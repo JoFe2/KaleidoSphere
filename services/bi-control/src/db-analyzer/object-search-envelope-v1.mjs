@@ -216,7 +216,7 @@ export function resumeObjectSearchEnvelope(snapshot) {
 }
 
 function maxPageIndex(state) {
-  return Math.floor(state.inventory.objectCount / state.pageSize) - 1;
+  return Math.ceil(state.inventory.objectCount / state.pageSize) - 1;
 }
 
 function makeCursor(state, pageIndex) {

@@ -82,6 +82,29 @@ test('builds snapshot-bound opaque cursors and advances bounded pages', () => {
   rejects(() => nextObjectSearchCursor(base, cursor), 'DB_OBJECT_SEARCH_CURSOR_EXHAUSTED');
 });
 
+test('cursor bounds use ceiling page semantics for empty, singleton, exact and partial inventories', () => {
+  const cases = [
+    {count: 0, pageSize: 20, pages: 0},
+    {count: 1, pageSize: 20, pages: 1},
+    {count: 40, pageSize: 20, pages: 2},
+    {count: 41, pageSize: 20, pages: 3},
+  ];
+  for (const {count, pageSize, pages} of cases) {
+    const base = envelope({
+      pageSize,
+      inventory: inventory({kindCounts: {...Object.fromEntries(Object.keys(KIND_COUNTS).map((kind) => [kind, 0])), TABLE: count}}),
+    });
+    if (pages === 0) {
+      rejects(() => buildObjectSearchCursor(base), 'DB_OBJECT_SEARCH_CURSOR_EXHAUSTED');
+      continue;
+    }
+    for (let pageIndex = 0; pageIndex < pages; pageIndex += 1) {
+      assert.equal(buildObjectSearchCursor(base, {pageIndex}).pageIndex, pageIndex);
+    }
+    rejects(() => buildObjectSearchCursor(base, {pageIndex: pages}), 'DB_OBJECT_SEARCH_CURSOR_EXHAUSTED');
+  }
+});
+
 test('fails closed on envelope and nested digest drift', () => {
   const base = envelope();
   rejects(() => resumeObjectSearchEnvelope({...base, engine: 'oracle'}), 'DB_OBJECT_SEARCH_ENVELOPE_TAMPERED');

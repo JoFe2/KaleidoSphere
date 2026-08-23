@@ -17,8 +17,8 @@ const SHAPE = {COMPLETE: 'VISIBLE', PARTIAL: 'VISIBLE_PARTIAL', DENIED: 'INVISIB
 const scopeSha256 = (engine) => identitySha256(normalizeJsonValue(SCOPE[engine]));
 const snapshotOf = (engine) => identitySha256({kind: 'structure-snapshot', engine});
 const preflightLedgerOf = (engine) => identitySha256({kind: 'preflight-coverage-ledger', engine});
-const receiptOf = (engine) => identitySha256({kind: 'probe-receipt', engine, scopeSha256: scopeSha256(engine)});
 const sourceObjectOf = (engine, relation) => identitySha256({kind: 'inventory-object', engine, relation});
+const seal = (body, key) => ({...normalizeJsonValue(body), [key]: identitySha256(normalizeJsonValue(body))});
 
 function buildLedger(engine, {state, reasonCode, schemaName = SCOPE[engine].schemas[0], relationName = 'sales_orders', sourceQueryId = `${engine}.structure-relations`, evidenceRefs}) {
   const sourceObjectSha256 = sourceObjectOf(engine, relationName);
@@ -42,15 +42,23 @@ function buildLedger(engine, {state, reasonCode, schemaName = SCOPE[engine].sche
   return {ledger, entry: ledger.entries[0], refs};
 }
 
-function inputsFor(engine, {entry, ledger, scope = SCOPE[engine], scopeSha256: boundScopeSha256 = scopeSha256(engine), inventorySnapshotSha256 = snapshotOf(engine), receiptSha256 = receiptOf(engine), objectKey = entry?.objectKey ?? identitySha256({missing: 'coverage-entry'}), coverageLedgerSha256 = ledger.coverageSha256, coverageEntry = entry, extra = {}} = {}) {
+function receiptFor(engine, {entry, ledger, inventorySnapshotSha256 = snapshotOf(engine), scopeDigest = scopeSha256(engine)} = {}) {
+  return seal({
+    schemaVersion: 'kaleidosphere.analysis/object-details-evidence-receipt/v1', engine,
+    scopeSha256: scopeDigest, inventorySnapshotSha256, coverageLedgerSha256: ledger.coverageSha256,
+    objectKey: entry.objectKey, coverageEntrySha256: identitySha256(entry),
+    evidenceRefs: [...entry.evidenceRefs].sort(),
+  }, 'receiptSha256');
+}
+
+function inputsFor(engine, {entry, ledger, scope = SCOPE[engine], scopeSha256: boundScopeSha256 = scopeSha256(engine), inventorySnapshotSha256 = snapshotOf(engine), receipt = entry && ledger ? receiptFor(engine, {entry, ledger, inventorySnapshotSha256, scopeDigest: boundScopeSha256}) : null, objectKey = entry?.objectKey ?? identitySha256({missing: 'coverage-entry'}), coverageLedger = ledger, extra = {}} = {}) {
   return {
     engine,
     scope,
     scopeSha256: boundScopeSha256,
     inventorySnapshotSha256,
-    coverageLedgerSha256,
-    coverageEntry,
-    receiptSha256,
+    coverageLedger,
+    receipt,
     objectKey,
     ...extra,
   };
@@ -73,6 +81,12 @@ function rawEntry({engine, relationName = 'sales_orders', schemaName = SCOPE[eng
   };
 }
 
+function ledgerWithEntry(ledger, entry) {
+  const {coverageSha256: _old, ...body} = structuredClone(ledger);
+  body.entries = [entry];
+  return seal(body, 'coverageSha256');
+}
+
 function expectedEnvelope(input, entry) {
   const ref = entry.objectRef;
   return {
@@ -91,8 +105,8 @@ function expectedEnvelope(input, entry) {
     bindings: {
       scopeSha256: input.scopeSha256,
       inventorySnapshotSha256: input.inventorySnapshotSha256,
-      coverageLedgerSha256: input.coverageLedgerSha256,
-      receiptSha256: input.receiptSha256,
+      coverageLedgerSha256: input.coverageLedger.coverageSha256 ?? identitySha256(input.coverageLedger),
+      receiptSha256: input.receipt.receiptSha256 ?? identitySha256(input.receipt),
       coverageEntrySha256: identitySha256(entry),
     },
     safety: {
@@ -172,19 +186,19 @@ test('rejects substitution, drift, injection, unknown fields and other fail-clos
   const {ledger, entry} = buildLedger(engine, {state: 'COMPLETE', reasonCode: null});
   const input = inputsFor(engine, {entry, ledger});
 
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry, ledger, objectKey: identitySha256({substituted: true})})), 'DB_OBJECT_DETAILS_KEY_SUBSTITUTION');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry, ledger, objectKey: identitySha256({substituted: true})})), 'DB_OBJECT_DETAILS_COVERAGE_MISSING');
   const escaped = buildLedger(engine, {state: 'COMPLETE', reasonCode: null, schemaName: 'hr'});
   expectCode(() => projectObjectDetails(inputsFor(engine, {entry: escaped.entry, ledger: escaped.ledger})), 'DB_OBJECT_DETAILS_SCOPE_DENIED');
   const injected = rawEntry({engine, relationName: 'sales--orders'});
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: injected, ledger, objectKey: injected.objectKey})), 'DB_OBJECT_DETAILS_IDENTIFIER_INVALID');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: injected, ledger: ledgerWithEntry(ledger, injected), objectKey: injected.objectKey})), 'DB_OBJECT_DETAILS_IDENTIFIER_INVALID');
   const claimed = rawEntry({engine, relationName: 'sales_orders_verified'});
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: claimed, ledger, objectKey: claimed.objectKey})), 'DB_OBJECT_DETAILS_IDENTIFIER_CLAIM');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: claimed, ledger: ledgerWithEntry(ledger, claimed), objectKey: claimed.objectKey})), 'DB_OBJECT_DETAILS_IDENTIFIER_CLAIM');
   const oversized = rawEntry({engine, relationName: `s_${'x'.repeat(127)}`});
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: oversized, ledger, objectKey: oversized.objectKey})), 'DB_OBJECT_DETAILS_IDENTIFIER_INVALID');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: oversized, ledger: ledgerWithEntry(ledger, oversized), objectKey: oversized.objectKey})), 'DB_OBJECT_DETAILS_IDENTIFIER_INVALID');
   const substitutedRef = rawEntry({engine});
   substitutedRef.objectRef.relationName = 'other_orders';
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: substitutedRef, ledger, objectKey: substitutedRef.objectKey})), 'DB_OBJECT_DETAILS_KEY_MISMATCH');
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: null, ledger})), 'DB_OBJECT_DETAILS_COVERAGE_MISSING');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: substitutedRef, ledger: ledgerWithEntry(ledger, substitutedRef), objectKey: substitutedRef.objectKey})), 'DB_OBJECT_DETAILS_KEY_MISMATCH');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry, ledger, objectKey: identitySha256({missing: 'coverage-entry'})})), 'DB_OBJECT_DETAILS_COVERAGE_MISSING');
   expectCode(() => projectObjectDetails(inputsFor(engine, {entry, ledger, extra: {hint: 'select 1'}})), 'DB_OBJECT_DETAILS_INPUT_INVALID');
   expectCode(() => projectObjectDetails(inputsFor(engine, {entry, ledger, scopeSha256: identitySha256({stale: true})})), 'DB_OBJECT_DETAILS_BINDING_DRIFT');
   const drifted = buildLedger(engine, {
@@ -195,10 +209,10 @@ test('rejects substitution, drift, injection, unknown fields and other fail-clos
   expectCode(() => projectObjectDetails(inputsFor(engine, {entry: drifted.entry, ledger: drifted.ledger})), 'DB_OBJECT_DETAILS_EVIDENCE_DRIFT');
   const duplicated = rawEntry({engine});
   duplicated.evidenceRefs = [snapshotOf(engine), snapshotOf(engine), preflightLedgerOf(engine)];
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: duplicated, ledger, objectKey: duplicated.objectKey})), 'DB_OBJECT_DETAILS_EVIDENCE_INVALID');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: duplicated, ledger: ledgerWithEntry(ledger, duplicated), objectKey: duplicated.objectKey})), 'DB_OBJECT_DETAILS_EVIDENCE_INVALID');
   const oversizedEvidence = rawEntry({engine});
   oversizedEvidence.evidenceRefs = [...Array.from({length: 17}, (_value, index) => identitySha256({evidence: index}))];
-  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: oversizedEvidence, ledger, objectKey: identitySha256(oversizedEvidence.objectRef)})), 'DB_OBJECT_DETAILS_EVIDENCE_INVALID');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {entry: oversizedEvidence, ledger: ledgerWithEntry(ledger, oversizedEvidence), objectKey: identitySha256(oversizedEvidence.objectRef)})), 'DB_OBJECT_DETAILS_EVIDENCE_INVALID');
 });
 
 test('rejects stale or tampered receipt bindings and a fully re-digested forged details envelope', () => {
@@ -207,8 +221,9 @@ test('rejects stale or tampered receipt bindings and a fully re-digested forged 
   const input = inputsFor(engine, {entry, ledger});
   const projection = projectObjectDetails(input);
 
-  expectCode(() => verifyObjectDetailsProjection(projection, inputsFor(engine, {entry, ledger, receiptSha256: identitySha256({stale: 'receipt'})})), 'DB_OBJECT_DETAILS_FORGED');
-  expectCode(() => verifyObjectDetailsProjection(projection, inputsFor(engine, {entry, ledger, coverageLedgerSha256: identitySha256({stale: 'ledger'})})), 'DB_OBJECT_DETAILS_FORGED');
+  expectCode(() => verifyObjectDetailsProjection(projection, inputsFor(engine, {entry, ledger, receipt: {...receiptFor(engine, {entry, ledger}), receiptSha256: identitySha256({stale: 'receipt'})}})), 'DB_OBJECT_DETAILS_FORGED');
+  const unrelated = buildLedger(engine, {state: 'COMPLETE', reasonCode: null, relationName: 'other_orders'});
+  expectCode(() => verifyObjectDetailsProjection(projection, inputsFor(engine, {entry: unrelated.entry, ledger: unrelated.ledger, objectKey: entry.objectKey})), 'DB_OBJECT_DETAILS_FORGED');
   const tamperedEntry = {...entry, reasonCode: 'PRIVILEGE_DENIED'};
   expectCode(() => verifyObjectDetailsProjection(projection, inputsFor(engine, {entry: tamperedEntry, ledger, objectKey: entry.objectKey})), 'DB_OBJECT_DETAILS_FORGED');
   expectCode(() => verifyObjectDetailsProjection({...projection, coverage: {...projection.coverage, visibility: 'EXHAUSTIVE'}}, input), 'DB_OBJECT_DETAILS_FORGED');
@@ -217,4 +232,22 @@ test('rejects stale or tampered receipt bindings and a fully re-digested forged 
   const forged = {...forgedBody, projectionSha256: identitySha256(forgedBody)};
   expectCode(() => verifyObjectDetailsProjection(forged, input), 'DB_OBJECT_DETAILS_FORGED');
   expectCode(() => verifyObjectDetailsProjection({forged: true}, input), 'DB_OBJECT_DETAILS_FORGED');
+});
+
+test('accepts recomputable evidence bodies and rejects re-digested unrelated ledger or receipt evidence', () => {
+  const engine = 'mssql';
+  const {ledger, entry} = buildLedger(engine, {state: 'COMPLETE', reasonCode: null});
+  const receipt = receiptFor(engine, {entry, ledger});
+  const {coverageSha256: _coverage, ...ledgerBody} = ledger;
+  const {receiptSha256: _receipt, ...receiptBody} = receipt;
+  assert.doesNotThrow(() => projectObjectDetails(inputsFor(engine, {entry, ledger: ledgerBody, receipt: receiptBody})));
+
+  const unrelated = buildLedger(engine, {state: 'COMPLETE', reasonCode: null, relationName: 'other_orders'});
+  expectCode(() => projectObjectDetails(inputsFor(engine, {
+    entry, ledger: unrelated.ledger, objectKey: entry.objectKey,
+    receipt: receiptFor(engine, {entry: unrelated.entry, ledger: unrelated.ledger}),
+  })), 'DB_OBJECT_DETAILS_COVERAGE_MISSING');
+  expectCode(() => projectObjectDetails(inputsFor(engine, {
+    entry, ledger, receipt: receiptFor(engine, {entry: unrelated.entry, ledger: unrelated.ledger}),
+  })), 'DB_OBJECT_DETAILS_RECEIPT_BINDING_INVALID');
 });

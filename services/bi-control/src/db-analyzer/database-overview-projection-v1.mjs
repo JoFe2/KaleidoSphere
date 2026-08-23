@@ -84,13 +84,18 @@ function validateSource(run) {
     queryIds.add(query.queryId);
   }
   const probes = new Map(run.probes.map((probe) => [probe.probeKey, probe]));
-  if (probes.size !== run.probes.length) fail('DB_OVERVIEW_RECEIPT_INVALID');
+  if (probes.size !== run.probes.length
+    || run.probes.some((probe) => probe.coverageSha256 !== run.coverage.coverageSha256)) {
+    fail('DB_OVERVIEW_PROBE_INVALID');
+  }
   const receiptProbes = new Set();
   for (const receipt of run.receipts) {
     assertSeal(receipt, 'receiptSha256', 'DB_OVERVIEW_RECEIPT_TAMPERED');
     const probe = probes.get(receipt.probeKey);
     if (!probe || receiptProbes.has(receipt.probeKey) || receipt.runId !== run.runId
-      || receipt.scopeSha256 !== run.scopeSha256 || receipt.methodRef !== probe.methodRef
+      || receipt.scopeSha256 !== run.scopeSha256
+      || receipt.coverageSha256 !== run.coverage.coverageSha256 || receipt.coverageSha256 !== probe.coverageSha256
+      || receipt.methodRef !== probe.methodRef
       || receipt.phase !== probe.phase || canonicalJson(receipt.target) !== canonicalJson(probe.target)
       || receipt.argumentsSha256 !== identitySha256(probe.arguments)
       || !Array.isArray(receipt.evidenceRefs) || receipt.evidenceRefs.some((item) => !hash(item))

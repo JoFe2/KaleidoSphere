@@ -44,6 +44,7 @@ function source({cancelled = false} = {}) {
   }] : [];
   const receipts = cancelled ? [seal({
     schemaVersion: 'kaleidosphere.analysis/progressive-probe-receipt/v1', runId: 'overview-run', scopeSha256,
+    coverageSha256: coverage.coverageSha256,
     probeKey: probes[0].probeKey, methodRef: probes[0].methodRef, phase: probes[0].phase, target: probes[0].target,
     argumentsSha256: identitySha256({}), resultState: 'CANCELLED', evidenceRefs: [], blindRetryAllowed: false,
   }, 'receiptSha256')] : [];
@@ -122,6 +123,19 @@ test('stale or tampered receipts, cancellation mismatch, and digest drift fail c
   assert.throws(() => verifyDatabaseOverviewProjection(cancellationMismatch, run), /DB_OVERVIEW_PROJECTION_MISMATCH/);
   const drift = redigestRun(run, (copy) => { copy.evidenceBinding.structureCoverageSha256 = digest('other-ledger'); });
   assert.throws(() => buildDatabaseOverviewProjection(drift), /DB_OVERVIEW_BINDING_DRIFT/);
+});
+
+test('probes and receipts bind the actual coverage digest and reject a fully re-digested replacement', () => {
+  const run = source({cancelled: true});
+  assert.equal(run.probes[0].coverageSha256, run.coverage.coverageSha256);
+  assert.equal(run.receipts[0].coverageSha256, run.coverage.coverageSha256);
+
+  const replacement = structuredClone(run);
+  replacement.coverage.thresholdBps = 9000;
+  const {coverageSha256: _oldCoverage, ...coverageBody} = replacement.coverage;
+  replacement.coverage = seal(coverageBody, 'coverageSha256');
+  const {stateSha256: _oldState, ...runBody} = replacement;
+  assert.throws(() => buildDatabaseOverviewProjection(seal(runBody, 'stateSha256')), /DB_OVERVIEW_(?:PROBE|RECEIPT)_INVALID/);
 });
 
 test('duplicate kinds or evidence, unsupported codes, and identifier substitution fail closed', () => {

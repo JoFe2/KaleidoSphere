@@ -5,6 +5,8 @@ import {
 } from './core.mjs';
 
 export const OBJECT_DETAILS_PROJECTION_SCHEMA = 'kaleidosphere.analysis/object-details-projection/v1';
+export const OBJECT_DETAILS_EVIDENCE_RECEIPT_SCHEMA = 'kaleidosphere.analysis/object-details-evidence-receipt/v1';
+const PROGRESSIVE_COVERAGE_SCHEMA = 'kaleidosphere.analysis/progressive-object-coverage/v1';
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const REASON_CODE = /^[A-Z][A-Z0-9_]{2,127}$/;
@@ -15,6 +17,7 @@ const CALLBACK_TEXT = /(?:callback|webhook|redirect|return[_-]?url)/i;
 const AUTHORITY_TEXT = /(?:dispatch|approval|execution|mutation|cancel(?:lation)?[_-]?bypass)[_-]?authority/i;
 const ENGINES = new Set(['mssql', 'oracle']);
 const STATES = new Set(['COMPLETE', 'PARTIAL', 'DENIED', 'UNSUPPORTED', 'UNKNOWN']);
+const QUERY_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED', 'TIMEOUT', 'ERROR']);
 const VISIBILITY = Object.freeze({
   COMPLETE: 'VISIBLE',
   PARTIAL: 'VISIBLE_PARTIAL',
@@ -95,28 +98,110 @@ function validateEntry(entry) {
   return ref;
 }
 
+function evidenceBody(value, digestKey, code) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) fail(code);
+  const normalized = normalizeJsonValue(value);
+  if (Object.hasOwn(normalized, digestKey)) {
+    if (!sha256Value(normalized[digestKey])) fail(code);
+    const {[digestKey]: claimed, ...body} = normalized;
+    if (identitySha256(body) !== claimed) fail(code);
+    return {body, digest: claimed, sealed: normalized};
+  }
+  return {body: normalized, digest: identitySha256(normalized), sealed: {...normalized, [digestKey]: identitySha256(normalized)}};
+}
+
+function validateCoverageLedger(value, engine) {
+  const evidence = evidenceBody(value, 'coverageSha256', 'DB_OBJECT_DETAILS_COVERAGE_LEDGER_TAMPERED');
+  const ledger = evidence.sealed;
+  if (!exactKeys(ledger, [
+    'schemaVersion', 'engine', 'structureSnapshotSha256', 'structureCoverageLedgerSha256', 'thresholdBps',
+    'summary', 'entries', 'queryCoverage', 'missingPrivilegeMeansAbsent', 'evidenceStoreSchema', 'coverageSha256',
+  ]) || ledger.schemaVersion !== PROGRESSIVE_COVERAGE_SCHEMA || ledger.engine !== engine
+    || !sha256Value(ledger.structureSnapshotSha256) || !sha256Value(ledger.structureCoverageLedgerSha256)
+    || !Array.isArray(ledger.entries) || !Array.isArray(ledger.queryCoverage)
+    || ledger.thresholdBps !== 9500 || ledger.missingPrivilegeMeansAbsent !== false
+    || ledger.evidenceStoreSchema !== 'kaleidosphere.analysis/evidence-store/v1') {
+    fail('DB_OBJECT_DETAILS_COVERAGE_LEDGER_INVALID');
+  }
+  const keys = new Set();
+  for (const entry of ledger.entries) {
+    validateEntry(entry);
+    if (keys.has(entry.objectKey)) fail('DB_OBJECT_DETAILS_COVERAGE_LEDGER_INVALID');
+    keys.add(entry.objectKey);
+  }
+  const queryIds = new Set();
+  for (const query of ledger.queryCoverage) {
+    if (!exactKeys(query, ['queryId', 'category', 'state', 'reasonCode', 'visibility', 'absenceClaim'])
+      || typeof query.queryId !== 'string' || !/^(?:mssql|oracle)\.[a-z0-9][a-z0-9._-]{2,127}$/.test(query.queryId)
+      || typeof query.category !== 'string' || query.category.length === 0 || query.category.length > 64
+      || !QUERY_STATES.has(query.state) || !(query.reasonCode === null || REASON_CODE.test(query.reasonCode))
+      || typeof query.visibility !== 'string' || query.visibility.length === 0 || query.visibility.length > 64
+      || query.absenceClaim !== 'NOT_CLAIMED' || queryIds.has(query.queryId)) {
+      fail('DB_OBJECT_DETAILS_COVERAGE_LEDGER_INVALID');
+    }
+    queryIds.add(query.queryId);
+  }
+  if (ledger.entries.some((entry) => !queryIds.has(entry.sourceQueryId))) fail('DB_OBJECT_DETAILS_COVERAGE_LEDGER_INVALID');
+  const counts = Object.fromEntries([...STATES].map((state) => [state, ledger.entries.filter((entry) => entry.state === state).length]));
+  const classified = ledger.entries.length - counts.UNKNOWN;
+  if (!exactKeys(ledger.summary, ['visibleObjectCount', 'classifiedObjectCount', 'coverageBps', 'stateCounts'])
+    || !exactKeys(ledger.summary.stateCounts, [...STATES])
+    || canonicalJson(ledger.summary.stateCounts) !== canonicalJson(counts)
+    || ledger.summary.visibleObjectCount !== ledger.entries.length || ledger.summary.classifiedObjectCount !== classified
+    || ledger.summary.coverageBps !== (ledger.entries.length === 0 ? 0 : Math.floor(classified * 10000 / ledger.entries.length))) {
+    fail('DB_OBJECT_DETAILS_COVERAGE_LEDGER_INVALID');
+  }
+  return evidence;
+}
+
+function validateReceipt(value, bindings, entry) {
+  const evidence = evidenceBody(value, 'receiptSha256', 'DB_OBJECT_DETAILS_RECEIPT_TAMPERED');
+  const receipt = evidence.sealed;
+  if (!exactKeys(receipt, [
+    'schemaVersion', 'engine', 'scopeSha256', 'inventorySnapshotSha256', 'coverageLedgerSha256',
+    'objectKey', 'coverageEntrySha256', 'evidenceRefs', 'receiptSha256',
+  ]) || receipt.schemaVersion !== OBJECT_DETAILS_EVIDENCE_RECEIPT_SCHEMA || receipt.engine !== bindings.engine
+    || receipt.scopeSha256 !== bindings.scopeSha256 || receipt.inventorySnapshotSha256 !== bindings.inventorySnapshotSha256
+    || receipt.coverageLedgerSha256 !== bindings.coverageLedgerSha256 || receipt.objectKey !== bindings.objectKey
+    || receipt.coverageEntrySha256 !== identitySha256(entry)
+    || !Array.isArray(receipt.evidenceRefs) || receipt.evidenceRefs.length === 0
+    || receipt.evidenceRefs.some((ref) => !sha256Value(ref)) || new Set(receipt.evidenceRefs).size !== receipt.evidenceRefs.length
+    || canonicalJson([...receipt.evidenceRefs].sort(compare)) !== canonicalJson([...entry.evidenceRefs].sort(compare))) {
+    fail('DB_OBJECT_DETAILS_RECEIPT_BINDING_INVALID');
+  }
+  return evidence;
+}
+
 function validatedInput(input) {
   if (!exactKeys(input, [
-    'engine', 'scope', 'scopeSha256', 'inventorySnapshotSha256', 'coverageLedgerSha256',
-    'coverageEntry', 'receiptSha256', 'objectKey',
+    'engine', 'scope', 'scopeSha256', 'inventorySnapshotSha256', 'coverageLedger', 'receipt', 'objectKey',
   ])) fail('DB_OBJECT_DETAILS_INPUT_INVALID');
   if (!ENGINES.has(input.engine)) fail('DB_OBJECT_DETAILS_ENGINE_INVALID');
-  if (![input.scopeSha256, input.inventorySnapshotSha256, input.coverageLedgerSha256, input.receiptSha256, input.objectKey].every(sha256Value)) {
+  if (![input.scopeSha256, input.inventorySnapshotSha256, input.objectKey].every(sha256Value)) {
     fail('DB_OBJECT_DETAILS_BINDING_INVALID');
   }
   const scope = validateScope(input.scope, input.engine);
   if (identitySha256(scope) !== input.scopeSha256) fail('DB_OBJECT_DETAILS_BINDING_DRIFT');
-  const ref = validateEntry(input.coverageEntry);
-  if (input.objectKey !== input.coverageEntry.objectKey) fail('DB_OBJECT_DETAILS_KEY_SUBSTITUTION');
+  const ledgerEvidence = validateCoverageLedger(input.coverageLedger, input.engine);
+  if (ledgerEvidence.sealed.structureSnapshotSha256 !== input.inventorySnapshotSha256) fail('DB_OBJECT_DETAILS_EVIDENCE_DRIFT');
+  const matches = ledgerEvidence.sealed.entries.filter((entry) => entry.objectKey === input.objectKey);
+  if (matches.length !== 1) fail(matches.length === 0 ? 'DB_OBJECT_DETAILS_COVERAGE_MISSING' : 'DB_OBJECT_DETAILS_KEY_SUBSTITUTION');
+  const coverageEntry = matches[0];
+  const ref = validateEntry(coverageEntry);
   if (!scope.schemas.includes(ref.schemaName)) fail('DB_OBJECT_DETAILS_SCOPE_DENIED');
-  if (!input.coverageEntry.sourceQueryId.startsWith(`${input.engine}.`)) fail('DB_OBJECT_DETAILS_ENGINE_MISMATCH');
-  if (!input.coverageEntry.evidenceRefs.includes(input.inventorySnapshotSha256)
-    || !input.coverageEntry.evidenceRefs.includes(ref.sourceObjectSha256)) fail('DB_OBJECT_DETAILS_EVIDENCE_DRIFT');
-  return ref;
+  if (!coverageEntry.sourceQueryId.startsWith(`${input.engine}.`)) fail('DB_OBJECT_DETAILS_ENGINE_MISMATCH');
+  if (!coverageEntry.evidenceRefs.includes(input.inventorySnapshotSha256)
+    || !coverageEntry.evidenceRefs.includes(ledgerEvidence.sealed.structureCoverageLedgerSha256)
+    || !coverageEntry.evidenceRefs.includes(ref.sourceObjectSha256)) fail('DB_OBJECT_DETAILS_EVIDENCE_DRIFT');
+  const receiptEvidence = validateReceipt(input.receipt, {
+    engine: input.engine, scopeSha256: input.scopeSha256, inventorySnapshotSha256: input.inventorySnapshotSha256,
+    coverageLedgerSha256: ledgerEvidence.digest, objectKey: input.objectKey,
+  }, coverageEntry);
+  return {ref, coverageEntry, coverageLedgerSha256: ledgerEvidence.digest, receiptSha256: receiptEvidence.digest};
 }
 
 function buildProjection(input) {
-  const ref = validatedInput(input);
+  const {ref, coverageEntry, coverageLedgerSha256, receiptSha256} = validatedInput(input);
   const identifierShape = ref.columnName !== null ? 'SCHEMA_RELATION_COLUMN'
     : ref.relationName !== null ? 'SCHEMA_RELATION'
       : ref.objectName !== null ? 'SCHEMA_OBJECT' : 'SCHEMA_ONLY';
@@ -135,18 +220,18 @@ function buildProjection(input) {
     identifierShape,
     sourceObjectSha256: ref.sourceObjectSha256,
     coverage: {
-      state: input.coverageEntry.state,
-      reasonCode: input.coverageEntry.reasonCode,
-      visibility: VISIBILITY[input.coverageEntry.state],
+      state: coverageEntry.state,
+      reasonCode: coverageEntry.reasonCode,
+      visibility: VISIBILITY[coverageEntry.state],
       absenceClaim: 'NOT_CLAIMED',
     },
-    evidenceRefs: [...input.coverageEntry.evidenceRefs].sort(compare),
+    evidenceRefs: [...coverageEntry.evidenceRefs].sort(compare),
     bindings: {
       scopeSha256: input.scopeSha256,
       inventorySnapshotSha256: input.inventorySnapshotSha256,
-      coverageLedgerSha256: input.coverageLedgerSha256,
-      receiptSha256: input.receiptSha256,
-      coverageEntrySha256: identitySha256(input.coverageEntry),
+      coverageLedgerSha256,
+      receiptSha256,
+      coverageEntrySha256: identitySha256(coverageEntry),
     },
     safety: {
       rawValuesIncluded: false,
