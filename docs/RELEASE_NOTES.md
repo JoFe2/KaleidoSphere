@@ -1,5 +1,17 @@
 # Release Notes
 
+## v0.18.10 - Safe local Hermes consumption proof
+
+Adds a deterministic local proof that the generated Hermes skill view is staged
+from the canonical KaleidoSphere AgentSkill with the exact file set, bytes and
+digests intact, including its Portable Companion binding. The proof uses only a
+temporary Hermes-style directory and leaves the canonical single source
+unchanged.
+
+This is local package-consumption evidence only. It does not touch a real home
+directory, install or invoke Hermes, execute a Hermes runtime, use credentials,
+access the network, or activate external dispatch or transport.
+
 ## v0.18.9 - Cross-harness Portable Companion distribution
 
 Completes K4e.7 by deriving the ClawHub/OpenClaw/Hermes, Codex and Claude host
