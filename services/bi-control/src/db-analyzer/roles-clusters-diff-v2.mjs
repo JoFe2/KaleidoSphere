@@ -97,6 +97,16 @@ function assertConfidence(value, code) {
     || value.lowerBps < 0 || value.upperBps > 10000 || value.lowerBps > value.upperBps) fail(code);
 }
 
+function rejectNegativeZero(value, code) {
+  if (Object.is(value, -0)) fail(code);
+  if (value === null || typeof value !== 'object') return;
+  if (Array.isArray(value)) {
+    value.forEach((item) => rejectNegativeZero(item, code));
+    return;
+  }
+  for (const item of Object.values(value)) rejectNegativeZero(item, code);
+}
+
 function assertVisibilityTargets(values, code) {
   if (!Array.isArray(values) || values.length === 0) fail(code);
   values.forEach(target);
@@ -440,7 +450,7 @@ export function buildRoleClusterSnapshotV2({analysisState, safeEvidence, snapsho
   const state = resumeProgressiveAnalysis(analysisState);
   if (state.controllerRun.phase !== 'REPORT') fail('DB_ROLE_CLUSTER_CONTROLLER_PHASE_INVALID');
   const controllerReport = buildProgressiveAnalysisReport(state);
-  if (!Number.isSafeInteger(snapshotOrdinal) || snapshotOrdinal < 1
+  if (!Number.isSafeInteger(snapshotOrdinal) || Object.is(snapshotOrdinal, -0) || snapshotOrdinal < 1
     || !(previousSnapshotSha256 === null || sha256Value(previousSnapshotSha256))
     || !Array.isArray(safeEvidence)) fail('DB_ROLE_CLUSTER_SNAPSHOT_INPUT_INVALID');
   const bindings = safeEvidence.map((evidence) => validateSafeEvidence(evidence, state));
@@ -492,6 +502,17 @@ function validateProjectionHash(item, hashKey, code) {
 }
 
 export function resumeRoleClusterSnapshotV2(snapshot) {
+  for (const [key, code] of [
+    ['relationships', 'DB_ROLE_CLUSTER_RELATIONSHIP_INVALID'],
+    ['hypotheses', 'DB_ROLE_CLUSTER_HYPOTHESIS_INVALID'],
+    ['roles', 'DB_ROLE_CLUSTER_ROLE_INVALID'],
+    ['clusters', 'DB_ROLE_CLUSTER_CLUSTER_INVALID'],
+  ]) {
+    if (snapshot && Array.isArray(snapshot[key])) {
+      snapshot[key].forEach((item) => rejectNegativeZero(item && item.confidenceBounds, code));
+    }
+  }
+  rejectNegativeZero(snapshot, 'DB_ROLE_CLUSTER_SNAPSHOT_INVALID');
   const value = normalizeJsonValue(snapshot);
   assertSealed(value, 'snapshotSha256', 'DB_ROLE_CLUSTER_SNAPSHOT_TAMPERED');
   if (value.schemaVersion !== ROLE_CLUSTER_SNAPSHOT_V2_SCHEMA) fail('DB_ROLE_CLUSTER_SNAPSHOT_VERSION_UNSUPPORTED');
@@ -726,6 +747,10 @@ function validateSurfaceDiff(surface) {
 }
 
 export function resumeExtendedEvidenceDiffV2(diff) {
+  for (const key of ['coverage', 'profiles', 'relationships', 'hypotheses', 'roles', 'clusters']) {
+    rejectNegativeZero(diff && diff[key], 'DB_EVIDENCE_DIFF_SURFACE_INVALID');
+  }
+  rejectNegativeZero(diff, 'DB_EVIDENCE_DIFF_INVALID');
   const value = normalizeJsonValue(diff);
   assertSealed(value, 'diffSha256', 'DB_EVIDENCE_DIFF_TAMPERED');
   if (value.schemaVersion !== EXTENDED_EVIDENCE_DIFF_V2_SCHEMA) fail('DB_EVIDENCE_DIFF_VERSION_UNSUPPORTED');
