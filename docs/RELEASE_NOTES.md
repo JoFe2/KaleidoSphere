@@ -1,5 +1,20 @@
 # Release Notes
 
+## v0.20.0 - Authority-bound relation search result foundation
+
+Adds a pure, deterministic first-page relation-search result projection over the
+merged controller, inventory, relation-kind and object-name authorities. Prefix
+selection applies only to authoritative object names, TABLE/VIEW filters remain
+exact, caller-supplied inventory counts never become page authority, and an
+optional continuation cursor is emitted without being consumed or claiming
+replay prevention.
+
+The increment supports relation TABLE/VIEW search only. Non-relation kinds and
+cursor consumption fail closed pending separately reviewed name authorities and
+a stateful continuation contract. It adds no SQL, query execution, mutation,
+dispatch, credentials, raw rows, absence/completeness claim or external runtime
+authority.
+
 ## v0.19.0 - Governed object identity and validator hardening
 
 Adds the next bounded database-intelligence increment over the released v0.18.10
