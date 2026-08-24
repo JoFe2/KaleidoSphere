@@ -334,7 +334,8 @@ export function createProgressiveBreadthOverride({
     || Number.isNaN(Date.parse(recordedAt)) || new Date(recordedAt).toISOString() !== recordedAt
     || !Array.isArray(allowedObjectKeys) || allowedObjectKeys.length === 0
     || allowedObjectKeys.some((key) => !sha256Value(key)) || new Set(allowedObjectKeys).size !== allowedObjectKeys.length
-    || !Number.isInteger(maxDepthProbeCount) || maxDepthProbeCount < 1) fail('DB_PROGRESSIVE_OVERRIDE_INVALID');
+    || !Number.isInteger(maxDepthProbeCount) || maxDepthProbeCount < 1
+    || maxDepthProbeCount > Number.MAX_SAFE_INTEGER) fail('DB_PROGRESSIVE_OVERRIDE_INVALID');
   return seal({
     schemaVersion: PROGRESSIVE_OVERRIDE_SCHEMA,
     runId,
