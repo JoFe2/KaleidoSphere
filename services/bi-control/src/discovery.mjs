@@ -266,7 +266,7 @@ function validateState(state) {
   exact(state, ['schemaVersion', 'sessionId', 'revision', 'status', 'createdAt', 'updatedAt', 'catalog', 'audienceRole', 'businessQuestions',
     'confirmedKpiCandidates', 'dimensions', 'time', 'filtersSegments', 'drilldowns', 'accessConfidentiality', 'openAssumptions', 'confirmation', 'guidance'], undefined, 'DISCOVERY_STATE_INVALID');
   if (state.schemaVersion !== DISCOVERY_STATE_SCHEMA || !SESSION_ID.test(state.sessionId)
-    || !Number.isInteger(state.revision) || state.revision < 1 || !['IN_PROGRESS', 'CONFIRMED'].includes(state.status)) fail('DISCOVERY_STATE_INVALID');
+    || !Number.isSafeInteger(state.revision) || state.revision < 1 || !['IN_PROGRESS', 'CONFIRMED'].includes(state.status)) fail('DISCOVERY_STATE_INVALID');
   exact(state.catalog, ['receiptId', 'snapshotSha256', 'engine', 'database', 'sourceMode', 'runtimeValidation', 'scope'], undefined, 'DISCOVERY_STATE_INVALID');
   exact(state.catalog.scope, ['schemas'], undefined, 'DISCOVERY_STATE_INVALID');
   if (!Array.isArray(state.catalog.scope.schemas) || state.catalog.scope.schemas.length === 0) fail('DISCOVERY_STATE_INVALID');
