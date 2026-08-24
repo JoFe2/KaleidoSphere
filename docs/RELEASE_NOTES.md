@@ -1,5 +1,24 @@
 # Release Notes
 
+## v0.19.0 - Governed object identity and validator hardening
+
+Adds the next bounded database-intelligence increment over the released v0.18.10
+baseline:
+
+- governed object search, object details and database-overview projections;
+- controller-bound inventory identity and authoritative relation-kind/name
+  envelopes over sealed structure evidence;
+- safe-integer and canonical-integer validation for object-search counts,
+  progressive stopping/override state, graph/discovery revisions and runtime
+  configuration;
+- complete default-suite and content-addressed source-map coverage for all new
+  modules and regression tests in this wave.
+
+The release remains read-only and proposal/evidence oriented. It does not add
+free SQL, mutation or execution authority, marketplace approval, remote
+connector credentials, tenant authority, or production/customer-data fitness
+claims. Issue #65 remains open for later API/adapter and lifecycle acceptance.
+
 ## v0.18.10 - Safe local Hermes consumption proof
 
 Adds a deterministic local proof that the generated Hermes skill view is staged
