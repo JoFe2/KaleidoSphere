@@ -31,7 +31,7 @@ function assertJson(value, code = 'DB_OVERVIEW_UNSAFE_JSON') {
       || /(?:password|passwd|secret|token|api[_-]?key)\s*[:=]/i.test(item))) fail(code);
     if (item === null || typeof item === 'string' || typeof item === 'boolean') return;
     if (typeof item === 'number') {
-      if (!Number.isFinite(item) || !Number.isSafeInteger(item)) fail(code);
+      if (!Number.isFinite(item) || !Number.isSafeInteger(item) || Object.is(item, -0)) fail(code);
       return;
     }
     if (typeof item !== 'object' || Array.isArray(item) && item.length > 100000 || seen.has(item)) fail(code);
