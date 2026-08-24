@@ -395,7 +395,8 @@ function validateState(state) {
     || state.binding.coverageSha256 !== state.controllerRun.coverage.coverageSha256
     || state.binding.methodRegistrySha256 !== state.controllerRun.methodRegistry.registrySha256) fail('DB_PROGRESSIVE_ANALYSIS_BINDING_INVALID');
   if (!exactKeys(state.policy, ['maxConsecutiveNoGain', 'maxConsecutiveCounterevidence', 'minExpectedGainBps'])
-    || ![state.policy.maxConsecutiveNoGain, state.policy.maxConsecutiveCounterevidence].every((value) => Number.isInteger(value) && value >= 1)
+    || ![state.policy.maxConsecutiveNoGain, state.policy.maxConsecutiveCounterevidence]
+      .every((value) => Number.isInteger(value) && value >= 1 && value <= Number.MAX_SAFE_INTEGER)
     || !Number.isInteger(state.policy.minExpectedGainBps) || state.policy.minExpectedGainBps < 1 || state.policy.minExpectedGainBps > 10000) {
     fail('DB_PROGRESSIVE_POLICY_INVALID');
   }
@@ -464,7 +465,8 @@ export function createProgressiveAnalysis({controllerRun, budgets, policy}) {
     || budgets.maxTableProbes > controllerRun.budget.maxRunProbes
     || budgets.maxHypothesisProbes > controllerRun.budget.maxRunProbes) fail('DB_PROGRESSIVE_BUDGET_INVALID');
   if (!exactKeys(policy, ['maxConsecutiveNoGain', 'maxConsecutiveCounterevidence', 'minExpectedGainBps'])
-    || ![policy.maxConsecutiveNoGain, policy.maxConsecutiveCounterevidence].every((value) => Number.isInteger(value) && value >= 1)
+    || ![policy.maxConsecutiveNoGain, policy.maxConsecutiveCounterevidence]
+      .every((value) => Number.isInteger(value) && value >= 1 && value <= Number.MAX_SAFE_INTEGER)
     || !Number.isInteger(policy.minExpectedGainBps) || policy.minExpectedGainBps < 1 || policy.minExpectedGainBps > 10000) {
     fail('DB_PROGRESSIVE_POLICY_INVALID');
   }

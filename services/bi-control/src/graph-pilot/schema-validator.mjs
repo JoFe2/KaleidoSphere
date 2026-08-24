@@ -5,9 +5,18 @@ const fail = (code, details) => {
   throw error;
 };
 
+// JSON-representable safe integer: an integer within Number.MIN_SAFE_INTEGER..Number.MAX_SAFE_INTEGER,
+// with negative zero denied so precision-unsafe re-digested values cannot cross the schema boundary.
+function isSafeInteger(value) {
+  return Number.isInteger(value)
+    && value >= Number.MIN_SAFE_INTEGER
+    && value <= Number.MAX_SAFE_INTEGER
+    && !Object.is(value, -0);
+}
+
 function checkType(value, expected) {
   if (expected === 'array') return Array.isArray(value);
-  if (expected === 'integer') return Number.isInteger(value);
+  if (expected === 'integer') return isSafeInteger(value);
   if (expected === 'number') return typeof value === 'number' && Number.isFinite(value);
   if (expected === 'object') return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
   return typeof value === expected;
