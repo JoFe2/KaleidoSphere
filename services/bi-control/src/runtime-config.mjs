@@ -7,8 +7,12 @@ const token = (value) => typeof value === 'string' && /^[A-Z][A-Z0-9_$#]{0,127}$
 const hostname = (value) => typeof value === 'string' && /^[A-Za-z0-9][A-Za-z0-9.-]{0,252}$/.test(value);
 const postgresqlIdentifier = (value) => typeof value === 'string' && /^[A-Za-z_][A-Za-z0-9_$]{0,62}$/.test(value);
 
+const canonicalInteger = (value) => typeof value === 'string' && /^(0|[1-9][0-9]*)$/.test(value);
+
 function integer(env, name, fallback, minimum, maximum) {
-  const value = Number(env[name] ?? fallback);
+  const raw = env[name];
+  if (raw !== undefined && !canonicalInteger(raw)) throw coded(`CONFIG_${name}_INVALID`);
+  const value = Number(raw ?? fallback);
   if (!Number.isInteger(value) || value < minimum || value > maximum) throw coded(`CONFIG_${name}_INVALID`);
   return value;
 }
