@@ -110,7 +110,22 @@ function evidenceBody(value, digestKey, code) {
   return {body: normalized, digest: identitySha256(normalized), sealed: {...normalized, [digestKey]: identitySha256(normalized)}};
 }
 
+const isNegativeZero = (value) => typeof value === 'number' && Object.is(value, -0);
+
+function summaryNegativeZero(ledger) {
+  if (ledger === null || typeof ledger !== 'object' || Array.isArray(ledger)) return false;
+  const summary = ledger.summary;
+  if (summary === null || typeof summary !== 'object' || Array.isArray(summary)) return false;
+  const stateCounts = summary.stateCounts;
+  const counts = stateCounts !== null && typeof stateCounts === 'object' && !Array.isArray(stateCounts)
+    ? Object.values(stateCounts)
+    : [];
+  return [summary.visibleObjectCount, summary.classifiedObjectCount, summary.coverageBps, ...counts].some(isNegativeZero);
+}
+
 function validateCoverageLedger(value, engine) {
+  // Reject negative zero on the raw summary before evidenceBody normalization coerces -0 to 0.
+  if (summaryNegativeZero(value)) fail('DB_OBJECT_DETAILS_COVERAGE_LEDGER_INVALID');
   const evidence = evidenceBody(value, 'coverageSha256', 'DB_OBJECT_DETAILS_COVERAGE_LEDGER_TAMPERED');
   const ledger = evidence.sealed;
   if (!exactKeys(ledger, [
