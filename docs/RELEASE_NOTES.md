@@ -1,5 +1,17 @@
 # Release Notes
 
+## v0.20.1 - Authority-bound search-result readback verification
+
+Adds a pure deterministic verifier for the v0.20.0 first-page relation-search
+projection. Verification rebuilds the expected result from the unchanged
+controller, inventory, relation-kind, object-name, structure-evidence and request
+inputs, then requires exact canonical byte equality. Unchanged-digest and fully
+re-digested projection forgeries fail closed with one fixed error code.
+
+The verifier adds no cursor consumption, replay prevention, non-relation name
+authority, SQL, query execution, mutation, dispatch, credentials, raw rows,
+absence/completeness claim or external runtime authority.
+
 ## v0.20.0 - Authority-bound relation search result foundation
 
 Adds a pure, deterministic first-page relation-search result projection over the
