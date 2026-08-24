@@ -192,6 +192,7 @@ export function compileSafeAnalysisMethod({manifest, sqlByMethodId, methodId, ta
 }
 
 const integer = (value, code = 'DB_SAFE_METHOD_RESULT_INVALID') => {
+  if (typeof value === 'number' && Object.is(value, -0)) fail(code);
   const normalized = typeof value === 'bigint' ? Number(value) : typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value;
   if (!Number.isSafeInteger(normalized) || normalized < 0) fail(code);
   return normalized;
