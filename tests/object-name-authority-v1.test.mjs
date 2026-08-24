@@ -22,6 +22,12 @@ const STATES = [['COMPLETE', null], ['PARTIAL', 'FIXTURE_PARTIAL'], ['DENIED', '
 const readJson = async (path) => JSON.parse(await readFile(path, 'utf8'));
 const rowFor = (query, values) => Object.fromEntries(query.outputColumns.map((column) => [column, values[column] ?? null]));
 
+function assertDeepFrozen(value) {
+  if (!value || typeof value !== 'object') return;
+  assert(Object.isFrozen(value));
+  Object.values(value).forEach(assertDeepFrozen);
+}
+
 function resealEvidence(evidence, mutate) {
   const copy = structuredClone(evidence);
   delete copy.snapshotSha256;
@@ -77,8 +83,10 @@ const oracleEnv = {
   ORACLE_SERVICE_NAME: 'FREEPDB1', ORACLE_USER: 'BI_ANALYZE', ORACLE_SCHEMAS: 'BI_DEMO',
   ORACLE_PROTOCOL: 'tcp', ORACLE_CONNECT_TIMEOUT_MS: '9000', ORACLE_QUERY_TIMEOUT_MS: '7000',
 };
+const ORACLE_QUOTED_TABLE_NAME_NFD = 'MiXeD Cafe\u0301 Table';
+const ORACLE_QUOTED_VIEW_NAME = 'Order Detail$View';
 
-async function oracleSources({reverseRows = false} = {}) {
+async function oracleSources({reverseExtracts = false, reverseRows = false} = {}) {
   const manifest = await readJson(`${ORACLE}/manifest.json`);
   const sqlByQueryId = Object.fromEntries(await Promise.all(manifest.queries.map(async (query) => [query.id, await readFile(`${ORACLE}/${query.file}`, 'utf8')])));
   const results = Object.fromEntries(manifest.queries.map((query) => [query.id, {state: 'SUCCEEDED', reasonCode: null, rows: []}]));
@@ -88,14 +96,20 @@ async function oracleSources({reverseRows = false} = {}) {
   results['oracle.preflight.capabilities'].rows = [rowFor(query('oracle.preflight.capabilities'), {collector_id: 'oracle.structure.relations', capability_name: 'ALL_OBJECTS', visibility_state: 'VISIBLE', minimum_privilege: 'CREATE SESSION', fallback_semantics: 'DENIED_IS_NOT_ABSENT'})];
   results['oracle.structure.schemas'].rows = [rowFor(query('oracle.structure.schemas'), {schema_name: 'BI_DEMO'})];
   const relationRows = [
-    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: 'ORDERS', relation_kind: 'TABLE', object_id: 101, status: 'VALID', temporary: false}),
-    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: 'ORDER_VIEW', relation_kind: 'VIEW', object_id: 102, status: 'VALID', temporary: false}),
+    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: ORACLE_QUOTED_TABLE_NAME_NFD, relation_kind: 'TABLE', object_id: 101, status: 'VALID', temporary: false}),
+    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: ORACLE_QUOTED_VIEW_NAME, relation_kind: 'VIEW', object_id: 102, status: 'VALID', temporary: false}),
   ];
-  results['oracle.structure.relations'].rows = reverseRows ? relationRows.reverse() : relationRows;
-  results['oracle.structure.columns'].rows = [rowFor(query('oracle.structure.columns'), {schema_name: 'BI_DEMO', relation_name: 'ORDERS', relation_kind: 'TABLE', column_name: 'ORDER_ID', ordinal_position: 1, data_type_schema: 'SYS', data_type: 'NUMBER', is_nullable: false})];
+  results['oracle.structure.relations'].rows = relationRows;
+  results['oracle.structure.columns'].rows = [rowFor(query('oracle.structure.columns'), {schema_name: 'BI_DEMO', relation_name: ORACLE_QUOTED_TABLE_NAME_NFD, relation_kind: 'TABLE', column_name: 'ORDER_ID', ordinal_position: 1, data_type_schema: 'SYS', data_type: 'NUMBER', is_nullable: false})];
   results['oracle.size.segments'] = {state: 'DENIED', reasonCode: 'ORA_01031', rows: []};
   const profile = buildLiveProfile(oracleEnv, 'CM_ORACLE_PASSWORD');
-  const evidence = buildPreflightEvidence({manifest, sqlByQueryId, resultSets: {schemaVersion: 'chimpmaera.db/runtime-query-results/v1', engine: 'oracle', runtimeValidated: true, results}, profileContext: {profileId: profile.profileId, mode: profile.mode, scope: profile.scope, policy: profile.policy, adapter: profile.adapter.kind}});
+  let evidence = buildPreflightEvidence({manifest, sqlByQueryId, resultSets: {schemaVersion: 'chimpmaera.db/runtime-query-results/v1', engine: 'oracle', runtimeValidated: true, results}, profileContext: {profileId: profile.profileId, mode: profile.mode, scope: profile.scope, policy: profile.policy, adapter: profile.adapter.kind}});
+  if (reverseExtracts || reverseRows) {
+    evidence = resealEvidence(evidence, (body) => {
+      if (reverseExtracts) body.extracts.reverse();
+      if (reverseRows) body.extracts.find(({category}) => category === 'relations').rows.reverse();
+    });
+  }
   const base = buildProgressiveCoverage(evidence);
   const coverage = createProgressiveCoverage({
     engine: 'oracle', structureSnapshotSha256: base.structureSnapshotSha256,
@@ -152,22 +166,29 @@ test('canonical MSSQL mixed TABLE/VIEW evidence yields the exact ordered frozen 
   for (const name of ['orders', 'customers']) assert(bytes.includes(name));
 });
 
-test('Oracle canonical ordering is byte-identical and PARTIAL/DENIED/UNKNOWN controller coverage is retained without promotion', async () => {
+test('Oracle quoted-valid relation names preserve exact normalized case with extract/row ordering, byte identity, and deep freeze', async () => {
+  assert.notEqual(ORACLE_QUOTED_TABLE_NAME_NFD, ORACLE_QUOTED_TABLE_NAME_NFD.normalize('NFC'));
   const first = await oracleSources();
-  const second = await oracleSources({reverseRows: true});
+  const second = await oracleSources({reverseExtracts: true, reverseRows: true});
   const a = buildObjectNameAuthority(first);
   const b = buildObjectNameAuthority(second);
-  assert.equal(canonicalJson(a), canonicalJson(b));
+  const verified = verifyObjectNameAuthority({...first, projection: a});
+  assert.notDeepEqual(first.structureEvidence.extracts.map(({queryId}) => queryId), second.structureEvidence.extracts.map(({queryId}) => queryId));
+  assert.notEqual(canonicalJson(first.structureEvidence.extracts.find(({category}) => category === 'relations').rows), canonicalJson(second.structureEvidence.extracts.find(({category}) => category === 'relations').rows));
   assert.deepEqual(a.mappings, [
-    {objectKey: '0351415bbec464f1935006badbbf13af5f09a125255d6b6037bd31c48faf58d7', objectName: 'ORDERS', relationKind: 'TABLE'},
-    {objectKey: '9c838e00bd7f6c6fbd39d12a3893de0d116f45306a13eaaf51d88c5fac950204', objectName: 'ORDER_VIEW', relationKind: 'VIEW'},
+    {objectKey: '4dc0fb16ec34e515958e4ca539e7e3766057116fc7ae97a4ff1ed2cfaa0a37d4', objectName: 'Order Detail$View', relationKind: 'VIEW'},
+    {objectKey: 'c7641dcc408ff462a388a055f08b47b2af159e1cb41b51018db4b89994f5835b', objectName: 'MiXeD Café Table', relationKind: 'TABLE'},
   ]);
-  assert.equal(a.objectNameAuthoritySha256, '7d2776b02f6d8d56290f8411a926e28b856568b39269a13612e19f27922fc149');
+  assert.deepEqual(b.mappings, a.mappings);
+  assert.deepEqual(Buffer.from(canonicalJson(verified), 'utf8'), Buffer.from(canonicalJson(a), 'utf8'));
+  assert.equal(a.objectNameAuthoritySha256, 'f2d094c82cf3adb53a7ded1d0a5bb7de1d92b37291050543e5162183068b1bbf');
   assert.deepEqual(a.mappings.map(({relationKind}) => relationKind).sort(), ['TABLE', 'VIEW']);
   for (const state of ['PARTIAL', 'DENIED', 'UNKNOWN']) assert(first.controllerRun.coverage.entries.some((entry) => entry.state === state));
   const bytes = canonicalJson(a);
   for (const forbidden of ['oracle-relation-kind-secret', 'BI_DEMO', 'schemaName', 'sourceObjectSha256']) assert(!bytes.includes(forbidden));
-  assert(Object.isFrozen(a) && Object.isFrozen(a.mappings));
+  assertDeepFrozen(a);
+  assertDeepFrozen(b);
+  assertDeepFrozen(verified);
   assert(!/complete|absence|businessTruth/i.test(bytes));
 });
 
