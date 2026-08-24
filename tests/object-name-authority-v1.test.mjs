@@ -86,7 +86,10 @@ const oracleEnv = {
 const ORACLE_QUOTED_TABLE_NAME_NFD = 'MiXeD Cafe\u0301 Table';
 const ORACLE_QUOTED_VIEW_NAME = 'Order Detail$View';
 
-async function oracleSources({reverseExtracts = false, reverseRows = false} = {}) {
+async function oracleSources({
+  reverseExtracts = false, reverseRows = false,
+  tableName = ORACLE_QUOTED_TABLE_NAME_NFD, viewName = ORACLE_QUOTED_VIEW_NAME,
+} = {}) {
   const manifest = await readJson(`${ORACLE}/manifest.json`);
   const sqlByQueryId = Object.fromEntries(await Promise.all(manifest.queries.map(async (query) => [query.id, await readFile(`${ORACLE}/${query.file}`, 'utf8')])));
   const results = Object.fromEntries(manifest.queries.map((query) => [query.id, {state: 'SUCCEEDED', reasonCode: null, rows: []}]));
@@ -96,11 +99,11 @@ async function oracleSources({reverseExtracts = false, reverseRows = false} = {}
   results['oracle.preflight.capabilities'].rows = [rowFor(query('oracle.preflight.capabilities'), {collector_id: 'oracle.structure.relations', capability_name: 'ALL_OBJECTS', visibility_state: 'VISIBLE', minimum_privilege: 'CREATE SESSION', fallback_semantics: 'DENIED_IS_NOT_ABSENT'})];
   results['oracle.structure.schemas'].rows = [rowFor(query('oracle.structure.schemas'), {schema_name: 'BI_DEMO'})];
   const relationRows = [
-    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: ORACLE_QUOTED_TABLE_NAME_NFD, relation_kind: 'TABLE', object_id: 101, status: 'VALID', temporary: false}),
-    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: ORACLE_QUOTED_VIEW_NAME, relation_kind: 'VIEW', object_id: 102, status: 'VALID', temporary: false}),
+    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: tableName, relation_kind: 'TABLE', object_id: 101, status: 'VALID', temporary: false}),
+    rowFor(query('oracle.structure.relations'), {schema_name: 'BI_DEMO', relation_name: viewName, relation_kind: 'VIEW', object_id: 102, status: 'VALID', temporary: false}),
   ];
   results['oracle.structure.relations'].rows = relationRows;
-  results['oracle.structure.columns'].rows = [rowFor(query('oracle.structure.columns'), {schema_name: 'BI_DEMO', relation_name: ORACLE_QUOTED_TABLE_NAME_NFD, relation_kind: 'TABLE', column_name: 'ORDER_ID', ordinal_position: 1, data_type_schema: 'SYS', data_type: 'NUMBER', is_nullable: false})];
+  results['oracle.structure.columns'].rows = [rowFor(query('oracle.structure.columns'), {schema_name: 'BI_DEMO', relation_name: tableName, relation_kind: 'TABLE', column_name: 'ORDER_ID', ordinal_position: 1, data_type_schema: 'SYS', data_type: 'NUMBER', is_nullable: false})];
   results['oracle.size.segments'] = {state: 'DENIED', reasonCode: 'ORA_01031', rows: []};
   const profile = buildLiveProfile(oracleEnv, 'CM_ORACLE_PASSWORD');
   let evidence = buildPreflightEvidence({manifest, sqlByQueryId, resultSets: {schemaVersion: 'chimpmaera.db/runtime-query-results/v1', engine: 'oracle', runtimeValidated: true, results}, profileContext: {profileId: profile.profileId, mode: profile.mode, scope: profile.scope, policy: profile.policy, adapter: profile.adapter.kind}});
@@ -190,6 +193,16 @@ test('Oracle quoted-valid relation names preserve exact normalized case with ext
   assertDeepFrozen(b);
   assertDeepFrozen(verified);
   assert(!/complete|absence|businessTruth/i.test(bytes));
+});
+
+test('Oracle relation names may exactly equal their schema without false identifier-leakage rejection', async () => {
+  const sources = await oracleSources({tableName: 'BI_DEMO'});
+  const projection = buildObjectNameAuthority(sources);
+  const verified = verifyObjectNameAuthority({...sources, projection});
+  assert(projection.mappings.some(({objectName, relationKind}) => objectName === 'BI_DEMO' && relationKind === 'TABLE'));
+  assert.deepEqual(verified, projection);
+  assertDeepFrozen(projection);
+  assertDeepFrozen(verified);
 });
 
 test('fails closed on substitutions, claim material, source mismatches, stale evidence, and fully re-digested forgeries', async () => {

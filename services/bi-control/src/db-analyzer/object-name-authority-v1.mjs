@@ -178,9 +178,9 @@ function assertCandidate(candidate, canonical) {
 }
 
 function assertNoLeakage(projection, run) {
-  const forbidden = new Set([run.runId, ...run.coverage.entries.flatMap((entry) => [
-    entry.objectRef.schemaName, entry.objectRef.sourceObjectSha256,
-  ])].filter(Boolean));
+  const forbidden = new Set([run.runId, ...run.coverage.entries.map((entry) => (
+    entry.objectRef.sourceObjectSha256
+  ))].filter(Boolean));
   const projectedValues = [];
   const visit = (value) => {
     if (typeof value === 'string') projectedValues.push(value);
