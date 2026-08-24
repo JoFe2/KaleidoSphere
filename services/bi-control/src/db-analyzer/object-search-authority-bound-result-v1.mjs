@@ -168,3 +168,14 @@ export function buildObjectSearchAuthorityBoundResult(input) {
   });
   return deepFreeze({...body, projectionSha256: identitySha256(body)});
 }
+
+export function verifyObjectSearchAuthorityBoundResult(projection, input) {
+  try {
+    const expected = buildObjectSearchAuthorityBoundResult(input);
+    if (canonicalJson(projection) !== canonicalJson(expected)) fail('DB_OBJECT_SEARCH_AUTHORITY_RESULT_FORGED');
+    return projection;
+  } catch (error) {
+    if (error?.code === 'DB_OBJECT_SEARCH_AUTHORITY_RESULT_FORGED') throw error;
+    fail('DB_OBJECT_SEARCH_AUTHORITY_RESULT_FORGED');
+  }
+}
