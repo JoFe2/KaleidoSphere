@@ -90,7 +90,8 @@ function scanDisclosure(value, location = '$') {
 function validateDiscovery(brief) {
   exact(brief, ['schemaVersion', 'status', 'sessionId', 'revision', 'catalog', 'audienceRole', 'businessQuestions', 'confirmedInterests', 'freshnessNeed', 'filtersSegments', 'accessConfidentiality', 'openAssumptions', 'coverageBlindSpots', 'provenance', 'm5Boundary', 'markdown'], ['schemaVersion', 'status', 'sessionId', 'revision', 'catalog', 'audienceRole', 'businessQuestions', 'confirmedInterests', 'freshnessNeed', 'filtersSegments', 'accessConfidentiality', 'openAssumptions', 'coverageBlindSpots', 'provenance', 'm5Boundary'], 'PROMOTION_DISCOVERY_SCHEMA_INVALID');
   if (brief.schemaVersion !== 'chimpmaera.bi/discovery-brief/v1' || brief.status !== 'EXPORTED_CONFIRMED_DISCOVERY_BRIEF') fail('PROMOTION_DISCOVERY_UNCONFIRMED');
-  if (!Number.isInteger(brief.revision) || brief.revision < 1 || !/^[a-z0-9][a-z0-9_-]{2,63}$/.test(brief.sessionId)) fail('PROMOTION_DISCOVERY_IDENTITY_INVALID');
+  // positive safe integer: also denies -0, which Number.isSafeInteger alone accepts
+  if (!Number.isSafeInteger(brief.revision) || brief.revision <= 0 || !/^[a-z0-9][a-z0-9_-]{2,63}$/.test(brief.sessionId)) fail('PROMOTION_DISCOVERY_IDENTITY_INVALID');
   if (!brief.catalog || typeof brief.catalog !== 'object' || !SHA256.test(brief.catalog.snapshotSha256 ?? '') || typeof brief.catalog.receiptId !== 'string') fail('PROMOTION_DISCOVERY_CATALOG_INVALID');
   if (!brief.catalog.scope || !Array.isArray(brief.catalog.scope.schemas) || brief.catalog.scope.schemas.length < 1) fail('PROMOTION_DISCOVERY_SCOPE_INVALID');
   if (!brief.provenance || brief.provenance.receiptId !== brief.catalog.receiptId || brief.provenance.snapshotSha256 !== brief.catalog.snapshotSha256 || !Array.isArray(brief.provenance.evidenceSources) || brief.provenance.evidenceSources.length < 1) fail('PROMOTION_DISCOVERY_PROVENANCE_INVALID');
