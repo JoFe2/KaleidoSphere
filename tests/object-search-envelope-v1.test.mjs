@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import {identitySha256} from '../services/bi-control/src/db-analyzer/core.mjs';
+import {COVERAGE_LEDGER_SCHEMA, identitySha256} from '../services/bi-control/src/db-analyzer/core.mjs';
 import {
+  OBJECT_INVENTORY_SNAPSHOT_SCHEMA,
   OBJECT_SEARCH_CURSOR_SCHEMA,
   buildObjectSearchCursor,
   createObjectInventorySnapshot,
@@ -205,4 +206,85 @@ test('inventory and coverage bindings verify internal consistency', () => {
   rejects(() => resumeObjectSearchEnvelope({
     ...reSeal({...envelope(), coverage: {...coverage(), stateCounts: {...STATE_COUNTS, SUCCEEDED: 19}}}, 'envelopeSha256'),
   }), 'DB_OBJECT_SEARCH_COVERAGE_INVALID');
+});
+
+const UNSAFE_COUNT = Number.MAX_SAFE_INTEGER + 1;
+const ZERO_KIND_COUNTS = Object.freeze(Object.fromEntries(Object.keys(KIND_COUNTS).map((kind) => [kind, 0])));
+const ZERO_STATE_COUNTS = Object.freeze(Object.fromEntries(Object.keys(STATE_COUNTS).map((state) => [state, 0])));
+
+test('rejects Number.MAX_SAFE_INTEGER + 1 kind and state counts before sealing', () => {
+  rejects(() => createObjectInventorySnapshot({
+    engine: 'mssql',
+    kindCounts: {...ZERO_KIND_COUNTS, TABLE: UNSAFE_COUNT},
+  }), 'DB_OBJECT_SEARCH_INVENTORY_INVALID');
+  rejects(() => createObjectSearchCoverageBinding({
+    stateCounts: {...ZERO_STATE_COUNTS, SUCCEEDED: UNSAFE_COUNT},
+  }), 'DB_OBJECT_SEARCH_COVERAGE_INVALID');
+});
+
+test('rejects unsafe aggregate overflow in computed objectCount and totalQueries', () => {
+  rejects(() => createObjectInventorySnapshot({
+    engine: 'mssql',
+    kindCounts: {...ZERO_KIND_COUNTS, TABLE: Number.MAX_SAFE_INTEGER, VIEW: 2},
+  }), 'DB_OBJECT_SEARCH_INVENTORY_INVALID');
+  rejects(() => createObjectSearchCoverageBinding({
+    stateCounts: {...ZERO_STATE_COUNTS, SUCCEEDED: Number.MAX_SAFE_INTEGER, PARTIAL: 2},
+  }), 'DB_OBJECT_SEARCH_COVERAGE_INVALID');
+});
+
+test('fails closed on re-digested unsafe inventory and coverage bindings', () => {
+  const unsafeInventory = reSeal({
+    schemaVersion: OBJECT_INVENTORY_SNAPSHOT_SCHEMA,
+    engine: 'mssql',
+    objectCount: UNSAFE_COUNT,
+    kindCounts: {...ZERO_KIND_COUNTS, TABLE: UNSAFE_COUNT},
+  }, 'inventorySha256');
+  rejects(() => envelope({inventory: unsafeInventory}), 'DB_OBJECT_SEARCH_INVENTORY_INVALID');
+  rejects(() => resumeObjectSearchEnvelope(reSeal(
+    {...envelope(), inventory: unsafeInventory}, 'envelopeSha256',
+  )), 'DB_OBJECT_SEARCH_INVENTORY_INVALID');
+  const unsafeCoverage = reSeal({
+    schemaVersion: COVERAGE_LEDGER_SCHEMA,
+    totalQueries: UNSAFE_COUNT,
+    stateCounts: {...ZERO_STATE_COUNTS, SUCCEEDED: UNSAFE_COUNT},
+  }, 'coverageSha256');
+  rejects(() => envelope({coverage: unsafeCoverage}), 'DB_OBJECT_SEARCH_COVERAGE_INVALID');
+  rejects(() => resumeObjectSearchEnvelope(reSeal(
+    {...envelope(), coverage: unsafeCoverage}, 'envelopeSha256',
+  )), 'DB_OBJECT_SEARCH_COVERAGE_INVALID');
+});
+
+test('rejects Number.MAX_SAFE_INTEGER + 1 cursor page index before sealing', () => {
+  rejects(() => buildObjectSearchCursor(envelope(), {pageIndex: UNSAFE_COUNT}), 'DB_OBJECT_SEARCH_CURSOR_INVALID');
+});
+
+test('fails closed on re-digested unsafe cursor page index', () => {
+  const base = envelope();
+  const forged = {
+    schemaVersion: OBJECT_SEARCH_CURSOR_SCHEMA,
+    envelopeSha256: base.envelopeSha256,
+    inventorySnapshotSha256: base.inventory.inventorySha256,
+    pageIndex: UNSAFE_COUNT,
+    opaqueDigest: identitySha256({
+      envelopeSha256: base.envelopeSha256,
+      inventorySnapshotSha256: base.inventory.inventorySha256,
+      pageIndex: UNSAFE_COUNT,
+    }),
+  };
+  rejects(() => resumeObjectSearchCursor(base, reSeal(forged, 'cursorSha256')), 'DB_OBJECT_SEARCH_CURSOR_BINDING_INVALID');
+});
+
+test('accepts boundary-safe counts at MAX_SAFE_INTEGER without aggregate overflow', () => {
+  const base = envelope({
+    pageSize: 500,
+    inventory: inventory({kindCounts: {...ZERO_KIND_COUNTS, TABLE: Number.MAX_SAFE_INTEGER}}),
+  });
+  assert.equal(base.inventory.objectCount, Number.MAX_SAFE_INTEGER);
+  assert.deepEqual(resumeObjectSearchEnvelope(base), base);
+  const first = buildObjectSearchCursor(base);
+  assert.deepEqual(resumeObjectSearchCursor(base, first), first);
+  const lastPageIndex = Math.ceil(Number.MAX_SAFE_INTEGER / 500) - 1;
+  const last = buildObjectSearchCursor(base, {pageIndex: lastPageIndex});
+  assert.equal(last.pageIndex, lastPageIndex);
+  rejects(() => nextObjectSearchCursor(base, last), 'DB_OBJECT_SEARCH_CURSOR_EXHAUSTED');
 });

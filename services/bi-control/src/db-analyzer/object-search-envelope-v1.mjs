@@ -47,6 +47,7 @@ const exactKeys = (value, keys) => value
   && typeof value === 'object'
   && !Array.isArray(value)
   && canonicalJson(Object.keys(value).sort()) === canonicalJson([...keys].sort());
+const isSafeCount = (value) => Number.isInteger(value) && value >= 0 && value <= Number.MAX_SAFE_INTEGER;
 
 function seal(body, hashKey) {
   const normalized = normalizeJsonValue(body);
@@ -114,9 +115,9 @@ function assertInventorySnapshot(inventory, engine) {
   if (!exactKeys(inventory, ['schemaVersion', 'engine', 'objectCount', 'kindCounts', 'inventorySha256'])
     || inventory.schemaVersion !== OBJECT_INVENTORY_SNAPSHOT_SCHEMA
     || inventory.engine !== engine
-    || !Number.isInteger(inventory.objectCount) || inventory.objectCount < 0
+    || !isSafeCount(inventory.objectCount)
     || !exactKeys(inventory.kindCounts, OBJECT_SEARCH_KINDS)
-    || !OBJECT_SEARCH_KINDS.every((kind) => Number.isInteger(inventory.kindCounts[kind]) && inventory.kindCounts[kind] >= 0)
+    || !OBJECT_SEARCH_KINDS.every((kind) => isSafeCount(inventory.kindCounts[kind]))
     || OBJECT_SEARCH_KINDS.reduce((total, kind) => total + inventory.kindCounts[kind], 0) !== inventory.objectCount) {
     fail('DB_OBJECT_SEARCH_INVENTORY_INVALID');
   }
@@ -127,9 +128,9 @@ function assertInventorySnapshot(inventory, engine) {
 function assertCoverageBinding(coverage) {
   if (!exactKeys(coverage, ['schemaVersion', 'totalQueries', 'stateCounts', 'coverageSha256'])
     || coverage.schemaVersion !== COVERAGE_LEDGER_SCHEMA
-    || !Number.isInteger(coverage.totalQueries) || coverage.totalQueries < 0
+    || !isSafeCount(coverage.totalQueries)
     || !exactKeys(coverage.stateCounts, COVERAGE_STATES)
-    || !COVERAGE_STATES.every((state) => Number.isInteger(coverage.stateCounts[state]) && coverage.stateCounts[state] >= 0)
+    || !COVERAGE_STATES.every((state) => isSafeCount(coverage.stateCounts[state]))
     || COVERAGE_STATES.reduce((total, state) => total + coverage.stateCounts[state], 0) !== coverage.totalQueries) {
     fail('DB_OBJECT_SEARCH_COVERAGE_INVALID');
   }
@@ -141,26 +142,30 @@ export function createObjectInventorySnapshot({engine, kindCounts}) {
   assertEngine(engine);
   if (!kindCounts || typeof kindCounts !== 'object' || Array.isArray(kindCounts)
     || Object.keys(kindCounts).some((kind) => !OBJECT_SEARCH_KINDS.includes(kind))
-    || Object.values(kindCounts).some((count) => !Number.isInteger(count) || count < 0)) {
+    || Object.values(kindCounts).some((count) => !isSafeCount(count))) {
     fail('DB_OBJECT_SEARCH_INVENTORY_INVALID');
   }
   const counts = Object.fromEntries(OBJECT_SEARCH_KINDS.map((kind) => [kind, kindCounts[kind] ?? 0]));
+  const objectCount = Object.values(counts).reduce((total, count) => total + count, 0);
+  if (!isSafeCount(objectCount)) fail('DB_OBJECT_SEARCH_INVENTORY_INVALID');
   return seal({
     schemaVersion: OBJECT_INVENTORY_SNAPSHOT_SCHEMA,
     engine,
-    objectCount: Object.values(counts).reduce((total, count) => total + count, 0),
+    objectCount,
     kindCounts: counts,
   }, 'inventorySha256');
 }
 
 export function createObjectSearchCoverageBinding({stateCounts}) {
   if (!exactKeys(stateCounts, COVERAGE_STATES)
-    || !COVERAGE_STATES.every((state) => Number.isInteger(stateCounts[state]) && stateCounts[state] >= 0)) {
+    || !COVERAGE_STATES.every((state) => isSafeCount(stateCounts[state]))) {
     fail('DB_OBJECT_SEARCH_COVERAGE_INVALID');
   }
+  const totalQueries = COVERAGE_STATES.reduce((total, state) => total + stateCounts[state], 0);
+  if (!isSafeCount(totalQueries)) fail('DB_OBJECT_SEARCH_COVERAGE_INVALID');
   return seal({
     schemaVersion: COVERAGE_LEDGER_SCHEMA,
-    totalQueries: COVERAGE_STATES.reduce((total, state) => total + stateCounts[state], 0),
+    totalQueries,
     stateCounts,
   }, 'coverageSha256');
 }
@@ -220,7 +225,7 @@ function maxPageIndex(state) {
 }
 
 function makeCursor(state, pageIndex) {
-  if (!Number.isInteger(pageIndex) || pageIndex < 0) fail('DB_OBJECT_SEARCH_CURSOR_INVALID');
+  if (!isSafeCount(pageIndex)) fail('DB_OBJECT_SEARCH_CURSOR_INVALID');
   if (pageIndex > maxPageIndex(state)) fail('DB_OBJECT_SEARCH_CURSOR_EXHAUSTED');
   const envelopeSha256 = state.envelopeSha256;
   const inventorySnapshotSha256 = state.inventory.inventorySha256;
@@ -246,7 +251,7 @@ export function resumeObjectSearchCursor(envelope, cursor) {
   assertSealed(value, 'cursorSha256', 'DB_OBJECT_SEARCH_CURSOR_TAMPERED');
   if (value.envelopeSha256 !== state.envelopeSha256
     || value.inventorySnapshotSha256 !== state.inventory.inventorySha256
-    || !Number.isInteger(value.pageIndex) || value.pageIndex < 0
+    || !isSafeCount(value.pageIndex)
     || value.pageIndex > maxPageIndex(state)
     || value.opaqueDigest !== identitySha256({
       envelopeSha256: value.envelopeSha256,
