@@ -175,6 +175,7 @@ export function compilePostgresqlWave2ProfileDispatches({profile, structureEvide
 }
 
 const parseCount = (value) => {
+  if (typeof value === 'number' && Object.is(value, -0)) fail('DB_WAVE2_PROFILE_RESULT_INVALID');
   const source = typeof value === 'bigint' ? value.toString() : String(value);
   if (!/^(?:0|[1-9][0-9]*)$/.test(source)) fail('DB_WAVE2_PROFILE_RESULT_INVALID');
   const parsed = Number(source);
