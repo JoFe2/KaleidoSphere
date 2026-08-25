@@ -1,5 +1,21 @@
 # Release Notes
 
+## v0.24.0 - Authority-bound local object handlers
+
+Wires local read-only Search, Details and Overview handlers to capability-specific,
+versioned binding profiles derived internally from each capability's immutable
+projection inputs. Search binds inventory, relation-kind and object-name authority;
+Details binds its inventory snapshot, coverage ledger and receipt; Overview binds
+its progressive run state, structure snapshot, coverage, receipt chain and
+cancellation evidence. Caller-supplied expected envelopes and synthetic
+not-applicable hashes are no longer trust anchors.
+
+A reusable adversarial matrix denies capability, scope and every profile digest
+substitution, fully re-digested forgeries, Proxy/accessor/hidden/symbol input,
+and post-validation mutation. External API v2 remains unchanged; no SQL,
+credentials, raw rows, network, dispatch, execution, mutation or replay-prevention
+authority is added.
+
 ## v0.23.1 - Object capability input hardening
 
 Rejects Proxy-backed request/result/expected and nested contract objects before

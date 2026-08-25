@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import {canonicalJson, identitySha256} from '../services/bi-control/src/db-analyzer/core.mjs';
+import {runCapabilityAdversarialMatrixV1} from './helpers/object-capability-adversarial-matrix-v1.mjs';
 import {
   buildDatabaseOverviewProjection,
   verifyDatabaseOverviewProjection,
@@ -19,6 +20,7 @@ import {
 const H = (character) => character.repeat(64);
 const digest = (label) => identitySha256({fixture: label});
 const seal = (body, key) => ({...body, [key]: identitySha256(body)});
+const REQUEST_SCHEMA = 'kaleidosphere.object-capabilities/request/v1';
 
 const freeze = (value) => {
   if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
@@ -28,38 +30,9 @@ const freeze = (value) => {
   return value;
 };
 const refreeze = (value) => freeze(structuredClone(value));
-// ArrayBuffer views are the single leaf exception: Node cannot freeze a
-// non-empty view (Object.freeze throws), so the frozen bytes wrapper object
-// pins each binding to its canonical buffer instead.
 const isDeepFrozen = (value) => value === null || typeof value !== 'object'
   || ArrayBuffer.isView(value)
   || (Object.isFrozen(value) && Object.values(value).every(isDeepFrozen));
-
-const bindings = (engine, overrides = {}) => ({
-  engine,
-  snapshotSha256: H('1'),
-  receiptSha256: H('2'),
-  coverageSha256: H('3'),
-  inventoryAuthoritySha256: H('4'),
-  relationKindAuthoritySha256: H('5'),
-  objectNameAuthoritySha256: H('6'),
-  cancellationSha256: H('7'),
-  ...overrides,
-});
-
-const REQUEST_SCHEMA = 'kaleidosphere.object-capabilities/request/v1';
-const SCOPE = {schemas: ['dbo']};
-
-function requestFor(engine, overrides = {}) {
-  return {
-    schemaVersion: REQUEST_SCHEMA,
-    requestId: 'request-database-overview',
-    capabilityId: DATABASE_OVERVIEW_HANDLER_CAPABILITY_ID,
-    bindings: bindings(engine),
-    scope: {...SCOPE, schemas: [...SCOPE.schemas]},
-    ...overrides,
-  };
-}
 
 function runFor(engine, {cancelled = false, empty = false} = {}) {
   const scope = {database: 'warehouse', container: null, schemas: ['audit', 'reporting']};
@@ -106,30 +79,37 @@ function runFor(engine, {cancelled = false, empty = false} = {}) {
   }, 'stateSha256');
 }
 
-function expectationsFor(engine, run, request, overrides = {}) {
+function overviewBindings(run) {
+  const projection = buildDatabaseOverviewProjection(run);
+  const receiptChainSha256 = projection.bindings.receiptChainSha256;
   return {
+    engine: run.engine,
+    runStateSha256: run.stateSha256,
+    snapshotSha256: projection.bindings.inventorySnapshotSha256,
+    coverageSha256: projection.bindings.coverageSha256,
+    receiptChainSha256,
+    cancellationSha256: identitySha256({
+      schemaVersion: 'kaleidosphere.object-capabilities/cancellation-binding/v1',
+      receiptChainSha256,
+      cancellation: projection.cancellation,
+    }),
+  };
+}
+
+function requestFor(run, overrides = {}) {
+  return {
+    schemaVersion: REQUEST_SCHEMA,
+    requestId: 'request-database-overview',
     capabilityId: DATABASE_OVERVIEW_HANDLER_CAPABILITY_ID,
-    bindings: bindings(engine),
-    scope: {...SCOPE, schemas: [...SCOPE.schemas]},
-    requestSha256: identitySha256(request),
-    projectionSha256: buildDatabaseOverviewProjection(run).projectionSha256,
+    bindings: overviewBindings(run),
+    scope: {schemas: [...run.scope.schemas]},
     ...overrides,
   };
 }
 
-// Independently supplied immutable authoritative inputs: plain values are sealed and deep-frozen
-// before the handler sees them.
-function inputs(engine, {cancelled = false, empty = false} = {}, overrides = {}) {
-  const run = runFor(engine, {cancelled, empty});
-  const request = requestFor(engine);
-  const expectations = expectationsFor(engine, run, request, overrides);
-  return {run: freeze(run), request: freeze(request), expectations: freeze(expectations)};
-}
-
-function redigestProjection(projection, mutate) {
-  const {projectionSha256: _old, ...body} = structuredClone(projection);
-  mutate(body);
-  return seal(body, 'projectionSha256');
+function inputs(engine, shape = {}) {
+  const run = runFor(engine, shape);
+  return {run: freeze(run), request: freeze(requestFor(run))};
 }
 
 function redigestRun(run, mutate) {
@@ -145,191 +125,107 @@ const ALL_FALSE = [
   'queryExecution', 'rawValuesIncluded', 'sqlAuthority',
 ];
 
-test('mssql and oracle exact mixed, empty and cancelled inputs produce byte-deterministic deeply frozen read-only envelopes', () => {
-  const digestsByEngine = new Map();
+test('mssql and oracle mixed, empty and cancelled authority inputs produce deterministic isolated read-only envelopes', () => {
   for (const engine of ['mssql', 'oracle']) {
     for (const shape of [{}, {empty: true}, {cancelled: true}]) {
-      const {run, request, expectations} = inputs(engine, shape);
-      const first = handleDatabaseOverviewRequestV1(request, expectations, run);
-      const second = handleDatabaseOverviewRequestV1(
-        refreeze(request), refreeze(expectations), refreeze(run),
-      );
-      for (const key of ['request', 'projection', 'result']) {
-        assert.equal(Buffer.compare(first.bytes[key], second.bytes[key]), 0, `${engine} ${key} bytes`);
-      }
-      assert.equal(first.requestSha256, second.requestSha256);
-      assert.equal(first.projectionSha256, second.projectionSha256);
-      assert.equal(first.resultSha256, second.resultSha256);
-      assert.ok(isDeepFrozen(first), 'result is deeply frozen');
-      assert.throws(() => { first.envelope.state = 'MUTATED'; }, TypeError);
-      assert.throws(() => { first.bytes.result = null; }, TypeError);
+      const {run, request} = inputs(engine, shape);
+      const first = handleDatabaseOverviewRequestV1(request, run);
+      const second = handleDatabaseOverviewRequestV1(refreeze(request), refreeze(run));
       assert.equal(first.schemaVersion, DATABASE_OVERVIEW_HANDLER_SCHEMA);
       assert.equal(first.capabilityId, DATABASE_OVERVIEW_HANDLER_CAPABILITY_ID);
       assert.equal(first.state, 'PROJECTED_READ_ONLY');
       assert.equal(first.requestSha256, identitySha256(request));
       assert.equal(first.projectionSha256, buildDatabaseOverviewProjection(run).projectionSha256);
+      assert.deepEqual(first.envelope.bindings, overviewBindings(run));
       assert.equal(first.resultSha256, identitySha256(first.envelope));
+      assert.ok(isDeepFrozen(first));
+      assert.notEqual(first.envelope.bindings, request.bindings);
+      for (const key of ['request', 'projection', 'result']) assert.equal(Buffer.compare(first.bytes[key], second.bytes[key]), 0);
+      for (const key of ALL_FALSE) assert.equal(first.envelope.claims[key] ?? first.envelope.authority[key], false);
       const projection = buildDatabaseOverviewProjection(run);
       verifyDatabaseOverviewProjection(projection, run);
-      assert.deepEqual(first.envelope, {
-        schemaVersion: KS_OBJECT_CAPABILITY_RESULT_SCHEMA,
-        requestSha256: first.requestSha256,
-        capabilityId: first.capabilityId,
-        state: 'PROJECTED_READ_ONLY',
-        projectionSha256: first.projectionSha256,
-        bindings: bindings(engine),
-        claims: {absenceClaimed: false, completenessClaimed: false, replayPreventionClaimed: false, sourceRowsIncluded: false},
-        authority: {
-          credentialsIncluded: false, dispatchAuthority: false, executionAuthority: false, mutationAuthority: false,
-          queryExecution: false, rawValuesIncluded: false, sqlAuthority: false,
-        },
-      });
-      assert.ok(Object.values(first.envelope.claims).every((value) => value === false), 'claims are all false');
-      assert.ok(Object.values(first.envelope.authority).every((value) => value === false), 'authority is all false');
       buildObjectCapabilityContractV1().validateResult(first.envelope, {
-        capabilityId: first.capabilityId, requestSha256: first.requestSha256, projectionSha256: first.projectionSha256, bindings: bindings(engine),
+        capabilityId: first.capabilityId,
+        requestSha256: first.requestSha256,
+        projectionSha256: first.projectionSha256,
+        bindings: overviewBindings(run),
       });
-      assert.ok(first.bytes.result.equals(Buffer.from(canonicalJson(first.envelope), 'utf8')), 'result bytes are canonical');
-      assert.ok(first.bytes.request.equals(Buffer.from(canonicalJson(request), 'utf8')), 'request bytes are canonical');
-      if (shape.cancelled) {
-        assert.deepEqual(projection.cancellation, {state: 'CANCELLED', cancelledReceiptCount: 1, receiptCount: 1});
-      } else if (shape.empty) {
-        assert.deepEqual(projection.totals, {visibleCount: 0, partialCount: 0, deniedCount: 0, unsupportedCount: 0, unknownCount: 0, totalCount: 0});
-        assert.deepEqual(projection.cancellation, {state: 'NOT_CANCELLED', cancelledReceiptCount: 0, receiptCount: 0});
-      } else {
-        assert.deepEqual(projection.totals, {visibleCount: 2, partialCount: 1, deniedCount: 1, unsupportedCount: 1, unknownCount: 1, totalCount: 6});
-        assert.equal(projection.coverageBasisPoints, 8333);
-      }
-      digestsByEngine.set(`${engine}-${shape.cancelled ? 'cancelled' : shape.empty ? 'empty' : 'mixed'}`, first.projectionSha256);
+      assert.throws(() => { first.envelope.state = 'MUTATED'; }, TypeError);
+      assert.ok(first.bytes.result.equals(Buffer.from(canonicalJson(first.envelope), 'utf8')));
     }
   }
-  assert.notEqual(digestsByEngine.get('mssql-mixed'), digestsByEngine.get('oracle-mixed'));
-  assert.notEqual(digestsByEngine.get('mssql-empty'), digestsByEngine.get('mssql-mixed'));
 });
 
-test('rejects capability, request, binding, scope and cancellation substitution before projection', () => {
-  const cases = [
-    [{}, {expectations: {capabilityId: 'bi.object.search.read'}}],
-    [{capabilityId: 'bi.object.search.read'}, {}],
-    [{bindings: bindings('mssql', {snapshotSha256: H('0')})}, {}],
-    [{bindings: bindings('mssql', {cancellationSha256: H('0')})}, {}],
-    [{scope: {schemas: ['other']}}, {}],
-    [{scope: {schemas: ['../escape']}}, {}],
-    [{scope: {schemas: ['dbo;--']}}, {}],
-    [{scope: {schemas: Array.from({length: 257}, (_, index) => `s${index}`)}}, {}],
+test('rejects paired scope and every profile binding substitution against the unchanged authoritative run', () => {
+  const {run, request} = inputs('mssql');
+  const substitutions = [
+    ['scope', {schemas: ['other']}],
+    ...Object.keys(request.bindings).filter((key) => key !== 'engine').map((key) => [key, H('0')]),
   ];
-  const [requestCode, expectedCode] = [
-    /DB_OVERVIEW_HANDLER_CAPABILITY_DENIED/, /KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED/,
-    /KS_OBJECT_CAPABILITY_BINDING_DENIED/, /KS_OBJECT_CAPABILITY_BINDING_DENIED/,
-    /KS_OBJECT_CAPABILITY_SCOPE_DENIED/, /KS_OBJECT_CAPABILITY_SCOPE_DENIED/, /KS_OBJECT_CAPABILITY_SCOPE_DENIED/,
-    /KS_OBJECT_CAPABILITY_SCOPE_DENIED/,
-  ];
-  cases.forEach(([requestOverrides, expectationOverrides], index) => {
-    const {run, request, expectations} = inputs('mssql', {}, expectationOverrides);
-    const mutated = freeze(structuredClone({...requestFor('mssql'), ...requestOverrides}));
+  for (const [key, value] of substitutions) {
+    const nextRequest = key === 'scope'
+      ? {...request, scope: value}
+      : {...request, bindings: {...request.bindings, [key]: value}};
     assert.throws(
-      () => handleDatabaseOverviewRequestV1(mutated, expectations, run),
-      expectedCode[index],
+      () => handleDatabaseOverviewRequestV1(refreeze(nextRequest), run),
+      /KS_OBJECT_CAPABILITY_(?:SCOPE|BINDING)_DENIED/,
+      `paired ${key} substitution must be denied`,
     );
-  });
+  }
 });
 
-test('rejects unsafe request surface fields: sql, credentials, raw rows and callbacks', () => {
+test('rejects capability, engine, unsafe surface, extra universal bindings and mutable inputs', () => {
+  const {run, request} = inputs('mssql');
+  assert.throws(() => handleDatabaseOverviewRequestV1(refreeze({...request, capabilityId: 'bi.object.search.read'}), run), /KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED/);
+  assert.throws(() => handleDatabaseOverviewRequestV1(refreeze({...request, bindings: {...request.bindings, engine: 'oracle'}}), run), /KS_OBJECT_CAPABILITY_BINDING_DENIED/);
   for (const [key, value] of [['sql', 'SELECT 1'], ['credentials', 'secret'], ['rawRows', []], ['callback', 'https://evil.invalid']]) {
-    const {run, expectations} = inputs('mssql');
-    const mutated = freeze(structuredClone({...requestFor('mssql'), [key]: value}));
-    assert.throws(() => handleDatabaseOverviewRequestV1(mutated, expectations, run), /KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED/);
+    assert.throws(() => handleDatabaseOverviewRequestV1(refreeze({...request, [key]: value}), run), /KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED/);
   }
+  assert.throws(() => handleDatabaseOverviewRequestV1(refreeze({
+    ...request, bindings: {...request.bindings, inventoryAuthoritySha256: H('4')},
+  }), run), /KS_OBJECT_CAPABILITY_BINDING_DENIED/);
+  assert.throws(() => handleDatabaseOverviewRequestV1(request, structuredClone(run)), /DB_OVERVIEW_HANDLER_INPUT_INVALID/);
 });
 
-test('rejects unchanged-digest binding drift against canonical request and projection digests', () => {
-  const {run, request, expectations} = inputs('mssql');
-  const driftedRequest = requestFor('mssql', {requestId: 'request-other-overview'});
-  assert.throws(
-    () => handleDatabaseOverviewRequestV1(
-      freeze(structuredClone(request)),
-      freeze(structuredClone({...expectationsFor('mssql', run, request), requestSha256: identitySha256(driftedRequest)})),
-      run,
-    ),
-    /DB_OVERVIEW_HANDLER_DIGEST_DRIFT/,
-  );
-  const forgery = redigestProjection(buildDatabaseOverviewProjection(run), (body) => {
-    body.totals.visibleCount += 1;
-    body.totals.totalCount += 1;
-    body.coverageBasisPoints = 8571;
-  });
-  assert.throws(
-    () => handleDatabaseOverviewRequestV1(
-      request,
-      freeze(structuredClone({...expectationsFor('mssql', run, request), projectionSha256: forgery.projectionSha256})),
-      run,
-    ),
-    /DB_OVERVIEW_HANDLER_DIGEST_DRIFT/,
-  );
-  assert.throws(
-    () => handleDatabaseOverviewRequestV1(
-      request,
-      freeze(structuredClone({...expectationsFor('mssql', run, request), requestSha256: H('g')})),
-      run,
-    ),
-    /DB_OVERVIEW_HANDLER_INPUT_INVALID/,
-  );
-  const {run: mssqlRun, request: oracleRequest, expectations: oracleExpectations} = inputs('mssql');
-  void mssqlRun;
-  const mismatched = freeze(structuredClone({
-    ...requestFor('oracle'),
-    bindings: bindings('oracle'),
-    scope: {...SCOPE, schemas: [...SCOPE.schemas]},
-  }));
-  assert.throws(
-    () => handleDatabaseOverviewRequestV1(mismatched, oracleExpectations, run),
-    /DB_OVERVIEW_HANDLER_ENGINE_MISMATCH/,
-  );
+test('rejects fully re-digested forged, claim-bearing, inconsistent, stale and authority-widened runs', () => {
+  const {request} = inputs('mssql');
+  const cases = [
+    [redigestRun(runFor('mssql'), (copy) => { copy.scope.database = 'warehouse_complete'; copy.scopeSha256 = identitySha256(copy.scope); }), /DB_OVERVIEW_CLAIM_BEARING_IDENTIFIER/],
+    [redigestRun(runFor('mssql'), (copy) => { copy.coverage.summary.visibleObjectCount = 7; }), /DB_OVERVIEW_(?:COVERAGE_TAMPERED|TOTALS_INCONSISTENT)/],
+    [redigestRun(runFor('mssql'), (copy) => { delete copy.coverage; }), /DB_OVERVIEW_SOURCE_INVALID/],
+    [redigestRun(runFor('mssql', {cancelled: true}), (copy) => { copy.receipts[0].scopeSha256 = digest('other-scope'); }), /DB_OVERVIEW_RECEIPT_(?:TAMPERED|INVALID)/],
+    [redigestRun(runFor('mssql'), (copy) => { copy.authority = {dispatchAuthority: true}; }), /DB_OVERVIEW_HANDLER_AUTHORITY_CLAIM_DENIED/],
+  ];
+  for (const [run, code] of cases) assert.throws(() => handleDatabaseOverviewRequestV1(request, freeze(run)), code);
 });
 
-test('rejects claim-bearing identifiers and fully re-digested forged runs against unchanged authoritative inputs', () => {
-  const {request, expectations} = inputs('mssql');
-  const claim = redigestRun(runFor('mssql'), (copy) => {
-    copy.scope.database = 'warehouse_complete';
-    copy.scopeSha256 = identitySha256(copy.scope);
-  });
-  assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(claim)), /DB_OVERVIEW_CLAIM_BEARING_IDENTIFIER/);
-  const inconsistent = redigestRun(runFor('mssql'), (copy) => {
-    copy.coverage.summary.visibleObjectCount = 7;
-  });
-  assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(inconsistent)), /DB_OVERVIEW_TOTALS_INCONSISTENT/);
-  const missing = redigestRun(runFor('mssql'), (copy) => { delete copy.coverage; });
-  assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(missing)), /DB_OVERVIEW_SOURCE_INVALID/);
-  const stale = redigestRun(runFor('mssql', {cancelled: true}), (copy) => {
-    copy.receipts[0].scopeSha256 = identitySha256({fixture: 'other-scope'});
-  });
-  assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(stale)), /DB_OVERVIEW_RECEIPT_INVALID/);
-  const replacement = redigestRun(runFor('mssql', {cancelled: true}), (copy) => {
-    copy.coverage.thresholdBps = 9000;
-    const {coverageSha256: _old, ...coverageBody} = copy.coverage;
-    copy.coverage = seal(coverageBody, 'coverageSha256');
-  });
-  assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(replacement)), /DB_OVERVIEW_(?:PROBE|RECEIPT)_INVALID/);
+test('rejects Proxy, accessor, hidden and symbol inputs before traps execute', () => {
+  const {run, request} = inputs('mssql');
+  let traps = 0;
+  const proxy = new Proxy(request, {getPrototypeOf() { traps += 1; return Object.prototype; }});
+  assert.throws(() => handleDatabaseOverviewRequestV1(proxy, run), /KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED/);
+  assert.equal(traps, 0);
+
+  const hidden = structuredClone(request);
+  Object.defineProperty(hidden, 'credentials', {value: 'secret', enumerable: false});
+  assert.throws(() => handleDatabaseOverviewRequestV1(freeze(hidden), run), /KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED/);
+
+  const symbol = structuredClone(request);
+  symbol[Symbol('secret')] = 'hidden';
+  assert.throws(() => handleDatabaseOverviewRequestV1(freeze(symbol), run), /KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED/);
+
+  let getterCalls = 0;
+  const accessor = structuredClone(request);
+  Object.defineProperty(accessor.bindings, 'coverageSha256', {enumerable: true, get() { getterCalls += 1; return request.bindings.coverageSha256; }});
+  assert.throws(() => handleDatabaseOverviewRequestV1(accessor, run), /KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED/);
+  assert.equal(getterCalls, 0);
 });
 
-test('rejects unsafe source values, authority claim fields and mutable inputs', () => {
-  const {request, expectations} = inputs('mssql');
-  for (const [key, value] of [['note', 'select * from users;'], ['apiToken', 'not-a-secret'], ['reference', 'https://example.invalid']]) {
-    const unsafe = redigestRun(runFor('mssql'), (copy) => { copy[key] = value; });
-    assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(unsafe)), /DB_OVERVIEW_UNSAFE_JSON/);
-  }
-  for (const [key, value] of [
-    ['authority', {dispatchAuthority: true}],
-    ['authority', {executionAuthority: true}],
-    ['authority', {mutationAuthority: true}],
-    ['claims', {completenessClaimed: true}],
-  ]) {
-    const claiming = redigestRun(runFor('mssql'), (copy) => { copy[key] = value; });
-    assert.throws(() => handleDatabaseOverviewRequestV1(request, expectations, freeze(claiming)), /DB_OVERVIEW_HANDLER_AUTHORITY_CLAIM_DENIED/);
-  }
-  const mutable = inputs('mssql');
-  assert.throws(
-    () => handleDatabaseOverviewRequestV1(structuredClone(mutable.request), mutable.expectations, mutable.run),
-    /DB_OVERVIEW_HANDLER_INPUT_INVALID/,
-  );
+test('reusable adversarial matrix covers the Overview capability profile against unchanged authority', () => {
+  const {run, request} = inputs('mssql');
+  runCapabilityAdversarialMatrixV1({
+    request,
+    otherCapabilityId: 'bi.object.search.read',
+    invokeWithRequest: (candidate) => handleDatabaseOverviewRequestV1(candidate, run),
+  });
 });

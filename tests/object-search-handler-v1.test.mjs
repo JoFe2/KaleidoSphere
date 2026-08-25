@@ -17,6 +17,7 @@ import {
 } from '../services/bi-control/src/db-analyzer/object-search-authority-bound-result-v1.mjs';
 import {runAnalyzeProfile} from '../services/bi-control/src/db-analyzer/workflow.mjs';
 import {buildLiveProfile} from '../services/bi-control/src/runtime-config.mjs';
+import {runCapabilityAdversarialMatrixV1} from './helpers/object-capability-adversarial-matrix-v1.mjs';
 import {
   KS_OBJECT_CAPABILITY_REQUEST_SCHEMA, KS_OBJECT_CAPABILITY_RESULT_SCHEMA, buildObjectCapabilityContractV1,
 } from '../services/bi-agent/src/object-capability-contract-v1.mjs';
@@ -36,7 +37,6 @@ const C = Object.freeze({
 const FORGED = 'KS_OBJECT_SEARCH_HANDLER_PROJECTION_FORGED';
 const INPUT_INVALID = 'KS_OBJECT_SEARCH_HANDLER_INPUT_INVALID';
 const CAPABILITY_MISMATCH = 'KS_OBJECT_SEARCH_HANDLER_CAPABILITY_MISMATCH';
-const BINDING_DRIFT = 'KS_OBJECT_SEARCH_HANDLER_BINDING_DRIFT';
 const CLAIMS = Object.freeze({
   absenceClaimed: false, completenessClaimed: false, replayPreventionClaimed: false, sourceRowsIncluded: false,
 });
@@ -163,7 +163,6 @@ function validHandlerInput({engine, sources, envelope, cursor}) {
     : buildObjectSearchAuthorityBoundResult(projectionInput);
   return {
     request: closedRequest(C.search, bindings, schemas),
-    expected: {capabilityId: C.search, bindings, scope: {schemas}},
     projection,
     projectionInput,
   };
@@ -198,7 +197,6 @@ test('MSSQL and Oracle exact first-page inputs produce byte-deterministic deeply
     const a = handleObjectSearchV1(value);
     const b = handleObjectSearchV1({
       request: {...value.request, bindings: {...value.request.bindings}, scope: {...value.request.scope, schemas: [...value.request.scope.schemas]}},
-      expected: {...value.expected, bindings: {...value.expected.bindings}, scope: {...value.expected.scope, schemas: [...value.expected.scope.schemas]}},
       projection: value.projection,
       projectionInput: value.projectionInput,
     });
@@ -207,7 +205,8 @@ test('MSSQL and Oracle exact first-page inputs produce byte-deterministic deeply
     assert.equal(a.state, 'PROJECTED_READ_ONLY');
     assert.equal(a.requestSha256, identitySha256(value.request));
     assert.equal(a.projectionSha256, value.projection.projectionSha256);
-    assert.deepEqual(a.bindings, value.expected.bindings);
+    assert.deepEqual(a.bindings, value.request.bindings);
+    assert.notEqual(a.bindings, value.request.bindings);
     assert.deepEqual(a.claims, CLAIMS);
     assert.deepEqual(a.authority, AUTHORITY);
     assertFrozen(a);
@@ -215,7 +214,7 @@ test('MSSQL and Oracle exact first-page inputs produce byte-deterministic deeply
     assert.equal(canonicalJson(a), canonicalJson(b));
     const contract = buildObjectCapabilityContractV1();
     const validated = contract.validateResult(a, {
-      capabilityId: C.search, requestSha256: a.requestSha256, projectionSha256: a.projectionSha256, bindings: value.expected.bindings,
+      capabilityId: C.search, requestSha256: a.requestSha256, projectionSha256: a.projectionSha256, bindings: value.request.bindings,
     });
     assert.deepEqual(validated, a);
     assert.notEqual(validated, a);
@@ -241,52 +240,28 @@ test('MSSQL and Oracle exact continuation inputs produce byte-deterministic deep
   }
 });
 
-test('handler rejects capability substitution, request substitution, binding drift, scope escape, oversize and cancellation drift before projection', async () => {
+test('handler rejects capability, every authoritative profile binding, scope, oversize and unsafe request fields', async () => {
   const {engine, sources, envelope} = (await fixtures())[0];
   const value = validHandlerInput({engine, sources, envelope});
   const bindings = value.request.bindings;
   const cases = [
-    [{
-      ...value,
-      request: closedRequest(C.details, bindings, value.request.scope.schemas),
-      expected: {...value.expected, capabilityId: C.details},
-    }, CAPABILITY_MISMATCH],
-    [{
-      ...value,
-      request: closedRequest(C.details, bindings, value.request.scope.schemas),
-    }, 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED'],
+    [{...value, request: closedRequest(C.details, bindings, value.request.scope.schemas)}, CAPABILITY_MISMATCH],
     [{...value, request: {...closedRequest(C.search, bindings, value.request.scope.schemas), sql: 'SELECT 1'}}, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
     [{...value, request: {...closedRequest(C.search, bindings, value.request.scope.schemas), credentials: 'secret'}}, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
     [{...value, request: {...closedRequest(C.search, bindings, value.request.scope.schemas), callback: 'https://evil.invalid'}}, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
     [{...value, request: {...closedRequest(C.search, bindings, value.request.scope.schemas), rawRows: []}}, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
-    [{
-      ...value,
-      request: closedRequest(C.search, {...bindings, claims: {completenessClaimed: true}}, value.request.scope.schemas),
-    }, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
-    [{
-      ...value,
-      request: closedRequest(C.search, {...bindings, dispatchAuthority: true}, value.request.scope.schemas),
-    }, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
-    [{
-      ...value,
-      request: closedRequest(C.search, {...bindings, receiptSha256: H('0')}, value.request.scope.schemas),
-      expected: {...value.expected, bindings: {...bindings, receiptSha256: H('0')}},
-    }, BINDING_DRIFT],
-    [{...value, request: closedRequest(C.search, {...bindings, receiptSha256: H('0')}, value.request.scope.schemas)}, 'KS_OBJECT_CAPABILITY_BINDING_DENIED'],
-    [{...value, request: closedRequest(C.search, {...bindings, cancellationSha256: H('0')}, value.request.scope.schemas)}, 'KS_OBJECT_CAPABILITY_BINDING_DENIED'],
-    [{
-      ...value,
-      request: closedRequest(C.search, {...bindings, objectNameAuthoritySha256: H('0')}, value.request.scope.schemas),
-      expected: {...value.expected, bindings: {...bindings, objectNameAuthoritySha256: H('0')}},
-    }, BINDING_DRIFT],
+    [{...value, request: closedRequest(C.search, {...bindings, claims: {completenessClaimed: true}}, value.request.scope.schemas)}, 'KS_OBJECT_CAPABILITY_BINDING_DENIED'],
+    [{...value, request: closedRequest(C.search, {...bindings, dispatchAuthority: true}, value.request.scope.schemas)}, 'KS_OBJECT_CAPABILITY_BINDING_DENIED'],
+    ...Object.keys(bindings).filter((key) => key !== 'engine').map((key) => [
+      {...value, request: closedRequest(C.search, {...bindings, [key]: H('0')}, value.request.scope.schemas)},
+      'KS_OBJECT_CAPABILITY_BINDING_DENIED',
+    ]),
     [{...value, request: closedRequest(C.search, bindings, ['../escape'])}, 'KS_OBJECT_CAPABILITY_SCOPE_DENIED'],
     [{...value, request: closedRequest(C.search, bindings, ['other'])}, 'KS_OBJECT_CAPABILITY_SCOPE_DENIED'],
     [{...value, request: closedRequest(C.search, bindings, Array.from({length: 257}, (_, index) => `s${index}`))}, 'KS_OBJECT_CAPABILITY_SCOPE_DENIED'],
     [{...value, request: null}, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED'],
   ];
-  for (const [input, code] of cases) {
-    assert.throws(() => handleObjectSearchV1(input), {code, message: code});
-  }
+  for (const [input, code] of cases) assert.throws(() => handleObjectSearchV1(input), {code, message: code});
 });
 
 test('handler rejects handler-surface injection, secrets, callbacks, raw rows and SQL/query fields with one fixed code', async () => {
@@ -363,19 +338,24 @@ test('handler fails closed on scope escape, injection, secrets, oversize page bo
   }
 });
 
-test('handler rejects paired request and expected scope substitution away from the authoritative projection scope', async () => {
+test('handler rejects request scope substitution away from the authoritative projection scope', async () => {
   const SCOPE_DENIED = 'KS_OBJECT_CAPABILITY_SCOPE_DENIED';
   for (const {engine, sources, envelope} of await fixtures()) {
     const value = validHandlerInput({engine, sources, envelope});
-    // Both request.scope and expected.scope are moved together off the authoritative
-    // envelope scope; the projection and projection input stay authoritative. The
-    // paired substitution must be denied against the projection's authoritative scope.
-    const paired = {
+    const substituted = {
       ...value,
       request: closedRequest(C.search, value.request.bindings, ['other']),
-      expected: {...value.expected, scope: {schemas: ['other']}},
     };
-    assert.equal(canonicalJson(paired.request.scope), canonicalJson(paired.expected.scope));
-    assert.throws(() => handleObjectSearchV1(paired), {code: SCOPE_DENIED, message: SCOPE_DENIED});
+    assert.throws(() => handleObjectSearchV1(substituted), {code: SCOPE_DENIED, message: SCOPE_DENIED});
   }
+});
+
+test('reusable adversarial matrix covers the Search capability profile against unchanged authority', async () => {
+  const {engine, sources, envelope} = (await fixtures())[0];
+  const value = validHandlerInput({engine, sources, envelope});
+  runCapabilityAdversarialMatrixV1({
+    request: value.request,
+    otherCapabilityId: C.details,
+    invokeWithRequest: (candidate) => handleObjectSearchV1({...value, request: candidate}),
+  });
 });
