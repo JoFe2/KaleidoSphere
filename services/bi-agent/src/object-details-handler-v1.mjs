@@ -10,6 +10,7 @@ export const KS_OBJECT_DETAILS_HANDLER_FAIL_CLOSED_CODES = Object.freeze([
   'KS_OBJECT_DETAILS_HANDLER_PROJECTION_INPUT_INVALID',
   'KS_OBJECT_DETAILS_HANDLER_ENGINE_DRIFT',
   'KS_OBJECT_DETAILS_HANDLER_SCOPE_DRIFT',
+  'KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT',
   'KS_OBJECT_DETAILS_HANDLER_PROJECTION_DIGEST_DRIFT',
 ]);
 
@@ -80,11 +81,14 @@ export function handleObjectDetailsV1(request, expectations, projectionInput) {
   if (requestSha256 !== expectations.requestSha256) fail('KS_OBJECT_DETAILS_HANDLER_REQUEST_DIGEST_DRIFT');
   validateProjectionInputShape(projectionInput);
   if (projectionInput.engine !== request.bindings.engine) fail('KS_OBJECT_DETAILS_HANDLER_ENGINE_DRIFT');
+  if (projectionInput.inventorySnapshotSha256 !== request.bindings.snapshotSha256) fail('KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT');
   if (canonicalJson([...projectionInput.scope.schemas].sort()) !== canonicalJson([...request.scope.schemas].sort())) {
     fail('KS_OBJECT_DETAILS_HANDLER_SCOPE_DRIFT');
   }
   const projection = projectObjectDetails(projectionInput);
   if (projection.projectionSha256 !== expectations.projectionSha256) fail('KS_OBJECT_DETAILS_HANDLER_PROJECTION_DIGEST_DRIFT');
+  if (request.bindings.coverageSha256 !== projection.bindings.coverageLedgerSha256
+      || request.bindings.receiptSha256 !== projection.bindings.receiptSha256) fail('KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT');
   const result = {
     schemaVersion: KS_OBJECT_CAPABILITY_RESULT_SCHEMA,
     state: 'PROJECTED_READ_ONLY',

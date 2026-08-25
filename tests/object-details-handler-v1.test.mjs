@@ -33,16 +33,18 @@ const STATES = {
 const VISIBILITY = {COMPLETE: 'VISIBLE', DENIED: 'INVISIBLE', PARTIAL: 'VISIBLE_PARTIAL', UNKNOWN: 'UNKNOWN'};
 const RESULT_KEYS = ['authority', 'bindings', 'capabilityId', 'claims', 'projectionSha256', 'requestSha256', 'schemaVersion', 'state'];
 
-const bindings = (engine) => ({
-  engine,
-  snapshotSha256: H('1'),
-  receiptSha256: H('2'),
-  coverageSha256: H('3'),
-  inventoryAuthoritySha256: H('4'),
-  relationKindAuthoritySha256: H('5'),
-  objectNameAuthoritySha256: H('6'),
-  cancellationSha256: H('7'),
-});
+function bindingsFor(engine, {ledger, receipt}) {
+  return {
+    engine,
+    snapshotSha256: snapshotOf(engine),
+    receiptSha256: receipt.receiptSha256,
+    coverageSha256: ledger.coverageSha256,
+    inventoryAuthoritySha256: H('4'),
+    relationKindAuthoritySha256: H('5'),
+    objectNameAuthoritySha256: H('6'),
+    cancellationSha256: H('7'),
+  };
+}
 
 const scopeSha256Of = (engine) => identitySha256(normalizeJsonValue(SCOPES[engine]));
 const snapshotOf = (engine) => identitySha256({kind: 'structure-snapshot', engine});
@@ -106,23 +108,25 @@ function ledgerWithEntry(ledger, entry) {
 
 function scenarioFor(engine, spec) {
   const {ledger, entry} = buildLedger(engine, spec);
-  const projectionInput = projectionInputFor(engine, {entry, ledger});
+  const receipt = receiptFor(engine, {entry, ledger});
+  const projectionInput = projectionInputFor(engine, {entry, ledger, receipt});
+  const scenarioBindings = bindingsFor(engine, {ledger, receipt});
   const request = {
     schemaVersion: 'kaleidosphere.object-capabilities/request/v1',
     requestId: `request-${engine}-${spec.state.toLowerCase()}`,
     capabilityId: KS_OBJECT_DETAILS_HANDLER_CAPABILITY,
-    bindings: bindings(engine),
+    bindings: scenarioBindings,
     scope: {schemas: SCOPES[engine].schemas},
   };
   const projection = projectObjectDetails(projectionInput);
   const expectations = {
     capabilityId: KS_OBJECT_DETAILS_HANDLER_CAPABILITY,
-    bindings: bindings(engine),
+    bindings: scenarioBindings,
     scope: {schemas: SCOPES[engine].schemas},
     requestSha256: identitySha256(normalizeJsonValue(request)),
     projectionSha256: projection.projectionSha256,
   };
-  return {ledger, entry, projectionInput, request, projection, expectations};
+  return {ledger, entry, receipt, projectionInput, request, projection, expectations};
 }
 
 function expectCode(action, code) {
@@ -138,14 +142,14 @@ function assertDeeplyFrozen(value, label) {
 test('M2.3 closed details request with authoritative expectations and projection inputs yields byte-deterministic deeply frozen read-only result envelopes bound to canonical request and verified projection digests', () => {
   for (const engine of ENGINES) {
     for (const [name, spec] of Object.entries(STATES)) {
-      const {projectionInput, request, projection, expectations} = scenarioFor(engine, spec);
+      const {ledger, receipt, projectionInput, request, projection, expectations} = scenarioFor(engine, spec);
       const result = handleObjectDetailsV1(request, expectations, projectionInput);
       assert.equal(result.schemaVersion, KS_OBJECT_CAPABILITY_RESULT_SCHEMA, `${engine} ${name} schemaVersion`);
       assert.equal(result.state, 'PROJECTED_READ_ONLY');
       assert.equal(result.capabilityId, 'bi.object.details.read');
       assert.equal(result.requestSha256, identitySha256(normalizeJsonValue(request)), `${engine} ${name} canonical request digest`);
       assert.equal(result.projectionSha256, projection.projectionSha256, `${engine} ${name} verified projection digest`);
-      assert.deepEqual(result.bindings, bindings(engine));
+      assert.deepEqual(result.bindings, bindingsFor(engine, {ledger, receipt}));
       assert.deepEqual(Object.keys(result).sort(), RESULT_KEYS);
       for (const flag of [...Object.values(result.claims), ...Object.values(result.authority)]) assert.equal(flag, false);
       verifyObjectDetailsProjection(projection, projectionInput);
@@ -170,8 +174,8 @@ test('M2.3 handler fails closed before projection for capability, request and bi
   expectCode(() => handleObjectDetailsV1({...request, capabilityId: 'bi.object.search.read'}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
   expectCode(() => handleObjectDetailsV1(request, {...expectations, capabilityId: 'bi.object.search.read'}, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_CAPABILITY_DENIED');
   expectCode(() => handleObjectDetailsV1(request, {...expectations, capabilityId: 'bi.database.overview.read'}, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_CAPABILITY_DENIED');
-  expectCode(() => handleObjectDetailsV1({...request, bindings: {...bindings('mssql'), snapshotSha256: H('0')}}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
-  expectCode(() => handleObjectDetailsV1({...request, bindings: {...bindings('mssql'), cancellationSha256: H('0')}}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
+  expectCode(() => handleObjectDetailsV1({...request, bindings: {...request.bindings, snapshotSha256: H('0')}}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
+  expectCode(() => handleObjectDetailsV1({...request, bindings: {...request.bindings, cancellationSha256: H('0')}}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
   expectCode(() => handleObjectDetailsV1({...request, scope: {schemas: ['../escape']}}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_SCOPE_DENIED');
   expectCode(() => handleObjectDetailsV1({...request, scope: {schemas: ['other']}}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_SCOPE_DENIED');
   expectCode(() => handleObjectDetailsV1({...request, requestId: 'r'}, expectations, projectionInput), 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
@@ -195,8 +199,27 @@ test('M2.3 handler rejects unchanged-digest binding drift and scope or engine dr
   expectCode(() => handleObjectDetailsV1(request, expectations, {...projectionInput, engine: 'oracle'}), 'KS_OBJECT_DETAILS_HANDLER_ENGINE_DRIFT');
   // Malformed expectations fail closed before any projection work.
   expectCode(() => handleObjectDetailsV1(request, {...expectations, extra: true}, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_EXPECTATION_INVALID');
-  expectCode(() => handleObjectDetailsV1(request, {...expectations, bindings: {...bindings('mssql'), engine: 'sqlite'}}, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_EXPECTATION_INVALID');
+  expectCode(() => handleObjectDetailsV1(request, {...expectations, bindings: {...expectations.bindings, engine: 'sqlite'}}, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_EXPECTATION_INVALID');
   expectCode(() => handleObjectDetailsV1(request, {...expectations, scope: {schemas: []}}, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_EXPECTATION_INVALID');
+});
+
+test('M2.3 handler rejects paired request and expectation binding substitution against the unchanged authoritative projection inputs and verified envelope', () => {
+  const {projectionInput, request, expectations} = scenarioFor('mssql', STATES.COMPLETE);
+  const paired = (changed) => {
+    const nextBindings = {...request.bindings, ...changed};
+    const nextRequest = {...request, bindings: nextBindings};
+    return [nextRequest, {...expectations, bindings: nextBindings, requestSha256: identitySha256(normalizeJsonValue(nextRequest))}];
+  };
+  // Review probe: snapshot and receipt are substituted as a pair with the authoritative request digest recomputed while the projection input and digest stay unchanged.
+  const [probeRequest, probeExpectations] = paired({snapshotSha256: H('0'), receiptSha256: H('9')});
+  expectCode(() => handleObjectDetailsV1(probeRequest, probeExpectations, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT');
+  // Each published hash anchored by the details capability must track the unchanged authoritative snapshot and verified projection envelope digests.
+  const [snapshotRequest, snapshotExpectations] = paired({snapshotSha256: H('0')});
+  expectCode(() => handleObjectDetailsV1(snapshotRequest, snapshotExpectations, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT');
+  const [coverageRequest, coverageExpectations] = paired({coverageSha256: H('0')});
+  expectCode(() => handleObjectDetailsV1(coverageRequest, coverageExpectations, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT');
+  const [receiptRequest, receiptExpectations] = paired({receiptSha256: H('0')});
+  expectCode(() => handleObjectDetailsV1(receiptRequest, receiptExpectations, projectionInput), 'KS_OBJECT_DETAILS_HANDLER_BINDING_DRIFT');
 });
 
 test('M2.3 handler rejects projection input substitution, identifier injection, claims, secrets, oversized evidence, missing coverage and stale receipt bindings', () => {
