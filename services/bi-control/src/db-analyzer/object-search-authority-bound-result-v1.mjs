@@ -169,8 +169,22 @@ export function buildObjectSearchAuthorityBoundResult(input) {
   return deepFreeze({...body, projectionSha256: identitySha256(body)});
 }
 
+function rejectNegativeZero(value) {
+  if (typeof value === 'number') {
+    if (Object.is(value, -0)) fail('DB_OBJECT_SEARCH_AUTHORITY_RESULT_FORGED');
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(rejectNegativeZero);
+    return;
+  }
+  if (value && typeof value === 'object') Object.values(value).forEach(rejectNegativeZero);
+}
+
 export function verifyObjectSearchAuthorityBoundResult(projection, input) {
   try {
+    // canonicalJson normalizes negative zero to zero, so reject it on the supplied projection before the canonical comparison.
+    rejectNegativeZero(projection);
     const expected = buildObjectSearchAuthorityBoundResult(input);
     if (canonicalJson(projection) !== canonicalJson(expected)) fail('DB_OBJECT_SEARCH_AUTHORITY_RESULT_FORGED');
     return projection;
