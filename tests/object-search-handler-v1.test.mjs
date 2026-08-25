@@ -214,9 +214,12 @@ test('MSSQL and Oracle exact first-page inputs produce byte-deterministic deeply
     assert.throws(() => {a.state = 'MUTATED';}, TypeError);
     assert.equal(canonicalJson(a), canonicalJson(b));
     const contract = buildObjectCapabilityContractV1();
-    assert.equal(contract.validateResult(a, {
+    const validated = contract.validateResult(a, {
       capabilityId: C.search, requestSha256: a.requestSha256, projectionSha256: a.projectionSha256, bindings: value.expected.bindings,
-    }), a);
+    });
+    assert.deepEqual(validated, a);
+    assert.notEqual(validated, a);
+    assertFrozen(validated);
   }
 });
 
