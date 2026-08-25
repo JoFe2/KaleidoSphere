@@ -1,5 +1,16 @@
 # Release Notes
 
+## v0.23.1 - Object capability input hardening
+
+Rejects Proxy-backed request/result/expected and nested contract objects before
+Proxy traps execute, preventing post-validation claim or authority widening.
+Closed surfaces now inspect all own keys and reject symbol or non-enumerable
+properties, including hidden credential-shaped fields.
+
+This protected successor fixes review findings in v0.23.0 without rewriting its
+immutable release. Capability, scope and evidence bindings remain exact;
+External API v2 and its six actions remain unchanged.
+
 ## v0.23.0 - Read-only object capability contract
 
 Freezes a separate versioned contract for future object Search, Details and

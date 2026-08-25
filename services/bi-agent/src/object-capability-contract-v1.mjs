@@ -1,4 +1,5 @@
 import {canonicalJson} from './external-api-v2.mjs';
+import {types as utilTypes} from 'node:util';
 
 export const KS_OBJECT_CAPABILITY_CONTRACT_SCHEMA = 'kaleidosphere.object-capabilities/handler-contract/v1';
 export const KS_OBJECT_CAPABILITY_REQUEST_SCHEMA = 'kaleidosphere.object-capabilities/request/v1';
@@ -29,10 +30,14 @@ const fail = (code) => {
   throw error;
 };
 
-const plain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
+const plain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value) && !utilTypes.isProxy(value)
   && Object.getPrototypeOf(value) === Object.prototype;
 const exact = (value, keys, code) => {
-  if (!plain(value) || canonicalJson(Object.keys(value).sort()) !== canonicalJson([...keys].sort())) fail(code);
+  if (!plain(value)) fail(code);
+  const ownKeys = Reflect.ownKeys(value);
+  if (ownKeys.some((key) => typeof key !== 'string'
+      || Object.getOwnPropertyDescriptor(value, key)?.enumerable !== true)
+      || canonicalJson(ownKeys.sort()) !== canonicalJson([...keys].sort())) fail(code);
 };
 const hash = (value) => typeof value === 'string' && HASH.test(value);
 const same = (left, right) => canonicalJson(left) === canonicalJson(right);
