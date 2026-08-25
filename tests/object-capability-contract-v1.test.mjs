@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 
 import {
@@ -192,4 +193,13 @@ test('validated request and result are isolated deeply frozen clones', () => {
   sourceResult.bindings.coverageSha256 = H('0');
   assert.equal(validatedRequest.scope.schemas[0], 'dbo');
   assert.notEqual(validatedResult.bindings.coverageSha256, H('0'));
+});
+
+test('canonical npm test and protected CI execute all three handler adversarial suites', async () => {
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  for (const file of [
+    'tests/object-search-handler-v1.test.mjs',
+    'tests/object-details-handler-v1.test.mjs',
+    'tests/database-overview-handler-v1.test.mjs',
+  ]) assert.match(pkg.scripts.test, new RegExp(`(?:^|\\s)${file.replaceAll('.', '\\.')}(?:\\s|$)`), file);
 });
