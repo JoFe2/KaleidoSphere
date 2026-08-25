@@ -12,6 +12,7 @@ const INPUT_KEYS = Object.freeze([
   'controllerRun', 'inventoryAuthorityProjection', 'relationKindAuthorityProjection',
   'objectNameAuthorityProjection', 'structureEvidence', 'request',
 ]);
+const CONTINUATION_INPUT_KEYS = Object.freeze([...INPUT_KEYS, 'cursor']);
 const VISIBILITY = Object.freeze({
   COMPLETE: 'VISIBLE',
   PARTIAL: 'VISIBLE_PARTIAL',
@@ -163,6 +164,46 @@ export function buildObjectSearchAuthorityBoundResult(input) {
     page,
     items,
     nextCursor: cursor,
+    claims: {...CLAIMS},
+    authority: {...AUTHORITY},
+  });
+  return deepFreeze({...body, projectionSha256: identitySha256(body)});
+}
+
+export function continueObjectSearchAuthorityBoundResult(input) {
+  if (!exactKeys(input, CONTINUATION_INPUT_KEYS)) fail('DB_OBJECT_SEARCH_AUTHORITY_CURSOR_INPUT_INVALID');
+  const {cursor, ...baseInput} = input;
+  const first = buildObjectSearchAuthorityBoundResult(baseInput);
+  if (first.nextCursor === null) fail('DB_OBJECT_SEARCH_AUTHORITY_CURSOR_EXHAUSTED');
+  if (!cursor || typeof cursor !== 'object' || Array.isArray(cursor)
+      || canonicalJson(cursor) !== canonicalJson(first.nextCursor)) {
+    fail('DB_OBJECT_SEARCH_AUTHORITY_CURSOR_FORGED');
+  }
+  const sources = validateSources(baseInput);
+  const matches = selectMatches(sources);
+  const startOrdinal = sources.request.pageSize;
+  const items = matches.slice(startOrdinal, startOrdinal + sources.request.pageSize).map(itemFor);
+  const remainingCount = matches.length - startOrdinal - items.length;
+  if (remainingCount > 0) fail('DB_OBJECT_SEARCH_AUTHORITY_CURSOR_WINDOW_EXCEEDED');
+  const page = normalizeJsonValue({
+    pageIndex: 1,
+    pageSize: sources.request.pageSize,
+    startOrdinal,
+    endOrdinal: startOrdinal + items.length - 1,
+    itemCount: items.length,
+    matchCount: matches.length,
+    remainingCount,
+    hasNext: false,
+  });
+  const body = normalizeJsonValue({
+    schemaVersion: OBJECT_SEARCH_AUTHORITY_BOUND_RESULT_SCHEMA,
+    type: OBJECT_SEARCH_AUTHORITY_BOUND_RESULT_TYPE,
+    state: OBJECT_SEARCH_AUTHORITY_BOUND_RESULT_STATE,
+    engine: sources.run.engine,
+    bindings: {...first.bindings},
+    page,
+    items,
+    nextCursor: null,
     claims: {...CLAIMS},
     authority: {...AUTHORITY},
   });
