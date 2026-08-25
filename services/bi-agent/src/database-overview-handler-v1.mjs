@@ -103,9 +103,9 @@ export function handleDatabaseOverviewRequestV1(request, run) {
     resultSha256: identitySha256(envelope),
     envelope,
     bytes: {
-      request: Buffer.from(canonicalJson(request), 'utf8'),
-      projection: Buffer.from(canonicalJson(projection), 'utf8'),
-      result: Buffer.from(canonicalJson(envelope), 'utf8'),
+      request: canonicalJson(request),
+      projection: canonicalJson(projection),
+      result: canonicalJson(envelope),
     },
   });
 }

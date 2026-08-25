@@ -140,7 +140,7 @@ test('mssql and oracle mixed, empty and cancelled authority inputs produce deter
       assert.equal(first.resultSha256, identitySha256(first.envelope));
       assert.ok(isDeepFrozen(first));
       assert.notEqual(first.envelope.bindings, request.bindings);
-      for (const key of ['request', 'projection', 'result']) assert.equal(Buffer.compare(first.bytes[key], second.bytes[key]), 0);
+      for (const key of ['request', 'projection', 'result']) assert.equal(first.bytes[key], second.bytes[key]);
       for (const key of ALL_FALSE) assert.equal(first.envelope.claims[key] ?? first.envelope.authority[key], false);
       const projection = buildDatabaseOverviewProjection(run);
       verifyDatabaseOverviewProjection(projection, run);
@@ -151,9 +151,19 @@ test('mssql and oracle mixed, empty and cancelled authority inputs produce deter
         bindings: overviewBindings(run),
       });
       assert.throws(() => { first.envelope.state = 'MUTATED'; }, TypeError);
-      assert.ok(first.bytes.result.equals(Buffer.from(canonicalJson(first.envelope), 'utf8')));
+      assert.equal(first.bytes.result, canonicalJson(first.envelope));
     }
   }
+});
+
+test('returned canonical byte material is immutable and cannot drift after validation', () => {
+  const {run, request} = inputs('mssql');
+  const result = handleDatabaseOverviewRequestV1(request, run);
+  for (const key of ['request', 'projection', 'result']) {
+    assert.equal(typeof result.bytes[key], 'string', `${key} bytes use immutable canonical text`);
+    assert.throws(() => { result.bytes[key] = 'mutated'; }, TypeError);
+  }
+  assert.equal(result.bytes.result, canonicalJson(result.envelope));
 });
 
 test('rejects paired scope and every profile binding substitution against the unchanged authoritative run', () => {
