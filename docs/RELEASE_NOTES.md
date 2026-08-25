@@ -1,5 +1,19 @@
 # Release Notes
 
+## v0.22.0 - Authority-bound first-cursor continuation
+
+Consumes exactly the cursor emitted by the deterministic first-page TABLE/VIEW
+object-search projection to produce its authority-bound second page. The
+continuation recomputes the first page from the same controller, coverage,
+inventory, relation-kind, object-name, structure and request evidence before it
+accepts the cursor; caller offsets, counts, page indexes and fully re-digested
+replacement cursors fail closed.
+
+This bounded increment intentionally supports first cursor to second page only.
+It does not claim replay prevention or add a mutable cursor store, later pages,
+new handler actions, DSH wiring, SQL, query execution, mutation, dispatch,
+credentials, raw rows, absence/completeness or external runtime authority.
+
 ## v0.21.0 - Canonical-number boundary hardening
 
 Hardens six established read-only evidence and projection boundaries so raw

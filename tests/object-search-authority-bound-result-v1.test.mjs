@@ -18,6 +18,7 @@ import {
   OBJECT_SEARCH_AUTHORITY_BOUND_CURSOR_SCHEMA,
   OBJECT_SEARCH_AUTHORITY_BOUND_RESULT_SCHEMA,
   buildObjectSearchAuthorityBoundResult,
+  continueObjectSearchAuthorityBoundResult,
 } from '../services/bi-control/src/db-analyzer/object-search-authority-bound-result-v1.mjs';
 
 const ROOT = 'services/bi-control';
@@ -157,6 +158,58 @@ test('pure first-page projection rejects cursor consumption, non-relation kinds 
   const inflated = build(sources, requestFor({engine: 'mssql', schema: 'dbo', prefix: 'Inventory', kindFilters: ['TABLE', 'VIEW'], inflated: true}));
   assert.equal(inflated.page.matchCount, 2);
   assert.deepEqual(inflated.items, first.items);
+});
+
+test('exact first-page cursor deterministically yields the authority-bound second page for MSSQL and Oracle', async () => {
+  for (const {sources, request} of [
+    {sources: await mssqlSources(), request: requestFor({engine: 'mssql', schema: 'dbo', prefix: 'Inventory', kindFilters: ['TABLE', 'VIEW']})},
+    {sources: await oracleSources(), request: requestFor({engine: 'oracle', schema: 'BI_DEMO', prefix: 'Order', kindFilters: ['TABLE', 'VIEW']})},
+  ]) {
+    const input = {...sources, request};
+    const first = buildObjectSearchAuthorityBoundResult(input);
+    assert(first.nextCursor);
+    const second = continueObjectSearchAuthorityBoundResult({...input, cursor: first.nextCursor});
+    assert.equal(second.page.pageIndex, 1);
+    assert.equal(second.page.startOrdinal, 1);
+    assert.equal(second.page.endOrdinal, 1);
+    assert.equal(second.page.itemCount, 1);
+    assert.equal(second.page.remainingCount, 0);
+    assert.equal(second.page.hasNext, false);
+    assert.equal(second.nextCursor, null);
+    assert.notEqual(second.items[0].objectKey, first.items[0].objectKey);
+    assert.equal(second.claims.replayPreventionClaimed, false);
+    assert.equal(second.authority.replayPreventionClaimed, false);
+    assertFrozen(second);
+    assert.equal(canonicalJson(second), canonicalJson(continueObjectSearchAuthorityBoundResult({...input, cursor: first.nextCursor})));
+  }
+});
+
+test('cursor continuation rejects missing, stale, substituted, re-digested, exhausted or caller-authoritative paging input', async () => {
+  const sources = await mssqlSources();
+  const request = requestFor({engine: 'mssql', schema: 'dbo', prefix: 'Inventory', kindFilters: ['TABLE', 'VIEW']});
+  const input = {...sources, request};
+  const first = buildObjectSearchAuthorityBoundResult(input);
+  assert(first.nextCursor);
+  assert.throws(() => continueObjectSearchAuthorityBoundResult(input), {code: 'DB_OBJECT_SEARCH_AUTHORITY_CURSOR_INPUT_INVALID'});
+  for (const mutate of [
+    (cursor) => {cursor.pageIndex = 2;},
+    (cursor) => {cursor.envelopeSha256 = '0'.repeat(64);},
+    (cursor) => {cursor.controllerStateSha256 = '0'.repeat(64);},
+    (cursor) => {cursor.objectNameAuthoritySha256 = '0'.repeat(64);},
+    (cursor) => {cursor.consumesState = true;},
+    (cursor) => {cursor.replayPreventionClaimed = true;},
+  ]) {
+    const cursor = structuredClone(first.nextCursor);
+    mutate(cursor);
+    delete cursor.cursorSha256;
+    cursor.cursorSha256 = identitySha256(normalizeJsonValue(cursor));
+    assert.throws(() => continueObjectSearchAuthorityBoundResult({...input, cursor}), {code: 'DB_OBJECT_SEARCH_AUTHORITY_CURSOR_FORGED'});
+  }
+  assert.throws(() => continueObjectSearchAuthorityBoundResult({...input, cursor: first.nextCursor, pageIndex: 1}), {code: 'DB_OBJECT_SEARCH_AUTHORITY_CURSOR_INPUT_INVALID'});
+  const exhaustedRequest = requestFor({engine: 'mssql', schema: 'dbo', prefix: 'Inventory', kindFilters: ['TABLE', 'VIEW'], pageSize: 10});
+  const exhausted = buildObjectSearchAuthorityBoundResult({...sources, request: exhaustedRequest});
+  assert.equal(exhausted.nextCursor, null);
+  assert.throws(() => continueObjectSearchAuthorityBoundResult({...sources, request: exhaustedRequest, cursor: null}), {code: 'DB_OBJECT_SEARCH_AUTHORITY_CURSOR_EXHAUSTED'});
 });
 
 test('exact bindings, deterministic bytes, deep freeze and authority/non-claim envelope are retained', async () => {
