@@ -9,15 +9,31 @@ const HASH = /^[a-f0-9]{64}$/;
 const ID = /^[A-Za-z][A-Za-z0-9._:-]{2,127}$/;
 const SCHEMA = /^[A-Za-z][A-Za-z0-9_$#]{0,127}$/;
 const CAPABILITIES = Object.freeze([
-  Object.freeze({id: 'bi.object.search.read', projectionSchema: 'chimpmaera.db/object-search-authority-bound-result/v1'}),
-  Object.freeze({id: 'bi.object.details.read', projectionSchema: 'kaleidosphere.analysis/object-details-projection/v1'}),
-  Object.freeze({id: 'bi.database.overview.read', projectionSchema: 'kaleidosphere.analysis/database-overview-projection/v1'}),
+  Object.freeze({
+    id: 'bi.object.search.read',
+    projectionSchema: 'chimpmaera.db/object-search-authority-bound-result/v1',
+    bindingProfileSchema: 'kaleidosphere.object-capabilities/binding-profile/object-search/v1',
+    bindingKeys: Object.freeze([
+      'engine', 'snapshotSha256', 'receiptSha256', 'coverageSha256', 'inventoryAuthoritySha256',
+      'relationKindAuthoritySha256', 'objectNameAuthoritySha256', 'cancellationSha256',
+    ]),
+  }),
+  Object.freeze({
+    id: 'bi.object.details.read',
+    projectionSchema: 'kaleidosphere.analysis/object-details-projection/v1',
+    bindingProfileSchema: 'kaleidosphere.object-capabilities/binding-profile/object-details/v1',
+    bindingKeys: Object.freeze(['engine', 'snapshotSha256', 'receiptSha256', 'coverageSha256']),
+  }),
+  Object.freeze({
+    id: 'bi.database.overview.read',
+    projectionSchema: 'kaleidosphere.analysis/database-overview-projection/v1',
+    bindingProfileSchema: 'kaleidosphere.object-capabilities/binding-profile/database-overview/v1',
+    bindingKeys: Object.freeze([
+      'engine', 'runStateSha256', 'snapshotSha256', 'coverageSha256', 'receiptChainSha256', 'cancellationSha256',
+    ]),
+  }),
 ]);
-const CAPABILITY_IDS = new Set(CAPABILITIES.map(({id}) => id));
-const BINDING_KEYS = Object.freeze([
-  'engine', 'snapshotSha256', 'receiptSha256', 'coverageSha256', 'inventoryAuthoritySha256',
-  'relationKindAuthoritySha256', 'objectNameAuthoritySha256', 'cancellationSha256',
-]);
+const CAPABILITY_BY_ID = new Map(CAPABILITIES.map((item) => [item.id, item]));
 const CLAIM_KEYS = Object.freeze(['absenceClaimed', 'completenessClaimed', 'replayPreventionClaimed', 'sourceRowsIncluded']);
 const AUTHORITY_KEYS = Object.freeze([
   'credentialsIncluded', 'dispatchAuthority', 'executionAuthority', 'mutationAuthority',
@@ -52,30 +68,42 @@ function deepFreeze(value) {
   return value;
 }
 
-function assertDataTree(value, code, seen = new Set()) {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value) || Object.is(value, -0)) fail(code);
-    return;
-  }
-  if (!value || typeof value !== 'object' || utilTypes.isProxy(value) || seen.has(value)) fail(code);
-  seen.add(value);
-  const array = Array.isArray(value);
-  if (!array && Object.getPrototypeOf(value) !== Object.prototype) fail(code);
-  for (const key of Reflect.ownKeys(value)) {
-    const descriptor = Object.getOwnPropertyDescriptor(value, key);
-    if (typeof key !== 'string' || !Object.hasOwn(descriptor ?? {}, 'value')) fail(code);
-    if (array && key === 'length') continue;
-    if (descriptor.enumerable !== true) fail(code);
-    assertDataTree(descriptor.value, code, seen);
-  }
-  seen.delete(value);
+export function assertObjectCapabilityDataTreeV1(value, code) {
+  const seen = new Set();
+  const visit = (item) => {
+    if (item === null || typeof item === 'string' || typeof item === 'boolean') return;
+    if (typeof item === 'number') {
+      if (!Number.isFinite(item) || Object.is(item, -0)) fail(code);
+      return;
+    }
+    if (!item || typeof item !== 'object' || utilTypes.isProxy(item) || seen.has(item)) fail(code);
+    seen.add(item);
+    const array = Array.isArray(item);
+    if (!array && Object.getPrototypeOf(item) !== Object.prototype) fail(code);
+    for (const key of Reflect.ownKeys(item)) {
+      const descriptor = Object.getOwnPropertyDescriptor(item, key);
+      if (typeof key !== 'string' || !Object.hasOwn(descriptor ?? {}, 'value')) fail(code);
+      if (array && key === 'length') continue;
+      if (descriptor.enumerable !== true) fail(code);
+      visit(descriptor.value);
+    }
+    seen.delete(item);
+  };
+  visit(value);
+  return value;
 }
 
-function validateBindings(value, expected, code) {
-  exact(value, BINDING_KEYS, code);
+function capabilityProfile(capabilityId, code) {
+  const profile = CAPABILITY_BY_ID.get(capabilityId);
+  if (!profile) fail(code);
+  return profile;
+}
+
+function validateBindings(value, expected, capabilityId, code) {
+  const profile = capabilityProfile(capabilityId, code);
+  exact(value, profile.bindingKeys, code);
   if (!['mssql', 'oracle'].includes(value.engine)
-      || BINDING_KEYS.slice(1).some((key) => !hash(value[key]))
+      || profile.bindingKeys.filter((key) => key !== 'engine').some((key) => !hash(value[key]))
       || !plain(expected) || !same(value, expected)) fail(code);
   return value;
 }
@@ -88,30 +116,33 @@ function validateScope(value) {
   return value;
 }
 
-function validateRequest(value, expected) {
-  assertDataTree(value, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED');
-  assertDataTree(expected, 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
+function validateRequest(value, authoritative) {
+  assertObjectCapabilityDataTreeV1(value, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED');
+  assertObjectCapabilityDataTreeV1(authoritative, 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
   exact(value, ['schemaVersion', 'requestId', 'capabilityId', 'bindings', 'scope'], 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED');
+  exact(authoritative, ['capabilityId', 'bindings', 'scope'], 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
   if (value.schemaVersion !== KS_OBJECT_CAPABILITY_REQUEST_SCHEMA || !ID.test(value.requestId ?? '')
-      || !CAPABILITY_IDS.has(value.capabilityId) || !plain(expected)
-      || value.capabilityId !== expected.capabilityId) fail('KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
-  validateBindings(value.bindings, expected.bindings, 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
+      || !CAPABILITY_BY_ID.has(value.capabilityId)
+      || value.capabilityId !== authoritative.capabilityId) fail('KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
+  validateBindings(value.bindings, authoritative.bindings, value.capabilityId, 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
   validateScope(value.scope);
-  if (!plain(expected.scope) || !same(value.scope, expected.scope)) fail('KS_OBJECT_CAPABILITY_SCOPE_DENIED');
+  if (!plain(authoritative.scope) || !same(value.scope, authoritative.scope)) fail('KS_OBJECT_CAPABILITY_SCOPE_DENIED');
   return deepFreeze(structuredClone(value));
 }
 
-function validateResult(value, expected) {
-  assertDataTree(value, 'KS_OBJECT_CAPABILITY_RESULT_SURFACE_DENIED');
-  assertDataTree(expected, 'KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
+function validateResult(value, authoritative) {
+  assertObjectCapabilityDataTreeV1(value, 'KS_OBJECT_CAPABILITY_RESULT_SURFACE_DENIED');
+  assertObjectCapabilityDataTreeV1(authoritative, 'KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
   exact(value, ['schemaVersion', 'requestSha256', 'capabilityId', 'state', 'projectionSha256', 'bindings', 'claims', 'authority'],
     'KS_OBJECT_CAPABILITY_RESULT_SURFACE_DENIED');
-  if (value.schemaVersion !== KS_OBJECT_CAPABILITY_RESULT_SCHEMA || !CAPABILITY_IDS.has(value.capabilityId)
+  exact(authoritative, ['capabilityId', 'requestSha256', 'projectionSha256', 'bindings'],
+    'KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
+  if (value.schemaVersion !== KS_OBJECT_CAPABILITY_RESULT_SCHEMA || !CAPABILITY_BY_ID.has(value.capabilityId)
       || value.state !== 'PROJECTED_READ_ONLY' || !hash(value.requestSha256) || !hash(value.projectionSha256)
-      || !plain(expected) || value.capabilityId !== expected.capabilityId
-      || value.requestSha256 !== expected.requestSha256
-      || value.projectionSha256 !== expected.projectionSha256) fail('KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
-  validateBindings(value.bindings, expected.bindings, 'KS_OBJECT_CAPABILITY_RESULT_BINDING_DENIED');
+      || value.capabilityId !== authoritative.capabilityId
+      || value.requestSha256 !== authoritative.requestSha256
+      || value.projectionSha256 !== authoritative.projectionSha256) fail('KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
+  validateBindings(value.bindings, authoritative.bindings, value.capabilityId, 'KS_OBJECT_CAPABILITY_RESULT_BINDING_DENIED');
   exact(value.claims, CLAIM_KEYS, 'KS_OBJECT_CAPABILITY_CLAIM_DENIED');
   exact(value.authority, AUTHORITY_KEYS, 'KS_OBJECT_CAPABILITY_AUTHORITY_DENIED');
   if (CLAIM_KEYS.some((key) => value.claims[key] !== false)) fail('KS_OBJECT_CAPABILITY_CLAIM_DENIED');
@@ -122,13 +153,13 @@ function validateResult(value, expected) {
 function contractData() {
   return {
     schemaVersion: KS_OBJECT_CAPABILITY_CONTRACT_SCHEMA,
-    capabilities: CAPABILITIES.map((item) => ({
+    capabilities: CAPABILITIES.map(({bindingKeys, ...item}) => ({
       ...item,
       requestSchema: KS_OBJECT_CAPABILITY_REQUEST_SCHEMA,
       resultSchema: KS_OBJECT_CAPABILITY_RESULT_SCHEMA,
       authority: 'read-only-evidence-projection',
+      requiredBindings: [...bindingKeys],
     })),
-    requiredBindings: [...BINDING_KEYS],
     failClosedCodes: [
       'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED', 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED',
       'KS_OBJECT_CAPABILITY_BINDING_DENIED', 'KS_OBJECT_CAPABILITY_SCOPE_DENIED',
@@ -150,6 +181,11 @@ function contractData() {
       replayPreventionClaimed: false,
     },
   };
+}
+
+export function getObjectCapabilityBindingProfileV1(capabilityId) {
+  const profile = capabilityProfile(capabilityId, 'KS_OBJECT_CAPABILITY_CAPABILITY_DENIED');
+  return deepFreeze({schemaVersion: profile.bindingProfileSchema, requiredBindings: [...profile.bindingKeys]});
 }
 
 export function buildObjectCapabilityContractV1() {
