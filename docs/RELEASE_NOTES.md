@@ -1,5 +1,21 @@
 # Release Notes
 
+## v0.21.0 - Canonical-number boundary hardening
+
+Hardens six established read-only evidence and projection boundaries so raw
+numeric negative zero cannot be canonicalized into ordinary zero. The checks
+cover database-overview and object-details coverage summaries, authority-bound
+object-search result verification, roles/clusters snapshot and diff evidence,
+PostgreSQL Wave 2 profile counts, and MSSQL/Oracle safe-analysis aggregate
+results. Canonical zero and existing safe integer/string/bigint inputs retain
+their deterministic behavior.
+
+This is a feature wave because the fail-closed canonical-number guarantee now
+spans multiple public analysis and readback contracts rather than correcting a
+single isolated implementation. It adds no SQL construction, query dispatch,
+mutation, credentials, raw rows, replay prevention, business-truth authority,
+external runtime authority, or production-readiness claim.
+
 ## v0.20.1 - Authority-bound search-result readback verification
 
 Adds a pure deterministic verifier for the v0.20.0 first-page relation-search
