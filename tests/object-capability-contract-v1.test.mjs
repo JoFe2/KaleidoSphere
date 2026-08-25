@@ -119,3 +119,47 @@ test('M2.2 result validation denies binding drift, tamper and every authority or
   ];
   for (const value of cases) assert.throws(() => validateResult(value, {capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings()}));
 });
+
+test('review follow-up rejects stateful Proxy inputs before any trap and cannot return a widened result', () => {
+  const {validateRequest, validateResult} = buildObjectCapabilityContractV1();
+  let traps = 0;
+  const statefulClaims = new Proxy(result(C.overview).claims, {
+    get(target, key, receiver) { traps += 1; return traps <= 4 ? false : Reflect.get(target, key, receiver); },
+    getPrototypeOf(target) { traps += 1; return Reflect.getPrototypeOf(target); },
+    ownKeys(target) { traps += 1; return Reflect.ownKeys(target); },
+  });
+  assert.throws(() => validateResult(result(C.overview, {claims: statefulClaims}), {
+    capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings(),
+  }));
+  assert.equal(traps, 0);
+
+  for (const [value, call] of [
+    [new Proxy(request(C.search), {getPrototypeOf() { traps += 1; return Object.prototype; }}), (item) => validateRequest(item, {capabilityId: C.search, bindings: bindings(), scope: {schemas: ['dbo']}})],
+    [result(C.search, {bindings: new Proxy(bindings(), {ownKeys(target) { traps += 1; return Reflect.ownKeys(target); }})}), (item) => validateResult(item, {capabilityId: C.search, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings()})],
+  ]) assert.throws(() => call(value));
+  assert.equal(traps, 0);
+});
+
+test('review follow-up rejects non-enumerable and symbol keys on closed request and result surfaces', () => {
+  const {validateRequest, validateResult} = buildObjectCapabilityContractV1();
+  const hidden = request(C.search);
+  Object.defineProperty(hidden, 'credentials', {value: 'secret', enumerable: false});
+  assert.throws(() => validateRequest(hidden, {capabilityId: C.search, bindings: bindings(), scope: {schemas: ['dbo']}}));
+
+  const symbol = result(C.overview);
+  symbol[Symbol('secret')] = 'hidden';
+  assert.throws(() => validateResult(symbol, {
+    capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings(),
+  }));
+
+  let getterCalls = 0;
+  const accessorClaims = result(C.overview).claims;
+  Object.defineProperty(accessorClaims, 'completenessClaimed', {
+    enumerable: true,
+    get() { getterCalls += 1; return getterCalls === 1 ? false : true; },
+  });
+  assert.throws(() => validateResult(result(C.overview, {claims: accessorClaims}), {
+    capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings(),
+  }));
+  assert.equal(getterCalls, 0);
+});

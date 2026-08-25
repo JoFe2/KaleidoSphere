@@ -1,4 +1,5 @@
 import {canonicalJson} from './external-api-v2.mjs';
+import {types as utilTypes} from 'node:util';
 
 export const KS_OBJECT_CAPABILITY_CONTRACT_SCHEMA = 'kaleidosphere.object-capabilities/handler-contract/v1';
 export const KS_OBJECT_CAPABILITY_REQUEST_SCHEMA = 'kaleidosphere.object-capabilities/request/v1';
@@ -29,10 +30,16 @@ const fail = (code) => {
   throw error;
 };
 
-const plain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value)
+const plain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value) && !utilTypes.isProxy(value)
   && Object.getPrototypeOf(value) === Object.prototype;
 const exact = (value, keys, code) => {
-  if (!plain(value) || canonicalJson(Object.keys(value).sort()) !== canonicalJson([...keys].sort())) fail(code);
+  if (!plain(value)) fail(code);
+  const ownKeys = Reflect.ownKeys(value);
+  if (ownKeys.some((key) => {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    return typeof key !== 'string' || descriptor?.enumerable !== true
+      || !Object.hasOwn(descriptor ?? {}, 'value');
+  }) || canonicalJson(ownKeys.sort()) !== canonicalJson([...keys].sort())) fail(code);
 };
 const hash = (value) => typeof value === 'string' && HASH.test(value);
 const same = (left, right) => canonicalJson(left) === canonicalJson(right);
@@ -43,6 +50,26 @@ function deepFreeze(value) {
     Object.freeze(value);
   }
   return value;
+}
+
+function assertDataTree(value, code, seen = new Set()) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value) || Object.is(value, -0)) fail(code);
+    return;
+  }
+  if (!value || typeof value !== 'object' || utilTypes.isProxy(value) || seen.has(value)) fail(code);
+  seen.add(value);
+  const array = Array.isArray(value);
+  if (!array && Object.getPrototypeOf(value) !== Object.prototype) fail(code);
+  for (const key of Reflect.ownKeys(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(value, key);
+    if (typeof key !== 'string' || !Object.hasOwn(descriptor ?? {}, 'value')) fail(code);
+    if (array && key === 'length') continue;
+    if (descriptor.enumerable !== true) fail(code);
+    assertDataTree(descriptor.value, code, seen);
+  }
+  seen.delete(value);
 }
 
 function validateBindings(value, expected, code) {
@@ -62,6 +89,8 @@ function validateScope(value) {
 }
 
 function validateRequest(value, expected) {
+  assertDataTree(value, 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED');
+  assertDataTree(expected, 'KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
   exact(value, ['schemaVersion', 'requestId', 'capabilityId', 'bindings', 'scope'], 'KS_OBJECT_CAPABILITY_REQUEST_SURFACE_DENIED');
   if (value.schemaVersion !== KS_OBJECT_CAPABILITY_REQUEST_SCHEMA || !ID.test(value.requestId ?? '')
       || !CAPABILITY_IDS.has(value.capabilityId) || !plain(expected)
@@ -69,10 +98,12 @@ function validateRequest(value, expected) {
   validateBindings(value.bindings, expected.bindings, 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
   validateScope(value.scope);
   if (!plain(expected.scope) || !same(value.scope, expected.scope)) fail('KS_OBJECT_CAPABILITY_SCOPE_DENIED');
-  return value;
+  return deepFreeze(structuredClone(value));
 }
 
 function validateResult(value, expected) {
+  assertDataTree(value, 'KS_OBJECT_CAPABILITY_RESULT_SURFACE_DENIED');
+  assertDataTree(expected, 'KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
   exact(value, ['schemaVersion', 'requestSha256', 'capabilityId', 'state', 'projectionSha256', 'bindings', 'claims', 'authority'],
     'KS_OBJECT_CAPABILITY_RESULT_SURFACE_DENIED');
   if (value.schemaVersion !== KS_OBJECT_CAPABILITY_RESULT_SCHEMA || !CAPABILITY_IDS.has(value.capabilityId)
@@ -85,7 +116,7 @@ function validateResult(value, expected) {
   exact(value.authority, AUTHORITY_KEYS, 'KS_OBJECT_CAPABILITY_AUTHORITY_DENIED');
   if (CLAIM_KEYS.some((key) => value.claims[key] !== false)) fail('KS_OBJECT_CAPABILITY_CLAIM_DENIED');
   if (AUTHORITY_KEYS.some((key) => value.authority[key] !== false)) fail('KS_OBJECT_CAPABILITY_AUTHORITY_DENIED');
-  return value;
+  return deepFreeze(structuredClone(value));
 }
 
 function contractData() {
