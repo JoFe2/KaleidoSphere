@@ -110,7 +110,7 @@ function verifyProjection(projection, projectionInput) {
   return recomputed;
 }
 
-function assertAuthoritativeBindings(request, projection) {
+function assertAuthoritativeBindings(request, projection, projectionInput) {
   const {bindings} = request;
   const bound = projection.bindings;
   if (bindings.engine !== projection.engine
@@ -123,12 +123,20 @@ function assertAuthoritativeBindings(request, projection) {
       || bindings.cancellationSha256 !== identitySha256({cancellation: 'NONE', engine: projection.engine})) {
     fail(BINDING_DRIFT);
   }
+  // The capability scope is canonically bound to the sealed authoritative envelope
+  // scope. The contract already ties request.scope to expected.scope, so binding
+  // request.scope to the verified projection's authoritative scope transitively
+  // binds both: a paired substitution away from the projection's authoritative
+  // scope is a scope denial, not a binding drift.
+  if (canonicalJson(request.scope) !== canonicalJson(projectionInput.request.scope)) {
+    fail('KS_OBJECT_CAPABILITY_SCOPE_DENIED');
+  }
 }
 
 export function handleObjectSearchV1(input) {
   const {request, expected, projection, projectionInput} = validateClosedRequest(input);
   const recomputed = verifyProjection(projection, validateProjectionInput(projectionInput));
-  assertAuthoritativeBindings(request, recomputed);
+  assertAuthoritativeBindings(request, recomputed, projectionInput);
   const result = {
     schemaVersion: KS_OBJECT_CAPABILITY_RESULT_SCHEMA,
     requestSha256: identitySha256(request),

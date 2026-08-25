@@ -359,3 +359,20 @@ test('handler fails closed on scope escape, injection, secrets, oversize page bo
     assert.throws(() => handleObjectSearchV1(withEnvelope(mutate)), {code: FORGED, message: FORGED});
   }
 });
+
+test('handler rejects paired request and expected scope substitution away from the authoritative projection scope', async () => {
+  const SCOPE_DENIED = 'KS_OBJECT_CAPABILITY_SCOPE_DENIED';
+  for (const {engine, sources, envelope} of await fixtures()) {
+    const value = validHandlerInput({engine, sources, envelope});
+    // Both request.scope and expected.scope are moved together off the authoritative
+    // envelope scope; the projection and projection input stay authoritative. The
+    // paired substitution must be denied against the projection's authoritative scope.
+    const paired = {
+      ...value,
+      request: closedRequest(C.search, value.request.bindings, ['other']),
+      expected: {...value.expected, scope: {schemas: ['other']}},
+    };
+    assert.equal(canonicalJson(paired.request.scope), canonicalJson(paired.expected.scope));
+    assert.throws(() => handleObjectSearchV1(paired), {code: SCOPE_DENIED, message: SCOPE_DENIED});
+  }
+});
