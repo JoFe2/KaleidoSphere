@@ -151,4 +151,15 @@ test('review follow-up rejects non-enumerable and symbol keys on closed request 
   assert.throws(() => validateResult(symbol, {
     capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings(),
   }));
+
+  let getterCalls = 0;
+  const accessorClaims = result(C.overview).claims;
+  Object.defineProperty(accessorClaims, 'completenessClaimed', {
+    enumerable: true,
+    get() { getterCalls += 1; return getterCalls === 1 ? false : true; },
+  });
+  assert.throws(() => validateResult(result(C.overview, {claims: accessorClaims}), {
+    capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings(),
+  }));
+  assert.equal(getterCalls, 0);
 });
