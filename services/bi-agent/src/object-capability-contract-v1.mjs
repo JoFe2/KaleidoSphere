@@ -68,6 +68,7 @@ function validateRequest(value, expected) {
       || value.capabilityId !== expected.capabilityId) fail('KS_OBJECT_CAPABILITY_REQUEST_IDENTITY_DENIED');
   validateBindings(value.bindings, expected.bindings, 'KS_OBJECT_CAPABILITY_BINDING_DENIED');
   validateScope(value.scope);
+  if (!plain(expected.scope) || !same(value.scope, expected.scope)) fail('KS_OBJECT_CAPABILITY_SCOPE_DENIED');
   return value;
 }
 
@@ -76,7 +77,8 @@ function validateResult(value, expected) {
     'KS_OBJECT_CAPABILITY_RESULT_SURFACE_DENIED');
   if (value.schemaVersion !== KS_OBJECT_CAPABILITY_RESULT_SCHEMA || !CAPABILITY_IDS.has(value.capabilityId)
       || value.state !== 'PROJECTED_READ_ONLY' || !hash(value.requestSha256) || !hash(value.projectionSha256)
-      || !plain(expected) || value.requestSha256 !== expected.requestSha256
+      || !plain(expected) || value.capabilityId !== expected.capabilityId
+      || value.requestSha256 !== expected.requestSha256
       || value.projectionSha256 !== expected.projectionSha256) fail('KS_OBJECT_CAPABILITY_RESULT_IDENTITY_DENIED');
   validateBindings(value.bindings, expected.bindings, 'KS_OBJECT_CAPABILITY_RESULT_BINDING_DENIED');
   exact(value.claims, CLAIM_KEYS, 'KS_OBJECT_CAPABILITY_CLAIM_DENIED');

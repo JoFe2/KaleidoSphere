@@ -81,8 +81,8 @@ test('M2.2 contract freezes three separate read-only object capabilities without
 test('M2.2 validator accepts exact deterministic request and result bindings for each capability', () => {
   const contract = buildObjectCapabilityContractV1();
   for (const id of Object.values(C)) {
-    assert.deepEqual(contract.validateRequest(request(id), {capabilityId: id, bindings: bindings()}), request(id));
-    assert.deepEqual(contract.validateResult(result(id), {requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings()}), result(id));
+    assert.deepEqual(contract.validateRequest(request(id), {capabilityId: id, bindings: bindings(), scope: {schemas: ['dbo']}}), request(id));
+    assert.deepEqual(contract.validateResult(result(id), {capabilityId: id, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings()}), result(id));
   }
   assert.equal(JSON.stringify(buildObjectCapabilityContractV1()), JSON.stringify(contract));
 });
@@ -93,6 +93,7 @@ test('M2.2 request validation fails closed for substitution, stale binding, scop
     request(C.search, {capabilityId: C.details}),
     request(C.search, {bindings: bindings({snapshotSha256: H('0')})}),
     request(C.search, {scope: {schemas: ['../escape']}}),
+    request(C.search, {scope: {schemas: ['other']}}),
     request(C.search, {scope: {schemas: Array.from({length: 257}, (_, i) => `s${i}`)}}),
     request(C.search, {bindings: bindings({cancellationSha256: H('0')})}),
     {...request(C.search), sql: 'SELECT 1'},
@@ -100,12 +101,13 @@ test('M2.2 request validation fails closed for substitution, stale binding, scop
     {...request(C.search), rawRows: []},
     {...request(C.search), callback: 'https://evil.invalid'},
   ];
-  for (const value of cases) assert.throws(() => validateRequest(value, {capabilityId: C.search, bindings: bindings()}));
+  for (const value of cases) assert.throws(() => validateRequest(value, {capabilityId: C.search, bindings: bindings(), scope: {schemas: ['dbo']}}));
 });
 
 test('M2.2 result validation denies binding drift, tamper and every authority or claim widening', () => {
   const {validateResult} = buildObjectCapabilityContractV1();
   const cases = [
+    result(C.details),
     result(C.overview, {projectionSha256: H('0')}),
     result(C.overview, {bindings: bindings({coverageSha256: H('0')})}),
     result(C.overview, {claims: {...result(C.overview).claims, completenessClaimed: true}}),
@@ -115,5 +117,5 @@ test('M2.2 result validation denies binding drift, tamper and every authority or
     result(C.overview, {authority: {...result(C.overview).authority, mutationAuthority: true}}),
     {...result(C.overview), token: 'secret'},
   ];
-  for (const value of cases) assert.throws(() => validateResult(value, {requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings()}));
+  for (const value of cases) assert.throws(() => validateResult(value, {capabilityId: C.overview, requestSha256: H('8'), projectionSha256: H('9'), bindings: bindings()}));
 });
