@@ -1,5 +1,18 @@
 # Release Notes
 
+## v0.23.0 - Read-only object capability contract
+
+Freezes a separate versioned contract for future object Search, Details and
+Overview handler wiring. Closed request/result envelopes bind exact snapshot,
+receipt, coverage, inventory, relation-kind, object-name and cancellation
+digests; scope, substitution, stale/tampered bindings, oversize and every
+claim/authority widening fail closed with fixed non-leaking codes.
+
+External API v2 remains byte-closed to its existing six actions. This contract
+does not add handlers, dispatch, DSH mapping, SQL, credentials, raw rows,
+mutation, execution or replay-prevention authority. It is the Sol-owned
+prerequisite for separately reviewed mechanical wiring under parent issue #65.
+
 ## v0.22.0 - Authority-bound first-cursor continuation
 
 Consumes exactly the cursor emitted by the deterministic first-page TABLE/VIEW
