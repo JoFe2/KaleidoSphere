@@ -27,6 +27,20 @@ evidence-bound technical catalog, guides dashboard requirement discovery, and
 prepares review-bound technical overview workflows for its own Apache Superset
 stack. Optional model use is limited to bounded intent classification.
 
+## Release identity
+
+KaleidoSphere uses separate, intentionally pinned version axes:
+
+| Layer | Version | Meaning |
+|---|---:|---|
+| Repository release | `v0.24.0` | Current source and release-archive identity |
+| bi-agent component | `v0.18.1` | Runtime product identity attested by the embedded service |
+| External API contract | `2.0.0` | Closed six-action wire contract |
+| Apache Superset | `6.1.0` | Digest-pinned local projection UI |
+
+The component and API versions do not imply that the repository is still on an
+older release.
+
 ## What you can do
 
 - Analyze Oracle or Microsoft SQL Server metadata with audited read-only query packs.
@@ -36,7 +50,9 @@ stack. Optional model use is limited to bounded intent classification.
 - Preview fixed managed Superset overview dashboards for system, table, code, and coverage views.
 - Collect a read-only Superset runtime fingerprint before future reviewed promotion planning.
 - Build, inspect, and fail-closed preflight a deterministic review-only promotion ZIP from confirmed evidence.
-- Execute a human-approved bundle only against an isolated synthetic owned metadata target, with backup, UUID readback, idempotency, and restore proof.
+- Validate promotion execution as **library/test evidence only** against an
+  isolated synthetic owned metadata target; no shipped CLI, HTTP, or operator
+  invocation path is claimed.
 
 ## Try it in 5 minutes
 
@@ -52,6 +68,7 @@ cd KaleidoSphere
 cp .env.example .env
 ./bin/bi setup
 ./bin/bi up
+./bin/bi status
 ./bin/bi analyze
 ./bin/bi ask "Largest tables by size"
 ./bin/bi discovery start demo
@@ -85,6 +102,16 @@ OpenClaw uses the same package under `<workspace>/skills/kaleidosphere`;
 Hermes uses `~/.hermes/skills/kaleidosphere`. Host-specific installation and
 evidence status are recorded in `agent-skills/host-contracts.json`. No
 marketplace listing is claimed.
+
+## DSH and host integrations
+
+The AgentSkill above is instruction-only. The optional
+[`JoFe2/kaleidosphere-dsh-plugin`](https://github.com/JoFe2/kaleidosphere-dsh-plugin)
+is a separate **Developer Preview** for DeepSeek Harness rc.8. It is not part
+of the KaleidoSphere v0.24.0 release assets and adds no DSH dependency, loader
+or mapping to this repository. The plugin exposes six native
+`kaleidosphere_*` tools and vendors its own exact KaleidoSphere v0.16.0 subset;
+its compatibility, lifecycle and release status are governed in that repository.
 
 ## First result
 
@@ -161,24 +188,37 @@ read visibility for the declared schemas. Details are in
 
 ## Current capabilities and boundaries
 
-Supported today:
+### Default runtime and documented CLI
 
 - Oracle and Microsoft SQL Server read-only metadata analysis.
-- Bounded PostgreSQL read-only metadata pilot with a frozen catalog pack and
-  digest-pinned synthetic PostgreSQL 16.10 E2E/readback evidence.
-- Explicitly allowlisted PostgreSQL null/distinct count profiling and
-  single-column relationship-candidate evidence with observed/computed/inferred
-  separation, deterministic Evidence Store and proposal-only rule plan/reports.
 - Versioned evidence-bound local technical catalog and bounded technical Q&A.
 - Guided BI requirements discovery with Markdown/JSON brief export.
 - Review-bound managed technical overview dashboard workflows in Apache Superset.
-- Server-attested external API `2.0.0` for status, discovery, analyze, plan,
-  preview and readback; the runtime reports product `v0.18.1` and exact
-  capabilities at `GET /v2/capabilities`. The additive
+- Server-attested External API `2.0.0` with six closed External API v2 actions:
+  status, discovery, analyze, plan, preview and readback. The runtime reports
+  `bi-agent` product `v0.18.1` and exact capabilities at
+  `GET /v2/capabilities`. The additive
   `GET /v2/capability-manifest` projects only those six actions with canonical
-  integrity, current-attestation, executable-state, authority and evidence bindings for thin
-  adapters.
+  integrity, current-attestation, executable-state, authority and evidence
+  bindings for thin adapters.
 - Read-only Superset 6.1.0 runtime fingerprint and fail-closed planning preflight.
+
+### Optional bounded pilots
+
+- Bounded PostgreSQL read-only metadata pilot with a frozen catalog pack and
+  digest-pinned synthetic PostgreSQL 16.10 E2E/readback evidence. It is not a
+  third `BI_ENGINE` option in the default Compose stack.
+- Explicitly allowlisted PostgreSQL null/distinct count profiling and
+  single-column relationship-candidate evidence with observed/computed/inferred
+  separation, deterministic Evidence Store and proposal-only rule plan/reports.
+
+### Local library/contract surfaces
+
+- The v0.24.0 authority-bound local object extension defines
+  `bi.object.search.read`, `bi.object.details.read` and
+  `bi.database.overview.read`, with capability-specific bindings and read-only
+  Search, Details and Overview handlers. These importable local contracts do
+  not extend External API v2 and are not additional public server routes.
 - Deterministic MSSQL/Oracle Progressive Run Controller v1 with explicit per-object coverage,
   a 95% breadth-before-depth gate, hard probe budgets, duplicate suppression and receipt resume.
 - Reservation-before-dispatch table/hypothesis budgets, persisted hypothesis and counterevidence,
@@ -192,7 +232,14 @@ Supported today:
 - Deterministic `chimpmaera.bi/superset-promotion-bundle/v1` review ZIP build,
   inspection, checksum, and fail-closed preflight.
 
-Not claimed today:
+### Synthetic test evidence only
+
+- Promotion execution, trusted-workflow apply/readback/rollback and ambiguous
+  outcome reconciliation are exercised through local synthetic library tests.
+  They have no shipped CLI or HTTP invocation path and do not authorize
+  production/customer mutation.
+
+### Not claimed today
 
 - Ambient or client-authorized dynamic dataset, chart, or dashboard mutation.
 - Production/customer promotion, Superset-native ZIP import/export, or dynamic
@@ -214,6 +261,21 @@ Not claimed today:
   [BI discovery](docs/evidence/M4_GUIDED_BI_DISCOVERY.md),
   [Superset fingerprint](docs/evidence/M5_SUPERSET_FINGERPRINT.md), and
   [promotion bundle contract](docs/evidence/M5_PROMOTION_BUNDLE.md)
+
+Some decision and roadmap documents preserve the non-claims of the historical
+slice in which they were written. Use [release notes](docs/RELEASE_NOTES.md) and
+the versioned tests as the current release delta; a later library proof does not
+retroactively create a public invocation path.
+
+## Development and verification
+
+Development and tests require Node.js 24. The canonical local gates are:
+
+```bash
+npm run dist:agent-skill
+npm test
+docker compose config
+```
 
 ## Provenance
 
