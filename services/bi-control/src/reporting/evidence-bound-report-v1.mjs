@@ -8,6 +8,7 @@ export const EVIDENCE_BOUND_REPORT_PROJECTION_SCHEMA_V1 = EVIDENCE_BOUND_REPORT_
 
 const HASH = /^[a-f0-9]{64}$/;
 const ID = /^[a-z][a-z0-9._:-]{2,127}$/;
+const MAX_SAFE_MAGNITUDE = Number.MAX_SAFE_INTEGER;
 const DATA_TYPES = new Set(['string', 'integer', 'number', 'boolean']);
 const DATASET_KINDS = new Set(['METRIC', 'TABLE', 'DIFFERENTIATOR_PLACEHOLDER']);
 const BINDING_KEYS = Object.freeze([
@@ -45,11 +46,11 @@ function inspectSurface(value, code = 'EVIDENCE_BOUND_REPORT_SURFACE_DENIED') {
   const visit = (item) => {
     if (item === null || typeof item === 'boolean') return;
     if (typeof item === 'string') {
-      if (item.length > 512 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(item) || FORBIDDEN_TEXT.test(item)) fail(code);
+      if (item.length > 512 || /[\u0000-\u001f\u007f]/.test(item) || FORBIDDEN_TEXT.test(item)) fail(code);
       return;
     }
     if (typeof item === 'number') {
-      if (!Number.isFinite(item) || Object.is(item, -0) || !Number.isSafeInteger(item) && !Number.isSafeInteger(Math.trunc(item))) fail(code);
+      if (!Number.isFinite(item) || Object.is(item, -0) || Math.abs(item) > MAX_SAFE_MAGNITUDE) fail(code);
       return;
     }
     if (!item || typeof item !== 'object' || utilTypes.isProxy(item) || seen.has(item)) fail(code);
@@ -85,7 +86,7 @@ function validateCell(value, column) {
   const valid = column.dataType === 'string' ? typeof value === 'string'
     : column.dataType === 'boolean' ? typeof value === 'boolean'
       : typeof value === 'number' && Number.isFinite(value) && !Object.is(value, -0)
-        && Math.abs(value) <= Number.MAX_SAFE_INTEGER
+        && Math.abs(value) <= MAX_SAFE_MAGNITUDE
         && (column.dataType === 'number' || Number.isSafeInteger(value));
   if (!valid) fail('EVIDENCE_BOUND_REPORT_CELL_DENIED');
 }
@@ -184,6 +185,22 @@ export function verifyEvidenceBoundReportV1(projection, spec, expectedBindings) 
   const expected = buildEvidenceBoundReportV1(spec, expectedBindings);
   const verified = validateEvidenceBoundReportV1(projection, expectedBindings ?? expected.bindings);
   if (!same(projection, expected)) fail('EVIDENCE_BOUND_REPORT_MISMATCH');
+  return verified;
+}
+
+export function verifyEvidenceBoundReportReplayV1(projection, spec, replayEvidence, expectedBindings) {
+  exact(replayEvidence, ['receipt', 'snapshot'], 'EVIDENCE_BOUND_REPORT_REPLAY_SURFACE_DENIED');
+  if (!plain(replayEvidence.receipt)) fail('EVIDENCE_BOUND_REPORT_REPLAY_RECEIPT_DENIED');
+  if (!plain(replayEvidence.snapshot)) fail('EVIDENCE_BOUND_REPORT_REPLAY_SNAPSHOT_DENIED');
+  inspectSurface(replayEvidence.receipt, 'EVIDENCE_BOUND_REPORT_REPLAY_RECEIPT_DENIED');
+  inspectSurface(replayEvidence.snapshot, 'EVIDENCE_BOUND_REPORT_REPLAY_SNAPSHOT_DENIED');
+  const verified = verifyEvidenceBoundReportV1(projection, spec, expectedBindings);
+  if (identitySha256(replayEvidence.receipt) !== verified.bindings.receiptSha256) {
+    fail('EVIDENCE_BOUND_REPORT_REPLAY_RECEIPT_DIGEST_DENIED');
+  }
+  if (identitySha256(replayEvidence.snapshot) !== verified.bindings.snapshotSha256) {
+    fail('EVIDENCE_BOUND_REPORT_REPLAY_SNAPSHOT_DIGEST_DENIED');
+  }
   return verified;
 }
 

@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
 
+import {identitySha256} from '../services/bi-control/src/db-analyzer/core.mjs';
 import {
   EVIDENCE_BOUND_REPORT_DATASET_SCHEMA_V1,
   EVIDENCE_BOUND_REPORT_SPEC_SCHEMA_V1,
   buildEvidenceBoundReportV1,
   validateEvidenceBoundReportV1,
   verifyEvidenceBoundReportV1,
+  verifyEvidenceBoundReportReplayV1,
 } from '../services/bi-control/src/reporting/evidence-bound-report-v1.mjs';
 
 const H = (character) => character.repeat(64);
@@ -90,6 +92,33 @@ test('bounded metric and table datasets produce deterministic canonical dataset 
   assert.notEqual(table.datasetSha256, metric.datasetSha256);
   validateEvidenceBoundReportV1(table, BINDINGS);
   verifyEvidenceBoundReportV1(table, spec(tableDataset()), BINDINGS);
+});
+
+test('replay verifies the bound receipt and snapshot without granting an external authority', () => {
+  const receipt = {schemaVersion: 'test/receipt/v1', receiptId: 'receipt-1', status: 'SUCCEEDED'};
+  const snapshot = {schemaVersion: 'test/snapshot/v1', snapshotId: 'snapshot-1', state: 'SEALED'};
+  const replayBindings = {
+    ...BINDINGS,
+    receiptSha256: identitySha256(receipt),
+    snapshotSha256: identitySha256(snapshot),
+  };
+  const replaySpec = spec(metricDataset());
+  replaySpec.bindings = replayBindings;
+  const projection = buildEvidenceBoundReportV1(replaySpec, replayBindings);
+  const verified = verifyEvidenceBoundReportReplayV1(projection, replaySpec, {receipt, snapshot}, replayBindings);
+
+  assertDeepFrozen(verified);
+  assert.notEqual(verified, projection);
+  assert.equal(verified.bindings.receiptSha256, identitySha256(receipt));
+  assert.equal(verified.bindings.snapshotSha256, identitySha256(snapshot));
+  assert.throws(() => verifyEvidenceBoundReportReplayV1(projection, replaySpec, {
+    receipt: {...receipt, status: 'TAMPERED'},
+    snapshot,
+  }, replayBindings), /EVIDENCE_BOUND_REPORT_REPLAY_RECEIPT_DIGEST_DENIED/);
+  assert.throws(() => verifyEvidenceBoundReportReplayV1(projection, replaySpec, {
+    receipt,
+    snapshot: {...snapshot, state: 'TAMPERED'},
+  }, replayBindings), /EVIDENCE_BOUND_REPORT_REPLAY_SNAPSHOT_DIGEST_DENIED/);
 });
 
 test('one explicitly typed differentiator placeholder is admitted and remains a nonclaim', () => {
@@ -243,6 +272,16 @@ test('schema safe text rejects uppercase forbidden variants exactly as runtime d
   }
 });
 
+test('C0 and DEL controls are denied in both the schema safe-text pattern and runtime', async () => {
+  const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
+  const safeTextPattern = new RegExp(schema.$defs.safeText.pattern);
+  for (const control of [...Array.from({length: 32}, (_, code) => String.fromCodePoint(code)), '\u007f']) {
+    const text = `safe${control}text`;
+    assert.equal(safeTextPattern.test(text), false, `schema accepted U+${control.codePointAt(0).toString(16)}`);
+    assert.throws(() => buildEvidenceBoundReportV1({...spec(), title: text}), /EVIDENCE_BOUND_REPORT_SURFACE_DENIED/, text);
+  }
+});
+
 test('schema and runtime cover row width, typed cells, unique keys and bounded numbers', async () => {
   const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
   assert.equal(schema.$defs.row.minItems, 1);
@@ -250,6 +289,14 @@ test('schema and runtime cover row width, typed cells, unique keys and bounded n
   assert.deepEqual(schema.$defs.dataType.enum, ['string', 'integer', 'number', 'boolean']);
   assert.equal(schema.$defs.safeNumber.minimum, -9007199254740991);
   assert.equal(schema.$defs.safeNumber.maximum, 9007199254740991);
+  assert.deepEqual(schema.$defs.safeNumber['x-kaleidosphere-invariants'], {finite: true, negativeZero: false});
+  assert.deepEqual(schema.$defs.dataset['x-kaleidosphere-invariants'], {
+    rowWidth: {path: 'rows[*].length', equals: 'columns.length'},
+    columnKeys: {path: 'columns[*].key', unique: true},
+    cellDataType: {value: 'rows[*][index]', typeFrom: 'columns[index].dataType'},
+    cellNullability: {nullAllowedBy: 'columns[index].nullable'},
+    numbers: {finite: true, absoluteMaximum: 9007199254740991, negativeZero: false},
+  });
 
   const typedDataset = {
     schemaVersion: EVIDENCE_BOUND_REPORT_DATASET_SCHEMA_V1,

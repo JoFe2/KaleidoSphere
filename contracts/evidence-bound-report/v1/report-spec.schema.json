@@ -17,11 +17,12 @@
     "datasetKind": {"enum": ["METRIC", "TABLE", "DIFFERENTIATOR_PLACEHOLDER"]},
     "dataType": {"enum": ["string", "integer", "number", "boolean"]},
     "cellDataType": {"$ref": "#/$defs/dataType"},
-    "safeText": {"type": "string", "pattern": "^(?!.*(?:[Hh][Tt][Tt][Pp][Ss]?:\\/\\/|[Ff][Ii][Ll][Ee]:\\/\\/|[Jj][Aa][Vv][Aa][Ss][Cc][Rr][Ii][Pp][Tt]:|[Dd][Aa][Tt][Aa]:[Tt][Ee][Xx][Tt]|<\\/?[Ss][Cc][Rr][Ii][Pp][Tt]\\b|\\b(?:[Ee][Vv][Aa][Ll]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn]|[Ss][Ee][Tt][Tt][Ii][Mm][Ee][Oo][Uu][Tt]|[Ss][Ee][Tt][Ii][Nn][Tt][Ee][Rr][Vv][Aa][Ll]|[Aa][Ll][Ee][Rr][Tt])\\s*\\(|=>|\\b(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Ii][Nn][Ss][Ee][Rr][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Mm][Ee][Rr][Gg][Ee]|[Dd][Rr][Oo][Pp]|[Aa][Ll][Tt][Ee][Rr]|[Cc][Rr][Ee][Aa][Tt][Ee])\\b[\\s;]|(?:^|\\s)[=:][A-Za-z_$][\\w$]*(?:\\(|\\b)|(?:[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn])\\s*[:=]))"},
+    "safeText": {"type": "string", "maxLength": 512, "pattern": "^(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:[Hh][Tt][Tt][Pp][Ss]?:\\/\\/|[Ff][Ii][Ll][Ee]:\\/\\/|[Jj][Aa][Vv][Aa][Ss][Cc][Rr][Ii][Pp][Tt]:|[Dd][Aa][Tt][Aa]:[Tt][Ee][Xx][Tt]|<\\/?[Ss][Cc][Rr][Ii][Pp][Tt]\\b|\\b(?:[Ee][Vv][Aa][Ll]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn]|[Ss][Ee][Tt][Tt][Ii][Mm][Ee][Oo][Uu][Tt]|[Aa][Ll][Ee][Rr][Tt])\\s*\\(|=>|\\b(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Ii][Nn][Ss][Ee][Rr][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Mm][Ee][Rr][Gg][Ee]|[Dd][Rr][Oo][Pp]|[Aa][Ll][Tt][Ee][Rr]|[Cc][Rr][Ee][Aa][Tt][Ee])\\b[\\s;]|(?:^|\\s)[=:][A-Za-z_$][\\w$]*(?:\\(|\\b)|(?:[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn])\\s*[:=]))"},
     "safeNumber": {
       "type": "number",
       "minimum": -9007199254740991,
       "maximum": 9007199254740991,
+      "x-kaleidosphere-invariants": {"finite": true, "negativeZero": false},
       "$comment": "The runtime additionally rejects negative zero with Object.is(value, -0); JSON Schema numbers do not preserve that distinction."
     },
     "nullableCell": {"type": "null"},
@@ -67,6 +68,13 @@
     },
     "dataset": {
       "type": "object",
+      "x-kaleidosphere-invariants": {
+        "rowWidth": {"path": "rows[*].length", "equals": "columns.length"},
+        "columnKeys": {"path": "columns[*].key", "unique": true},
+        "cellDataType": {"value": "rows[*][index]", "typeFrom": "columns[index].dataType"},
+        "cellNullability": {"nullAllowedBy": "columns[index].nullable"},
+        "numbers": {"finite": true, "absoluteMaximum": 9007199254740991, "negativeZero": false}
+      },
       "additionalProperties": false,
       "required": ["schemaVersion", "datasetId", "kind", "columns", "rows", "differentiator"],
       "properties": {
