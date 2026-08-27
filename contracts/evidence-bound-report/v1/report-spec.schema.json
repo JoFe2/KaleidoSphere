@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/contracts/evidence-bound-report/v1/report-spec.schema.json",
+  "title": "KaleidoSphere transport-neutral evidence-bound report specification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reportId", "title", "dataset", "bindings"],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere.reporting/evidence-bound-report-spec/v1"},
+    "reportId": {"type": "string", "pattern": "^[a-z][a-z0-9._:-]{2,127}$"},
+    "title": {"type": "string", "minLength": 1, "maxLength": 256},
+    "dataset": {"$ref": "#/$defs/dataset"},
+    "bindings": {"$ref": "#/$defs/bindings"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "datasetKind": {"enum": ["METRIC", "TABLE", "DIFFERENTIATOR_PLACEHOLDER"]},
+    "dataType": {"enum": ["string", "integer", "number", "boolean"]},
+    "cell": {
+      "oneOf": [
+        {"type": "null"},
+        {"type": "string", "maxLength": 512, "pattern": "^(?!.*(?:https?:\\/\\/|file:\\/\\/|javascript:|data:text|\\b(?:select|insert|update|delete|merge|drop|alter|create)\\b[\\s;]|(?:password|credential|secret|token)\\s*[:=]))"},
+        {"type": "boolean"},
+        {"type": "number"}
+      ]
+    },
+    "row": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/cell"}},
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "label", "dataType", "nullable"],
+      "properties": {
+        "key": {"type": "string", "pattern": "^[a-z][a-z0-9._:-]{2,127}$"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 128},
+        "dataType": {"$ref": "#/$defs/dataType"},
+        "nullable": {"type": "boolean"}
+      }
+    },
+    "differentiator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "status", "label"],
+      "properties": {
+        "type": {"const": "DIFFERENTIATOR_PLACEHOLDER"},
+        "status": {"const": "UNPOPULATED"},
+        "label": {"type": "string", "minLength": 1, "maxLength": 128}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "datasetId", "kind", "columns", "rows", "differentiator"],
+      "properties": {
+        "schemaVersion": {"const": "kaleidosphere.reporting/evidence-bound-dataset/v1"},
+        "datasetId": {"type": "string", "pattern": "^[a-z][a-z0-9._:-]{2,127}$"},
+        "kind": {"$ref": "#/$defs/datasetKind"},
+        "columns": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/column"}},
+        "rows": {"type": "array", "maxItems": 1000, "items": {"$ref": "#/$defs/row"}},
+        "differentiator": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/differentiator"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "DIFFERENTIATOR_PLACEHOLDER"}}},
+          "then": {
+            "properties": {
+              "columns": {"maxItems": 0},
+              "rows": {"maxItems": 0},
+              "differentiator": {"$ref": "#/$defs/differentiator"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "METRIC"}}},
+          "then": {
+            "properties": {
+              "columns": {"minItems": 1, "maxItems": 1},
+              "rows": {"minItems": 1, "maxItems": 1},
+              "differentiator": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "TABLE"}}},
+          "then": {
+            "properties": {
+              "columns": {"minItems": 1},
+              "rows": {"minItems": 1},
+              "differentiator": {"type": "null"}
+            }
+          }
+        }
+      ]
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotSha256", "receiptSha256", "coverageSha256", "capabilitySha256", "resultSha256"],
+      "properties": {
+        "snapshotSha256": {"$ref": "#/$defs/sha256"},
+        "receiptSha256": {"$ref": "#/$defs/sha256"},
+        "coverageSha256": {"$ref": "#/$defs/sha256"},
+        "capabilitySha256": {"$ref": "#/$defs/sha256"},
+        "resultSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
