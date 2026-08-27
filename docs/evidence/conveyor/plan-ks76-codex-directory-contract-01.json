@@ -1,0 +1,236 @@
+{
+  "schemaVersion": "kaleidosphere/conveyor-decision-integration-receipt/v1",
+  "contractVersion": "ks76/codex-directory-contract/v1",
+  "receiptId": "plan-ks76-codex-directory-contract-01",
+  "task": {
+    "id": "PLAN-KS76-CODEX-DIRECTORY-CONTRACT-01",
+    "kind": "contract-freeze",
+    "phase": "pre-implementation",
+    "process": {
+      "operatingModelVersion": "1.1",
+      "preservedDecisions": ["D-001", "D-002", "D-003", "D-004", "D-005", "D-006", "D-007"],
+      "processVariantIntroduced": false
+    },
+    "mutations": {
+      "remote": false,
+      "identity": false,
+      "identityDefinition": "portal or catalog identity creation or use (for example an OpenAI/Codex Directory publisher identity); local git operations on the conveyor branch are not identity actions",
+      "portal": false
+    }
+  },
+  "frozenAt": {
+    "baseCommit": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+    "branch": "conveyor/kaleidosphere-76",
+    "packageVersion": "0.24.0"
+  },
+  "packageIdentity": {
+    "host": "codex",
+    "classification": "skills-only",
+    "distribution": {
+      "builder": "scripts/build-agent-skill-distribution.mjs",
+      "outputRoot": "dist/agent-skill-distribution",
+      "viewPath": "dist/agent-skill-distribution/codex/kaleidosphere-agent-skill"
+    },
+    "pluginManifest": {
+      "path": ".codex-plugin/plugin.json",
+      "sha256": "beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75",
+      "fields": {
+        "name": "kaleidosphere-agent-skill",
+        "version": "0.24.0",
+        "description": "KaleidoSphere bounded BI AgentSkill distribution",
+        "author": { "name": "JoFe2", "url": "https://github.com/JoFe2" },
+        "homepage": "https://github.com/JoFe2/KaleidoSphere",
+        "repository": "https://github.com/JoFe2/KaleidoSphere",
+        "license": "Apache-2.0",
+        "keywords": ["kaleidosphere", "agent-skill", "business-intelligence", "openclaw"],
+        "skills": "./skills/"
+      },
+      "interface": {
+        "displayName": "KaleidoSphere",
+        "developerName": "JoFe2",
+        "shortDescription": "Bounded BI skill",
+        "longDescription": "Use the KaleidoSphere AgentSkill for bounded status, discovery, analyze, plan, preview and readback requests under the closed authority-free contract.",
+        "category": "Data & Analytics",
+        "capabilities": ["Bounded BI workflows", "Closed action validation", "Readback evidence review"],
+        "defaultPrompt": ["Use KaleidoSphere for BI status.", "Plan a bounded BI preview.", "Review KaleidoSphere readback evidence."],
+        "brandColor": "#0F766E",
+        "websiteURL": "https://github.com/JoFe2/KaleidoSphere"
+      }
+    },
+    "forbiddenPluginSurfaces": ["hooks", "mcpServers", "apps", "commands", "agents"],
+    "viewFiles": [
+      ".codex-plugin/plugin.json",
+      "skills/kaleidosphere/SKILL.md",
+      "skills/kaleidosphere/references/contract.json",
+      "skills/kaleidosphere/references/portable-companion-v1.json",
+      "skills/kaleidosphere/scripts/validate-request.mjs"
+    ],
+    "archive": {
+      "file": "archives/kaleidosphere-codex-plugin-v0.24.0.tar.gz",
+      "sha256": "09d5a056efba82526f9c1d66079790f5b07eba66cde77c5d806cbe22f7ac5145",
+      "sidecar": {
+        "file": "archives/kaleidosphere-codex-plugin-v0.24.0.tar.gz.sha256",
+        "sha256": "9f4eacb93b1cb2ed786b98ea06c9abdeac5eeb1cb1b6398becfcd521c0412970"
+      },
+      "archiveRoot": "kaleidosphere-codex-plugin-v0.24.0"
+    },
+    "canonicalSource": {
+      "path": "agent-skills/kaleidosphere",
+      "workshopProposalId": "kaleidosphere-20260821-e90f51c924",
+      "workshopStatus": "applied",
+      "files": {
+        "SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
+        "references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
+        "scripts/validate-request.mjs": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509"
+      }
+    },
+    "portableCompanionReference": {
+      "path": "references/portable-companion-v1.json",
+      "sha256": "cded42fc9bad2ad6cdaed4eaabb9ab4ccd63919fadc8e1a603b66e4ea310d10d"
+    },
+    "actionContract": {
+      "authority": "authority-free",
+      "runtimeIntents": ["status", "discovery", "analyze", "plan", "preview", "readback"],
+      "wideningAllowed": false
+    },
+    "securityPolicy": {
+      "skillsOnly": true,
+      "hooksAllowed": false,
+      "mcpServersAllowed": false,
+      "executableModeFilesAllowed": false,
+      "externalCallsAllowed": false,
+      "secretsAllowed": false,
+      "archiveTraversalAllowed": false
+    },
+    "license": "Apache-2.0"
+  },
+  "evidenceReceipts": {
+    "bindingSources": [
+      { "path": "agent-skills/host-contracts.json", "schemaVersion": "kaleidosphere/agent-skill-host-contracts/v2", "sha256": "f35481aff657e92593278ed680eeba9b44fb6d47f248701526efcef446dfabcc" },
+      { "path": "package.json", "field": "version", "sha256": "0c63fc0982c65cfca861074526d030e31c236dcc95d64b1fd6757acd85190e82" },
+      { "path": "docs/decisions/K4-SINGLE-SOURCE-AGENTSKILL-DISTRIBUTION.md", "sha256": "f00caf1a6c72f9325f459972385221a9df50554572ca2b12f424ce606097acec" },
+      { "path": "scripts/build-agent-skill-distribution.mjs", "sha256": "264a16c39dc1c383a2b743268cf1a4e299b51c6b262970c8f2eaacabec0328fe" },
+      { "path": "tests/agent-skill-distribution.test.mjs", "sha256": "b0dd129c22f8b21cbbce8ef83cd80dcfc4f307fdb72ff4ce3d0bc4413130b178" },
+      { "path": "tests/agent-skill-adapters.test.mjs", "sha256": "035c62c651d6048b2be208959898b55e941b6a20797ede0015340a8a1f45a763" },
+      { "path": "docs/RELEASE_NOTES.md", "sha256": "ac408c463bfce6fbe6b4c358cca81489c9f983c8566888505e0df97db2ec3586" }
+    ],
+    "buildEvidence": {
+      "buildCommand": "node scripts/build-agent-skill-distribution.mjs <fresh-output-dir>",
+      "verifyCommand": "node scripts/build-agent-skill-distribution.mjs --verify <output-dir>",
+      "deterministicRebuild": {
+        "method": "two fresh output directories built from the baseCommit tree",
+        "codexArchiveSha256Both": "09d5a056efba82526f9c1d66079790f5b07eba66cde77c5d806cbe22f7ac5145",
+        "result": "byte-identical archives; --verify readback passed"
+      }
+    },
+    "futureReceiptFormat": {
+      "location": "docs/evidence/conveyor/<task-id>.json",
+      "requirements": [
+        "deterministic content: no timestamps, no random values",
+        "versioned schemaVersion and contractVersion",
+        "digest-bound inputs: sha256 of every cited file",
+        "explicit non-claims",
+        "fail-closed: no success claim without the enumerated evidence"
+      ]
+    }
+  },
+  "authorityBoundary": {
+    "local": {
+      "holder": "conveyor worker on this repository lane",
+      "scope": [
+        "repository tree at baseCommit",
+        "deterministic builds into temporary output directories",
+        "tests and fail-closed gates",
+        "local commits on the conveyor branch",
+        "receipt authoring under docs/evidence/conveyor/"
+      ],
+      "prohibited": ["push", "merge", "release", "retag", "remote or portal mutation", "identity operations"]
+    },
+    "portal": {
+      "holder": "repository owner (JoFe2) via the owner's portal account only",
+      "surface": "OpenAI/Codex Directory listing surface",
+      "scope": ["listing creation", "submission", "approval", "publication", "takedown", "retraction"],
+      "workerAccess": "none",
+      "preconditions": [
+        "an owner-approved portal task (PLAN-KS76-CODEX-DIRECTORY-PORTAL-01)",
+        "all local fail-closed gates green",
+        "reviewer-matrix quorum for the portal row"
+      ]
+    },
+    "failClosedRules": [
+      "a worker task lacking the enumerated local evidence records the exact blocker and does not claim success",
+      "portal state is observed only through owner-produced read-back receipts, never asserted by a worker",
+      "no credential, identity, or secret material may appear in any receipt or artifact",
+      "no receipt may claim marketplace approval, listing presence, or production readiness"
+    ]
+  },
+  "reviewerMatrix": [
+    { "area": "package identity bytes and digests", "domain": "local", "quorum": "all", "reviewers": ["contract-reviewer", "evidence-reviewer"] },
+    { "area": "authority boundary and portal operations", "domain": "portal", "quorum": "all", "reviewers": ["repository-owner", "controller"] },
+    { "area": "evidence receipt sealing", "domain": "local", "quorum": "all", "reviewers": ["evidence-reviewer"] },
+    { "area": "rollback contract", "domain": "local", "quorum": "all", "reviewers": ["contract-reviewer", "controller"] },
+    { "area": "terminal classification", "domain": "local", "quorum": "all", "reviewers": ["controller"] }
+  ],
+  "terminalClassifier": {
+    "inputs": {
+      "receiptPath": "docs/evidence/conveyor/plan-ks76-codex-directory-contract-01.json",
+      "receiptDigestCommand": "sha256sum docs/evidence/conveyor/plan-ks76-codex-directory-contract-01.json",
+      "baseCommit": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+      "acceptanceCriteriaMapping": "see acceptanceCriteria block: each criterion maps to at least one subsequent bounded task",
+      "verifications": [
+        { "id": "V-01", "command": "git diff --check origin/main...HEAD", "expected": "exit code 0 and no output" },
+        { "id": "V-02", "command": "node -e \"JSON.parse(require('fs').readFileSync('docs/evidence/conveyor/plan-ks76-codex-directory-contract-01.json','utf8'))\"", "expected": "valid JSON, exit code 0" },
+        { "id": "V-03", "command": "node scripts/build-agent-skill-distribution.mjs <fresh-output-dir> && sha256sum <fresh-output-dir>/archives/kaleidosphere-codex-plugin-v0.24.0.tar.gz", "expected": "codex archive sha256 equals 09d5a056efba82526f9c1d66079790f5b07eba66cde77c5d806cbe22f7ac5145" },
+        { "id": "V-04", "command": "node scripts/build-agent-skill-distribution.mjs --verify <fresh-output-dir>", "expected": "prints verified <fresh-output-dir>, exit code 0" }
+      ],
+      "nonClaimAssertions": [
+        "no remote or portal mutation performed by this task",
+        "no identity operation performed by this task",
+        "no marketplace approval or listing presence claimed"
+      ]
+    },
+    "classification": {
+      "done": "V-01 through V-04 all pass and the receipt is committed on the conveyor branch",
+      "partial": "not reportable: any failed verification fails the task closed",
+      "blocked": "a missing input or failed verification is recorded as the exact blocker and success is not claimed"
+    }
+  },
+  "rollback": {
+    "mechanism": "protected successor commit that removes docs/evidence/conveyor/plan-ks76-codex-directory-contract-01.json and any downstream artifacts materialized by subsequent tasks",
+    "portalEffect": "none: rollback never triggers a portal takedown; retraction is a separate owner portal action with its own receipt",
+    "triggers": ["contract drift", "failed gate", "controller directive"],
+    "preservedInvariants": [
+      "canonical skill bytes at agent-skills/kaleidosphere are unchanged",
+      "agent-skills/host-contracts.json is unchanged",
+      "distribution manifest schemaVersion remains kaleidosphere/agent-skill-distribution/v2",
+      "released tags are immutable and are never retagged"
+    ],
+    "drillTask": "PLAN-KS76-CODEX-DIRECTORY-ROLLBACK-DRILL-01"
+  },
+  "acceptanceCriteria": [
+    { "id": "AC-01", "claim": "the codex skills-only package identity is frozen and byte-reproducible from baseCommit", "mappedTasks": ["PLAN-KS76-CODEX-DIRECTORY-IMPL-01"] },
+    { "id": "AC-02", "claim": "evidence receipts are digest-bound and sealed under the future receipt format", "mappedTasks": ["PLAN-KS76-CODEX-DIRECTORY-EVIDENCE-01"] },
+    { "id": "AC-03", "claim": "the local/portal authority boundary is enforced fail-closed with portal operations owner-only", "mappedTasks": ["PLAN-KS76-CODEX-DIRECTORY-REVIEW-01", "PLAN-KS76-CODEX-DIRECTORY-PORTAL-01"] },
+    { "id": "AC-04", "claim": "the reviewer matrix governs approval of identity, boundary, evidence, rollback and classification", "mappedTasks": ["PLAN-KS76-CODEX-DIRECTORY-REVIEW-01"] },
+    { "id": "AC-05", "claim": "the rollback contract is executable with zero portal side effect", "mappedTasks": ["PLAN-KS76-CODEX-DIRECTORY-ROLLBACK-DRILL-01"] }
+  ],
+  "subsequentTasks": [
+    { "id": "PLAN-KS76-CODEX-DIRECTORY-IMPL-01", "domain": "local", "scope": "rebuild the codex skills-only view and archive from baseCommit, pass the fail-closed gates, and produce the submission manifest with digest sidecars", "dependsOn": ["PLAN-KS76-CODEX-DIRECTORY-CONTRACT-01"] },
+    { "id": "PLAN-KS76-CODEX-DIRECTORY-REVIEW-01", "domain": "local", "scope": "contract review of identity digests, authority boundary, non-claims and reviewer-matrix quorum before any portal task", "dependsOn": ["PLAN-KS76-CODEX-DIRECTORY-IMPL-01"] },
+    { "id": "PLAN-KS76-CODEX-DIRECTORY-PORTAL-01", "domain": "portal", "ownerOnly": true, "scope": "owner-only submission to the OpenAI/Codex Directory under the portal row of the reviewer matrix", "dependsOn": ["PLAN-KS76-CODEX-DIRECTORY-REVIEW-01"] },
+    { "id": "PLAN-KS76-CODEX-DIRECTORY-EVIDENCE-01", "domain": "local", "scope": "seal the portal outcome read-back evidence receipt: listing state is observed, never asserted by a worker", "dependsOn": ["PLAN-KS76-CODEX-DIRECTORY-PORTAL-01"] },
+    { "id": "PLAN-KS76-CODEX-DIRECTORY-ROLLBACK-DRILL-01", "domain": "local", "scope": "prove the rollback contract executes locally with zero portal side effect and preserves the invariants", "dependsOn": ["PLAN-KS76-CODEX-DIRECTORY-REVIEW-01"] }
+  ],
+  "determinism": {
+    "timestamps": false,
+    "randomValues": false,
+    "inputs": ["repository tree at baseCommit", "package.json version 0.24.0"],
+    "note": "every value is derived from the baseCommit tree or a fixed literal; codex archive rebuilds from the same tree are byte-identical (two fresh output directories both produced 09d5a056efba82526f9c1d66079790f5b07eba66cde77c5d806cbe22f7ac5145)"
+  },
+  "nonClaims": [
+    "This receipt does not claim public marketplace listing or approval.",
+    "This receipt does not claim Codex runtime execution or host compatibility beyond the installer round-trip evidence recorded in agent-skills/host-contracts.json.",
+    "This receipt does not widen the closed KaleidoSphere action contract.",
+    "This task performs no remote mutation and no identity operation."
+  ]
+}
