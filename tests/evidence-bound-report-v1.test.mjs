@@ -112,6 +112,9 @@ test('schema is closed and states the same accepted dataset kinds and limits as 
   assert.equal(schema.$defs.row.maxItems, 32);
   assert.equal(schema.$defs.differentiator.properties.type.const, 'DIFFERENTIATOR_PLACEHOLDER');
   assert.equal(schema.$defs.differentiator.properties.status.const, 'UNPOPULATED');
+  const safeTextPattern = new RegExp(schema.$defs.safeText.pattern, 'i');
+  assert.equal(safeTextPattern.test('<script>alert(1)</script>'), false);
+  assert.equal(safeTextPattern.test('eval("unsafe")'), false);
   for (const definition of Object.values(schema.$defs)) {
     if (definition.type === 'object') assert.equal(definition.additionalProperties, false);
   }
@@ -139,6 +142,8 @@ test('script, executable expression, URL, credential, connection, raw-row, overs
   const cases = [
     (copy) => { copy.script = 'alert(1)'; },
     (copy) => { copy.dataset.rows[0][0] = '=SUM(A1)'; },
+    (copy) => { copy.dataset = tableDataset(); copy.dataset.rows[0][0] = '<script>alert(1)</script>'; },
+    (copy) => { copy.dataset = tableDataset(); copy.dataset.rows[0][0] = 'eval("unsafe")'; },
     (copy) => { copy.url = 'https://example.invalid'; },
     (copy) => { copy.credentials = 'secret'; },
     (copy) => { copy.sourceConnection = {host: 'db'}; },

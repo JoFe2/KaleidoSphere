@@ -7,8 +7,8 @@
   "required": ["schemaVersion", "reportId", "title", "dataset", "bindings"],
   "properties": {
     "schemaVersion": {"const": "kaleidosphere.reporting/evidence-bound-report-spec/v1"},
-    "reportId": {"type": "string", "pattern": "^[a-z][a-z0-9._:-]{2,127}$"},
-    "title": {"type": "string", "minLength": 1, "maxLength": 256},
+    "reportId": {"allOf": [{"$ref": "#/$defs/safeText"}, {"pattern": "^[a-z][a-z0-9._:-]{2,127}$"}]},
+    "title": {"allOf": [{"$ref": "#/$defs/safeText"}, {"minLength": 1, "maxLength": 256}]},
     "dataset": {"$ref": "#/$defs/dataset"},
     "bindings": {"$ref": "#/$defs/bindings"}
   },
@@ -16,10 +16,11 @@
     "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
     "datasetKind": {"enum": ["METRIC", "TABLE", "DIFFERENTIATOR_PLACEHOLDER"]},
     "dataType": {"enum": ["string", "integer", "number", "boolean"]},
+    "safeText": {"type": "string", "pattern": "^(?!.*(?:https?:\\/\\/|file:\\/\\/|javascript:|data:text|<\\/?script\\b|\\b(?:eval|function|setTimeout|setInterval|alert)\\s*\\(|=>|\\b(?:select|insert|update|delete|merge|drop|alter|create)\\b[\\s;]|(?:^|\\s)[=:][A-Za-z_$][\\w$]*(?:\\(|\\b)|(?:password|credential|secret|token)\\s*[:=]))"},
     "cell": {
       "oneOf": [
         {"type": "null"},
-        {"type": "string", "maxLength": 512, "pattern": "^(?!.*(?:https?:\\/\\/|file:\\/\\/|javascript:|data:text|\\b(?:select|insert|update|delete|merge|drop|alter|create)\\b[\\s;]|(?:password|credential|secret|token)\\s*[:=]))"},
+        {"allOf": [{"$ref": "#/$defs/safeText"}, {"maxLength": 512}]},
         {"type": "boolean"},
         {"type": "number"}
       ]
@@ -30,8 +31,8 @@
       "additionalProperties": false,
       "required": ["key", "label", "dataType", "nullable"],
       "properties": {
-        "key": {"type": "string", "pattern": "^[a-z][a-z0-9._:-]{2,127}$"},
-        "label": {"type": "string", "minLength": 1, "maxLength": 128},
+        "key": {"allOf": [{"$ref": "#/$defs/safeText"}, {"pattern": "^[a-z][a-z0-9._:-]{2,127}$"}]},
+        "label": {"allOf": [{"$ref": "#/$defs/safeText"}, {"minLength": 1, "maxLength": 128}]},
         "dataType": {"$ref": "#/$defs/dataType"},
         "nullable": {"type": "boolean"}
       }
@@ -43,7 +44,7 @@
       "properties": {
         "type": {"const": "DIFFERENTIATOR_PLACEHOLDER"},
         "status": {"const": "UNPOPULATED"},
-        "label": {"type": "string", "minLength": 1, "maxLength": 128}
+        "label": {"allOf": [{"$ref": "#/$defs/safeText"}, {"minLength": 1, "maxLength": 128}]}
       }
     },
     "dataset": {
@@ -52,7 +53,7 @@
       "required": ["schemaVersion", "datasetId", "kind", "columns", "rows", "differentiator"],
       "properties": {
         "schemaVersion": {"const": "kaleidosphere.reporting/evidence-bound-dataset/v1"},
-        "datasetId": {"type": "string", "pattern": "^[a-z][a-z0-9._:-]{2,127}$"},
+        "datasetId": {"allOf": [{"$ref": "#/$defs/safeText"}, {"pattern": "^[a-z][a-z0-9._:-]{2,127}$"}]},
         "kind": {"$ref": "#/$defs/datasetKind"},
         "columns": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/column"}},
         "rows": {"type": "array", "maxItems": 1000, "items": {"$ref": "#/$defs/row"}},

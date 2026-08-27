@@ -19,7 +19,7 @@ const DATASET_KEYS = Object.freeze(['schemaVersion', 'datasetId', 'kind', 'colum
 const COLUMN_KEYS = Object.freeze(['key', 'label', 'dataType', 'nullable']);
 const DIFFERENTIATOR_KEYS = Object.freeze(['type', 'status', 'label']);
 const FORBIDDEN_KEY = /(?:script|executable|expression|credential|password|secret|token|connection|dsn|raw[_-]?row|source[_-]?connection|renderer|browser|url|uri|sql|query|callback)/i;
-const FORBIDDEN_TEXT = /(?:https?:\/\/|file:\/\/|javascript:|data:text|\b(?:select|insert|update|delete|merge|drop|alter|create)\b[\s;]|(?:^|\s)[=:][A-Za-z_$][\w$]*(?:\(|\b)|(?:password|credential|secret|token)\s*[:=])/i;
+const FORBIDDEN_TEXT = /(?:https?:\/\/|file:\/\/|javascript:|data:text|<\/?script\b|\b(?:eval|function|setTimeout|setInterval|alert)\s*\(|=>|\b(?:select|insert|update|delete|merge|drop|alter|create)\b[\s;]|(?:^|\s)[=:][A-Za-z_$][\w$]*(?:\(|\b)|(?:password|credential|secret|token)\s*[:=])/i;
 
 const fail = (code) => {
   const error = new Error(code);
