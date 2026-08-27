@@ -162,8 +162,8 @@ function frozen(value) {
 export function validateEvidenceBoundReportV1(value, expectedBindings) {
   inspectSurface(value);
   if (!plain(value)) fail('EVIDENCE_BOUND_REPORT_SURFACE_DENIED');
-  const {body, projection} = validateProjection(value, expectedBindings);
-  return projection && Object.isFrozen(value) ? value : frozen(projection ? value : body);
+  validateProjection(value, expectedBindings);
+  return frozen(value);
 }
 
 export function buildEvidenceBoundReportV1(value, expectedBindings) {
@@ -182,9 +182,9 @@ export function buildEvidenceBoundReportV1(value, expectedBindings) {
 export function verifyEvidenceBoundReportV1(projection, spec, expectedBindings) {
   inspectSurface(spec);
   const expected = buildEvidenceBoundReportV1(spec, expectedBindings);
-  validateEvidenceBoundReportV1(projection, expectedBindings ?? expected.bindings);
+  const verified = validateEvidenceBoundReportV1(projection, expectedBindings ?? expected.bindings);
   if (!same(projection, expected)) fail('EVIDENCE_BOUND_REPORT_MISMATCH');
-  return projection;
+  return verified;
 }
 
 export const buildEvidenceBoundReportDatasetV1 = buildEvidenceBoundReportV1;

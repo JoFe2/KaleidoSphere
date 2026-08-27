@@ -112,7 +112,7 @@ test('schema is closed and states the same accepted dataset kinds and limits as 
   assert.equal(schema.$defs.row.maxItems, 32);
   assert.equal(schema.$defs.differentiator.properties.type.const, 'DIFFERENTIATOR_PLACEHOLDER');
   assert.equal(schema.$defs.differentiator.properties.status.const, 'UNPOPULATED');
-  const safeTextPattern = new RegExp(schema.$defs.safeText.pattern, 'i');
+  const safeTextPattern = new RegExp(schema.$defs.safeText.pattern);
   assert.equal(safeTextPattern.test('<script>alert(1)</script>'), false);
   assert.equal(safeTextPattern.test('eval("unsafe")'), false);
   for (const definition of Object.values(schema.$defs)) {
@@ -123,7 +123,8 @@ test('schema is closed and states the same accepted dataset kinds and limits as 
 
 test('validator and verifier require exact evidence bindings and digest identities', () => {
   const report = buildEvidenceBoundReportV1(spec());
-  assert.equal(validateEvidenceBoundReportV1(report, BINDINGS), report);
+  assert.deepEqual(validateEvidenceBoundReportV1(report, BINDINGS), report);
+  assert.notEqual(validateEvidenceBoundReportV1(report, BINDINGS), report);
   for (const key of Object.keys(BINDINGS)) {
     const wrong = {...BINDINGS, [key]: H('9')};
     assert.throws(() => validateEvidenceBoundReportV1(report, wrong), /EVIDENCE_BOUND_REPORT_(?:BINDING|SPEC)_DENIED/);
@@ -203,9 +204,80 @@ test('validation returns an isolated deeply frozen canonical copy and unload lea
   const source = spec(tableDataset());
   const report = buildEvidenceBoundReportV1(source);
   const validated = validateEvidenceBoundReportV1(report, BINDINGS);
-  assert.equal(validated, report);
+  assert.deepEqual(validated, report);
+  assert.notEqual(validated, report);
   assertDeepFrozen(validated);
   source.dataset.rows[0][1] = 999;
   assert.equal(validated.dataset.rows[0][1], 31);
   assert.equal(Object.keys(globalThis).some((key) => /report|renderer|connection|credential/i.test(key)), false);
+});
+
+test('validation and verification never return caller-owned shallow-frozen projections', () => {
+  const source = buildEvidenceBoundReportV1(spec(tableDataset()));
+  const mutableProjection = structuredClone(source);
+  Object.freeze(mutableProjection);
+
+  const validated = validateEvidenceBoundReportV1(mutableProjection, BINDINGS);
+  assert.notEqual(validated, mutableProjection);
+  assert.notEqual(validated.dataset, mutableProjection.dataset);
+  assertDeepFrozen(validated);
+  mutableProjection.dataset.rows[0][1] = 999;
+  assert.equal(validated.dataset.rows[0][1], 31);
+
+  const verificationInput = structuredClone(source);
+  Object.freeze(verificationInput);
+  const verified = verifyEvidenceBoundReportV1(verificationInput, spec(tableDataset()), BINDINGS);
+  assert.notEqual(verified, verificationInput);
+  assert.notEqual(verified.dataset.rows, verificationInput.dataset.rows);
+  assertDeepFrozen(verified);
+  verificationInput.dataset.rows[0][1] = 1000;
+  assert.equal(verified.dataset.rows[0][1], 31);
+});
+
+test('schema safe text rejects uppercase forbidden variants exactly as runtime does', async () => {
+  const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
+  const safeTextPattern = new RegExp(schema.$defs.safeText.pattern);
+  for (const text of ['HTTPS://example.invalid', 'JAVASCRIPT:alert(1)', '<SCRIPT>alert(1)</SCRIPT>', 'EVAL("unsafe")', 'SELECT 1', 'PASSWORD: secret']) {
+    assert.equal(safeTextPattern.test(text), false, text);
+    assert.throws(() => buildEvidenceBoundReportV1({...spec(), title: text}), /EVIDENCE_BOUND_REPORT_(?:SURFACE|SPEC)_DENIED/, text);
+  }
+});
+
+test('schema and runtime cover row width, typed cells, unique keys and bounded numbers', async () => {
+  const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
+  assert.equal(schema.$defs.row.minItems, 1);
+  assert.equal(schema.$defs.dataset.properties.columns.uniqueItems, true);
+  assert.deepEqual(schema.$defs.dataType.enum, ['string', 'integer', 'number', 'boolean']);
+  assert.equal(schema.$defs.safeNumber.minimum, -9007199254740991);
+  assert.equal(schema.$defs.safeNumber.maximum, 9007199254740991);
+
+  const typedDataset = {
+    schemaVersion: EVIDENCE_BOUND_REPORT_DATASET_SCHEMA_V1,
+    datasetId: 'typed-values',
+    kind: 'TABLE',
+    columns: [
+      {key: 'text', label: 'Text', dataType: 'string', nullable: true},
+      {key: 'count', label: 'Count', dataType: 'integer', nullable: false},
+      {key: 'ratio', label: 'Ratio', dataType: 'number', nullable: false},
+      {key: 'enabled', label: 'Enabled', dataType: 'boolean', nullable: false},
+    ],
+    rows: [[null, 0, -9007199254740991, true], ['ok', 9007199254740991, 0, false]],
+    differentiator: null,
+  };
+  const accepted = buildEvidenceBoundReportV1(spec(typedDataset));
+  assertDeepFrozen(accepted);
+
+  for (const mutate of [
+    (copy) => { copy.dataset.rows[0].pop(); },
+    (copy) => { copy.dataset.rows[0][1] = 1.5; },
+    (copy) => { copy.dataset.rows[0][0] = null; copy.dataset.columns[0].nullable = false; },
+    (copy) => { copy.dataset.rows[0][3] = 1; },
+    (copy) => { copy.dataset.columns[1].key = copy.dataset.columns[0].key; },
+    (copy) => { copy.dataset.rows[0][2] = -0; },
+    (copy) => { copy.dataset.rows[0][2] = 9007199254740992; },
+  ]) {
+    const copy = structuredClone(spec(typedDataset));
+    mutate(copy);
+    assert.throws(() => buildEvidenceBoundReportV1(copy), /EVIDENCE_BOUND_REPORT_(?:DATASET|CELL|SURFACE)_DENIED/);
+  }
 });
