@@ -19,6 +19,8 @@ export const PROGRESSIVE_RESERVATION_SCHEMA = 'kaleidosphere.analysis/progressiv
 export const PROGRESSIVE_OUTCOME_SCHEMA = 'kaleidosphere.analysis/progressive-probe-outcome/v1';
 export const PROGRESSIVE_RECONCILIATION_SCHEMA = 'kaleidosphere.analysis/progressive-unknown-reconciliation/v1';
 export const PROGRESSIVE_ANALYSIS_REPORT_SCHEMA = 'kaleidosphere.analysis/progressive-analysis-report/v1';
+export const PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA = 'kaleidosphere.analysis/progressive-drilldown-request/v1';
+export const PROGRESSIVE_DRILLDOWN_ELIGIBILITY_SCHEMA = 'kaleidosphere.analysis/progressive-drilldown-eligibility/v1';
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const ID = /^[a-z0-9][a-z0-9._-]{2,127}$/;
@@ -33,6 +35,13 @@ const GRAINS = new Set(['COLUMN', 'TABLE']);
 const OUTCOME_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED', 'TIMEOUT', 'CANCELLED', 'UNKNOWN']);
 const SIGNALS = new Set(['SUPPORTS', 'COUNTERS', 'NO_GAIN', 'INCONCLUSIVE', 'UNKNOWN']);
 const RESOLVED_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED']);
+const CAPABILITY_STATES = new Set(['COMPLETE', 'UNSUPPORTED']);
+const SAFE_DRILLDOWN_METHODS = new Map([
+  ['column-summary', new Set(['NUMERIC', 'CATEGORY', 'TEXT', 'BOOLEAN'])],
+  ['temporal-coverage', new Set(['TEMPORAL'])],
+  ['quality-indicators', new Set(['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN'])],
+  ['relationship-overlap', new Set(['PAIR'])],
+]);
 
 const fail = (code) => {
   const error = new Error(code);
@@ -597,6 +606,241 @@ export function rankProgressiveProbeCandidates(state, candidates) {
   if (new Set(candidates.map(({candidateSha256}) => candidateSha256)).size !== candidates.length) fail('DB_PROGRESSIVE_CANDIDATE_DUPLICATE');
   return [...candidates].sort((left, right) => right.expectedGain.expectedInformationGainBps - left.expectedGain.expectedInformationGainBps
     || compare(left.candidateSha256, right.candidateSha256));
+}
+
+function safeDrilldownMethod(methodRef) {
+  const match = /\.safe\.([a-z0-9-]+)@/.exec(methodRef);
+  return match === null ? null : match[1];
+}
+
+function typedCapability(state, methodRef, typeFamily) {
+  const method = state.controllerRun.methodRegistry.methods.find(({methodRef: registered}) => registered === methodRef);
+  const path = safeDrilldownMethod(methodRef);
+  const supported = method !== undefined && path !== null && SAFE_DRILLDOWN_METHODS.get(path)?.has(typeFamily) === true
+    && !(state.controllerRun.engine === 'oracle' && typeFamily === 'BOOLEAN'
+      && ['column-summary', 'quality-indicators'].includes(path));
+  return {
+    typeFamily,
+    state: supported ? 'COMPLETE' : 'UNSUPPORTED',
+    reasonCode: supported ? null : (state.controllerRun.engine === 'oracle' && typeFamily === 'BOOLEAN'
+      ? 'ORACLE_NATIVE_BOOLEAN_COLUMN_UNSUPPORTED' : 'TYPED_CAPABILITY_UNSUPPORTED'),
+  };
+}
+
+function drilldownTargetCoverages(state, target) {
+  const endpoints = target?.kind === 'RELATIONSHIP' ? [target.source, target.target] : [target];
+  return endpoints.map((endpoint) => state.controllerRun.coverage.entries.find((entry) => entry.objectRef.kind === 'COLUMN'
+    && entry.objectRef.schemaName === endpoint.schemaName
+    && entry.objectRef.relationName === endpoint.relationName
+    && entry.objectRef.columnName === endpoint.columnName) ?? null);
+}
+
+function currentDrilldownBudget(state, candidate) {
+  const tableCount = state.budget.tableReservationCounts.find(({tableKey}) => tableKey === candidate.tableKey)?.count ?? 0;
+  const hypothesisCount = state.budget.hypothesisReservationCounts.find(({hypothesisId}) => hypothesisId === candidate.hypothesisId)?.count ?? 0;
+  return normalizeJsonValue({
+    runProbes: state.controllerRun.budget.maxRunProbes - state.controllerRun.budget.authorizedProbeCount,
+    tableProbes: state.budget.maxTableProbes - tableCount,
+    hypothesisProbes: state.budget.maxHypothesisProbes - hypothesisCount,
+  });
+}
+
+function stoppingRuleFor(state, hypothesis) {
+  return normalizeJsonValue({
+    maxConsecutiveNoGain: state.policy.maxConsecutiveNoGain,
+    maxConsecutiveCounterevidence: state.policy.maxConsecutiveCounterevidence,
+    minExpectedGainBps: state.policy.minExpectedGainBps,
+    consecutiveNoGain: hypothesis.consecutiveNoGain,
+    consecutiveCounterevidence: hypothesis.consecutiveCounterevidence,
+  });
+}
+
+function validateDrilldownRequest(request, state) {
+  assertSealed(request, 'requestSha256', 'DB_PROGRESSIVE_DRILLDOWN_REQUEST_TAMPERED');
+  if (!request?.candidate || !exactKeys(request, [
+    'schemaVersion', 'runId', 'scopeSha256', 'claimSha256', 'evidenceGapSha256', 'hypothesisId', 'candidate',
+    'candidateSha256', 'phase', 'methodRef', 'target', 'arguments', 'intentFeatures', 'expectedGain', 'capability',
+    'remainingBudget', 'stoppingRule', 'resumeReceiptSha256', 'dispatchAllowed', 'requestSha256',
+  ]) || request.schemaVersion !== PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA
+    || request.runId !== state.controllerRun.runId || request.scopeSha256 !== state.controllerRun.scopeSha256
+    || !sha256Value(request.claimSha256) || !sha256Value(request.evidenceGapSha256)
+    || request.candidateSha256 !== request.candidate.candidateSha256
+    || request.phase !== request.candidate.phase || request.methodRef !== request.candidate.methodRef
+    || canonicalJson(request.target) !== canonicalJson(request.candidate.target)
+    || canonicalJson(request.arguments) !== canonicalJson(request.candidate.arguments)
+    || canonicalJson(request.intentFeatures) !== canonicalJson(request.candidate.intentFeatures)
+    || canonicalJson(request.expectedGain) !== canonicalJson(request.candidate.expectedGain)
+    || !exactKeys(request.capability, ['typeFamily', 'state', 'reasonCode'])
+    || !CAPABILITY_STATES.has(request.capability.state)
+    || !(request.capability.reasonCode === null || REASON_CODE.test(request.capability.reasonCode))
+    || !(request.resumeReceiptSha256 === null || sha256Value(request.resumeReceiptSha256))
+    || request.dispatchAllowed !== false) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  validateCandidate(request.candidate, state);
+  const expectedCapability = typedCapability(state, request.methodRef, request.arguments.typeFamily);
+  if (canonicalJson(expectedCapability) !== canonicalJson(request.capability)) fail('DB_PROGRESSIVE_DRILLDOWN_CAPABILITY_INVALID');
+  const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === request.hypothesisId);
+  if (!hypothesis || request.candidate.hypothesisId !== request.hypothesisId) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  if (!exactKeys(request.remainingBudget, ['runProbes', 'tableProbes', 'hypothesisProbes'])
+    || !Object.values(request.remainingBudget).every((value) => Number.isSafeInteger(value) && value >= 0)) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  if (!exactKeys(request.stoppingRule, [
+    'maxConsecutiveNoGain', 'maxConsecutiveCounterevidence', 'minExpectedGainBps', 'consecutiveNoGain', 'consecutiveCounterevidence',
+  ]) || canonicalJson(request.stoppingRule) !== canonicalJson(stoppingRuleFor(state, hypothesis))) {
+    fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  }
+  const {requestSha256: _requestHash, ...body} = request;
+  if (identitySha256(body) !== request.requestSha256) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_TAMPERED');
+  return {request, hypothesis};
+}
+
+export function buildProgressiveTypedDrilldownRequest(state, input) {
+  validateState(state);
+  const baseInputKeys = ['claimSha256', 'evidenceGapSha256', 'hypothesisId', 'phase', 'methodRef', 'target', 'arguments', 'intentFeatures', 'gainInputs'];
+  if (!(exactKeys(input, baseInputKeys) || exactKeys(input, [...baseInputKeys, 'resumeReceiptSha256']))
+    || !sha256Value(input.claimSha256) || !sha256Value(input.evidenceGapSha256)
+    || !(input.resumeReceiptSha256 === undefined || input.resumeReceiptSha256 === null || sha256Value(input.resumeReceiptSha256))) {
+    fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  }
+  const candidate = buildProgressiveProbeCandidate(state, input);
+  const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === input.hypothesisId);
+  const request = {
+    schemaVersion: PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA,
+    runId: state.controllerRun.runId,
+    scopeSha256: state.controllerRun.scopeSha256,
+    claimSha256: input.claimSha256,
+    evidenceGapSha256: input.evidenceGapSha256,
+    hypothesisId: input.hypothesisId,
+    candidate,
+    candidateSha256: candidate.candidateSha256,
+    phase: candidate.phase,
+    methodRef: candidate.methodRef,
+    target: candidate.target,
+    arguments: candidate.arguments,
+    intentFeatures: candidate.intentFeatures,
+    expectedGain: candidate.expectedGain,
+    capability: typedCapability(state, candidate.methodRef, candidate.arguments.typeFamily),
+    remainingBudget: currentDrilldownBudget(state, candidate),
+    stoppingRule: stoppingRuleFor(state, hypothesis),
+    resumeReceiptSha256: input.resumeReceiptSha256 ?? null,
+    dispatchAllowed: false,
+  };
+  validateDrilldownRequest({...request, requestSha256: identitySha256(request)}, state);
+  return seal(request, 'requestSha256');
+}
+
+function controllerProbeKeyForRequest(state, request) {
+  return identitySha256({
+    runId: state.controllerRun.runId,
+    scopeSha256: state.controllerRun.scopeSha256,
+    methodRef: request.methodRef,
+    phase: request.phase,
+    target: request.target,
+    arguments: request.arguments,
+    methodRegistrySha256: state.controllerRun.methodRegistry.registrySha256,
+    coverageSha256: state.controllerRun.coverage.coverageSha256,
+  });
+}
+
+function eligibilityTrace(state, request, hypothesis, reservation, outcome, controllerReceipt) {
+  return normalizeJsonValue({
+    claimSha256: request.claimSha256,
+    evidenceGapSha256: request.evidenceGapSha256,
+    intent: {
+      candidateSha256: request.candidateSha256,
+      phase: request.phase,
+      methodRef: request.methodRef,
+      target: request.target,
+      arguments: request.arguments,
+      intentFeatures: request.intentFeatures,
+    },
+    expectedGain: request.expectedGain,
+    remainingBudget: currentDrilldownBudget(state, request.candidate),
+    stoppingRule: request.stoppingRule,
+    receipt: controllerReceipt === null ? null : {
+      reservationSha256: reservation.reservationSha256,
+      controllerReceiptSha256: controllerReceipt.receiptSha256,
+      resultState: outcome?.resultState ?? controllerReceipt.resultState,
+    },
+    evidence: {
+      evidenceRefs: outcome?.evidenceRefs ?? [],
+      counterevidenceRefs: hypothesis.counterevidenceRefs,
+      signal: outcome?.signal ?? null,
+    },
+  });
+}
+
+export function evaluateProgressiveDrilldownEligibility(state, request) {
+  validateState(state);
+  const {request: valid, hypothesis} = validateDrilldownRequest(request, state);
+  const coverages = drilldownTargetCoverages(state, valid.target);
+  const reservation = state.reservations.find(({candidateSha256, nearDuplicateKey}) => candidateSha256 === valid.candidateSha256
+    || nearDuplicateKey === valid.candidate.nearDuplicateKey) ?? null;
+  const outcome = reservation === null ? null : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
+  const controllerReceipt = reservation === null ? null
+    : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
+  const expectedProbeKey = controllerProbeKeyForRequest(state, valid);
+  const receiptResume = valid.resumeReceiptSha256 === null
+    ? true
+    : controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey;
+  const gates = {
+    phase: valid.phase === state.controllerRun.phase,
+    scope: coverages.length === (valid.target.kind === 'RELATIONSHIP' ? 2 : 1) && coverages.every(Boolean)
+      && [valid.target.kind === 'RELATIONSHIP' ? valid.target.source : valid.target].every((endpoint) => state.controllerRun.scope.schemas.includes(endpoint.schemaName)),
+    allowlist: state.controllerRun.methodRegistry.methods.some(({methodRef}) => methodRef === valid.methodRef),
+    privilege: state.controllerRun.safety.missingPrivilegeMeansAbsent === false && coverages.length > 0 && coverages.every((entry) => entry?.state === 'COMPLETE'),
+    capability: valid.capability.state === 'COMPLETE',
+    runBudget: currentDrilldownBudget(state, valid.candidate).runProbes > 0,
+    tableBudget: currentDrilldownBudget(state, valid.candidate).tableProbes > 0,
+    hypothesisBudget: currentDrilldownBudget(state, valid.candidate).hypothesisProbes > 0,
+    duplicate: reservation === null,
+    timeout: outcome?.resultState !== 'TIMEOUT',
+    cancellation: outcome?.resultState !== 'CANCELLED',
+    receiptResume,
+    stoppingRule: !['STOPPED', 'AWAITING_RECONCILIATION'].includes(hypothesis.status)
+      && hypothesis.consecutiveNoGain < valid.stoppingRule.maxConsecutiveNoGain
+      && hypothesis.consecutiveCounterevidence < valid.stoppingRule.maxConsecutiveCounterevidence
+      && valid.expectedGain.expectedInformationGainBps >= valid.stoppingRule.minExpectedGainBps,
+  };
+  let disposition = 'ELIGIBLE';
+  if (!gates.phase) disposition = 'DENIED_PHASE';
+  else if (!gates.scope) disposition = 'DENIED_SCOPE';
+  else if (!gates.allowlist) disposition = 'DENIED_ALLOWLIST';
+  else if (!gates.privilege) disposition = 'DENIED_PRIVILEGE';
+  else if (!gates.capability) disposition = 'TERMINATED_UNSUPPORTED_CAPABILITY';
+  else if (!gates.receiptResume) disposition = 'DENIED_RECEIPT_RESUME';
+  else if (!gates.timeout) disposition = 'TERMINATED_TIMEOUT';
+  else if (!gates.cancellation) disposition = 'TERMINATED_CANCELLED';
+  else if (!gates.stoppingRule) disposition = 'TERMINATED_STOPPING_RULE';
+  else if (!gates.runBudget || !gates.tableBudget || !gates.hypothesisBudget) disposition = 'DENIED_BUDGET';
+  else if (!gates.duplicate) disposition = outcome?.resultState === 'SUCCEEDED' ? 'REUSED_SUCCESS' : 'SUPPRESSED_DUPLICATE';
+  const body = {
+    schemaVersion: PROGRESSIVE_DRILLDOWN_ELIGIBILITY_SCHEMA,
+    runId: state.controllerRun.runId,
+    requestSha256: valid.requestSha256,
+    disposition,
+    dispatchAllowed: false,
+    gates,
+    trace: eligibilityTrace(state, valid, hypothesis, reservation, outcome, controllerReceipt),
+  };
+  return seal(body, 'eligibilitySha256');
+}
+
+export function rankProgressiveDrilldownRequests(state, requests) {
+  validateState(state);
+  if (!Array.isArray(requests)) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  const decisions = requests.map((request) => evaluateProgressiveDrilldownEligibility(state, request));
+  const ranked = [...decisions].sort((left, right) => {
+    const leftGain = left.trace.expectedGain.expectedInformationGainBps;
+    const rightGain = right.trace.expectedGain.expectedInformationGainBps;
+    return (right.disposition === 'ELIGIBLE') - (left.disposition === 'ELIGIBLE')
+      || rightGain - leftGain || compare(left.requestSha256, right.requestSha256);
+  });
+  ranked.eligible = ranked.filter(({disposition}) => disposition === 'ELIGIBLE');
+  ranked.ineligible = ranked.filter(({disposition}) => disposition !== 'ELIGIBLE');
+  ranked.terminalDigestSha256 = identitySha256({
+    eligible: ranked.eligible.map(({requestSha256, eligibilitySha256}) => ({requestSha256, eligibilitySha256})),
+    ineligible: ranked.ineligible.map(({requestSha256, disposition, eligibilitySha256}) => ({requestSha256, disposition, eligibilitySha256})),
+  });
+  return ranked;
 }
 
 function dispositionForExisting(state, reservation) {
