@@ -29,6 +29,8 @@ if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error(`package version must be s
 
 const CANONICAL_SOURCE = 'agent-skills/kaleidosphere';
 const PACKAGE_REL = 'packages/codex/kaleidosphere';
+const canonicalRoot = path.join(root, CANONICAL_SOURCE);
+const packageRoot = path.join(root, PACKAGE_REL);
 const MANIFEST_REL = '.codex-plugin/plugin.json';
 const SKILL_NAME = 'kaleidosphere';
 const RECEIPT_SCHEMA = 'kaleidosphere/k4c-codex-plugin-receipt/v1';
@@ -117,20 +119,34 @@ function insideAllowedScope(resolved) {
   return [root, os.tmpdir()].some((scope) => resolved === scope || resolved.startsWith(`${scope}${path.sep}`));
 }
 
+function containsPath(parent, candidate) {
+  return candidate === parent || candidate.startsWith(`${parent}${path.sep}`);
+}
+
 function resolveCanonicalScope(value) {
   const resolved = path.resolve(value);
-  if (resolved.includes('\0') || !insideAllowedScope(resolved)) {
-    throw new Error('non-canonical source path denied: outside allowed scope');
+  const isCanonicalRepositoryRoot = resolved === canonicalRoot;
+  const isTemporaryCanonicalRoot = resolved.startsWith(`${os.tmpdir()}${path.sep}`);
+  if (resolved.includes('\0') || !insideAllowedScope(resolved) || (!isCanonicalRepositoryRoot && !isTemporaryCanonicalRoot)) {
+    throw new Error('non-canonical source path denied: outside canonical source scope');
   }
   return resolved;
 }
 
 function resolveOutputScope(value) {
   const resolved = path.resolve(value);
-  if (resolved.includes('\0') || !insideAllowedScope(resolved)) {
-    throw new Error('output root outside allowed scope denied');
+  const isDeclaredPackageRoot = resolved === packageRoot;
+  const isTemporaryOutputRoot = resolved.startsWith(`${os.tmpdir()}${path.sep}`);
+  if (resolved.includes('\0') || !insideAllowedScope(resolved) || (!isDeclaredPackageRoot && !isTemporaryOutputRoot)) {
+    throw new Error('output root outside declared package scope denied');
   }
   return resolved;
+}
+
+function assertNonOverlappingScopes(outDir, canonicalDir) {
+  if (containsPath(outDir, canonicalDir) || containsPath(canonicalDir, outDir)) {
+    throw new Error('output root overlaps canonical source denied');
+  }
 }
 
 async function walkRegularFiles(base, label) {
@@ -148,6 +164,24 @@ async function walkRegularFiles(base, label) {
       const stat = await lstat(path.join(base, relative));
       if (!stat.isFile()) throw new Error(`${label} denied: ${relative}`);
       out.push(relative);
+    }
+  };
+  await walk('');
+  return out;
+}
+
+async function walkDirectories(base, label) {
+  const out = [];
+  const walk = async (prefix) => {
+    const entries = (await readdir(path.join(base, prefix || '.'), { withFileTypes: true }))
+      .sort((a, b) => comparePath(a.name, b.name));
+    for (const entry of entries) {
+      const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.isSymbolicLink()) throw new Error(`${label} denied: ${relative}`);
+      if (entry.isDirectory()) {
+        out.push(relative);
+        await walk(relative);
+      }
     }
   };
   await walk('');
@@ -207,6 +241,15 @@ async function verifyView(outDir, records, manifestBytes) {
   const expected = new Map([[MANIFEST_REL, manifestBytes]]);
   for (const record of records) expected.set(`skills/${SKILL_NAME}/${record.relative}`, record.bytes);
 
+  let outStat;
+  try {
+    outStat = await lstat(outDir);
+  } catch (error) {
+    if (error && error.code === 'ENOENT') throw new Error(`missing generated package view denied: ${outDir}`);
+    throw error;
+  }
+  if (outStat.isSymbolicLink() || !outStat.isDirectory()) throw new Error(`unsafe generated path denied: ${outDir}`);
+
   let files;
   try {
     files = await walkRegularFiles(outDir, 'unsafe generated path');
@@ -253,6 +296,15 @@ async function verifyView(outDir, records, manifestBytes) {
     if (!(file in generated)) {
       throw new Error(file === MANIFEST_REL ? 'plugin manifest drift denied' : `missing generated file denied: ${file}`);
     }
+  }
+  const generatedDirectories = await walkDirectories(outDir, 'unsafe generated path');
+  const expectedDirectories = new Set();
+  for (const file of expected.keys()) {
+    const parts = file.split('/');
+    for (let index = 1; index < parts.length; index += 1) expectedDirectories.add(parts.slice(0, index).join('/'));
+  }
+  for (const directory of generatedDirectories) {
+    if (!expectedDirectories.has(directory)) throw new Error(`extra generated directory denied: ${directory}`);
   }
   return generated;
 }
@@ -373,6 +425,7 @@ const args = parseArgs(process.argv.slice(2));
 const outDir = args.out === null ? path.join(root, PACKAGE_REL) : resolveOutputScope(args.out);
 const canonicalDir = args.canonical === null ? path.join(root, CANONICAL_SOURCE) : resolveCanonicalScope(args.canonical);
 try {
+  assertNonOverlappingScopes(outDir, canonicalDir);
   if (args.check) await runCheck(args.fixture, outDir, canonicalDir);
   else await runGenerate(outDir, canonicalDir);
 } catch (error) {

@@ -116,6 +116,11 @@ test('fail-closed: extra generated skill and stray generated file are denied', a
   await writeFile(path.join(stray.dir, 'notes.txt'), 'stray\n');
   result = deny(process.execPath, checkArgs(stray.dir), { cwd: root });
   assert.match(result.stderr, /extra generated file denied/);
+
+  const emptySkill = await build('ks76-k4c-empty-skill-');
+  await mkdir(path.join(emptySkill.dir, 'skills', 'rogue'), { recursive: true });
+  result = deny(process.execPath, checkArgs(emptySkill.dir), { cwd: root });
+  assert.match(result.stderr, /extra generated directory denied/);
 });
 
 test('fail-closed: missing canonical skill file is denied against the fixture', async () => {
@@ -141,6 +146,26 @@ test('fail-closed: non-canonical source path is denied', async () => {
   await symlink(canonical, link);
   result = deny(process.execPath, [generator, '--check', '--fixture', fixturePath, '--canonical', link, '--out', out], { cwd: root });
   assert.match(result.stderr, /non-canonical source path denied/);
+
+  result = deny(process.execPath, [generator, '--canonical', path.join(root, 'packages'), '--out', out], { cwd: root });
+  assert.match(result.stderr, /non-canonical source path denied/);
+});
+
+test('fail-closed: output scope cannot delete repository or overlap canonical source', async () => {
+  let result = deny(process.execPath, [generator, '--out', root], { cwd: root });
+  assert.match(result.stderr, /output root outside declared package scope denied/);
+
+  const scratch = await mkdtemp(path.join(tmpdir(), 'ks76-k4c-overlap-'));
+  result = deny(process.execPath, [generator, '--canonical', scratch, '--out', path.join(scratch, 'out')], { cwd: root });
+  assert.match(result.stderr, /output root overlaps canonical source denied/);
+});
+
+test('fail-closed: symlinked generated package root is denied', async () => {
+  const actual = await build('ks76-k4c-output-link-target-');
+  const link = path.join(await mkdtemp(path.join(tmpdir(), 'ks76-k4c-output-link-')), 'out');
+  await symlink(actual.dir, link);
+  const result = deny(process.execPath, checkArgs(link), { cwd: root });
+  assert.match(result.stderr, /unsafe generated path denied/);
 });
 
 test('fail-closed: plugin manifest drift and active plugin surfaces are denied', async () => {
