@@ -999,6 +999,12 @@ test('typed drilldown returns explicit denials for valid phase and allowlist mis
   };
   const phaseMismatch = typedRequest(analysis, {...validInput, phase: 'RELATIONSHIP_GRAPH'});
   assert.equal(evaluateProgressiveDrilldownEligibility(analysis, phaseMismatch).disposition, 'DENIED_PHASE');
+  const methodPhaseMismatch = typedRequest(analysis, {
+    ...validInput,
+    methodRef: safeMethod(registry, 'QUALITY_INDICATORS'),
+    phase: 'SAFE_AGGREGATES',
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, methodPhaseMismatch).disposition, 'DENIED_PHASE');
   const allowlistMismatch = typedRequest(analysis, {...validInput, methodRef: 'mssql.safe.model-authored-sql@1.0.0'});
   assert.equal(evaluateProgressiveDrilldownEligibility(analysis, allowlistMismatch).disposition, 'DENIED_ALLOWLIST');
 });

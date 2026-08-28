@@ -834,11 +834,13 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     ? claimBound
     : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey);
   const traceReadbackBound = claimBound && receiptResume;
+  const registeredMethod = state.controllerRun.methodRegistry.methods.find(({methodRef}) => methodRef === valid.methodRef) ?? null;
   const gates = {
-    phase: valid.phase === state.controllerRun.phase,
+    phase: valid.phase === state.controllerRun.phase
+      && (registeredMethod === null || registeredMethod.phase === valid.phase),
     scope: coverages.length === (valid.target.kind === 'RELATIONSHIP' ? 2 : 1) && coverages.every(Boolean)
       && [valid.target.kind === 'RELATIONSHIP' ? valid.target.source : valid.target].every((endpoint) => state.controllerRun.scope.schemas.includes(endpoint.schemaName)),
-    allowlist: state.controllerRun.methodRegistry.methods.some(({methodRef}) => methodRef === valid.methodRef),
+    allowlist: registeredMethod !== null,
     privilege: state.controllerRun.safety.missingPrivilegeMeansAbsent === false && coverages.length > 0 && coverages.every((entry) => entry?.state === 'COMPLETE'),
     capability: valid.capability.state === 'COMPLETE',
     runBudget: currentDrilldownBudget(state, valid.candidate).runProbes > 0,
