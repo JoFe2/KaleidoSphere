@@ -4,7 +4,10 @@
   "codex": {
     "binary": "codex",
     "version": "codex-cli 0.144.1",
-    "versionCommand": ["codex", "--version"]
+    "versionCommand": [
+      "codex",
+      "--version"
+    ]
   },
   "package": {
     "version": "0.24.0",
@@ -24,26 +27,273 @@
     "temporaryBoundaryDigest": "931bee50088e07731ed3ff67204546d3e90cff0daef6496545342a6280c75aee"
   },
   "orderedCommandResults": [
-    {"order": 1, "id": "generate-package", "phase": "preflight", "command": ["node", "scripts/release/generate-k4c-codex-plugin.mjs", "--out", "<package-root>"], "expectedOutcome": "passed", "assertion": "package digest is bound to the generated receipt", "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}},
-    {"order": 2, "id": "codex-version", "phase": "preflight", "command": ["codex", "--version"], "expectedOutcome": "passed", "result": {"exitCode": 0, "signal": null, "stdout": "codex-cli 0.144.1\n", "stderr": ""}},
-    {"order": 3, "id": "install-marketplace", "phase": "install", "command": ["codex", "plugin", "marketplace", "add", "<marketplace-root>", "--json"], "expectedOutcome": "passed", "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}},
-    {"order": 4, "id": "malformed-install-target-denied", "phase": "negative-install", "command": ["codex", "plugin", "add", "kaleidosphere@", "--json"], "expectedOutcome": "denied", "assertion": "malformed package target is rejected before install", "result": {"exitCode": 2, "signal": null, "stdout": "", "stderr": "invalid plugin target\n"}},
-    {"order": 5, "id": "install-plugin", "phase": "install", "command": ["codex", "plugin", "add", "kaleidosphere@ks76-local", "--json"], "expectedOutcome": "passed", "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}},
-    {"order": 6, "id": "discover-skill", "phase": "discovery", "command": ["codex", "plugin", "list", "--json"], "expectedOutcome": "passed", "assertion": "declared skill kaleidosphere is discoverable", "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}},
-    {"order": 7, "id": "use-declared-skill", "phase": "positive-use", "command": ["codex", "exec", "--ephemeral", "--ignore-user-config", "--skip-git-repo-check", "--json", "Use the kaleidosphere skill for a bounded status request."], "expectedOutcome": "passed", "assertion": "expectedUseResponse is present", "result": {"exitCode": 0, "signal": null, "stdout": "KaleidoSphere: WAITING_EXTERNAL\n", "stderr": ""}},
-    {"order": 8, "id": "use-undeclared-skill-denied", "phase": "negative-use", "command": ["codex", "exec", "--ephemeral", "--ignore-user-config", "--skip-git-repo-check", "--json", "Use the undeclared skill ks76-not-declared."], "expectedOutcome": "denied", "assertion": "negative use assertion is required", "result": {"exitCode": 1, "signal": null, "stdout": "KaleidoSphere: REFUSED_UNDECLARED_SKILL\n", "stderr": ""}},
-    {"order": 9, "id": "remove-plugin", "phase": "removal", "command": ["codex", "plugin", "remove", "kaleidosphere@ks76-local", "--json"], "expectedOutcome": "passed", "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}},
-    {"order": 10, "id": "use-after-removal-denied", "phase": "negative-use-after-removal", "command": ["codex", "exec", "--ephemeral", "--ignore-user-config", "--skip-git-repo-check", "--json", "Use the kaleidosphere skill for a bounded status request."], "expectedOutcome": "denied", "assertion": "successful use after removal must fail", "result": {"exitCode": 1, "signal": null, "stdout": "KaleidoSphere: REFUSED_SKILL_NOT_INSTALLED\n", "stderr": ""}},
-    {"order": 11, "id": "remove-marketplace", "phase": "removal", "command": ["codex", "plugin", "marketplace", "remove", "ks76-local", "--json"], "expectedOutcome": "passed", "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}},
-    {"order": 12, "id": "zero-residue-readback", "phase": "readback", "command": ["read-boundary", "<codex-home>"], "expectedOutcome": "passed", "assertion": "profile, cache and config roots are empty", "result": {"exitCode": 0, "signal": null, "stdout": "empty\n", "stderr": ""}}
+    {
+      "order": 1,
+      "id": "generate-package",
+      "phase": "preflight",
+      "command": [
+        "node",
+        "scripts/release/generate-k4c-codex-plugin.mjs",
+        "--out",
+        "<package-root>"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "package digest is bound to the generated receipt",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 2,
+      "id": "codex-version",
+      "phase": "preflight",
+      "command": [
+        "codex",
+        "--version"
+      ],
+      "expectedOutcome": "passed",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "codex-cli 0.144.1\n",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 3,
+      "id": "install-marketplace",
+      "phase": "install",
+      "command": [
+        "codex",
+        "plugin",
+        "marketplace",
+        "add",
+        "<marketplace-root>",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 4,
+      "id": "malformed-install-target-denied",
+      "phase": "negative-install",
+      "command": [
+        "codex",
+        "plugin",
+        "add",
+        "kaleidosphere@",
+        "--json"
+      ],
+      "expectedOutcome": "denied",
+      "assertion": "malformed package target is rejected before install",
+      "result": {
+        "exitCode": 2,
+        "signal": null,
+        "stdout": "",
+        "stderr": "invalid plugin target\n"
+      }
+    },
+    {
+      "order": 5,
+      "id": "install-plugin",
+      "phase": "install",
+      "command": [
+        "codex",
+        "plugin",
+        "add",
+        "kaleidosphere@ks76-local",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 6,
+      "id": "discover-skill",
+      "phase": "discovery",
+      "command": [
+        "codex",
+        "plugin",
+        "list",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "declared skill kaleidosphere is discoverable",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 7,
+      "id": "use-declared-skill",
+      "phase": "positive-use",
+      "command": [
+        "codex",
+        "exec",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--skip-git-repo-check",
+        "--json",
+        "Use the kaleidosphere skill for a bounded status request."
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "expectedUseResponse is present",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "KaleidoSphere: WAITING_EXTERNAL\n",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 8,
+      "id": "use-undeclared-skill-denied",
+      "phase": "negative-use",
+      "command": [
+        "codex",
+        "exec",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--skip-git-repo-check",
+        "--json",
+        "Use the undeclared skill ks76-not-declared."
+      ],
+      "expectedOutcome": "denied",
+      "assertion": "negative use assertion is required",
+      "result": {
+        "exitCode": 1,
+        "signal": null,
+        "stdout": "KaleidoSphere: REFUSED_UNDECLARED_SKILL\n",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 9,
+      "id": "remove-plugin",
+      "phase": "removal",
+      "command": [
+        "codex",
+        "plugin",
+        "remove",
+        "kaleidosphere@ks76-local",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 10,
+      "id": "use-after-removal-denied",
+      "phase": "negative-use-after-removal",
+      "command": [
+        "codex",
+        "exec",
+        "--ephemeral",
+        "--ignore-user-config",
+        "--skip-git-repo-check",
+        "--json",
+        "Use the kaleidosphere skill for a bounded status request."
+      ],
+      "expectedOutcome": "denied",
+      "assertion": "successful use after removal must fail",
+      "result": {
+        "exitCode": 1,
+        "signal": null,
+        "stdout": "KaleidoSphere: REFUSED_SKILL_NOT_INSTALLED\n",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 11,
+      "id": "remove-marketplace",
+      "phase": "removal",
+      "command": [
+        "codex",
+        "plugin",
+        "marketplace",
+        "remove",
+        "ks76-local",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "",
+        "stderr": ""
+      }
+    },
+    {
+      "order": 12,
+      "id": "zero-residue-readback",
+      "phase": "readback",
+      "command": [
+        "read-boundary",
+        "<codex-home>"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "profile, cache and config roots are empty",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "empty\n",
+        "stderr": ""
+      }
+    }
   ],
   "negativeAssertions": [
-    {"id": "preexisting-profile-residue", "required": true, "observed": "denied"},
-    {"id": "absent-skill-discovery", "required": true, "observed": "denied"},
-    {"id": "undeclared-skill-invocation", "required": true, "observed": "denied"},
-    {"id": "malformed-install-target", "required": true, "observed": "denied"},
-    {"id": "successful-use-after-removal", "required": true, "observed": "denied"},
-    {"id": "residue-after-cleanup", "required": true, "observed": "denied"}
+    {
+      "id": "preexisting-profile-residue",
+      "required": true,
+      "observed": "denied"
+    },
+    {
+      "id": "absent-skill-discovery",
+      "required": true,
+      "observed": "denied"
+    },
+    {
+      "id": "undeclared-skill-invocation",
+      "required": true,
+      "observed": "denied"
+    },
+    {
+      "id": "malformed-install-target",
+      "required": true,
+      "observed": "denied"
+    },
+    {
+      "id": "successful-use-after-removal",
+      "required": true,
+      "observed": "denied"
+    },
+    {
+      "id": "residue-after-cleanup",
+      "required": true,
+      "observed": "denied"
+    }
   ],
   "accepted": true,
   "globalConfigurationMutated": false,
