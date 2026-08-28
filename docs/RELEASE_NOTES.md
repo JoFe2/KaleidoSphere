@@ -1,5 +1,37 @@
 # Release Notes
 
+## v0.25.0 - Typed progressive drilldown eligibility
+
+Adds one sealed `progressive-drilldown-request/v1` and one pure, sealed
+`progressive-drilldown-eligibility/v1` decision to Progressive Analysis v1.
+The request binds the report claim digest, evidence-gap digest, hypothesis,
+one existing method reference, typed target and arguments, typed intent,
+sealed expected-gain evidence, remaining run/table/hypothesis budget,
+stopping-rule snapshot, and an optional receipt-resume digest;
+`dispatchAllowed` is permanently false.
+
+Eligibility covers exactly four bounded typed paths over existing safe
+methods only: column summary, temporal coverage, relationship overlap and
+quality indicators. It is pure: it represents phase, scope/visibility,
+registry allowlist, privilege/coverage, capability, run/table/hypothesis
+budget, duplicate reservation, timeout, cancellation, receipt-resume, and
+stopping-rule gates without reserving, dispatching, executing SQL or mutating
+analysis state. Eligible decisions are ordered by sealed expected gain and
+request digest; terminal ordering is hashed canonically. Existing
+reservations and receipts are read back into the trace with evidence and
+counterevidence references; the controller remains the sole
+reservation/receipt authority.
+
+Deterministic local synthetic evidence shows reversed request input order and
+JSON restart producing the same eligible ordering and typed terminal digest,
+while unsupported capability, invisible scope, forged or stale receipt,
+duplicate reservation, exhausted budget, raw value, credential-shaped input,
+free SQL and unknown method cases fail closed. This release is a local
+eligibility artifact only: it adds no dispatch authority, runtime activation,
+new safe methods, free model SQL, raw rows, credentials, capability beyond
+the four manifest-backed safe methods, automatic remediation, causal
+explanation, production/customer database access or deployment.
+
 ## v0.24.0 - Authority-bound local object handlers
 
 Wires local read-only Search, Details and Overview handlers to capability-specific,
