@@ -1,0 +1,79 @@
+{
+  "schemaVersion": "kaleidosphere/k4c-delivery-readback-receipt/v1",
+  "generated_at": "2026-08-28T18:06:00.000Z",
+  "task": {
+    "id": "INT-KS76-DELIVERY-READBACK-02",
+    "issue": "KS76"
+  },
+  "fixture": "tests/fixtures/release/k4c-delivery-readback-v1.json",
+  "inputDigests": {
+    "local": {
+      "path": "verification/k4c/local-contract-integration-v1.json",
+      "sha256": "fbceca64eed503259c66b8de8109a938a7849258e716d8202dac147ab82eafd6",
+      "schemaVersion": "kaleidosphere/k4c-local-contract-integration/v1",
+      "provenance": "local-contract-integration",
+      "task_id": "INT-KS76-DELIVERY-READBACK-02",
+      "issue_id": "KS76",
+      "freshness": {
+        "issued_at": "2026-08-28T18:00:00.000Z",
+        "expires_at": "2026-08-28T18:10:00.000Z",
+        "nonce": "a19e07015ba016cf00fe5e64d5c25182223618e157b14126e69c523c8f3d9b18"
+      },
+      "observed_sha256": "fbceca64eed503259c66b8de8109a938a7849258e716d8202dac147ab82eafd6"
+    },
+    "portal": {
+      "path": "verification/k4c/portal-submission-receipt-v1.json",
+      "sha256": "16def76684b97fb1a3aca03d12c19bcd551940dbb44dbac44d9326dcbaf9e102",
+      "schemaVersion": "kaleidosphere/k4c-portal-submission-receipt/v1",
+      "provenance": "portal-preflight",
+      "task_id": "INT-KS76-DELIVERY-READBACK-02",
+      "issue_id": "KS76",
+      "freshness": {
+        "issued_at": "2026-08-28T18:00:00.000Z",
+        "expires_at": "2026-08-28T18:10:00.000Z",
+        "nonce": "b29e07015ba016cf00fe5e64d5c25182223618e157b14126e69c523c8f3d9b19"
+      },
+      "observed_sha256": "16def76684b97fb1a3aca03d12c19bcd551940dbb44dbac44d9326dcbaf9e102"
+    },
+    "anonymous": {
+      "path": "verification/k4c/anonymous-directory-readback-v1.json",
+      "sha256": "6d1587967b921ebc46480fe5439c7e3f40026d167224434bb36c7ae4283b548e",
+      "schemaVersion": "kaleidosphere/k4c-anonymous-directory-readback/v1",
+      "provenance": "anonymous-directory-readback",
+      "task_id": "INT-KS76-DELIVERY-READBACK-02",
+      "issue_id": "KS76",
+      "freshness": {
+        "issued_at": "2026-08-28T18:00:00.000Z",
+        "expires_at": "2026-08-28T18:10:00.000Z",
+        "nonce": "c39e07015ba016cf00fe5e64d5c25182223618e157b14126e69c523c8f3d9b20"
+      },
+      "observed_sha256": "6d1587967b921ebc46480fe5439c7e3f40026d167224434bb36c7ae4283b548e"
+    },
+    "terminal": {
+      "path": "verification/k4c/terminal-evidence-v1.json",
+      "sha256": "293d9da3d40dadcf82d7ac1077eb30767f8cd7d9c9e5a202ebced14a563d8f27",
+      "schemaVersion": "kaleidosphere/k4c-terminal-evidence-receipt/v1",
+      "provenance": "terminal-evidence-classifier",
+      "task_id": "INT-KS76-DELIVERY-READBACK-02",
+      "issue_id": "KS76",
+      "freshness": {
+        "issued_at": "2026-08-28T18:00:00.000Z",
+        "expires_at": "2026-08-28T18:10:00.000Z",
+        "nonce": "d49e07015ba016cf00fe5e64d5c25182223618e157b14126e69c523c8f3d9b21"
+      },
+      "observed_sha256": "293d9da3d40dadcf82d7ac1077eb30767f8cd7d9c9e5a202ebced14a563d8f27"
+    }
+  },
+  "bindingDigest": "7d4ffa4dadaf8c1eda40fb82d100a6f7b6b56f901ad757c9f3db7e6fbd4b6971",
+  "terminalDisposition": "RELEASED",
+  "disposition": "RELEASED",
+  "reason": "upstream terminal classifier is RELEASED and fresh anonymous discovery plus install prove the same digest",
+  "evidence": [],
+  "resumeActions": [],
+  "rollback": "Delete the owned script, test, fixture, schema, and verification receipt; external rollback is unnecessary because execution is local and read-only.",
+  "side_effects": [],
+  "nonClaims": [
+    "No delivery, submission, listing, external issue close, cache removal, public correction, or production readiness is performed or inferred.",
+    "This receipt is a deterministic local readback of four committed receipts and creates no external state."
+  ]
+}
