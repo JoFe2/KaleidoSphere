@@ -266,6 +266,11 @@ test('registered method argument values are controller-validated before authoriz
   assert(method);
   const invalidArguments = [
     {maxSourceRows: '500', typeFamily: 'NUMERIC'},
+    {maxSourceRows: 500.5, typeFamily: 'NUMERIC'},
+    {maxSourceRows: 0, typeFamily: 'NUMERIC'},
+    {maxSourceRows: 10001, typeFamily: 'NUMERIC'},
+    {typeFamily: 'NUMERIC'},
+    {maxSourceRows: 500, typeFamily: 'NUMERIC', rawValues: ['raw-argument-marker']},
     {maxSourceRows: 'password=[REDACTED]', typeFamily: 'NUMERIC'},
     {maxSourceRows: 500, typeFamily: 'DECIMAL'},
   ];
@@ -279,6 +284,70 @@ test('registered method argument values are controller-validated before authoriz
     authorizeProgressiveProbe(run, request(run, method.methodRef, first.target, {maxSourceRows: 500, typeFamily: 'NUMERIC'})).authorization.disposition,
     'AUTHORIZED',
   );
+});
+
+test('registered column and relationship targets require exact value-safe shapes before authorization', async () => {
+  const inputs = await mssqlInputs({includeSafeAnalysis: true});
+  const first = mssqlColumnTarget(inputs.coverage, 0).target;
+  const second = mssqlColumnTarget(inputs.coverage, 1).target;
+  const columnMethod = inputs.registry.methods.find(({methodRef}) => methodRef.includes('safe.column-summary@'));
+  const relationshipMethod = inputs.registry.methods.find(({methodRef}) => methodRef.includes('safe.relationship-overlap@'));
+  assert(columnMethod);
+  assert(relationshipMethod);
+
+  const columnRun = advanceTo(newRun(inputs, {runId: 'fixture-controller-column-target-shape'}), 'SAFE_AGGREGATES');
+  const columnArguments = {maxSourceRows: 500, typeFamily: 'NUMERIC'};
+  assert.equal(
+    authorizeProgressiveProbe(columnRun, request(columnRun, columnMethod.methodRef, first, columnArguments)).authorization.disposition,
+    'AUTHORIZED',
+  );
+  const {columnName: _columnName, ...columnWithoutName} = first;
+  const invalidColumns = [
+    {...first, extra: 'raw-target-marker'},
+    columnWithoutName,
+    {...first, kind: 'TABLE'},
+    {...first, columnName: 'unsafe; SELECT raw-target-marker'},
+    {...first, credential: 'target-credential-marker'},
+    {...first, rawValues: ['raw-target-marker']},
+  ];
+  for (const target of invalidColumns) {
+    assert.throws(
+      () => authorizeProgressiveProbe(columnRun, request(columnRun, columnMethod.methodRef, target, columnArguments)),
+      /DB_PROGRESSIVE_SCOPE_DENIED/,
+    );
+  }
+
+  const endpoint = ({kind: _kind, ...value}) => value;
+  const relationship = {kind: 'RELATIONSHIP', source: endpoint(first), target: endpoint(second)};
+  const relationshipRun = advanceTo(newRun(inputs, {runId: 'fixture-controller-relationship-target-shape'}), 'RELATIONSHIP_GRAPH');
+  const relationshipArguments = {maxSourceRows: 500, typeFamily: 'PAIR'};
+  assert.equal(
+    authorizeProgressiveProbe(
+      relationshipRun,
+      request(relationshipRun, relationshipMethod.methodRef, relationship, relationshipArguments),
+    ).authorization.disposition,
+    'AUTHORIZED',
+  );
+  const {target: _target, ...relationshipWithoutTarget} = relationship;
+  const {columnName: _targetColumnName, ...endpointWithoutColumn} = relationship.target;
+  const invalidRelationships = [
+    {...relationship, extra: 'raw-target-marker'},
+    relationshipWithoutTarget,
+    {...relationship, kind: 'COLUMN'},
+    {...relationship, target: endpointWithoutColumn},
+    {...relationship, target: {...relationship.target, columnName: 'unsafe; SELECT raw-target-marker'}},
+    {...relationship, target: {...relationship.target, credential: 'target-credential-marker'}},
+    {...relationship, target: {...relationship.target, rawValue: 'raw-target-marker'}},
+  ];
+  for (const target of invalidRelationships) {
+    assert.throws(
+      () => authorizeProgressiveProbe(
+        relationshipRun,
+        request(relationshipRun, relationshipMethod.methodRef, target, relationshipArguments),
+      ),
+      /DB_PROGRESSIVE_TARGET_INVALID|DB_PROGRESSIVE_SCOPE_DENIED/,
+    );
+  }
 });
 
 async function terminalMssqlReport() {

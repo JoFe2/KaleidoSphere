@@ -130,6 +130,26 @@ function validateControllerMethodArguments(args, allowedArgumentKeys) {
   return args;
 }
 
+function validateDrilldownTarget(state, target, targetKind) {
+  if (targetKind === 'COLUMN') {
+    if (!exactKeys(target, ['kind', 'schemaName', 'relationName', 'columnName']) || target.kind !== 'COLUMN'
+      || ![target.schemaName, target.relationName, target.columnName].every(identifier)
+      || !state.controllerRun.scope.schemas.includes(target.schemaName)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
+    return normalizeJsonValue(target);
+  }
+  if (targetKind === 'RELATIONSHIP') {
+    if (!exactKeys(target, ['kind', 'source', 'target']) || target.kind !== 'RELATIONSHIP') fail('DB_PROGRESSIVE_SCOPE_DENIED');
+    for (const endpoint of [target.source, target.target]) {
+      if (!exactKeys(endpoint, ['schemaName', 'relationName', 'columnName'])
+        || ![endpoint.schemaName, endpoint.relationName, endpoint.columnName].every(identifier)
+        || !state.controllerRun.scope.schemas.includes(endpoint.schemaName)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
+    }
+    if (canonicalJson(target.source) === canonicalJson(target.target)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
+    return normalizeJsonValue(target);
+  }
+  fail('DB_PROGRESSIVE_SCOPE_DENIED');
+}
+
 function validateDispatchShape(state, {phase, methodRef, target, arguments: args}, {allowEligibilityDenials = false} = {}) {
   const method = state.controllerRun.methodRegistry.methods.find((entry) => entry.methodRef === methodRef);
   if (!PROGRESSIVE_PHASES.includes(phase)
@@ -143,27 +163,14 @@ function validateDispatchShape(state, {phase, methodRef, target, arguments: args
       fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
     }
     validateControllerMethodArguments(args, ['maxSourceRows', 'typeFamily']);
-    return;
+  } else {
+    validateControllerMethodArguments(args, method.allowedArgumentKeys);
   }
-  validateControllerMethodArguments(args, method.allowedArgumentKeys);
+  validateDrilldownTarget(state, target, method?.targetKind ?? target?.kind);
+  if (!method) return;
   if ((!allowEligibilityDenials && (method.phase !== phase || phase !== state.controllerRun.phase))
     || (allowEligibilityDenials && !PROGRESSIVE_PHASES.includes(phase))) {
     fail('DB_PROGRESSIVE_METHOD_DENIED');
-  }
-  if (method.targetKind === 'COLUMN') {
-    if (!exactKeys(target, ['kind', 'schemaName', 'relationName', 'columnName']) || target.kind !== 'COLUMN'
-      || ![target.schemaName, target.relationName, target.columnName].every(identifier)
-      || !state.controllerRun.scope.schemas.includes(target.schemaName)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
-  } else if (method.targetKind === 'RELATIONSHIP') {
-    if (!exactKeys(target, ['kind', 'source', 'target']) || target.kind !== 'RELATIONSHIP') fail('DB_PROGRESSIVE_SCOPE_DENIED');
-    for (const endpoint of [target.source, target.target]) {
-      if (!exactKeys(endpoint, ['schemaName', 'relationName', 'columnName'])
-        || ![endpoint.schemaName, endpoint.relationName, endpoint.columnName].every(identifier)
-        || !state.controllerRun.scope.schemas.includes(endpoint.schemaName)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
-    }
-    if (canonicalJson(target.source) === canonicalJson(target.target)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
-  } else {
-    fail('DB_PROGRESSIVE_SCOPE_DENIED');
   }
 }
 
@@ -707,8 +714,8 @@ function validateDrilldownRequest(request, state) {
     || !(request.capability.reasonCode === null || REASON_CODE.test(request.capability.reasonCode))
     || !(request.resumeReceiptSha256 === null || sha256Value(request.resumeReceiptSha256))
     || request.dispatchAllowed !== false) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
-  validateCandidate(request.candidate, state);
   validateDispatchShape(state, request, {allowEligibilityDenials: true});
+  validateCandidate(request.candidate, state);
   const expectedCapability = typedCapability(state, request.methodRef, request.arguments.typeFamily);
   if (canonicalJson(expectedCapability) !== canonicalJson(request.capability)) fail('DB_PROGRESSIVE_DRILLDOWN_CAPABILITY_INVALID');
   const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === request.hypothesisId);
@@ -776,7 +783,8 @@ function controllerProbeKeyForRequest(state, request) {
   });
 }
 
-function eligibilityTrace(state, request, hypothesis, reservation, outcome, controllerReceipt) {
+function eligibilityTrace(state, request, reservation, outcome, controllerReceipt) {
+  const outcomeEvidenceRefs = outcome?.evidenceRefs ?? [];
   return normalizeJsonValue({
     claimSha256: request.claimSha256,
     evidenceGapSha256: request.evidenceGapSha256,
@@ -797,8 +805,8 @@ function eligibilityTrace(state, request, hypothesis, reservation, outcome, cont
       resultState: outcome?.resultState ?? controllerReceipt.resultState,
     },
     evidence: {
-      evidenceRefs: outcome?.evidenceRefs ?? [],
-      counterevidenceRefs: hypothesis.counterevidenceRefs,
+      evidenceRefs: outcomeEvidenceRefs,
+      counterevidenceRefs: outcome?.signal === 'COUNTERS' ? outcomeEvidenceRefs : [],
       signal: outcome?.signal ?? null,
     },
   });
@@ -869,7 +877,6 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     trace: eligibilityTrace(
       state,
       valid,
-      hypothesis,
       reservation,
       traceReadbackBound ? outcome : null,
       traceReadbackBound ? controllerReceipt : null,
