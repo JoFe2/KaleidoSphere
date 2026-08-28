@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/tests/fixtures/release/k4c-reviewer-test-cases-v1.json",
+  "schemaVersion": "kaleidosphere/k4c-reviewer-test-cases/v1",
+  "packet": {
+    "listing": "docs/release/k4c-directory-listing.md",
+    "releaseNotes": "docs/release/k4c-release-notes.md",
+    "packageVersion": "0.24.0",
+    "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
+    "manifestSha256": "beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75",
+    "publicationPerformed": false
+  },
+  "requiredPositiveCaseIds": [
+    "manifest-validation",
+    "install",
+    "discovery",
+    "declared-skill-use",
+    "cleanup",
+    "package-digest-inspection"
+  ],
+  "requiredNegativeCaseIds": [
+    "undeclared-skill-use",
+    "prohibited-package-content",
+    "post-remove-residue"
+  ],
+  "positiveCases": [
+    {
+      "id": "manifest-validation",
+      "kind": "positive",
+      "objective": "Confirm the generated manifest and canonical skill bytes pass the repository and plugin-creator validation routes.",
+      "reviewerSteps": [
+        "Run the repository generator check against packages/codex/kaleidosphere.",
+        "Run the version-recorded plugin-creator validator and confirm exit code 0.",
+        "Confirm publicationPerformed is false and the returned packageDigest equals the packet digest."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "scripts/release/validate-k4c-codex-plugin.mjs",
+        "docs/release/k4c-manifest-validation-schema-v1.json",
+        "verification/k4c/security-license-receipt-v1.json"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "install",
+      "kind": "positive",
+      "objective": "Confirm the local marketplace and KaleidoSphere plugin install in the isolated reviewer boundary.",
+      "reviewerSteps": [
+        "Create an empty temporary Codex boundary with global configuration excluded.",
+        "Add the local marketplace and install kaleidosphere@ks76-local.",
+        "Require both install commands to exit 0 before continuing."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "install-marketplace",
+        "install-plugin"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "discovery",
+      "kind": "positive",
+      "objective": "Confirm the installed plugin and declared kaleidosphere skill are discoverable.",
+      "reviewerSteps": [
+        "Run codex plugin list --json inside the isolated boundary.",
+        "Confirm the response names the kaleidosphere plugin and the declared skill path exists.",
+        "Reject the case if discovery succeeds without the declared skill identity."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "discover-skill",
+        "packages/codex/kaleidosphere/.codex-plugin/plugin.json"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "declared-skill-use",
+      "kind": "positive",
+      "objective": "Confirm a declared KaleidoSphere skill request is locally validated and reaches the expected external-wait boundary.",
+      "reviewerSteps": [
+        "Request a bounded status operation using the declared kaleidosphere skill.",
+        "Confirm the isolated command exits 0 and returns KaleidoSphere: WAITING_EXTERNAL.",
+        "Confirm no user-supplied endpoint, credential, or mutation is introduced."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "use-declared-skill",
+        "packages/codex/kaleidosphere/skills/kaleidosphere/SKILL.md"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "cleanup",
+      "kind": "positive",
+      "objective": "Confirm removal completes and the isolated profile, configuration, cache, data, and marketplace roots are empty on readback.",
+      "reviewerSteps": [
+        "Remove the KaleidoSphere plugin and local marketplace.",
+        "Delete the temporary marketplace root as specified by the isolated harness.",
+        "Read back every configured temporary root and require zero residue with exit code 0."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "remove-plugin",
+        "remove-marketplace",
+        "zero-residue-readback"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "package-digest-inspection",
+      "kind": "positive",
+      "objective": "Confirm the package and manifest digests are inspected and agree across the release evidence.",
+      "reviewerSteps": [
+        "Read packageDigest from the security receipt and isolated E2E receipt.",
+        "Compare both values with the packet digest and compute the manifest SHA-256 from .codex-plugin/plugin.json.",
+        "Accept only when all package and manifest digest comparisons match exactly."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "verification/k4c/security-license-receipt-v1.json",
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "packageDigest",
+        "manifestSha256"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "undeclared-skill-use",
+      "kind": "negative",
+      "objective": "Reject invocation of a skill that is not declared by the package manifest.",
+      "reviewerSteps": [
+        "After install, request the undeclared skill ks76-not-declared.",
+        "Require a denied result containing KaleidoSphere: REFUSED_UNDECLARED_SKILL.",
+        "Reject the package if the undeclared request succeeds or returns an accepted evidence result."
+      ],
+      "expectedResult": "denied",
+      "evidence": [
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "use-undeclared-skill-denied",
+        "undeclared-skill-invocation"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "prohibited-package-content",
+      "kind": "negative",
+      "objective": "Reject package content that violates the skills-only policy, including app, MCP, hook, executable, symlink, dependency, secret-like, or license input.",
+      "reviewerSteps": [
+        "Run the static skills-only guard against each prohibited-package fixture input.",
+        "Require every prohibited input to be denied without echoing secret contents.",
+        "Reject any package that contains prohibited content even if its manifest digest otherwise looks valid."
+      ],
+      "expectedResult": "denied",
+      "evidence": [
+        "scripts/release/check-k4c-skills-only.mjs",
+        "tests/fixtures/release/k4c-prohibited-package-inputs-v1.json",
+        "verification/k4c/security-license-receipt-v1.json"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    },
+    {
+      "id": "post-remove-residue",
+      "kind": "negative",
+      "objective": "Reject cleanup when any profile, configuration, cache, data, marketplace, or package residue remains after removal.",
+      "reviewerSteps": [
+        "After plugin and marketplace removal, read back every isolated boundary root.",
+        "Treat any residue path or a non-empty cleanup proof as a denied result.",
+        "Reject the submission packet if post-remove residue is not explicitly denied and recorded."
+      ],
+      "expectedResult": "denied",
+      "evidence": [
+        "verification/k4c/codex-isolated-e2e-v1.json",
+        "zero-residue-readback",
+        "residue-after-cleanup"
+      ],
+      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    }
+  ],
+  "nonClaims": [
+    "No portal form, marketplace submission, publication, or release action is performed by this packet.",
+    "Fixture-mode transcripts are deterministic evidence and are not live provider responses.",
+    "A passing reviewer case does not claim host compatibility, marketplace approval, deployment, production readiness, or customer-data fitness."
+  ]
+}
