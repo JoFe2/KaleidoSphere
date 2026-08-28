@@ -1,0 +1,607 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/contracts/evidence-bound-report/v1/report-spec.schema.json",
+  "title": "KaleidoSphere transport-neutral evidence-bound report specification v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "reportId", "title", "dataset", "bindings"],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere.reporting/evidence-bound-report-spec/v1"},
+    "reportId": {"allOf": [{"$ref": "#/$defs/safeText"}, {"pattern": "^[a-z][a-z0-9._:-]{2,127}$"}]},
+    "title": {"allOf": [{"$ref": "#/$defs/safeText"}, {"minLength": 1, "maxLength": 256}]},
+    "dataset": {"$ref": "#/$defs/dataset"},
+    "bindings": {"$ref": "#/$defs/bindings"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "datasetKind": {"enum": ["METRIC", "TABLE", "DIFFERENTIATOR_PLACEHOLDER"]},
+    "dataType": {"enum": ["string", "integer", "number", "boolean"]},
+    "cellDataType": {"$ref": "#/$defs/dataType"},
+    "safeText": {"type": "string", "maxLength": 512, "pattern": "^(?!.*[\\u0000-\\u001f\\u007f])(?!.*(?:[Hh][Tt][Tt][Pp][Ss]?:\\/\\/|[Ff][Ii][Ll][Ee]:\\/\\/|[Jj][Aa][Vv][Aa][Ss][Cc][Rr][Ii][Pp][Tt]:|[Dd][Aa][Tt][Aa]:[Tt][Ee][Xx][Tt]|<\\/?[Ss][Cc][Rr][Ii][Pp][Tt]\\b|\\b(?:[Ee][Vv][Aa][Ll]|[Ff][Uu][Nn][Cc][Tt][Ii][Oo][Nn]|[Ss][Ee][Tt][Tt][Ii][Mm][Ee][Oo][Uu][Tt]|[Aa][Ll][Ee][Rr][Tt])\\s*\\(|=>|\\b(?:[Ss][Ee][Ll][Ee][Cc][Tt]|[Ii][Nn][Ss][Ee][Rr][Tt]|[Uu][Pp][Dd][Aa][Tt][Ee]|[Dd][Ee][Ll][Ee][Tt][Ee]|[Mm][Ee][Rr][Gg][Ee]|[Dd][Rr][Oo][Pp]|[Aa][Ll][Tt][Ee][Rr]|[Cc][Rr][Ee][Aa][Tt][Ee])\\b[\\s;]|(?:^|\\s)[=:][A-Za-z_$][\\w$]*(?:\\(|\\b)|(?:[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Cc][Rr][Ee][Dd][Ee][Nn][Tt][Ii][Aa][Ll]|[Ss][Ee][Cc][Rr][Ee][Tt]|[Tt][Oo][Kk][Ee][Nn])\\s*[:=]))"},
+    "safeNumber": {
+      "type": "number",
+      "minimum": -9007199254740991,
+      "maximum": 9007199254740991,
+      "not": {"const": 0}
+    },
+    "canonicalZero": {"const": "0"},
+    "nullableCell": {"type": "null"},
+    "stringCell": {"allOf": [{"$ref": "#/$defs/safeText"}, {"maxLength": 512}]},
+    "integerCell": {"anyOf": [{"allOf": [{"$ref": "#/$defs/safeNumber"}, {"type": "integer"}]}, {"$ref": "#/$defs/canonicalZero"}]},
+    "numberCell": {"anyOf": [{"$ref": "#/$defs/safeNumber"}, {"$ref": "#/$defs/canonicalZero"}]},
+    "booleanCell": {"type": "boolean"},
+    "nullableStringCell": {"anyOf": [{"$ref": "#/$defs/stringCell"}, {"$ref": "#/$defs/nullableCell"}]},
+    "nullableIntegerCell": {"anyOf": [{"$ref": "#/$defs/integerCell"}, {"$ref": "#/$defs/nullableCell"}]},
+    "nullableNumberCell": {"anyOf": [{"$ref": "#/$defs/numberCell"}, {"$ref": "#/$defs/nullableCell"}]},
+    "nullableBooleanCell": {"anyOf": [{"$ref": "#/$defs/booleanCell"}, {"$ref": "#/$defs/nullableCell"}]},
+    "cell": {
+      "anyOf": [
+        {"$ref": "#/$defs/nullableCell"},
+        {"$ref": "#/$defs/stringCell"},
+        {"$ref": "#/$defs/booleanCell"},
+        {"$ref": "#/$defs/numberCell"}
+      ]
+    },
+    "row": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {"$ref": "#/$defs/cell"}
+    },
+    "column": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key"],
+      "properties": {
+        "key": {"allOf": [{"$ref": "#/$defs/safeText"}, {"pattern": "^[a-z][a-z0-9._:-]{2,127}$"}]}
+      }
+    },
+    "columnDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label", "dataType", "nullable"],
+      "properties": {
+        "label": {"allOf": [{"$ref": "#/$defs/safeText"}, {"minLength": 1, "maxLength": 128}]},
+        "dataType": {"$ref": "#/$defs/dataType"},
+        "nullable": {"type": "boolean"}
+      }
+    },
+    "stringColumn": {"properties": {"dataType": {"const": "string"}, "nullable": {"const": false}}},
+    "nullableStringColumn": {"properties": {"dataType": {"const": "string"}, "nullable": {"const": true}}},
+    "integerColumn": {"properties": {"dataType": {"const": "integer"}, "nullable": {"const": false}}},
+    "nullableIntegerColumn": {"properties": {"dataType": {"const": "integer"}, "nullable": {"const": true}}},
+    "numberColumn": {"properties": {"dataType": {"const": "number"}, "nullable": {"const": false}}},
+    "nullableNumberColumn": {"properties": {"dataType": {"const": "number"}, "nullable": {"const": true}}},
+    "booleanColumn": {"properties": {"dataType": {"const": "boolean"}, "nullable": {"const": false}}},
+    "nullableBooleanColumn": {"properties": {"dataType": {"const": "boolean"}, "nullable": {"const": true}}},
+    "differentiator": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "status", "label"],
+      "properties": {
+        "type": {"const": "DIFFERENTIATOR_PLACEHOLDER"},
+        "status": {"const": "UNPOPULATED"},
+        "label": {"allOf": [{"$ref": "#/$defs/safeText"}, {"minLength": 1, "maxLength": 128}]}
+      }
+    },
+    "dataset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "datasetId", "kind", "columns", "columnDefinitions", "rows", "differentiator"],
+      "properties": {
+        "schemaVersion": {"const": "kaleidosphere.reporting/evidence-bound-dataset/v1"},
+        "datasetId": {"allOf": [{"$ref": "#/$defs/safeText"}, {"pattern": "^[a-z][a-z0-9._:-]{2,127}$"}]},
+        "kind": {"$ref": "#/$defs/datasetKind"},
+        "columns": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/column"}
+        },
+        "columnDefinitions": {"type": "array", "maxItems": 32, "items": {"$ref": "#/$defs/columnDefinition"}},
+        "rows": {"type": "array", "maxItems": 1000, "items": {"$ref": "#/$defs/row"}},
+        "differentiator": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/differentiator"}]}
+      },
+      "allOf": [
+        {
+          "if": {"properties": {"kind": {"const": "DIFFERENTIATOR_PLACEHOLDER"}}},
+          "then": {
+            "properties": {
+              "columns": {"maxItems": 0},
+              "columnDefinitions": {"maxItems": 0},
+              "rows": {"maxItems": 0},
+              "differentiator": {"$ref": "#/$defs/differentiator"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "METRIC"}}},
+          "then": {
+            "properties": {
+              "columns": {"minItems": 1, "maxItems": 1},
+              "columnDefinitions": {"minItems": 1, "maxItems": 1},
+              "rows": {"minItems": 1, "maxItems": 1},
+              "differentiator": {"type": "null"}
+            }
+          }
+        },
+        {
+          "if": {"properties": {"kind": {"const": "TABLE"}}},
+          "then": {
+            "properties": {
+              "columns": {"minItems": 1},
+              "columnDefinitions": {"minItems": 1},
+              "rows": {"minItems": 1},
+              "differentiator": {"type": "null"}
+            }
+          }
+        },
+        {
+          "oneOf": [
+            {"properties": {"columns": {"minItems": 0, "maxItems": 0}, "columnDefinitions": {"minItems": 0, "maxItems": 0}, "rows": {"items": {"minItems": 0, "maxItems": 0}}}},
+            {"properties": {"columns": {"minItems": 1, "maxItems": 1}, "columnDefinitions": {"minItems": 1, "maxItems": 1}, "rows": {"items": {"minItems": 1, "maxItems": 1}}}},
+            {"properties": {"columns": {"minItems": 2, "maxItems": 2}, "columnDefinitions": {"minItems": 2, "maxItems": 2}, "rows": {"items": {"minItems": 2, "maxItems": 2}}}},
+            {"properties": {"columns": {"minItems": 3, "maxItems": 3}, "columnDefinitions": {"minItems": 3, "maxItems": 3}, "rows": {"items": {"minItems": 3, "maxItems": 3}}}},
+            {"properties": {"columns": {"minItems": 4, "maxItems": 4}, "columnDefinitions": {"minItems": 4, "maxItems": 4}, "rows": {"items": {"minItems": 4, "maxItems": 4}}}},
+            {"properties": {"columns": {"minItems": 5, "maxItems": 5}, "columnDefinitions": {"minItems": 5, "maxItems": 5}, "rows": {"items": {"minItems": 5, "maxItems": 5}}}},
+            {"properties": {"columns": {"minItems": 6, "maxItems": 6}, "columnDefinitions": {"minItems": 6, "maxItems": 6}, "rows": {"items": {"minItems": 6, "maxItems": 6}}}},
+            {"properties": {"columns": {"minItems": 7, "maxItems": 7}, "columnDefinitions": {"minItems": 7, "maxItems": 7}, "rows": {"items": {"minItems": 7, "maxItems": 7}}}},
+            {"properties": {"columns": {"minItems": 8, "maxItems": 8}, "columnDefinitions": {"minItems": 8, "maxItems": 8}, "rows": {"items": {"minItems": 8, "maxItems": 8}}}},
+            {"properties": {"columns": {"minItems": 9, "maxItems": 9}, "columnDefinitions": {"minItems": 9, "maxItems": 9}, "rows": {"items": {"minItems": 9, "maxItems": 9}}}},
+            {"properties": {"columns": {"minItems": 10, "maxItems": 10}, "columnDefinitions": {"minItems": 10, "maxItems": 10}, "rows": {"items": {"minItems": 10, "maxItems": 10}}}},
+            {"properties": {"columns": {"minItems": 11, "maxItems": 11}, "columnDefinitions": {"minItems": 11, "maxItems": 11}, "rows": {"items": {"minItems": 11, "maxItems": 11}}}},
+            {"properties": {"columns": {"minItems": 12, "maxItems": 12}, "columnDefinitions": {"minItems": 12, "maxItems": 12}, "rows": {"items": {"minItems": 12, "maxItems": 12}}}},
+            {"properties": {"columns": {"minItems": 13, "maxItems": 13}, "columnDefinitions": {"minItems": 13, "maxItems": 13}, "rows": {"items": {"minItems": 13, "maxItems": 13}}}},
+            {"properties": {"columns": {"minItems": 14, "maxItems": 14}, "columnDefinitions": {"minItems": 14, "maxItems": 14}, "rows": {"items": {"minItems": 14, "maxItems": 14}}}},
+            {"properties": {"columns": {"minItems": 15, "maxItems": 15}, "columnDefinitions": {"minItems": 15, "maxItems": 15}, "rows": {"items": {"minItems": 15, "maxItems": 15}}}},
+            {"properties": {"columns": {"minItems": 16, "maxItems": 16}, "columnDefinitions": {"minItems": 16, "maxItems": 16}, "rows": {"items": {"minItems": 16, "maxItems": 16}}}},
+            {"properties": {"columns": {"minItems": 17, "maxItems": 17}, "columnDefinitions": {"minItems": 17, "maxItems": 17}, "rows": {"items": {"minItems": 17, "maxItems": 17}}}},
+            {"properties": {"columns": {"minItems": 18, "maxItems": 18}, "columnDefinitions": {"minItems": 18, "maxItems": 18}, "rows": {"items": {"minItems": 18, "maxItems": 18}}}},
+            {"properties": {"columns": {"minItems": 19, "maxItems": 19}, "columnDefinitions": {"minItems": 19, "maxItems": 19}, "rows": {"items": {"minItems": 19, "maxItems": 19}}}},
+            {"properties": {"columns": {"minItems": 20, "maxItems": 20}, "columnDefinitions": {"minItems": 20, "maxItems": 20}, "rows": {"items": {"minItems": 20, "maxItems": 20}}}},
+            {"properties": {"columns": {"minItems": 21, "maxItems": 21}, "columnDefinitions": {"minItems": 21, "maxItems": 21}, "rows": {"items": {"minItems": 21, "maxItems": 21}}}},
+            {"properties": {"columns": {"minItems": 22, "maxItems": 22}, "columnDefinitions": {"minItems": 22, "maxItems": 22}, "rows": {"items": {"minItems": 22, "maxItems": 22}}}},
+            {"properties": {"columns": {"minItems": 23, "maxItems": 23}, "columnDefinitions": {"minItems": 23, "maxItems": 23}, "rows": {"items": {"minItems": 23, "maxItems": 23}}}},
+            {"properties": {"columns": {"minItems": 24, "maxItems": 24}, "columnDefinitions": {"minItems": 24, "maxItems": 24}, "rows": {"items": {"minItems": 24, "maxItems": 24}}}},
+            {"properties": {"columns": {"minItems": 25, "maxItems": 25}, "columnDefinitions": {"minItems": 25, "maxItems": 25}, "rows": {"items": {"minItems": 25, "maxItems": 25}}}},
+            {"properties": {"columns": {"minItems": 26, "maxItems": 26}, "columnDefinitions": {"minItems": 26, "maxItems": 26}, "rows": {"items": {"minItems": 26, "maxItems": 26}}}},
+            {"properties": {"columns": {"minItems": 27, "maxItems": 27}, "columnDefinitions": {"minItems": 27, "maxItems": 27}, "rows": {"items": {"minItems": 27, "maxItems": 27}}}},
+            {"properties": {"columns": {"minItems": 28, "maxItems": 28}, "columnDefinitions": {"minItems": 28, "maxItems": 28}, "rows": {"items": {"minItems": 28, "maxItems": 28}}}},
+            {"properties": {"columns": {"minItems": 29, "maxItems": 29}, "columnDefinitions": {"minItems": 29, "maxItems": 29}, "rows": {"items": {"minItems": 29, "maxItems": 29}}}},
+            {"properties": {"columns": {"minItems": 30, "maxItems": 30}, "columnDefinitions": {"minItems": 30, "maxItems": 30}, "rows": {"items": {"minItems": 30, "maxItems": 30}}}},
+            {"properties": {"columns": {"minItems": 31, "maxItems": 31}, "columnDefinitions": {"minItems": 31, "maxItems": 31}, "rows": {"items": {"minItems": 31, "maxItems": 31}}}},
+            {"properties": {"columns": {"minItems": 32, "maxItems": 32}, "columnDefinitions": {"minItems": 32, "maxItems": 32}, "rows": {"items": {"minItems": 32, "maxItems": 32}}}}
+          ]
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 1}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 2}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 3}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 4}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 5}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 6}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 7}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 8}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 9}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 10}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 11}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 12}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 13}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 14}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 15}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 16}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 17}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 18}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 19}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 20}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 21}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 22}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 23}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 24}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 25}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 26}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 27}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 28}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 29}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 30}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 31}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        },
+        {
+          "if": {"properties": {"columnDefinitions": {"minItems": 32}}},
+          "then": {"oneOf": [
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/stringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableStringCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/integerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableIntegerCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/numberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableNumberCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/booleanCell"}]}}}},
+            {"properties": {"columnDefinitions": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanColumn"}]}, "rows": {"items": {"prefixItems": [{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {"$ref": "#/$defs/nullableBooleanCell"}]}}}}
+          ]}
+        }
+      ]
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["snapshotSha256", "receiptSha256", "coverageSha256", "capabilitySha256", "resultSha256"],
+      "properties": {
+        "snapshotSha256": {"$ref": "#/$defs/sha256"},
+        "receiptSha256": {"$ref": "#/$defs/sha256"},
+        "coverageSha256": {"$ref": "#/$defs/sha256"},
+        "capabilitySha256": {"$ref": "#/$defs/sha256"},
+        "resultSha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
