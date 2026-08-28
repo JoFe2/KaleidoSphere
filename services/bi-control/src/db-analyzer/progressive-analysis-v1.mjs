@@ -119,14 +119,14 @@ function validateIntentFeatures(features) {
 }
 
 function validateControllerMethodArguments(args, allowedArgumentKeys) {
-  if (!args || typeof args !== 'object' || Array.isArray(args)
-    || canonicalJson(Object.keys(args).sort()) !== canonicalJson(allowedArgumentKeys)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+  if (!args || typeof args !== 'object' || Array.isArray(args)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
   for (const [key, value] of Object.entries(args)) {
-    if (SECRET_SHAPE.test(key)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    if (!safeText(key, 64) || (typeof value === 'string' && !safeText(value, 64))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
     if (key === 'maxSourceRows' && (!Number.isInteger(value) || value < 1 || value > 10000)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
     else if (key === 'typeFamily' && !['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN', 'PAIR'].includes(value)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
     else if (!['maxSourceRows', 'typeFamily'].includes(key)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
   }
+  if (canonicalJson(Object.keys(args).sort()) !== canonicalJson(allowedArgumentKeys)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
   return args;
 }
 
@@ -142,7 +142,7 @@ function validateDispatchShape(state, {phase, methodRef, target, arguments: args
     if (!safeText(methodRef, 180) || !args || typeof args !== 'object' || Array.isArray(args)) {
       fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
     }
-    if (Object.keys(args).some((key) => !safeText(key, 64) || SECRET_SHAPE.test(key))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    validateControllerMethodArguments(args, ['maxSourceRows', 'typeFamily']);
     return;
   }
   validateControllerMethodArguments(args, method.allowedArgumentKeys);
@@ -816,15 +816,16 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     ? state.reservations.find(({controllerProbeKey}) => controllerProbeKey === expectedProbeKey) ?? null
     : null;
   const probeKeyBound = reservation === null || reservation.controllerProbeKey === expectedProbeKey;
-  const outcome = !probeKeyBound ? null : reservation === null ? null
-    : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
-  const controllerReceipt = !probeKeyBound ? null : reservation === null ? null
-    : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
   const claimBound = reservation === null
     || (reservation.claimSha256 === valid.claimSha256 && reservation.evidenceGapSha256 === valid.evidenceGapSha256);
+  const outcome = !probeKeyBound || !claimBound ? null : reservation === null ? null
+    : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
+  const controllerReceipt = !probeKeyBound || !claimBound ? null : reservation === null ? null
+    : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
   const receiptResume = probeKeyBound && (valid.resumeReceiptSha256 === null
     ? claimBound
     : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey);
+  const traceReadbackBound = claimBound && receiptResume;
   const gates = {
     phase: valid.phase === state.controllerRun.phase,
     scope: coverages.length === (valid.target.kind === 'RELATIONSHIP' ? 2 : 1) && coverages.every(Boolean)
@@ -865,7 +866,14 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     disposition,
     dispatchAllowed: false,
     gates,
-    trace: eligibilityTrace(state, valid, hypothesis, reservation, outcome, controllerReceipt),
+    trace: eligibilityTrace(
+      state,
+      valid,
+      hypothesis,
+      reservation,
+      traceReadbackBound ? outcome : null,
+      traceReadbackBound ? controllerReceipt : null,
+    ),
   };
   return seal(body, 'eligibilitySha256');
 }

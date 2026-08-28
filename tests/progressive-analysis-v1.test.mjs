@@ -566,6 +566,19 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
     gainInputs: {...fixture.gainInputs.high, evidenceRefs: [identitySha256({fixture: 'denied-allowlist-gain'})]},
   });
   assert.equal(evaluateProgressiveDrilldownEligibility(analysis, deniedAllowlistRequest).disposition, 'DENIED_ALLOWLIST');
+  const unsafeDeniedArguments = {value: 'password=[REDACTED]'};
+  assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
+    phase: valid.phase, methodRef: deniedAllowlistRequest.methodRef, target: targets[0],
+    arguments: unsafeDeniedArguments, intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
+  }), /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/);
+  assert.throws(
+    () => evaluateProgressiveDrilldownEligibility(
+      analysis,
+      resealTypedRequestArguments(deniedAllowlistRequest, unsafeDeniedArguments),
+    ),
+    /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+  );
   assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
     claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
     phase: valid.phase, methodRef, target: targets[0], arguments: {maxSourceRows: 500, credential: 'fixture-secret'},
@@ -607,6 +620,15 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
   assert.equal(resumedDecision.trace.receipt.resultState, 'SUCCEEDED');
   assert.deepEqual(resumedDecision.trace.evidence.evidenceRefs, [receiptEvidence]);
   assert.deepEqual(resumedDecision.trace.evidence.counterevidenceRefs, [receiptEvidence]);
+  const mismatchedReceipt = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0],
+    typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: '0'.repeat(64),
+  });
+  const mismatchedReceiptDecision = evaluateProgressiveDrilldownEligibility(received, mismatchedReceipt);
+  assert.equal(mismatchedReceiptDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assert.equal(mismatchedReceiptDecision.trace.receipt, null);
+  assert.deepEqual(mismatchedReceiptDecision.trace.evidence.evidenceRefs, []);
+  assert.equal(mismatchedReceiptDecision.trace.evidence.signal, null);
   const changedArguments = typedRequest(received, {
     methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC',
     arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
@@ -626,17 +648,29 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
     claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
     target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
   });
-  assert.equal(evaluateProgressiveDrilldownEligibility(received, crossClaimResume).disposition, 'DENIED_RECEIPT_RESUME');
+  const crossClaimResumeDecision = evaluateProgressiveDrilldownEligibility(received, crossClaimResume);
+  assert.equal(crossClaimResumeDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assert.equal(crossClaimResumeDecision.trace.receipt, null);
+  assert.deepEqual(crossClaimResumeDecision.trace.evidence.evidenceRefs, []);
+  assert.equal(crossClaimResumeDecision.trace.evidence.signal, null);
   const crossClaimNoResume = typedRequest(received, {
     claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
     target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   });
-  assert.equal(evaluateProgressiveDrilldownEligibility(received, crossClaimNoResume).disposition, 'DENIED_RECEIPT_RESUME');
+  const crossClaimNoResumeDecision = evaluateProgressiveDrilldownEligibility(received, crossClaimNoResume);
+  assert.equal(crossClaimNoResumeDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assert.equal(crossClaimNoResumeDecision.trace.receipt, null);
+  assert.deepEqual(crossClaimNoResumeDecision.trace.evidence.evidenceRefs, []);
+  assert.equal(crossClaimNoResumeDecision.trace.evidence.signal, null);
   const gapSubstitution = typedRequest(received, {
     claim: 'claim', gap: 'other-gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
     target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
   });
-  assert.equal(evaluateProgressiveDrilldownEligibility(received, gapSubstitution).disposition, 'DENIED_RECEIPT_RESUME');
+  const gapSubstitutionDecision = evaluateProgressiveDrilldownEligibility(received, gapSubstitution);
+  assert.equal(gapSubstitutionDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assert.equal(gapSubstitutionDecision.trace.receipt, null);
+  assert.deepEqual(gapSubstitutionDecision.trace.evidence.evidenceRefs, []);
+  assert.equal(gapSubstitutionDecision.trace.evidence.signal, null);
 
   const reserved = reserveProgressiveProbeCandidate(analysis, valid.candidate, {
     expectedStateSha256: analysis.stateSha256,
