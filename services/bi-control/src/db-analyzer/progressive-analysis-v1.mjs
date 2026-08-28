@@ -783,6 +783,9 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
   const exactReservation = state.reservations.find(({candidateSha256}) => candidateSha256 === valid.candidateSha256) ?? null;
   const reservation = exactReservation
     ?? state.reservations.find(({nearDuplicateKey}) => nearDuplicateKey === valid.candidate.nearDuplicateKey) ?? null;
+  const probeIdentityReservation = reservation === null
+    ? state.reservations.find(({controllerProbeKey}) => controllerProbeKey === expectedProbeKey) ?? null
+    : null;
   const probeKeyBound = reservation === null || reservation.controllerProbeKey === expectedProbeKey;
   const outcome = !probeKeyBound ? null : reservation === null ? null
     : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
@@ -803,7 +806,7 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     runBudget: currentDrilldownBudget(state, valid.candidate).runProbes > 0,
     tableBudget: currentDrilldownBudget(state, valid.candidate).tableProbes > 0,
     hypothesisBudget: currentDrilldownBudget(state, valid.candidate).hypothesisProbes > 0,
-    duplicate: reservation === null,
+    duplicate: reservation === null && probeIdentityReservation === null,
     timeout: outcome?.resultState !== 'TIMEOUT',
     cancellation: outcome?.resultState !== 'CANCELLED',
     receiptResume,

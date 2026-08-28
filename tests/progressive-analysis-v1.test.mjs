@@ -662,3 +662,48 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
   staleReceiptRequest.requestSha256 = identitySha256(staleReceiptRequest);
   assert.equal(evaluateProgressiveDrilldownEligibility(analysis, staleReceiptRequest).disposition, 'DENIED_RECEIPT_RESUME');
 });
+
+test('typed drilldown duplicate lookup is bound to the controller probe key across hypothesis and intent changes', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-probe-key', phase: 'SAFE_AGGREGATES'});
+  const secondHypothesis = fixture.hypotheses[1];
+  assert(secondHypothesis, 'expected a second fixture hypothesis');
+  const registered = registerProgressiveHypothesis(analysis, {
+    hypothesisId: secondHypothesis.hypothesisId, hypothesisKind: secondHypothesis.hypothesisKind,
+    target: {kind: 'TABLE', schemaName: targets[0].schemaName, relationName: targets[0].relationName},
+    confidenceBounds: secondHypothesis.confidenceBounds,
+    sourceEvidenceRefs: [identitySha256({fixture: `typed-${secondHypothesis.sourceEvidence}`})],
+  });
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const base = typedRequest(registered, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const reserved = reserveProgressiveProbeCandidate(registered, base.candidate, {
+    expectedStateSha256: registered.stateSha256,
+    claimSha256: base.claimSha256, evidenceGapSha256: base.evidenceGapSha256,
+  });
+  const probeEvidence = identitySha256({fixture: 'typed-probe-key-evidence'});
+  const received = recordProgressiveProbeOutcome(reserved.state, {
+    reservationSha256: reserved.authorization.reservationSha256, resultState: 'SUCCEEDED', evidenceRefs: [probeEvidence],
+    signal: 'COUNTERS', informationGainBps: 1700, confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
+  });
+  const exactReuse = typedRequest(received, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const exactReuseDecision = evaluateProgressiveDrilldownEligibility(received, exactReuse);
+  assert.equal(exactReuseDecision.disposition, 'REUSED_SUCCESS');
+  assert.equal(exactReuseDecision.gates.duplicate, false);
+  assert.deepEqual(exactReuseDecision.trace.evidence.evidenceRefs, [probeEvidence]);
+  const changedIntent = typedRequest(received, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: CARDINALITY_INTENT});
+  const changedIntentDecision = evaluateProgressiveDrilldownEligibility(received, changedIntent);
+  assert.equal(changedIntentDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedIntentDecision.gates.duplicate, false);
+  assert.equal(changedIntentDecision.trace.receipt, null);
+  assert.deepEqual(changedIntentDecision.trace.evidence.evidenceRefs, []);
+  const changedHypothesis = buildProgressiveTypedDrilldownRequest(received, {
+    claimSha256: base.claimSha256, evidenceGapSha256: base.evidenceGapSha256,
+    hypothesisId: secondHypothesis.hypothesisId, phase: received.controllerRun.phase, methodRef,
+    target: targets[0], arguments: {maxSourceRows: 500, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+    gainInputs: {...fixture.gainInputs.high, evidenceRefs: [identitySha256({fixture: 'claim-gain'})]},
+  });
+  const changedHypothesisDecision = evaluateProgressiveDrilldownEligibility(received, changedHypothesis);
+  assert.equal(changedHypothesisDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedHypothesisDecision.gates.duplicate, false);
+  assert.equal(changedHypothesisDecision.trace.receipt, null);
+  assert.deepEqual(changedHypothesisDecision.trace.evidence.evidenceRefs, []);
+});
