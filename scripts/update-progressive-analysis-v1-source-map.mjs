@@ -18,7 +18,9 @@ const authoredFiles = [
   'services/bi-agent/package.json',
   'services/bi-control/fixtures/progressive-analysis-v1.json',
   'services/bi-control/src/db-analyzer/progressive-analysis-v1.mjs',
+  'services/bi-control/src/db-analyzer/progressive-controller.mjs',
   'tests/progressive-analysis-v1.test.mjs',
+  'tests/progressive-controller.test.mjs',
   'tests/external-api-v2.test.mjs',
   'tests/release.test.mjs',
 ];

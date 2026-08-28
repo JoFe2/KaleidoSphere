@@ -568,8 +568,8 @@ test('typed drilldown ordering and terminal eligibility digest are independent o
   }
 });
 
-test('typed capability is bound to sealed registry semantic and capability metadata', async () => {
-  const {analysis, registry, targets} = await safeAnalysis({
+test('safe manifest capability metadata is enforced before registry construction', async () => {
+  await assert.rejects(() => safeAnalysis({
     runId: 'fixture-typed-drilldown-manifest-capability',
     phase: 'SAFE_AGGREGATES',
     transformSafeAnalysisManifest: (manifest) => {
@@ -579,20 +579,7 @@ test('typed capability is bound to sealed registry semantic and capability metad
       capability.reasonCode = 'FIXTURE_NUMERIC_UNSUPPORTED';
       return manifest;
     },
-  });
-  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
-  const request = typedRequest(analysis, {
-    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
-  });
-  const descriptor = registry.methods.find(({methodRef: registered}) => registered === methodRef);
-  assert.equal(descriptor.semanticMethod, 'COLUMN_SUMMARY');
-  assert.deepEqual(descriptor.capabilities.find(({typeFamily}) => typeFamily === 'NUMERIC'), {
-    typeFamily: 'NUMERIC', state: 'UNSUPPORTED', reasonCode: 'FIXTURE_NUMERIC_UNSUPPORTED',
-  });
-  assert.deepEqual(request.capability, {
-    typeFamily: 'NUMERIC', state: 'UNSUPPORTED', reasonCode: 'FIXTURE_NUMERIC_UNSUPPORTED',
-  });
-  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, request).disposition, 'TERMINATED_UNSUPPORTED_CAPABILITY');
+  }), /DB_SAFE_METHOD_MANIFEST_INVALID/);
 });
 
 test('typed drilldown rejects incomplete or unsafe argument values before sealing on registered and denial paths', async () => {

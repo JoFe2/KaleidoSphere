@@ -83,8 +83,7 @@ function normalizeScope(scope) {
   return normalizeJsonValue({...scope, schemas: [...scope.schemas].sort(compare)});
 }
 
-function methodDescriptor({methodRef, engine, phase, targetKind, allowedArgumentKeys, readOnly, aggregateOnly,
-  sourceManifestSha256, templateSha256, semanticMethod = null, capabilities = []}) {
+function methodDescriptor({methodRef, engine, phase, targetKind, allowedArgumentKeys, readOnly, aggregateOnly, sourceManifestSha256, templateSha256}) {
   return normalizeJsonValue({
     methodRef,
     engine,
@@ -95,8 +94,6 @@ function methodDescriptor({methodRef, engine, phase, targetKind, allowedArgument
     aggregateOnly,
     sourceManifestSha256,
     templateSha256,
-    semanticMethod,
-    capabilities: [...capabilities].sort((left, right) => compare(left.typeFamily, right.typeFamily)),
     acceptsFreeSql: false,
     acceptsRawValues: false,
     acceptsCredentials: false,
@@ -152,8 +149,6 @@ export function buildProgressiveMethodRegistry({structureManifest, profilingMani
       aggregateOnly: true,
       sourceManifestSha256: safeManifestSha256,
       templateSha256: method.templateSha256,
-      semanticMethod: method.semanticMethod,
-      capabilities: method.capabilities,
     })));
   }
   methods.sort((left, right) => compare(left.methodRef, right.methodRef));
@@ -170,8 +165,7 @@ function validateMethodRegistry(registry) {
   for (const method of registry.methods) {
     if (!exactKeys(method, [
       'methodRef', 'engine', 'phase', 'targetKind', 'allowedArgumentKeys', 'readOnly', 'aggregateOnly',
-      'sourceManifestSha256', 'templateSha256', 'semanticMethod', 'capabilities',
-      'acceptsFreeSql', 'acceptsRawValues', 'acceptsCredentials',
+      'sourceManifestSha256', 'templateSha256', 'acceptsFreeSql', 'acceptsRawValues', 'acceptsCredentials',
     ]) || refs.has(method.methodRef) || method.engine !== registry.engine
       || !METHOD_ID.test(method.methodRef.split('@')[0]) || !/^\d+\.\d+\.\d+$/.test(method.methodRef.split('@')[1] ?? '')
       || !PROGRESSIVE_PHASES.includes(method.phase)
@@ -181,12 +175,6 @@ function validateMethodRegistry(registry) {
       || method.readOnly !== true || typeof method.aggregateOnly !== 'boolean'
       || !sha256Value(method.sourceManifestSha256)
       || !(method.templateSha256 === null || sha256Value(method.templateSha256))
-      || !(method.semanticMethod === null || REASON_CODE.test(method.semanticMethod))
-      || !Array.isArray(method.capabilities)
-      || method.capabilities.some((entry) => !exactKeys(entry, ['typeFamily', 'state', 'reasonCode'])
-        || !REASON_CODE.test(entry.typeFamily) || !['COMPLETE', 'UNSUPPORTED'].includes(entry.state)
-        || !(entry.reasonCode === null || REASON_CODE.test(entry.reasonCode)))
-      || new Set(method.capabilities.map(({typeFamily}) => typeFamily)).size !== method.capabilities.length
       || method.acceptsFreeSql !== false || method.acceptsRawValues !== false || method.acceptsCredentials !== false) {
       fail('DB_PROGRESSIVE_METHOD_REGISTRY_INVALID');
     }

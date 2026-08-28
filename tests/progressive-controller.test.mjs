@@ -140,6 +140,14 @@ function request(run, methodRef, target, extra = {}) {
   return {phase: run.phase, methodRef, target, arguments: extra};
 }
 
+test('legacy v1 method-registry snapshots remain resumable without new descriptor fields', async () => {
+  const inputs = await mssqlInputs({includeSafeAnalysis: true});
+  const snapshot = JSON.parse(JSON.stringify(newRun(inputs, {runId: 'fixture-v1-registry-resume'})));
+  assert(snapshot.methodRegistry.methods.every((method) => !Object.hasOwn(method, 'semanticMethod')
+    && !Object.hasOwn(method, 'capabilities')));
+  assert.deepEqual(resumeProgressiveRun(snapshot), snapshot);
+});
+
 test('controller derives explicit per-visible-object coverage from existing evidence without absence inference', async () => {
   const mssql = await mssqlInputs();
   assert(mssql.coverage.entries.length > 0);
