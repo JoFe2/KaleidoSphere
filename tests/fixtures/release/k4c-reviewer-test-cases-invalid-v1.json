@@ -2,6 +2,10 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/tests/fixtures/release/k4c-reviewer-test-cases-invalid-v1.json",
   "schemaVersion": "kaleidosphere/k4c-reviewer-test-cases/v1",
+  "expectedValidation": {
+    "accepted": false,
+    "error": "reviewer case matrix denied: fewer than five positive cases"
+  },
   "packet": {
     "listing": "docs/release/k4c-directory-listing.md",
     "releaseNotes": "docs/release/k4c-release-notes.md",

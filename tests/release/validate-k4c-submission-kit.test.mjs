@@ -49,12 +49,23 @@ test('accepts the complete receipt-bound directory submission packet', () => {
   assert.equal(receipt.dryRun, true);
 });
 
-test('invalid repository fixture is rejected for fewer than five positives', () => {
+test('invalid repository fixture confirms its expected rejection in dry-run mode', () => {
   const result = run(['--fixture', invalidFixture, '--dry-run']);
-  denied(result, /fewer than five positive cases/);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  const receipt = parse(result.stdout);
+  assert.equal(receipt.accepted, false);
+  assert.equal(receipt.publicationPerformed, false);
+  assert.equal(receipt.dryRun, true);
+  assert.equal(receipt.expectedRejectionObserved, true);
+  assert.equal(receipt.rejectionReason, 'reviewer case matrix denied: fewer than five positive cases');
+
+  denied(run(['--fixture', invalidFixture]), /expected validation fixture denied: --dry-run required/);
 });
 
-test('rejects fewer than three negatives and duplicate case IDs', async () => {
+test('rejects too few positive or negative cases and duplicate case IDs', async () => {
+  const tooFewPositives = await variant((value) => { value.positiveCases = value.positiveCases.slice(0, 4); });
+  denied(run(['--fixture', tooFewPositives, '--dry-run']), /fewer than five positive cases/);
+
   const tooFew = await variant((value) => { value.negativeCases = value.negativeCases.slice(0, 2); });
   denied(run(['--fixture', tooFew, '--dry-run']), /fewer than three negative cases/);
 

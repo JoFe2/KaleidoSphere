@@ -230,6 +230,45 @@ function assertCaseMatrix(fixture) {
   }
 }
 
+function observeExpectedRejection(fixture, dryRun) {
+  assertObject(fixture, 'reviewer case matrix');
+  if (fixture.expectedValidation === undefined) return null;
+  if (!dryRun) throw new Error('expected validation fixture denied: --dry-run required');
+  assertObject(fixture.expectedValidation, 'expected validation');
+  if (fixture.expectedValidation.accepted !== false) throw new Error('expected validation denied: accepted must be false');
+  assertText(fixture.expectedValidation.error, 'expected validation error');
+
+  let rejection;
+  try {
+    assertCaseMatrix(fixture);
+  } catch (error) {
+    rejection = error;
+  }
+  if (!rejection) throw new Error('expected validation denied: reviewer case matrix was accepted');
+  if (rejection.message !== fixture.expectedValidation.error) {
+    throw new Error(`expected validation error mismatch: ${rejection.message}`);
+  }
+  return rejection.message;
+}
+
+function buildResult(args, fixture, overrides = {}) {
+  return {
+    schemaVersion: SCHEMA,
+    packageVersion: VERSION,
+    packageDigest: PACKAGE_DIGEST,
+    manifestSha256: MANIFEST_DIGEST,
+    positiveCaseCount: fixture.positiveCases.length,
+    negativeCaseCount: fixture.negativeCases.length,
+    listing: args.listing === defaultListing ? 'docs/release/k4c-directory-listing.md' : args.listing,
+    releaseNotes: args.releaseNotes === defaultReleaseNotes ? 'docs/release/k4c-release-notes.md' : args.releaseNotes,
+    publicationPerformed: false,
+    accepted: true,
+    dryRun: args.dryRun,
+    nonClaims: fixture.nonClaims,
+    ...overrides,
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const [listing, notes, fixture, security, e2e, manifestBytes] = await Promise.all([
@@ -243,21 +282,13 @@ async function main() {
   assertListing(listing);
   assertReleaseNotes(notes);
   assertReceiptBindings(security, e2e, manifestBytes);
-  assertCaseMatrix(fixture);
-  const result = {
-    schemaVersion: SCHEMA,
-    packageVersion: VERSION,
-    packageDigest: PACKAGE_DIGEST,
-    manifestSha256: MANIFEST_DIGEST,
-    positiveCaseCount: fixture.positiveCases.length,
-    negativeCaseCount: fixture.negativeCases.length,
-    listing: args.listing === defaultListing ? 'docs/release/k4c-directory-listing.md' : args.listing,
-    releaseNotes: args.releaseNotes === defaultReleaseNotes ? 'docs/release/k4c-release-notes.md' : args.releaseNotes,
-    publicationPerformed: false,
-    accepted: true,
-    dryRun: args.dryRun,
-    nonClaims: fixture.nonClaims,
-  };
+  const rejectionReason = observeExpectedRejection(fixture, args.dryRun);
+  if (rejectionReason === null) assertCaseMatrix(fixture);
+  const result = buildResult(args, fixture, rejectionReason === null ? {} : {
+    accepted: false,
+    expectedRejectionObserved: true,
+    rejectionReason,
+  });
   process.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
 }
 
