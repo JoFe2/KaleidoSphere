@@ -803,7 +803,7 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     runBudget: currentDrilldownBudget(state, valid.candidate).runProbes > 0,
     tableBudget: currentDrilldownBudget(state, valid.candidate).tableProbes > 0,
     hypothesisBudget: currentDrilldownBudget(state, valid.candidate).hypothesisProbes > 0,
-    duplicate: reservation === null || !probeKeyBound,
+    duplicate: reservation === null,
     timeout: outcome?.resultState !== 'TIMEOUT',
     cancellation: outcome?.resultState !== 'CANCELLED',
     receiptResume,
