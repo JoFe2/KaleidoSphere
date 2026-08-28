@@ -35,6 +35,15 @@ const plain = (value) => value !== null && typeof value === 'object' && !Array.i
 const hash = (value) => typeof value === 'string' && HASH.test(value);
 const same = (left, right) => canonicalJson(left) === canonicalJson(right);
 
+function withinCodePointBounds(value, minimum, maximum) {
+  let length = 0;
+  for (const _codePoint of value) {
+    length += 1;
+    if (length > maximum) return false;
+  }
+  return length >= minimum;
+}
+
 function exact(value, keys, code) {
   if (!plain(value)) fail(code);
   const ownKeys = Reflect.ownKeys(value);
@@ -49,7 +58,7 @@ function inspectSurface(value, code = 'EVIDENCE_BOUND_REPORT_SURFACE_DENIED') {
   const visit = (item) => {
     if (item === null || typeof item === 'boolean') return;
     if (typeof item === 'string') {
-      if (item.length > 512 || /[\u0000-\u001f\u007f]/.test(item) || FORBIDDEN_TEXT.test(item)) fail(code);
+      if (!withinCodePointBounds(item, 0, 512) || /[\u0000-\u001f\u007f]/.test(item) || FORBIDDEN_TEXT.test(item)) fail(code);
       return;
     }
     if (typeof item === 'number') {
@@ -108,7 +117,7 @@ function validateDataset(value) {
   }
   for (const column of value.columnDefinitions) {
     exact(column, COLUMN_DEFINITION_KEYS, 'EVIDENCE_BOUND_REPORT_DATASET_DENIED');
-    if (typeof column.label !== 'string' || column.label.length < 1 || column.label.length > 128
+    if (typeof column.label !== 'string' || !withinCodePointBounds(column.label, 1, 128)
       || !DATA_TYPES.has(column.dataType) || typeof column.nullable !== 'boolean') fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
   }
   if (value.kind === 'DIFFERENTIATOR_PLACEHOLDER') {
@@ -116,7 +125,7 @@ function validateDataset(value) {
       || value.differentiator === null) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
     exact(value.differentiator, DIFFERENTIATOR_KEYS, 'EVIDENCE_BOUND_REPORT_DATASET_DENIED');
     if (value.differentiator.type !== 'DIFFERENTIATOR_PLACEHOLDER' || value.differentiator.status !== 'UNPOPULATED'
-      || typeof value.differentiator.label !== 'string' || value.differentiator.label.length < 1 || value.differentiator.label.length > 128) {
+      || typeof value.differentiator.label !== 'string' || !withinCodePointBounds(value.differentiator.label, 1, 128)) {
       fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
     }
     return;
@@ -133,7 +142,7 @@ function validateDataset(value) {
 function validateSpec(value, expectedBindings) {
   exact(value, SPEC_KEYS, 'EVIDENCE_BOUND_REPORT_SURFACE_DENIED');
   if (value.schemaVersion !== EVIDENCE_BOUND_REPORT_SPEC_SCHEMA_V1 || !ID.test(value.reportId ?? '')
-    || typeof value.title !== 'string' || value.title.length < 1 || value.title.length > 256) fail('EVIDENCE_BOUND_REPORT_SPEC_DENIED');
+    || typeof value.title !== 'string' || !withinCodePointBounds(value.title, 1, 256)) fail('EVIDENCE_BOUND_REPORT_SPEC_DENIED');
   validateDataset(value.dataset);
   validateBindings(value.bindings, expectedBindings);
 }

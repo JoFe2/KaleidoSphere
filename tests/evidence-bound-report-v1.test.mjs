@@ -347,6 +347,28 @@ test('C0 and DEL controls are denied in both the schema safe-text pattern and ru
   }
 });
 
+test('schema and runtime count astral Unicode code points equally at bounded text limits', async () => {
+  const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
+  const astral = '\u{1f642}';
+  const surfaces = [
+    ['title', 256, () => spec(), (value, text) => { value.title = text; }],
+    ['column label', 128, () => spec(tableDataset()), (value, text) => { value.dataset.columnDefinitions[0].label = text; }],
+    ['differentiator label', 128, () => spec(differentiatorDataset()), (value, text) => { value.dataset.differentiator.label = text; }],
+    ['string cell', 512, () => spec(tableDataset()), (value, text) => { value.dataset.rows[0][0] = text; }],
+  ];
+
+  for (const [label, maximum, fixture, setText] of surfaces) {
+    for (const [codePoints, accepted] of [[maximum, true], [maximum + 1, false]]) {
+      const value = fixture();
+      setText(value, astral.repeat(codePoints));
+      const message = `${label} at ${codePoints} code points`;
+      assert.equal(schemaAccepts(schema, schema, value), accepted, `schema mismatch for ${message}`);
+      if (accepted) assert.doesNotThrow(() => buildEvidenceBoundReportV1(value), `runtime rejected ${message}`);
+      else assert.throws(() => buildEvidenceBoundReportV1(value), /EVIDENCE_BOUND_REPORT_(?:SURFACE|SPEC|DATASET|CELL)_DENIED/, `runtime accepted ${message}`);
+    }
+  }
+});
+
 test('standard schema assertions and runtime deny the same bounded relational and numeric fixtures', async () => {
   const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
   assert.equal(schema.$defs.row.minItems, 1);
