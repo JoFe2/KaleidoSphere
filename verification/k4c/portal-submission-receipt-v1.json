@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "kaleidosphere/k4c-portal-submission-receipt/v1",
+  "fixture": "tests/fixtures/release/k4c-portal-capability-v1.json",
+  "fixtureSha256": "09782a68a85d0f663ef7c841b28883949c84481755d4a3b753d7441133b43c1b",
+  "validatedInputDigests": {
+    "package": {
+      "version": "0.24.0",
+      "digest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
+      "manifestSha256": "beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75"
+    },
+    "securityReceipt": {
+      "path": "verification/k4c/security-license-receipt-v1.json",
+      "expectedSha256": "44106cffcfa0e245b46923d1e1c0ae6fdb316001a066b1459e832accaba5e165",
+      "observedSha256": "44106cffcfa0e245b46923d1e1c0ae6fdb316001a066b1459e832accaba5e165"
+    },
+    "reviewerPacket": {
+      "path": "docs/release/k4c-reviewer-test-cases-v1.json",
+      "expectedSha256": "791cafe683e8d1a57d43bcaec99f2805800588c70bd6a268db158243226b1b6a",
+      "observedSha256": "791cafe683e8d1a57d43bcaec99f2805800588c70bd6a268db158243226b1b6a"
+    }
+  },
+  "portal": {
+    "identityClass": "owner-official-ui",
+    "capability": "k4c-portal-preflight-v1"
+  },
+  "disposition": "PRECHECK_READY",
+  "redactedReason": "same-digest security evidence and reviewer packet validated",
+  "evidence": [],
+  "side_effects": [],
+  "resumeActions": [],
+  "proposal": {
+    "kind": "non-executable",
+    "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
+    "portalIdentityClass": "owner-official-ui",
+    "packetDigest": "791cafe683e8d1a57d43bcaec99f2805800588c70bd6a268db158243226b1b6a",
+    "redactedReason": "Owner review proposal only; no portal action is encoded or performed."
+  },
+  "nonClaims": [
+    "No portal submission, publication, listing, authenticated identity proof, anonymous availability, or release is performed or established.",
+    "This local receipt is proposal evidence only and does not delegate authority or transfer execution."
+  ]
+}

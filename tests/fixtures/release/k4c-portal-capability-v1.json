@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": "kaleidosphere/k4c-portal-capability-fixture/v1",
+  "package": {
+    "version": "0.24.0",
+    "digest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
+    "manifestSha256": "beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75"
+  },
+  "securityReceipt": {
+    "path": "verification/k4c/security-license-receipt-v1.json",
+    "sha256": "44106cffcfa0e245b46923d1e1c0ae6fdb316001a066b1459e832accaba5e165"
+  },
+  "reviewerPacket": {
+    "path": "docs/release/k4c-reviewer-test-cases-v1.json",
+    "sha256": "791cafe683e8d1a57d43bcaec99f2805800588c70bd6a268db158243226b1b6a"
+  },
+  "portal": {
+    "identityClass": "owner-official-ui",
+    "capability": "k4c-portal-preflight-v1",
+    "ownerPortalAuthority": true,
+    "verifiedPublisherIdentity": true,
+    "prerequisites": {
+      "officialUiAvailable": true,
+      "ownerAuthorityConfirmed": true,
+      "verifiedPublisherIdentity": true,
+      "packageDigestConfirmed": true,
+      "reviewerPacketComplete": true
+    }
+  },
+  "proposal": {
+    "kind": "non-executable",
+    "purpose": "owner review of same-digest local evidence",
+    "scope": "preflight only"
+  }
+}
