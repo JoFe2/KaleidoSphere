@@ -82,7 +82,7 @@ function safeMethod(registry, semanticMethod) {
 }
 
 function typedRequest(state, {
-  claim = 'claim', gap = 'gap', methodRef, target, typeFamily, intentFeatures, gain = 'high', resumeReceiptSha256,
+  claim = 'claim', gap = 'gap', methodRef, target, typeFamily, arguments: args, intentFeatures, gain = 'high', resumeReceiptSha256,
 }) {
   const input = {
     claimSha256: identitySha256({fixture: claim}),
@@ -91,7 +91,7 @@ function typedRequest(state, {
     phase: state.controllerRun.phase,
     methodRef,
     target,
-    arguments: {maxSourceRows: 500, typeFamily},
+    arguments: args ?? {maxSourceRows: 500, typeFamily},
     intentFeatures,
     gainInputs: {...fixture.gainInputs[gain], evidenceRefs: [identitySha256({fixture: `${claim}-gain`})]},
   };
@@ -553,6 +553,21 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
   assert.equal(resumedDecision.trace.receipt.resultState, 'SUCCEEDED');
   assert.deepEqual(resumedDecision.trace.evidence.evidenceRefs, [receiptEvidence]);
   assert.deepEqual(resumedDecision.trace.evidence.counterevidenceRefs, [receiptEvidence]);
+  const changedArguments = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC',
+    arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+  });
+  const changedArgumentsDecision = evaluateProgressiveDrilldownEligibility(received, changedArguments);
+  assert.equal(changedArgumentsDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedArgumentsDecision.trace.receipt, null);
+  assert.deepEqual(changedArgumentsDecision.trace.evidence.evidenceRefs, []);
+  const changedArgumentsResume = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC',
+    arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  const changedArgumentsResumeDecision = evaluateProgressiveDrilldownEligibility(received, changedArgumentsResume);
+  assert.equal(changedArgumentsResumeDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedArgumentsResumeDecision.trace.receipt, null);
   const crossClaimResume = typedRequest(received, {
     claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
     target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
@@ -613,6 +628,12 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
     methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   });
   assert.equal(evaluateProgressiveDrilldownEligibility(timedOut, timedOutRequest).disposition, 'TERMINATED_TIMEOUT');
+  const changedArgumentsTimedOutRequest = typedRequest(timedOut, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+  });
+  const changedArgumentsTimedOutDecision = evaluateProgressiveDrilldownEligibility(timedOut, changedArgumentsTimedOutRequest);
+  assert.equal(changedArgumentsTimedOutDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedArgumentsTimedOutDecision.trace.receipt, null);
   const cancelBase = await safeAnalysis({runId: 'fixture-typed-drilldown-cancel', phase: 'SAFE_AGGREGATES'});
   const cancelRequest = typedRequest(cancelBase.analysis, {
     methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
@@ -629,6 +650,13 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
     methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   });
   assert.equal(evaluateProgressiveDrilldownEligibility(cancelled, cancelledRequest).disposition, 'TERMINATED_CANCELLED');
+  const changedArgumentsCancelledRequest = typedRequest(cancelled, {
+    methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC',
+    arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+  });
+  const changedArgumentsCancelledDecision = evaluateProgressiveDrilldownEligibility(cancelled, changedArgumentsCancelledRequest);
+  assert.equal(changedArgumentsCancelledDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedArgumentsCancelledDecision.trace.receipt, null);
   const staleReceiptRequest = {...valid, resumeReceiptSha256: '0'.repeat(64)};
   delete staleReceiptRequest.requestSha256;
   staleReceiptRequest.requestSha256 = identitySha256(staleReceiptRequest);

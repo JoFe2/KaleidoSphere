@@ -779,15 +779,18 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
   validateState(state);
   const {request: valid, hypothesis} = validateDrilldownRequest(request, state);
   const coverages = drilldownTargetCoverages(state, valid.target);
-  const reservation = state.reservations.find(({candidateSha256, nearDuplicateKey}) => candidateSha256 === valid.candidateSha256
-    || nearDuplicateKey === valid.candidate.nearDuplicateKey) ?? null;
-  const outcome = reservation === null ? null : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
-  const controllerReceipt = reservation === null ? null
-    : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
   const expectedProbeKey = controllerProbeKeyForRequest(state, valid);
+  const exactReservation = state.reservations.find(({candidateSha256}) => candidateSha256 === valid.candidateSha256) ?? null;
+  const reservation = exactReservation
+    ?? state.reservations.find(({nearDuplicateKey}) => nearDuplicateKey === valid.candidate.nearDuplicateKey) ?? null;
+  const probeKeyBound = reservation === null || reservation.controllerProbeKey === expectedProbeKey;
+  const outcome = !probeKeyBound ? null : reservation === null ? null
+    : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
+  const controllerReceipt = !probeKeyBound ? null : reservation === null ? null
+    : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
   const claimBound = reservation === null
     || (reservation.claimSha256 === valid.claimSha256 && reservation.evidenceGapSha256 === valid.evidenceGapSha256);
-  const receiptResume = valid.resumeReceiptSha256 === null
+  const receiptResume = !probeKeyBound ? true : valid.resumeReceiptSha256 === null
     ? claimBound
     : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey;
   const gates = {
@@ -800,14 +803,14 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     runBudget: currentDrilldownBudget(state, valid.candidate).runProbes > 0,
     tableBudget: currentDrilldownBudget(state, valid.candidate).tableProbes > 0,
     hypothesisBudget: currentDrilldownBudget(state, valid.candidate).hypothesisProbes > 0,
-    duplicate: reservation === null,
+    duplicate: reservation === null || !probeKeyBound,
     timeout: outcome?.resultState !== 'TIMEOUT',
     cancellation: outcome?.resultState !== 'CANCELLED',
     receiptResume,
-    stoppingRule: !['STOPPED', 'AWAITING_RECONCILIATION'].includes(hypothesis.status)
+    stoppingRule: !probeKeyBound || (!['STOPPED', 'AWAITING_RECONCILIATION'].includes(hypothesis.status)
       && hypothesis.consecutiveNoGain < valid.stoppingRule.maxConsecutiveNoGain
       && hypothesis.consecutiveCounterevidence < valid.stoppingRule.maxConsecutiveCounterevidence
-      && valid.expectedGain.expectedInformationGainBps >= valid.stoppingRule.minExpectedGainBps,
+      && valid.expectedGain.expectedInformationGainBps >= valid.stoppingRule.minExpectedGainBps),
   };
   let disposition = 'ELIGIBLE';
   if (!gates.phase) disposition = 'DENIED_PHASE';
@@ -879,12 +882,12 @@ export function reserveProgressiveProbeCandidate(state, candidate, {expectedStat
       reservationSha256: existing.reservationSha256, controllerProbeKey: existing.controllerProbeKey,
     })};
   }
-  if (hypothesis.status === 'STOPPED' || hypothesis.status === 'AWAITING_RECONCILIATION') fail('DB_PROGRESSIVE_HYPOTHESIS_STOPPED');
   const near = state.reservations.find(({nearDuplicateKey}) => nearDuplicateKey === candidate.nearDuplicateKey);
   if (near) return {state, authorization: normalizeJsonValue({
     disposition: 'SUPPRESSED_NEAR_DUPLICATE', candidateSha256: candidate.candidateSha256,
     reservationSha256: near.reservationSha256, controllerProbeKey: near.controllerProbeKey,
   })};
+  if (hypothesis.status === 'STOPPED' || hypothesis.status === 'AWAITING_RECONCILIATION') fail('DB_PROGRESSIVE_HYPOTHESIS_STOPPED');
   if (candidate.expectedGain.expectedInformationGainBps < state.policy.minExpectedGainBps) fail('DB_PROGRESSIVE_EXPECTED_GAIN_TOO_LOW');
   const tableCount = state.budget.tableReservationCounts.find(({tableKey}) => tableKey === candidate.tableKey)?.count ?? 0;
   const hypothesisCount = state.budget.hypothesisReservationCounts.find(({hypothesisId}) => hypothesisId === candidate.hypothesisId)?.count ?? 0;
