@@ -172,6 +172,8 @@ test('the same evidence yields a deterministic bounded report-compatible coverag
   assert.equal(first.dataset.rows.length, 5);
   assert(first.dataset.columns.every((column) => Object.keys(column).length === 1 && Object.hasOwn(column, 'key')));
   assert.equal(first.dataset.columnDefinitions.length, first.dataset.columns.length);
+  assert.equal(first.dataset.columns[3].key, 'source_evidence_id');
+  assert(first.dataset.rows.every((row) => /^mssql\.coverage_/.test(row[3])));
   assert.match(first.datasetSha256, /^[a-f0-9]{64}$/);
   assert.match(first.viewSha256, /^[a-f0-9]{64}$/);
   assertDeepFrozen(first);
@@ -296,10 +298,21 @@ test('view verification rejects a re-digested substitution and never returns cal
   const view = buildEvidenceBoundCoverageViewV1(source);
   const forged = structuredClone(view);
   forged.states[0].sourceQueryId = 'mssql.coverage_substituted';
+  forged.dataset.rows[0][3] = 'mssql.coverage_substituted';
+  forged.datasetSha256 = identitySha256(forged.dataset);
   const {viewSha256: _old, ...body} = forged;
   forged.viewSha256 = identitySha256(body);
   assert.throws(() => verifyEvidenceBoundCoverageViewV1(forged, source), /EVIDENCE_BOUND_COVERAGE_VIEW_MISMATCH/);
   const copy = verifyEvidenceBoundCoverageViewV1(view, source);
   assert.notEqual(copy, view);
   assertDeepFrozen(copy);
+});
+
+test('the pure build and replay boundary leaves no lifecycle residue', () => {
+  const source = input();
+  const view = buildEvidenceBoundCoverageViewV1(source);
+  verifyEvidenceBoundCoverageViewReplayV1(view, source, {
+    receipt: source.receipt, snapshot: source.snapshot,
+  });
+  assert.equal(Object.keys(globalThis).some((key) => /coverage|credential|connection|renderer/i.test(key)), false);
 });

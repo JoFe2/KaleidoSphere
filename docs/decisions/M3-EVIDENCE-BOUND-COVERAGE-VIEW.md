@@ -46,6 +46,11 @@ exact citations on every row:
 - `receiptSha256`; and
 - `snapshotSha256`.
 
+The view-state citations use camel-case evidence names, including
+`sourceQueryId`. The report-compatible table uses the equivalent lower-snake
+case field names, including `source_evidence_id`, because the #122 closed report
+contract intentionally rejects query-shaped and noncanonical field names.
+
 Rows are canonically ordered by capability ID, source query ID, and coverage-entry
 digest. Object-key ordering and the order of capability/result evidence do not
 change the output. `datasetSha256` identifies only the report-compatible table;

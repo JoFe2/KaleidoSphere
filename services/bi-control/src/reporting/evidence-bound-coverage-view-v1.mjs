@@ -26,6 +26,19 @@ const STATE_ROW_KEYS = Object.freeze([
   'capabilityId', 'state', 'reasonCode', 'sourceQueryId', 'coverageEntrySha256',
   'capabilitySha256', 'resultSha256', 'coverageSha256', 'receiptSha256', 'snapshotSha256',
 ]);
+// The merged report contract rejects query-shaped field names. Keep the
+// source-query citation in the view state, but use its report-safe alias in the
+// table projection passed through that contract.
+const DATASET_ROW_KEYS = Object.freeze([
+  'capability_id', 'state', 'reason_code', 'source_evidence_id', 'coverage_entry_sha256',
+  'capability_sha256', 'result_sha256', 'coverage_sha256', 'receipt_sha256', 'snapshot_sha256',
+]);
+const STATE_KEY_BY_DATASET_KEY = Object.freeze({
+  capability_id: 'capabilityId', state: 'state', reason_code: 'reasonCode', source_evidence_id: 'sourceQueryId',
+  coverage_entry_sha256: 'coverageEntrySha256', capability_sha256: 'capabilitySha256',
+  result_sha256: 'resultSha256', coverage_sha256: 'coverageSha256', receipt_sha256: 'receiptSha256',
+  snapshot_sha256: 'snapshotSha256',
+});
 const METRIC_KEYS = Object.freeze([
   'completeCount', 'partialCount', 'deniedCount', 'unsupportedCount', 'unknownCount',
   'classifiedCount', 'totalCount', 'coverageBps',
@@ -276,15 +289,15 @@ function buildBody(source) {
   const dataset = normalizeJsonValue({
     schemaVersion: 'kaleidosphere.reporting/evidence-bound-dataset/v1', datasetId: 'coverage-view', kind: 'TABLE',
     columns: [
-      {key: 'capabilityId'}, {key: 'state'}, {key: 'reasonCode'}, {key: 'sourceQueryId'},
-      {key: 'coverageEntrySha256'}, {key: 'capabilitySha256'}, {key: 'resultSha256'},
-      {key: 'coverageSha256'}, {key: 'receiptSha256'}, {key: 'snapshotSha256'},
+      {key: 'capability_id'}, {key: 'state'}, {key: 'reason_code'}, {key: 'source_evidence_id'},
+      {key: 'coverage_entry_sha256'}, {key: 'capability_sha256'}, {key: 'result_sha256'},
+      {key: 'coverage_sha256'}, {key: 'receipt_sha256'}, {key: 'snapshot_sha256'},
     ],
     columnDefinitions: [
       {label: 'Capability', dataType: 'string', nullable: false},
       {label: 'Coverage state', dataType: 'string', nullable: false},
       {label: 'Blind spot reason', dataType: 'string', nullable: true},
-      {label: 'Source query', dataType: 'string', nullable: false},
+      {label: 'Source evidence', dataType: 'string', nullable: false},
       {label: 'Coverage entry digest', dataType: 'string', nullable: false},
       {label: 'Capability digest', dataType: 'string', nullable: false},
       {label: 'Result digest', dataType: 'string', nullable: false},
@@ -292,7 +305,7 @@ function buildBody(source) {
       {label: 'Receipt digest', dataType: 'string', nullable: false},
       {label: 'Snapshot digest', dataType: 'string', nullable: false},
     ],
-    rows: states.map((row) => STATE_ROW_KEYS.map((key) => row[key])), differentiator: null,
+    rows: states.map((row) => DATASET_ROW_KEYS.map((key) => row[STATE_KEY_BY_DATASET_KEY[key]])), differentiator: null,
   });
   return normalizeJsonValue({
     schemaVersion: EVIDENCE_BOUND_COVERAGE_VIEW_SCHEMA_V1, viewKind: EVIDENCE_BOUND_COVERAGE_VIEW_KIND,
