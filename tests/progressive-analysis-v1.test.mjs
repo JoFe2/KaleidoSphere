@@ -48,13 +48,16 @@ async function mssqlInputs() {
   };
 }
 
-async function safeAnalysis({runId, phase, maxRunProbes = 8} = {}) {
-  const [structureManifest, profilingManifest, safeAnalysisManifest, structureEvidence] = await Promise.all([
+async function safeAnalysis({runId, phase, maxRunProbes = 8, transformSafeAnalysisManifest = null} = {}) {
+  const [structureManifest, profilingManifest, loadedSafeAnalysisManifest, structureEvidence] = await Promise.all([
     readJson(`${MSSQL_DIRECTORY}/manifest.json`),
     readJson(`${MSSQL_DIRECTORY}/profiling-manifest.json`),
     readJson(`${ROOT}/query-packs/db-analyzer/v1/mssql/safe-analysis-manifest.json`),
     runAnalyzeProfile(`${ROOT}/fixtures/mssql-profile-v1.json`, {repositoryRoot: ROOT}),
   ]);
+  const safeAnalysisManifest = transformSafeAnalysisManifest === null
+    ? loadedSafeAnalysisManifest
+    : transformSafeAnalysisManifest(structuredClone(loadedSafeAnalysisManifest));
   const coverage = buildProgressiveCoverage(structureEvidence);
   const registry = buildProgressiveMethodRegistry({structureManifest, profilingManifest, safeAnalysisManifest});
   const controllerRun = advanceControllerTo(createProgressiveRun({
@@ -563,6 +566,33 @@ test('typed drilldown ordering and terminal eligibility digest are independent o
   if (process.env.KS_PRINT_PROGRESSIVE_ANALYSIS_HASHES === '1') {
     console.log(JSON.stringify({typedDrilldownTerminalDigest: forward.terminalDigestSha256}));
   }
+});
+
+test('typed capability is bound to sealed registry semantic and capability metadata', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({
+    runId: 'fixture-typed-drilldown-manifest-capability',
+    phase: 'SAFE_AGGREGATES',
+    transformSafeAnalysisManifest: (manifest) => {
+      const method = manifest.methods.find(({semanticMethod}) => semanticMethod === 'COLUMN_SUMMARY');
+      const capability = method.capabilities.find(({typeFamily}) => typeFamily === 'NUMERIC');
+      capability.state = 'UNSUPPORTED';
+      capability.reasonCode = 'FIXTURE_NUMERIC_UNSUPPORTED';
+      return manifest;
+    },
+  });
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const request = typedRequest(analysis, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const descriptor = registry.methods.find(({methodRef: registered}) => registered === methodRef);
+  assert.equal(descriptor.semanticMethod, 'COLUMN_SUMMARY');
+  assert.deepEqual(descriptor.capabilities.find(({typeFamily}) => typeFamily === 'NUMERIC'), {
+    typeFamily: 'NUMERIC', state: 'UNSUPPORTED', reasonCode: 'FIXTURE_NUMERIC_UNSUPPORTED',
+  });
+  assert.deepEqual(request.capability, {
+    typeFamily: 'NUMERIC', state: 'UNSUPPORTED', reasonCode: 'FIXTURE_NUMERIC_UNSUPPORTED',
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, request).disposition, 'TERMINATED_UNSUPPORTED_CAPABILITY');
 });
 
 test('typed drilldown rejects incomplete or unsafe argument values before sealing on registered and denial paths', async () => {

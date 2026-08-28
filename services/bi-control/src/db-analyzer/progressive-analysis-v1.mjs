@@ -37,12 +37,6 @@ const OUTCOME_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED',
 const SIGNALS = new Set(['SUPPORTS', 'COUNTERS', 'NO_GAIN', 'INCONCLUSIVE', 'UNKNOWN']);
 const RESOLVED_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED']);
 const CAPABILITY_STATES = new Set(['COMPLETE', 'UNSUPPORTED']);
-const SAFE_DRILLDOWN_METHODS = new Map([
-  ['column-summary', new Set(['NUMERIC', 'CATEGORY', 'TEXT', 'BOOLEAN'])],
-  ['temporal-coverage', new Set(['TEMPORAL'])],
-  ['quality-indicators', new Set(['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN'])],
-  ['relationship-overlap', new Set(['PAIR'])],
-]);
 
 const fail = (code) => {
   const error = new Error(code);
@@ -655,14 +649,14 @@ function safeDrilldownMethod(methodRef) {
 function typedCapability(state, methodRef, typeFamily) {
   const method = state.controllerRun.methodRegistry.methods.find(({methodRef: registered}) => registered === methodRef);
   const path = safeDrilldownMethod(methodRef);
-  const supported = method !== undefined && path !== null && SAFE_DRILLDOWN_METHODS.get(path)?.has(typeFamily) === true
-    && !(state.controllerRun.engine === 'oracle' && typeFamily === 'BOOLEAN'
-      && ['column-summary', 'quality-indicators'].includes(path));
+  const semanticMethod = path === null ? null : path.toUpperCase().replaceAll('-', '_');
+  const capability = method?.capabilities.find(({typeFamily: registered}) => registered === typeFamily) ?? null;
+  const supported = method !== undefined && semanticMethod !== null && method.semanticMethod === semanticMethod
+    && capability?.state === 'COMPLETE';
   return {
     typeFamily,
     state: supported ? 'COMPLETE' : 'UNSUPPORTED',
-    reasonCode: supported ? null : (state.controllerRun.engine === 'oracle' && typeFamily === 'BOOLEAN'
-      ? 'ORACLE_NATIVE_BOOLEAN_COLUMN_UNSUPPORTED' : 'TYPED_CAPABILITY_UNSUPPORTED'),
+    reasonCode: supported ? null : capability?.reasonCode ?? 'TYPED_CAPABILITY_UNSUPPORTED',
   };
 }
 
