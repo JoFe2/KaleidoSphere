@@ -136,6 +136,33 @@ test('fail-closed: missing canonical skill file is denied against the fixture', 
   assert.match(result.stderr, /missing canonical skill denied/);
 });
 
+test('fail-closed: canonical digest drift against the fixture is denied', async () => {
+  const scratch = await mkdtemp(path.join(tmpdir(), 'ks76-k4c-canonical-drift-'));
+  const canonicalCopy = path.join(scratch, 'canonical');
+  await cp(canonical, canonicalCopy, { recursive: true });
+  const skill = path.join(canonicalCopy, 'SKILL.md');
+  await writeFile(skill, `${await readFile(skill, 'utf8')}\ndrift-marker\n`);
+  const result = deny(
+    process.execPath,
+    [generator, '--check', '--fixture', fixturePath, '--canonical', canonicalCopy, '--out', path.join(scratch, 'out')],
+    { cwd: root },
+  );
+  assert.match(result.stderr, /canonical skill digest drift denied/);
+});
+
+test('fail-closed: undeclared canonical skill file is denied against the fixture', async () => {
+  const scratch = await mkdtemp(path.join(tmpdir(), 'ks76-k4c-undeclared-'));
+  const canonicalCopy = path.join(scratch, 'canonical');
+  await cp(canonical, canonicalCopy, { recursive: true });
+  await writeFile(path.join(canonicalCopy, 'references', 'extra.md'), 'extra reference note\n');
+  const result = deny(
+    process.execPath,
+    [generator, '--check', '--fixture', fixturePath, '--canonical', canonicalCopy, '--out', path.join(scratch, 'out')],
+    { cwd: root },
+  );
+  assert.match(result.stderr, /undeclared canonical skill file denied/);
+});
+
 test('fail-closed: non-canonical source path is denied', async () => {
   const scratch = await mkdtemp(path.join(tmpdir(), 'ks76-k4c-scope-'));
   const out = path.join(scratch, 'out');
