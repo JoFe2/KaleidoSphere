@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import test from 'node:test';
+import {isDeepStrictEqual} from 'node:util';
 
 import {identitySha256} from '../services/bi-control/src/db-analyzer/core.mjs';
 import {
@@ -21,11 +22,65 @@ const BINDINGS = Object.freeze({
   resultSha256: H('5'),
 });
 
+function resolveRef(root, ref) {
+  assert.match(ref, /^#\//);
+  return ref.slice(2).split('/').reduce((value, token) => value[token.replaceAll('~1', '/').replaceAll('~0', '~')], root);
+}
+
+function schemaAccepts(root, schema, value) {
+  if (typeof schema === 'boolean') return schema;
+  if (schema.$ref && !schemaAccepts(root, resolveRef(root, schema.$ref), value)) return false;
+  if (Object.hasOwn(schema, 'const') && !isDeepStrictEqual(schema.const, value)
+    && !(typeof schema.const === 'number' && typeof value === 'number' && schema.const === value)) return false;
+  if (schema.enum && !schema.enum.some((item) => isDeepStrictEqual(item, value))) return false;
+  if (schema.allOf && !schema.allOf.every((item) => schemaAccepts(root, item, value))) return false;
+  if (schema.anyOf && !schema.anyOf.some((item) => schemaAccepts(root, item, value))) return false;
+  if (schema.oneOf && schema.oneOf.filter((item) => schemaAccepts(root, item, value)).length !== 1) return false;
+  if (schema.not && schemaAccepts(root, schema.not, value)) return false;
+  if (schema.if) {
+    const branch = schemaAccepts(root, schema.if, value) ? schema.then : schema.else;
+    if (branch && !schemaAccepts(root, branch, value)) return false;
+  }
+  if (schema.type) {
+    const matches = schema.type === 'null' ? value === null
+      : schema.type === 'array' ? Array.isArray(value)
+        : schema.type === 'object' ? value !== null && typeof value === 'object' && !Array.isArray(value)
+          : schema.type === 'integer' ? typeof value === 'number' && Number.isInteger(value)
+            : typeof value === schema.type;
+    if (!matches) return false;
+  }
+  if (typeof value === 'string') {
+    if (schema.minLength !== undefined && [...value].length < schema.minLength) return false;
+    if (schema.maxLength !== undefined && [...value].length > schema.maxLength) return false;
+    if (schema.pattern && !new RegExp(schema.pattern, 'u').test(value)) return false;
+  }
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) return false;
+    if (schema.minimum !== undefined && value < schema.minimum) return false;
+    if (schema.maximum !== undefined && value > schema.maximum) return false;
+  }
+  if (Array.isArray(value)) {
+    if (schema.minItems !== undefined && value.length < schema.minItems) return false;
+    if (schema.maxItems !== undefined && value.length > schema.maxItems) return false;
+    if (schema.uniqueItems && value.some((item, index) => value.slice(0, index).some((other) => isDeepStrictEqual(item, other)))) return false;
+    const prefixLength = schema.prefixItems?.length ?? 0;
+    if (schema.prefixItems && !schema.prefixItems.every((item, index) => index >= value.length || schemaAccepts(root, item, value[index]))) return false;
+    if (schema.items && !value.slice(prefixLength).every((item) => schemaAccepts(root, schema.items, item))) return false;
+  }
+  if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+    if (schema.required?.some((key) => !Object.hasOwn(value, key))) return false;
+    if (schema.properties && Object.entries(schema.properties).some(([key, item]) => Object.hasOwn(value, key) && !schemaAccepts(root, item, value[key]))) return false;
+    if (schema.additionalProperties === false && Object.keys(value).some((key) => !Object.hasOwn(schema.properties ?? {}, key))) return false;
+  }
+  return true;
+}
+
 const metricDataset = () => ({
   schemaVersion: EVIDENCE_BOUND_REPORT_DATASET_SCHEMA_V1,
   datasetId: 'orders-total',
   kind: 'METRIC',
-  columns: [{key: 'value', label: 'Orders total', dataType: 'number', nullable: false}],
+  columns: [{key: 'value'}],
+  columnDefinitions: [{label: 'Orders total', dataType: 'number', nullable: false}],
   rows: [[42]],
   differentiator: null,
 });
@@ -35,8 +90,12 @@ const tableDataset = () => ({
   datasetId: 'orders-by-status',
   kind: 'TABLE',
   columns: [
-    {key: 'status', label: 'Status', dataType: 'string', nullable: false},
-    {key: 'orders', label: 'Orders', dataType: 'integer', nullable: false},
+    {key: 'status'},
+    {key: 'orders'},
+  ],
+  columnDefinitions: [
+    {label: 'Status', dataType: 'string', nullable: false},
+    {label: 'Orders', dataType: 'integer', nullable: false},
   ],
   rows: [['paid', 31], ['pending', 11]],
   differentiator: null,
@@ -47,6 +106,7 @@ const differentiatorDataset = () => ({
   datasetId: 'unavailable-differentiator',
   kind: 'DIFFERENTIATOR_PLACEHOLDER',
   columns: [],
+  columnDefinitions: [],
   rows: [],
   differentiator: {type: 'DIFFERENTIATOR_PLACEHOLDER', status: 'UNPOPULATED', label: 'Differentiator pending evidence'},
 });
@@ -147,6 +207,9 @@ test('schema is closed and states the same accepted dataset kinds and limits as 
   for (const definition of Object.values(schema.$defs)) {
     if (definition.type === 'object') assert.equal(definition.additionalProperties, false);
   }
+  assert.equal(schemaAccepts(schema, schema, spec()), true);
+  assert.equal(schemaAccepts(schema, schema, spec(tableDataset())), true);
+  assert.equal(schemaAccepts(schema, schema, spec(differentiatorDataset())), true);
   assert.deepEqual(buildEvidenceBoundReportV1(spec()).dataset, metricDataset());
 });
 
@@ -268,6 +331,7 @@ test('schema safe text rejects uppercase forbidden variants exactly as runtime d
   const safeTextPattern = new RegExp(schema.$defs.safeText.pattern);
   for (const text of ['HTTPS://example.invalid', 'JAVASCRIPT:alert(1)', '<SCRIPT>alert(1)</SCRIPT>', 'EVAL("unsafe")', 'SELECT 1', 'PASSWORD: secret']) {
     assert.equal(safeTextPattern.test(text), false, text);
+    assert.equal(schemaAccepts(schema, schema, {...spec(), title: text}), false, text);
     assert.throws(() => buildEvidenceBoundReportV1({...spec(), title: text}), /EVIDENCE_BOUND_REPORT_(?:SURFACE|SPEC)_DENIED/, text);
   }
 });
@@ -278,53 +342,62 @@ test('C0 and DEL controls are denied in both the schema safe-text pattern and ru
   for (const control of [...Array.from({length: 32}, (_, code) => String.fromCodePoint(code)), '\u007f']) {
     const text = `safe${control}text`;
     assert.equal(safeTextPattern.test(text), false, `schema accepted U+${control.codePointAt(0).toString(16)}`);
+    assert.equal(schemaAccepts(schema, schema, {...spec(), title: text}), false, `schema accepted U+${control.codePointAt(0).toString(16)}`);
     assert.throws(() => buildEvidenceBoundReportV1({...spec(), title: text}), /EVIDENCE_BOUND_REPORT_SURFACE_DENIED/, text);
   }
 });
 
-test('schema and runtime cover row width, typed cells, unique keys and bounded numbers', async () => {
+test('standard schema assertions and runtime deny the same bounded relational and numeric fixtures', async () => {
   const schema = JSON.parse(await readFile('contracts/evidence-bound-report/v1/report-spec.schema.json', 'utf8'));
   assert.equal(schema.$defs.row.minItems, 1);
   assert.equal(schema.$defs.dataset.properties.columns.uniqueItems, true);
   assert.deepEqual(schema.$defs.dataType.enum, ['string', 'integer', 'number', 'boolean']);
   assert.equal(schema.$defs.safeNumber.minimum, -9007199254740991);
   assert.equal(schema.$defs.safeNumber.maximum, 9007199254740991);
-  assert.deepEqual(schema.$defs.safeNumber['x-kaleidosphere-invariants'], {finite: true, negativeZero: false});
-  assert.deepEqual(schema.$defs.dataset['x-kaleidosphere-invariants'], {
-    rowWidth: {path: 'rows[*].length', equals: 'columns.length'},
-    columnKeys: {path: 'columns[*].key', unique: true},
-    cellDataType: {value: 'rows[*][index]', typeFrom: 'columns[index].dataType'},
-    cellNullability: {nullAllowedBy: 'columns[index].nullable'},
-    numbers: {finite: true, absoluteMaximum: 9007199254740991, negativeZero: false},
-  });
+  assert.equal(schema.$defs.safeNumber.not.const, 0);
+  assert.equal(schema.$defs.canonicalZero.const, '0');
+  assert.equal(JSON.stringify(schema).includes('x-kaleidosphere-invariants'), false);
 
   const typedDataset = {
     schemaVersion: EVIDENCE_BOUND_REPORT_DATASET_SCHEMA_V1,
     datasetId: 'typed-values',
     kind: 'TABLE',
     columns: [
-      {key: 'text', label: 'Text', dataType: 'string', nullable: true},
-      {key: 'count', label: 'Count', dataType: 'integer', nullable: false},
-      {key: 'ratio', label: 'Ratio', dataType: 'number', nullable: false},
-      {key: 'enabled', label: 'Enabled', dataType: 'boolean', nullable: false},
+      {key: 'text'},
+      {key: 'count'},
+      {key: 'ratio'},
+      {key: 'enabled'},
     ],
-    rows: [[null, 0, -9007199254740991, true], ['ok', 9007199254740991, 0, false]],
+    columnDefinitions: [
+      {label: 'Text', dataType: 'string', nullable: true},
+      {label: 'Count', dataType: 'integer', nullable: false},
+      {label: 'Ratio', dataType: 'number', nullable: false},
+      {label: 'Enabled', dataType: 'boolean', nullable: false},
+    ],
+    rows: [[null, '0', -9007199254740991, true], ['ok', 9007199254740991, '0', false]],
     differentiator: null,
   };
-  const accepted = buildEvidenceBoundReportV1(spec(typedDataset));
+  const acceptedSpec = spec(typedDataset);
+  assert.equal(schemaAccepts(schema, schema, acceptedSpec), true);
+  const accepted = buildEvidenceBoundReportV1(acceptedSpec);
   assertDeepFrozen(accepted);
 
-  for (const mutate of [
-    (copy) => { copy.dataset.rows[0].pop(); },
-    (copy) => { copy.dataset.rows[0][1] = 1.5; },
-    (copy) => { copy.dataset.rows[0][0] = null; copy.dataset.columns[0].nullable = false; },
-    (copy) => { copy.dataset.rows[0][3] = 1; },
-    (copy) => { copy.dataset.columns[1].key = copy.dataset.columns[0].key; },
-    (copy) => { copy.dataset.rows[0][2] = -0; },
-    (copy) => { copy.dataset.rows[0][2] = 9007199254740992; },
-  ]) {
+  const denied = [
+    ['row width', (copy) => { copy.dataset.rows[0].pop(); }],
+    ['definition width', (copy) => { copy.dataset.columnDefinitions.pop(); }],
+    ['integer type', (copy) => { copy.dataset.rows[0][1] = 1.5; }],
+    ['nullability', (copy) => { copy.dataset.columnDefinitions[0].nullable = false; }],
+    ['boolean type', (copy) => { copy.dataset.rows[0][3] = 1; }],
+    ['duplicate key', (copy) => { copy.dataset.columns[1].key = copy.dataset.columns[0].key; }],
+    ['negative zero', (copy) => { copy.dataset.rows[0][2] = -0; }],
+    ['noncanonical numeric zero', (copy) => { copy.dataset.rows[0][2] = 0; }],
+    ['unsafe magnitude', (copy) => { copy.dataset.rows[0][2] = 9007199254740992; }],
+    ['numeric string substitution', (copy) => { copy.dataset.rows[0][2] = '1'; }],
+  ];
+  for (const [label, mutate] of denied) {
     const copy = structuredClone(spec(typedDataset));
     mutate(copy);
-    assert.throws(() => buildEvidenceBoundReportV1(copy), /EVIDENCE_BOUND_REPORT_(?:DATASET|CELL|SURFACE)_DENIED/);
+    assert.equal(schemaAccepts(schema, schema, copy), false, `schema accepted ${label}`);
+    assert.throws(() => buildEvidenceBoundReportV1(copy), /EVIDENCE_BOUND_REPORT_(?:DATASET|CELL|SURFACE)_DENIED/, label);
   }
 });

@@ -16,8 +16,11 @@ const BINDING_KEYS = Object.freeze([
 ]);
 const SPEC_KEYS = Object.freeze(['schemaVersion', 'reportId', 'title', 'dataset', 'bindings']);
 const PROJECTION_KEYS = Object.freeze([...SPEC_KEYS, 'datasetSha256', 'specSha256']);
-const DATASET_KEYS = Object.freeze(['schemaVersion', 'datasetId', 'kind', 'columns', 'rows', 'differentiator']);
-const COLUMN_KEYS = Object.freeze(['key', 'label', 'dataType', 'nullable']);
+const DATASET_KEYS = Object.freeze([
+  'schemaVersion', 'datasetId', 'kind', 'columns', 'columnDefinitions', 'rows', 'differentiator',
+]);
+const COLUMN_KEYS = Object.freeze(['key']);
+const COLUMN_DEFINITION_KEYS = Object.freeze(['label', 'dataType', 'nullable']);
 const DIFFERENTIATOR_KEYS = Object.freeze(['type', 'status', 'label']);
 const FORBIDDEN_KEY = /(?:script|executable|expression|credential|password|secret|token|connection|dsn|raw[_-]?row|source[_-]?connection|renderer|browser|url|uri|sql|query|callback)/i;
 const FORBIDDEN_TEXT = /(?:https?:\/\/|file:\/\/|javascript:|data:text|<\/?script\b|\b(?:eval|function|setTimeout|setInterval|alert)\s*\(|=>|\b(?:select|insert|update|delete|merge|drop|alter|create)\b[\s;]|(?:^|\s)[=:][A-Za-z_$][\w$]*(?:\(|\b)|(?:password|credential|secret|token)\s*[:=])/i;
@@ -85,8 +88,8 @@ function validateCell(value, column) {
   }
   const valid = column.dataType === 'string' ? typeof value === 'string'
     : column.dataType === 'boolean' ? typeof value === 'boolean'
-      : typeof value === 'number' && Number.isFinite(value) && !Object.is(value, -0)
-        && Math.abs(value) <= MAX_SAFE_MAGNITUDE
+      : value === '0' || typeof value === 'number' && value !== 0 && Number.isFinite(value)
+        && !Object.is(value, -0) && Math.abs(value) <= MAX_SAFE_MAGNITUDE
         && (column.dataType === 'number' || Number.isSafeInteger(value));
   if (!valid) fail('EVIDENCE_BOUND_REPORT_CELL_DENIED');
 }
@@ -94,17 +97,23 @@ function validateCell(value, column) {
 function validateDataset(value) {
   exact(value, DATASET_KEYS, 'EVIDENCE_BOUND_REPORT_DATASET_DENIED');
   if (value.schemaVersion !== EVIDENCE_BOUND_REPORT_DATASET_SCHEMA_V1 || !ID.test(value.datasetId ?? '')
-    || !DATASET_KINDS.has(value.kind) || !Array.isArray(value.columns) || !Array.isArray(value.rows)
+    || !DATASET_KINDS.has(value.kind) || !Array.isArray(value.columns) || !Array.isArray(value.columnDefinitions)
+    || !Array.isArray(value.rows) || value.columns.length !== value.columnDefinitions.length
     || value.columns.length > 32 || value.rows.length > 1000) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
   const keys = new Set();
   for (const column of value.columns) {
     exact(column, COLUMN_KEYS, 'EVIDENCE_BOUND_REPORT_DATASET_DENIED');
-    if (!ID.test(column.key ?? '') || typeof column.label !== 'string' || column.label.length < 1 || column.label.length > 128
-      || !DATA_TYPES.has(column.dataType) || typeof column.nullable !== 'boolean' || keys.has(column.key)) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
+    if (!ID.test(column.key ?? '') || keys.has(column.key)) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
     keys.add(column.key);
   }
+  for (const column of value.columnDefinitions) {
+    exact(column, COLUMN_DEFINITION_KEYS, 'EVIDENCE_BOUND_REPORT_DATASET_DENIED');
+    if (typeof column.label !== 'string' || column.label.length < 1 || column.label.length > 128
+      || !DATA_TYPES.has(column.dataType) || typeof column.nullable !== 'boolean') fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
+  }
   if (value.kind === 'DIFFERENTIATOR_PLACEHOLDER') {
-    if (value.columns.length !== 0 || value.rows.length !== 0 || value.differentiator === null) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
+    if (value.columns.length !== 0 || value.columnDefinitions.length !== 0 || value.rows.length !== 0
+      || value.differentiator === null) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
     exact(value.differentiator, DIFFERENTIATOR_KEYS, 'EVIDENCE_BOUND_REPORT_DATASET_DENIED');
     if (value.differentiator.type !== 'DIFFERENTIATOR_PLACEHOLDER' || value.differentiator.status !== 'UNPOPULATED'
       || typeof value.differentiator.label !== 'string' || value.differentiator.label.length < 1 || value.differentiator.label.length > 128) {
@@ -117,7 +126,7 @@ function validateDataset(value) {
     || value.kind === 'TABLE' && value.rows.length === 0) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
   for (const row of value.rows) {
     if (!Array.isArray(row) || row.length !== value.columns.length || row.length > 32) fail('EVIDENCE_BOUND_REPORT_DATASET_DENIED');
-    for (let index = 0; index < row.length; index += 1) validateCell(row[index], value.columns[index]);
+    for (let index = 0; index < row.length; index += 1) validateCell(row[index], value.columnDefinitions[index]);
   }
 }
 
