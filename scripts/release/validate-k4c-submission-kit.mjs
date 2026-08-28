@@ -11,7 +11,7 @@ import path from 'node:path';
 const root = path.resolve(import.meta.dirname, '..', '..');
 const defaultListing = path.join(root, 'docs', 'release', 'k4c-directory-listing.md');
 const defaultReleaseNotes = path.join(root, 'docs', 'release', 'k4c-release-notes.md');
-const defaultFixture = path.join(root, 'tests', 'fixtures', 'release', 'k4c-reviewer-test-cases-v1.json');
+const defaultFixture = path.join(root, 'docs', 'release', 'k4c-reviewer-test-cases-v1.json');
 const securityReceipt = path.join(root, 'verification', 'k4c', 'security-license-receipt-v1.json');
 const e2eReceipt = path.join(root, 'verification', 'k4c', 'codex-isolated-e2e-v1.json');
 const manifest = path.join(root, 'packages', 'codex', 'kaleidosphere', '.codex-plugin', 'plugin.json');

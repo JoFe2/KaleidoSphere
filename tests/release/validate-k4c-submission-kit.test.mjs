@@ -7,7 +7,7 @@ import test from 'node:test';
 
 const root = path.resolve(import.meta.dirname, '..', '..');
 const validator = path.join(root, 'scripts/release/validate-k4c-submission-kit.mjs');
-const fixture = path.join(root, 'tests/fixtures/release/k4c-reviewer-test-cases-v1.json');
+const fixture = path.join(root, 'docs/release/k4c-reviewer-test-cases-v1.json');
 const invalidFixture = path.join(root, 'tests/fixtures/release/k4c-reviewer-test-cases-invalid-v1.json');
 
 function run(args) {

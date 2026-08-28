@@ -26,7 +26,7 @@ files.
 - Plugin manifest SHA-256 digest: `beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75`
 - Security receipt: `verification/k4c/security-license-receipt-v1.json`
 - Isolated E2E receipt: `verification/k4c/codex-isolated-e2e-v1.json`
-- Reviewer case matrix: `tests/fixtures/release/k4c-reviewer-test-cases-v1.json`
+- Reviewer case matrix: `docs/release/k4c-reviewer-test-cases-v1.json`
 
 The package digest is the deterministic digest recorded by both receipts. A
 reviewer must inspect the digest before treating the package contents as the
