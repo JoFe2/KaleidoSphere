@@ -534,31 +534,73 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
   const receiptRequest = typedRequest(receiptBase.analysis, {
     methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   });
-  const receiptReservation = reserveProgressiveProbeCandidate(receiptBase.analysis, receiptRequest.candidate, {expectedStateSha256: receiptBase.analysis.stateSha256});
+  const receiptReservation = reserveProgressiveProbeCandidate(receiptBase.analysis, receiptRequest.candidate, {
+    expectedStateSha256: receiptBase.analysis.stateSha256,
+    claimSha256: receiptRequest.claimSha256, evidenceGapSha256: receiptRequest.evidenceGapSha256,
+  });
   const receiptEvidence = identitySha256({fixture: 'typed-receipt-counterevidence'});
   const received = recordProgressiveProbeOutcome(receiptReservation.state, {
     reservationSha256: receiptReservation.authorization.reservationSha256, resultState: 'SUCCEEDED', evidenceRefs: [receiptEvidence],
     signal: 'COUNTERS', informationGainBps: 1700, confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
   });
+  const receiptSha256 = received.controllerRun.receipts[0].receiptSha256;
   const resumedRequest = typedRequest(received, {
     methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
-    resumeReceiptSha256: received.controllerRun.receipts[0].receiptSha256,
+    resumeReceiptSha256: receiptSha256,
   });
   const resumedDecision = evaluateProgressiveDrilldownEligibility(received, resumedRequest);
   assert.equal(resumedDecision.disposition, 'REUSED_SUCCESS');
   assert.equal(resumedDecision.trace.receipt.resultState, 'SUCCEEDED');
   assert.deepEqual(resumedDecision.trace.evidence.evidenceRefs, [receiptEvidence]);
   assert.deepEqual(resumedDecision.trace.evidence.counterevidenceRefs, [receiptEvidence]);
+  const crossClaimResume = typedRequest(received, {
+    claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
+    target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(received, crossClaimResume).disposition, 'DENIED_RECEIPT_RESUME');
+  const crossClaimNoResume = typedRequest(received, {
+    claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
+    target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(received, crossClaimNoResume).disposition, 'DENIED_RECEIPT_RESUME');
+  const gapSubstitution = typedRequest(received, {
+    claim: 'claim', gap: 'other-gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
+    target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(received, gapSubstitution).disposition, 'DENIED_RECEIPT_RESUME');
 
-  const reserved = reserveProgressiveProbeCandidate(analysis, valid.candidate, {expectedStateSha256: analysis.stateSha256});
-  const duplicate = evaluateProgressiveDrilldownEligibility(reserved.state, valid);
+  const reserved = reserveProgressiveProbeCandidate(analysis, valid.candidate, {
+    expectedStateSha256: analysis.stateSha256,
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256,
+  });
+  const duplicateRequest = typedRequest(reserved.state, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const duplicate = evaluateProgressiveDrilldownEligibility(reserved.state, duplicateRequest);
   assert.equal(duplicate.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.throws(() => evaluateProgressiveDrilldownEligibility(reserved.state, valid), /DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID/);
+  const forgedBudget = structuredClone(valid);
+  forgedBudget.remainingBudget = {...valid.remainingBudget, runProbes: valid.remainingBudget.runProbes + 1};
+  const {requestSha256: _oldRequestHash, ...forgedBudgetBody} = forgedBudget;
+  forgedBudget.requestSha256 = identitySha256(forgedBudgetBody);
+  assert.throws(() => evaluateProgressiveDrilldownEligibility(analysis, forgedBudget), /DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID/);
+  assert.throws(() => reserveProgressiveProbeCandidate(reserved.state, valid.candidate, {
+    expectedStateSha256: reserved.state.stateSha256,
+    claimSha256: identitySha256({fixture: 'other-claim'}), evidenceGapSha256: valid.evidenceGapSha256,
+  }), /DB_PROGRESSIVE_CLAIM_BINDING_INVALID/);
+  assert.throws(() => reserveProgressiveProbeCandidate(reserved.state, valid.candidate, {
+    expectedStateSha256: reserved.state.stateSha256,
+    claimSha256: valid.claimSha256, evidenceGapSha256: null,
+  }), /DB_PROGRESSIVE_CLAIM_BINDING_INVALID/);
   const exhausted = await safeAnalysis({runId: 'fixture-typed-drilldown-exhausted', phase: 'SAFE_AGGREGATES', maxRunProbes: 1});
   const exhaustedRequest = typedRequest(exhausted.analysis, {
     methodRef: safeMethod(exhausted.registry, 'COLUMN_SUMMARY'), target: exhausted.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   });
-  const exhaustedState = reserveProgressiveProbeCandidate(exhausted.analysis, exhaustedRequest.candidate, {expectedStateSha256: exhausted.analysis.stateSha256}).state;
-  const budget = evaluateProgressiveDrilldownEligibility(exhaustedState, typedRequest(exhausted.analysis, {
+  const exhaustedState = reserveProgressiveProbeCandidate(exhausted.analysis, exhaustedRequest.candidate, {
+    expectedStateSha256: exhausted.analysis.stateSha256,
+    claimSha256: exhaustedRequest.claimSha256, evidenceGapSha256: exhaustedRequest.evidenceGapSha256,
+  }).state;
+  const budget = evaluateProgressiveDrilldownEligibility(exhaustedState, typedRequest(exhaustedState, {
     claim: 'other', gap: 'other-gap', methodRef: safeMethod(exhausted.registry, 'COLUMN_SUMMARY'), target: exhausted.targets[1], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   }));
   assert.equal(budget.disposition, 'DENIED_BUDGET');
@@ -567,17 +609,26 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
     reservationSha256: reserved.authorization.reservationSha256, resultState: 'TIMEOUT', evidenceRefs: [], signal: 'UNKNOWN', informationGainBps: 0,
     confidenceBounds: {lowerBps: 1500, upperBps: 7500}, reasonCode: 'QUERY_TIMEOUT',
   });
-  assert.equal(evaluateProgressiveDrilldownEligibility(timedOut, valid).disposition, 'TERMINATED_TIMEOUT');
+  const timedOutRequest = typedRequest(timedOut, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(timedOut, timedOutRequest).disposition, 'TERMINATED_TIMEOUT');
   const cancelBase = await safeAnalysis({runId: 'fixture-typed-drilldown-cancel', phase: 'SAFE_AGGREGATES'});
   const cancelRequest = typedRequest(cancelBase.analysis, {
     methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
   });
-  const cancelReservation = reserveProgressiveProbeCandidate(cancelBase.analysis, cancelRequest.candidate, {expectedStateSha256: cancelBase.analysis.stateSha256});
+  const cancelReservation = reserveProgressiveProbeCandidate(cancelBase.analysis, cancelRequest.candidate, {
+    expectedStateSha256: cancelBase.analysis.stateSha256,
+    claimSha256: cancelRequest.claimSha256, evidenceGapSha256: cancelRequest.evidenceGapSha256,
+  });
   const cancelled = recordProgressiveProbeOutcome(cancelReservation.state, {
     reservationSha256: cancelReservation.authorization.reservationSha256, resultState: 'CANCELLED', evidenceRefs: [], signal: 'UNKNOWN', informationGainBps: 0,
     confidenceBounds: {lowerBps: 1500, upperBps: 7500}, reasonCode: 'QUERY_CANCELLED',
   });
-  assert.equal(evaluateProgressiveDrilldownEligibility(cancelled, cancelRequest).disposition, 'TERMINATED_CANCELLED');
+  const cancelledRequest = typedRequest(cancelled, {
+    methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(cancelled, cancelledRequest).disposition, 'TERMINATED_CANCELLED');
   const staleReceiptRequest = {...valid, resumeReceiptSha256: '0'.repeat(64)};
   delete staleReceiptRequest.requestSha256;
   staleReceiptRequest.requestSha256 = identitySha256(staleReceiptRequest);

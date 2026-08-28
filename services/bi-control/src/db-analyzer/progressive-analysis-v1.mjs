@@ -296,14 +296,18 @@ function validateCandidate(candidate, state) {
 
 function validateReservation(reservation, state) {
   assertSealed(reservation, 'reservationSha256', 'DB_PROGRESSIVE_RESERVATION_TAMPERED');
+  const claimBound = 'claimSha256' in reservation;
   if (!exactKeys(reservation, [
     'schemaVersion', 'runId', 'scopeSha256', 'candidateSha256', 'nearDuplicateKey', 'controllerProbeKey',
     'hypothesisId', 'hypothesisDefinitionSha256', 'tableKey', 'methodRef', 'phase', 'target', 'intentFeatures',
     'gainBindingSha256', 'expectedGain', 'reservationDebit', 'dispatched', 'reservationSha256',
+    ...(claimBound ? ['claimSha256', 'evidenceGapSha256'] : []),
   ]) || reservation.schemaVersion !== PROGRESSIVE_RESERVATION_SCHEMA || !sha256Value(reservation.candidateSha256)
     || !sha256Value(reservation.controllerProbeKey) || !sha256Value(reservation.nearDuplicateKey)
     || !ID.test(reservation.hypothesisId) || !sha256Value(reservation.hypothesisDefinitionSha256)
     || !sha256Value(reservation.tableKey) || !sha256Value(reservation.gainBindingSha256)
+    || (claimBound ? !sha256Value(reservation.claimSha256) || !sha256Value(reservation.evidenceGapSha256)
+      : 'evidenceGapSha256' in reservation)
     || reservation.reservationDebit !== 1 || reservation.dispatched !== false
     || !state.controllerRun.probes.some(({probeKey}) => probeKey === reservation.controllerProbeKey)) {
     fail('DB_PROGRESSIVE_RESERVATION_INVALID');
@@ -680,8 +684,11 @@ function validateDrilldownRequest(request, state) {
   if (canonicalJson(expectedCapability) !== canonicalJson(request.capability)) fail('DB_PROGRESSIVE_DRILLDOWN_CAPABILITY_INVALID');
   const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === request.hypothesisId);
   if (!hypothesis || request.candidate.hypothesisId !== request.hypothesisId) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
-  if (!exactKeys(request.remainingBudget, ['runProbes', 'tableProbes', 'hypothesisProbes'])
-    || !Object.values(request.remainingBudget).every((value) => Number.isSafeInteger(value) && value >= 0)) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  if (canonicalJson(request.remainingBudget) !== canonicalJson(currentDrilldownBudget(state, request.candidate))
+    || !exactKeys(request.remainingBudget, ['runProbes', 'tableProbes', 'hypothesisProbes'])
+    || !Object.values(request.remainingBudget).every((value) => Number.isSafeInteger(value) && value >= 0)) {
+    fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  }
   if (!exactKeys(request.stoppingRule, [
     'maxConsecutiveNoGain', 'maxConsecutiveCounterevidence', 'minExpectedGainBps', 'consecutiveNoGain', 'consecutiveCounterevidence',
   ]) || canonicalJson(request.stoppingRule) !== canonicalJson(stoppingRuleFor(state, hypothesis))) {
@@ -778,9 +785,11 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
   const controllerReceipt = reservation === null ? null
     : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
   const expectedProbeKey = controllerProbeKeyForRequest(state, valid);
+  const claimBound = reservation === null
+    || (reservation.claimSha256 === valid.claimSha256 && reservation.evidenceGapSha256 === valid.evidenceGapSha256);
   const receiptResume = valid.resumeReceiptSha256 === null
-    ? true
-    : controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey;
+    ? claimBound
+    : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey;
   const gates = {
     phase: valid.phase === state.controllerRun.phase,
     scope: coverages.length === (valid.target.kind === 'RELATIONSHIP' ? 2 : 1) && coverages.every(Boolean)
@@ -854,16 +863,22 @@ function dispositionForExisting(state, reservation) {
   return outcome.resultState === 'SUCCEEDED' ? 'REUSED_SUCCESS' : 'SUPPRESSED_TERMINAL_OUTCOME';
 }
 
-export function reserveProgressiveProbeCandidate(state, candidate, {expectedStateSha256}) {
+export function reserveProgressiveProbeCandidate(state, candidate, {expectedStateSha256, claimSha256 = null, evidenceGapSha256 = null}) {
   validateState(state);
   if (!sha256Value(expectedStateSha256) || expectedStateSha256 !== state.stateSha256) fail('DB_PROGRESSIVE_STALE_RESERVATION');
+  if ((claimSha256 === null) !== (evidenceGapSha256 === null)
+    || !(claimSha256 === null || sha256Value(claimSha256))
+    || !(evidenceGapSha256 === null || sha256Value(evidenceGapSha256))) fail('DB_PROGRESSIVE_CLAIM_BINDING_INVALID');
   validateCandidate(candidate, state);
   const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === candidate.hypothesisId);
   const existing = state.reservations.find(({candidateSha256}) => candidateSha256 === candidate.candidateSha256);
-  if (existing) return {state, authorization: normalizeJsonValue({
-    disposition: dispositionForExisting(state, existing), candidateSha256: candidate.candidateSha256,
-    reservationSha256: existing.reservationSha256, controllerProbeKey: existing.controllerProbeKey,
-  })};
+  if (existing) {
+    if ((existing.claimSha256 ?? null) !== claimSha256 || (existing.evidenceGapSha256 ?? null) !== evidenceGapSha256) fail('DB_PROGRESSIVE_CLAIM_BINDING_INVALID');
+    return {state, authorization: normalizeJsonValue({
+      disposition: dispositionForExisting(state, existing), candidateSha256: candidate.candidateSha256,
+      reservationSha256: existing.reservationSha256, controllerProbeKey: existing.controllerProbeKey,
+    })};
+  }
   if (hypothesis.status === 'STOPPED' || hypothesis.status === 'AWAITING_RECONCILIATION') fail('DB_PROGRESSIVE_HYPOTHESIS_STOPPED');
   const near = state.reservations.find(({nearDuplicateKey}) => nearDuplicateKey === candidate.nearDuplicateKey);
   if (near) return {state, authorization: normalizeJsonValue({
@@ -888,6 +903,7 @@ export function reserveProgressiveProbeCandidate(state, candidate, {expectedStat
     schemaVersion: PROGRESSIVE_RESERVATION_SCHEMA,
     runId: state.controllerRun.runId,
     scopeSha256: state.controllerRun.scopeSha256,
+    ...(claimSha256 === null ? {} : {claimSha256, evidenceGapSha256}),
     candidateSha256: candidate.candidateSha256,
     nearDuplicateKey: candidate.nearDuplicateKey,
     controllerProbeKey: controllerAuthorization.authorization.probeKey,
