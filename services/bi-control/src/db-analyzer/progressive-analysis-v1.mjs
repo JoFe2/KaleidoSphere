@@ -4,6 +4,7 @@ import {
   normalizeJsonValue,
 } from './core.mjs';
 import {
+  PROGRESSIVE_PHASES,
   advanceProgressivePhase,
   authorizeProgressiveProbe,
   buildProgressiveReport,
@@ -117,12 +118,25 @@ function validateIntentFeatures(features) {
   return normalizeJsonValue(features);
 }
 
-function validateDispatchShape(state, {phase, methodRef, target, arguments: args}) {
+function validateDispatchShape(state, {phase, methodRef, target, arguments: args}, {allowEligibilityDenials = false} = {}) {
   const method = state.controllerRun.methodRegistry.methods.find((entry) => entry.methodRef === methodRef);
-  if (!method || method.phase !== phase || phase !== state.controllerRun.phase || method.readOnly !== true
+  if (!PROGRESSIVE_PHASES.includes(phase)
+    || (!method && !allowEligibilityDenials)
+    || (method && (method.readOnly !== true
     || method.acceptsFreeSql !== false || method.acceptsRawValues !== false || method.acceptsCredentials !== false
     || !args || typeof args !== 'object' || Array.isArray(args)
-    || canonicalJson(Object.keys(args).sort()) !== canonicalJson(method.allowedArgumentKeys)) {
+    || canonicalJson(Object.keys(args).sort()) !== canonicalJson(method.allowedArgumentKeys)))) {
+    fail('DB_PROGRESSIVE_METHOD_DENIED');
+  }
+  if (!method) {
+    if (!safeText(methodRef, 180) || !args || typeof args !== 'object' || Array.isArray(args)) {
+      fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+    }
+    if (Object.keys(args).some((key) => !safeText(key, 64) || SECRET_SHAPE.test(key))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    return;
+  }
+  if ((!allowEligibilityDenials && (method.phase !== phase || phase !== state.controllerRun.phase))
+    || (allowEligibilityDenials && !PROGRESSIVE_PHASES.includes(phase))) {
     fail('DB_PROGRESSIVE_METHOD_DENIED');
   }
   if (Object.keys(args).some((key) => !safeText(key, 64) || SECRET_SHAPE.test(key))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
@@ -556,13 +570,13 @@ export function registerProgressiveHypothesis(state, {
   return replaceState(state, {hypothesisLedger: sealLedger([...state.hypothesisLedger.entries, entry])});
 }
 
-export function buildProgressiveProbeCandidate(state, {
+function buildProgressiveProbeCandidateInternal(state, {
   hypothesisId, phase, methodRef, target, arguments: args, intentFeatures, gainInputs,
-}) {
+}, options = {}) {
   validateState(state);
   const hypothesis = state.hypothesisLedger.entries.find((entry) => entry.hypothesisId === hypothesisId);
   if (!hypothesis) fail('DB_PROGRESSIVE_HYPOTHESIS_UNKNOWN');
-  validateDispatchShape(state, {phase, methodRef, target, arguments: args});
+  validateDispatchShape(state, {phase, methodRef, target, arguments: args}, options);
   const normalizedIntent = validateIntentFeatures(intentFeatures);
   const normalizedTarget = normalizeJsonValue(target);
   const normalizedArguments = normalizeJsonValue(args);
@@ -601,6 +615,10 @@ export function buildProgressiveProbeCandidate(state, {
     intentFeatures: base.intentFeatures,
   });
   return seal({...base, nearDuplicateKey, gainBindingSha256, expectedGain: expectedGain(gainInputs, gainBindingSha256)}, 'candidateSha256');
+}
+
+export function buildProgressiveProbeCandidate(state, input) {
+  return buildProgressiveProbeCandidateInternal(state, input);
 }
 
 export function rankProgressiveProbeCandidates(state, candidates) {
@@ -707,7 +725,7 @@ export function buildProgressiveTypedDrilldownRequest(state, input) {
     || !(input.resumeReceiptSha256 === undefined || input.resumeReceiptSha256 === null || sha256Value(input.resumeReceiptSha256))) {
     fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
   }
-  const candidate = buildProgressiveProbeCandidate(state, input);
+  const candidate = buildProgressiveProbeCandidateInternal(state, input, {allowEligibilityDenials: true});
   const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === input.hypothesisId);
   const request = {
     schemaVersion: PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA,
@@ -793,9 +811,9 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
     : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
   const claimBound = reservation === null
     || (reservation.claimSha256 === valid.claimSha256 && reservation.evidenceGapSha256 === valid.evidenceGapSha256);
-  const receiptResume = !probeKeyBound ? true : valid.resumeReceiptSha256 === null
+  const receiptResume = probeKeyBound && (valid.resumeReceiptSha256 === null
     ? claimBound
-    : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey;
+    : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey);
   const gates = {
     phase: valid.phase === state.controllerRun.phase,
     scope: coverages.length === (valid.target.kind === 'RELATIONSHIP' ? 2 : 1) && coverages.every(Boolean)
@@ -821,11 +839,12 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
   else if (!gates.allowlist) disposition = 'DENIED_ALLOWLIST';
   else if (!gates.privilege) disposition = 'DENIED_PRIVILEGE';
   else if (!gates.capability) disposition = 'TERMINATED_UNSUPPORTED_CAPABILITY';
-  else if (!gates.receiptResume) disposition = 'DENIED_RECEIPT_RESUME';
   else if (!gates.timeout) disposition = 'TERMINATED_TIMEOUT';
   else if (!gates.cancellation) disposition = 'TERMINATED_CANCELLED';
   else if (!gates.stoppingRule) disposition = 'TERMINATED_STOPPING_RULE';
   else if (!gates.runBudget || !gates.tableBudget || !gates.hypothesisBudget) disposition = 'DENIED_BUDGET';
+  else if (!gates.duplicate && exactReservation === null) disposition = 'SUPPRESSED_DUPLICATE';
+  else if (!gates.receiptResume) disposition = 'DENIED_RECEIPT_RESUME';
   else if (!gates.duplicate) disposition = outcome?.resultState === 'SUCCEEDED' ? 'REUSED_SUCCESS' : 'SUPPRESSED_DUPLICATE';
   const body = {
     schemaVersion: PROGRESSIVE_DRILLDOWN_ELIGIBILITY_SCHEMA,

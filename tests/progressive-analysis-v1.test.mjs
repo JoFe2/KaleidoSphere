@@ -82,13 +82,14 @@ function safeMethod(registry, semanticMethod) {
 }
 
 function typedRequest(state, {
-  claim = 'claim', gap = 'gap', methodRef, target, typeFamily, arguments: args, intentFeatures, gain = 'high', resumeReceiptSha256,
+  claim = 'claim', gap = 'gap', methodRef, target, typeFamily, arguments: args, phase = state.controllerRun.phase,
+  intentFeatures, gain = 'high', resumeReceiptSha256,
 }) {
   const input = {
     claimSha256: identitySha256({fixture: claim}),
     evidenceGapSha256: identitySha256({fixture: gap}),
     hypothesisId: fixture.hypotheses[0].hypothesisId,
-    phase: state.controllerRun.phase,
+    phase,
     methodRef,
     target,
     arguments: args ?? {maxSourceRows: 500, typeFamily},
@@ -507,11 +508,12 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
     phase: valid.phase, methodRef, target: targets[0], arguments: invalidArguments.arguments,
     intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
   }), /DB_PROGRESSIVE_METHOD_DENIED|DB_PROGRESSIVE_PROBE_REQUEST_INVALID/);
-  assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
+  const deniedAllowlistRequest = buildProgressiveTypedDrilldownRequest(analysis, {
     claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
     phase: valid.phase, methodRef: 'mssql.safe.model-authored-sql@1.0.0', target: targets[0],
     arguments: {maxSourceRows: 500, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
-  }), /DB_PROGRESSIVE_METHOD_DENIED/);
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, deniedAllowlistRequest).disposition, 'DENIED_ALLOWLIST');
   assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
     claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
     phase: valid.phase, methodRef, target: targets[0], arguments: {maxSourceRows: 500, credential: 'fixture-secret'},
@@ -706,4 +708,40 @@ test('typed drilldown duplicate lookup is bound to the controller probe key acro
   assert.equal(changedHypothesisDecision.gates.duplicate, false);
   assert.equal(changedHypothesisDecision.trace.receipt, null);
   assert.deepEqual(changedHypothesisDecision.trace.evidence.evidenceRefs, []);
+});
+
+test('typed drilldown suppresses a mismatched probe receipt without resuming or reusing evidence', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-mismatched-receipt', phase: 'SAFE_AGGREGATES'});
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const original = typedRequest(analysis, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const reserved = reserveProgressiveProbeCandidate(analysis, original.candidate, {
+    expectedStateSha256: analysis.stateSha256,
+    claimSha256: original.claimSha256, evidenceGapSha256: original.evidenceGapSha256,
+  });
+  const evidence = identitySha256({fixture: 'mismatched-receipt-evidence'});
+  const received = recordProgressiveProbeOutcome(reserved.state, {
+    reservationSha256: reserved.authorization.reservationSha256, resultState: 'SUCCEEDED', evidenceRefs: [evidence],
+    signal: 'COUNTERS', informationGainBps: 1700, confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
+  });
+  const receiptSha256 = received.controllerRun.receipts[0].receiptSha256;
+  const mismatched = typedRequest(received, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'},
+    intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  const decision = evaluateProgressiveDrilldownEligibility(received, mismatched);
+  assert.equal(decision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(decision.gates.receiptResume, false);
+  assert.equal(decision.trace.receipt, null);
+  assert.deepEqual(decision.trace.evidence.evidenceRefs, []);
+});
+
+test('typed drilldown returns explicit denials for valid phase and allowlist mismatches', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-denial-dispositions', phase: 'SAFE_AGGREGATES'});
+  const validInput = {
+    methodRef: safeMethod(registry, 'COLUMN_SUMMARY'), target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  };
+  const phaseMismatch = typedRequest(analysis, {...validInput, phase: 'RELATIONSHIP_GRAPH'});
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, phaseMismatch).disposition, 'DENIED_PHASE');
+  const allowlistMismatch = typedRequest(analysis, {...validInput, methodRef: 'mssql.safe.model-authored-sql@1.0.0'});
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, allowlistMismatch).disposition, 'DENIED_ALLOWLIST');
 });
