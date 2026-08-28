@@ -1,6 +1,6 @@
 # Progressive Analysis v1
 
-Status: accepted implementation decision for issue #37.
+Status: accepted implementation decision for issue #37, with the bounded issue #40 typed-drilldown leaf appended.
 
 ## Context
 
@@ -52,6 +52,31 @@ State and reports reject free SQL, raw values, credentials, cross-scope
 candidates, stale state, forged gain, counter rollback, receipt replay, and
 tampering. Missing privilege remains evidence and never means an absent object.
 
+## Issue #40 partial contract: typed drilldown leaf
+
+The leaf adds one sealed `progressive-drilldown-request/v1` and one pure,
+sealed `progressive-drilldown-eligibility/v1` decision. The request binds the
+report claim digest, evidence-gap digest, hypothesis, one existing method
+reference, typed target and arguments, typed intent, sealed expected-gain
+evidence, remaining run/table/hypothesis budget, stopping-rule snapshot, and
+an optional receipt-resume digest. `dispatchAllowed` is permanently false.
+
+The four bounded paths are existing safe methods only:
+
+1. `COLUMN_SUMMARY` for typed column distribution/cardinality evidence.
+2. `TEMPORAL_COVERAGE` for typed temporal evidence.
+3. `RELATIONSHIP_OVERLAP` for typed pair evidence.
+4. `QUALITY_INDICATORS` for typed quality evidence.
+
+Eligibility is pure and does not reserve, dispatch, execute SQL, or mutate the
+analysis state. It represents phase, scope/visibility, registry allowlist,
+privilege/coverage, capability, run/table/hypothesis budget, duplicate
+reservation, timeout, cancellation, receipt-resume, and stopping-rule gates.
+Eligible decisions are ordered by sealed expected gain and request digest;
+terminal ordering is hashed canonically. Existing reservations and receipts
+are read back into the trace, including evidence and counterevidence refs.
+The controller remains the sole reservation/receipt authority.
+
 ## Risks, fallback, and review markers
 
 - Expected gain is a deterministic bounded policy signal, not an optimal
@@ -70,3 +95,19 @@ No free model SQL, raw-row transfer, automatic business truth, production or
 customer database access, deployment/runtime activation, inferred-FK truth,
 universal completeness, unrestricted concurrency, optimal information theory,
 or performance improvement.
+
+The typed leaf additionally does not claim capability beyond the four
+manifest-backed safe methods, privilege from a missing/denied coverage record,
+dispatch authorization, automatic remediation, causal explanation, or a
+complete drilldown plan. A future issue may add an owner-controlled dispatch
+adapter only after it preserves this request binding, receipt readback, and
+the controller gates.
+
+## Remaining issue criteria
+
+This slice is complete only as a local eligibility artifact. The remaining
+issue is open if a caller needs runtime dispatch, a production/customer
+database, a new method, raw values, model-authored SQL, dynamic capability
+discovery, or claims stronger than bounded evidence. Those requirements are
+explicitly outside this contract and must not be satisfied by weakening a
+fail-closed eligibility result.

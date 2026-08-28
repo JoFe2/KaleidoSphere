@@ -13,9 +13,12 @@ import {
 import {
   advanceProgressiveAnalysisPhase,
   buildProgressiveAnalysisReport,
+  buildProgressiveTypedDrilldownRequest,
   buildProgressiveProbeCandidate,
   createProgressiveAnalysis,
+  evaluateProgressiveDrilldownEligibility,
   rankProgressiveProbeCandidates,
+  rankProgressiveDrilldownRequests,
   reconcileProgressiveUnknownOutcome,
   recordProgressiveProbeOutcome,
   registerProgressiveHypothesis,
@@ -43,6 +46,128 @@ async function mssqlInputs() {
     registry: buildProgressiveMethodRegistry({structureManifest, profilingManifest}),
     coverage: buildProgressiveCoverage(structureEvidence),
   };
+}
+
+async function safeAnalysis({runId, phase, maxRunProbes = 8, transformSafeAnalysisManifest = null} = {}) {
+  const [structureManifest, profilingManifest, loadedSafeAnalysisManifest, structureEvidence] = await Promise.all([
+    readJson(`${MSSQL_DIRECTORY}/manifest.json`),
+    readJson(`${MSSQL_DIRECTORY}/profiling-manifest.json`),
+    readJson(`${ROOT}/query-packs/db-analyzer/v1/mssql/safe-analysis-manifest.json`),
+    runAnalyzeProfile(`${ROOT}/fixtures/mssql-profile-v1.json`, {repositoryRoot: ROOT}),
+  ]);
+  const safeAnalysisManifest = transformSafeAnalysisManifest === null
+    ? loadedSafeAnalysisManifest
+    : transformSafeAnalysisManifest(structuredClone(loadedSafeAnalysisManifest));
+  const coverage = buildProgressiveCoverage(structureEvidence);
+  const registry = buildProgressiveMethodRegistry({structureManifest, profilingManifest, safeAnalysisManifest});
+  const controllerRun = advanceControllerTo(createProgressiveRun({
+    runId, engine: 'mssql', scope: structureEvidence.profile.scope, methodRegistry: registry, coverage,
+    budgets: {maxRunProbes, maxObjectProbes: Math.min(3, maxRunProbes)},
+  }), phase);
+  let analysis = createProgressiveAnalysis({
+    controllerRun, budgets: {maxTableProbes: Math.min(4, maxRunProbes), maxHypothesisProbes: Math.min(3, maxRunProbes)}, policy: fixture.policy,
+  });
+  const targets = columnTargets(coverage);
+  const hypothesis = fixture.hypotheses[0];
+  analysis = registerProgressiveHypothesis(analysis, {
+    hypothesisId: hypothesis.hypothesisId, hypothesisKind: hypothesis.hypothesisKind,
+    target: {kind: 'TABLE', schemaName: targets[0].schemaName, relationName: targets[0].relationName},
+    confidenceBounds: hypothesis.confidenceBounds,
+    sourceEvidenceRefs: [identitySha256({fixture: `typed-${hypothesis.sourceEvidence}`})],
+  });
+  return {analysis, registry, targets};
+}
+
+function safeMethod(registry, semanticMethod) {
+  const found = registry.methods.find(({methodRef}) => methodRef.includes(`safe.${semanticMethod.toLowerCase().replaceAll('_', '-')}@`));
+  assert(found, semanticMethod);
+  return found.methodRef;
+}
+
+function typedRequest(state, {
+  claim = 'claim', gap = 'gap', methodRef, target, typeFamily, arguments: args, phase = state.controllerRun.phase,
+  intentFeatures, gain = 'high', resumeReceiptSha256,
+}) {
+  const input = {
+    claimSha256: identitySha256({fixture: claim}),
+    evidenceGapSha256: identitySha256({fixture: gap}),
+    hypothesisId: fixture.hypotheses[0].hypothesisId,
+    phase,
+    methodRef,
+    target,
+    arguments: args ?? {maxSourceRows: 500, typeFamily},
+    intentFeatures,
+    gainInputs: {...fixture.gainInputs[gain], evidenceRefs: [identitySha256({fixture: `${claim}-gain`})]},
+  };
+  if (resumeReceiptSha256 !== undefined) input.resumeReceiptSha256 = resumeReceiptSha256;
+  return buildProgressiveTypedDrilldownRequest(state, input);
+}
+
+function reseal(value, hashKey) {
+  const body = structuredClone(value);
+  delete body[hashKey];
+  return {...body, [hashKey]: identitySha256(body)};
+}
+
+function resealTypedRequest(request, {target = request.target, arguments: args = request.arguments}) {
+  let candidate = structuredClone(request.candidate);
+  candidate.target = structuredClone(target);
+  candidate.arguments = structuredClone(args);
+  candidate.gainBindingSha256 = identitySha256({
+    runId: candidate.runId,
+    scopeSha256: candidate.scopeSha256,
+    hypothesisDefinitionSha256: candidate.hypothesisDefinitionSha256,
+    phase: candidate.phase,
+    methodRef: candidate.methodRef,
+    target: candidate.target,
+    arguments: candidate.arguments,
+    intentFeatures: candidate.intentFeatures,
+  });
+  candidate.nearDuplicateKey = identitySha256({
+    scopeSha256: candidate.scopeSha256,
+    hypothesisDefinitionSha256: candidate.hypothesisDefinitionSha256,
+    tableKey: candidate.tableKey,
+    target: candidate.target,
+    intentFeatures: candidate.intentFeatures,
+  });
+  candidate.expectedGain = reseal({...candidate.expectedGain, bindingSha256: candidate.gainBindingSha256}, 'expectedGainSha256');
+  candidate = reseal(candidate, 'candidateSha256');
+  return reseal({
+    ...request,
+    candidate,
+    candidateSha256: candidate.candidateSha256,
+    target: candidate.target,
+    arguments: candidate.arguments,
+    expectedGain: candidate.expectedGain,
+  }, 'requestSha256');
+}
+
+function resealTypedRequestArguments(request, args) {
+  return resealTypedRequest(request, {arguments: args});
+}
+
+function resealTypedRequestTarget(request, target) {
+  return resealTypedRequest(request, {target});
+}
+
+function assertNoProjectedReadback(decision, foreignEvidenceRef) {
+  assert.equal(decision.trace.receipt, null);
+  assert.deepEqual(decision.trace.evidence.evidenceRefs, []);
+  assert.deepEqual(decision.trace.evidence.counterevidenceRefs, []);
+  assert.equal(decision.trace.evidence.signal, null);
+  assert.equal(JSON.stringify(decision).includes(foreignEvidenceRef), false);
+}
+
+function assertRejectedWithoutEcho(action, pattern, rejectedValue, message) {
+  let caught = null;
+  try {
+    action();
+  } catch (error) {
+    caught = error;
+  }
+  assert(caught, message ?? 'expected request rejection');
+  assert.match(caught.message, pattern, message);
+  assert.equal(caught.message.includes(rejectedValue), false, message);
 }
 
 function advanceControllerTo(run, target) {
@@ -384,4 +509,519 @@ test('sequential, restart, concurrent-reservation and unknown-outcome fixture ha
   };
   assert.deepEqual(hashes, JSON.parse(JSON.stringify(hashes)));
   if (process.env.KS_PRINT_PROGRESSIVE_ANALYSIS_HASHES === '1') console.log(JSON.stringify(hashes));
+});
+
+test('typed drilldown eligibility seals the four existing safe paths and preserves claim-to-receipt evidence traceability', async () => {
+  const paths = [
+    {phase: 'SAFE_AGGREGATES', semanticMethod: 'COLUMN_SUMMARY', typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT},
+    {phase: 'SAFE_AGGREGATES', semanticMethod: 'TEMPORAL_COVERAGE', typeFamily: 'TEMPORAL', intentFeatures: TEMPORAL_INTENT},
+    {phase: 'RELATIONSHIP_GRAPH', semanticMethod: 'RELATIONSHIP_OVERLAP', typeFamily: 'PAIR', intentFeatures: {...NUMERIC_INTENT, probeClass: 'RELATIONSHIP_CHECK', signalKind: 'RELATIONSHIP', grain: 'TABLE'}},
+    {phase: 'HYPOTHESIS_VALIDATION', semanticMethod: 'QUALITY_INDICATORS', typeFamily: 'NUMERIC', intentFeatures: {...NUMERIC_INTENT, probeClass: 'QUALITY_CHECK', signalKind: 'NULLABILITY'}},
+  ];
+  const decisions = [];
+  for (const [index, path] of paths.entries()) {
+    const {analysis, registry, targets} = await safeAnalysis({
+      runId: `fixture-typed-drilldown-${index}`, phase: path.phase,
+    });
+    const target = path.semanticMethod === 'RELATIONSHIP_OVERLAP'
+      ? {kind: 'RELATIONSHIP', source: (({kind: _sourceKind, ...source}) => source)(targets[0]), target: (({kind: _targetKind, ...target}) => target)(targets[1])}
+      : targets[index === 1 ? 1 : 0];
+    const request = typedRequest(analysis, {
+      claim: `claim-${index}`, gap: `gap-${index}`, methodRef: safeMethod(registry, path.semanticMethod), target,
+      typeFamily: path.typeFamily, intentFeatures: path.intentFeatures,
+    });
+    const decision = evaluateProgressiveDrilldownEligibility(analysis, request);
+    assert.equal(decision.disposition, 'ELIGIBLE');
+    assert.equal(decision.dispatchAllowed, false);
+    assert.equal(decision.trace.claimSha256, request.claimSha256);
+    assert.equal(decision.trace.evidenceGapSha256, request.evidenceGapSha256);
+    assert.equal(decision.trace.intent.methodRef, request.methodRef);
+    assert.equal(decision.trace.intent.candidateSha256, request.candidateSha256);
+    assert.deepEqual(decision.gates, {
+      phase: true, scope: true, allowlist: true, privilege: true, capability: true,
+      runBudget: true, tableBudget: true, hypothesisBudget: true, duplicate: true,
+      timeout: true, cancellation: true, receiptResume: true, stoppingRule: true,
+    });
+    decisions.push(decision);
+  }
+  assert.equal(new Set(decisions.map(({eligibilitySha256}) => eligibilitySha256)).size, paths.length);
+});
+
+test('typed drilldown ordering and terminal eligibility digest are independent of request input order and restart', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-order', phase: 'SAFE_AGGREGATES'});
+  const first = typedRequest(analysis, {
+    claim: 'order-first', gap: 'order-gap-first', methodRef: safeMethod(registry, 'COLUMN_SUMMARY'), target: targets[0],
+    typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const second = typedRequest(analysis, {
+    claim: 'order-second', gap: 'order-gap-second', methodRef: safeMethod(registry, 'TEMPORAL_COVERAGE'), target: targets[1],
+    typeFamily: 'TEMPORAL', intentFeatures: TEMPORAL_INTENT, gain: 'medium',
+  });
+  const forward = rankProgressiveDrilldownRequests(analysis, [second, first]);
+  const reverse = rankProgressiveDrilldownRequests(JSON.parse(JSON.stringify(analysis)), [first, second]);
+  assert.deepEqual(forward.map(({requestSha256}) => requestSha256), reverse.map(({requestSha256}) => requestSha256));
+  assert.equal(forward.terminalDigestSha256, reverse.terminalDigestSha256);
+  assert.equal(forward.eligible.length, 2);
+  assert(forward.eligible.every(({dispatchAllowed}) => dispatchAllowed === false));
+  if (process.env.KS_PRINT_PROGRESSIVE_ANALYSIS_HASHES === '1') {
+    console.log(JSON.stringify({typedDrilldownTerminalDigest: forward.terminalDigestSha256}));
+  }
+});
+
+test('safe manifest capability metadata is enforced before registry construction', async () => {
+  await assert.rejects(() => safeAnalysis({
+    runId: 'fixture-typed-drilldown-manifest-capability',
+    phase: 'SAFE_AGGREGATES',
+    transformSafeAnalysisManifest: (manifest) => {
+      const method = manifest.methods.find(({semanticMethod}) => semanticMethod === 'COLUMN_SUMMARY');
+      const capability = method.capabilities.find(({typeFamily}) => typeFamily === 'NUMERIC');
+      capability.state = 'UNSUPPORTED';
+      capability.reasonCode = 'FIXTURE_NUMERIC_UNSUPPORTED';
+      return manifest;
+    },
+  }), /DB_SAFE_METHOD_MANIFEST_INVALID/);
+});
+
+test('typed drilldown rejects incomplete or unsafe argument values before sealing on registered and denial paths', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-invalid-values', phase: 'SAFE_AGGREGATES'});
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const unknownMethodRef = 'mssql.safe.unknown-column-summary@1.0.0';
+  const input = {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT};
+  const registered = typedRequest(analysis, input);
+  const denied = typedRequest(analysis, {...input, methodRef: unknownMethodRef});
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, registered).disposition, 'ELIGIBLE');
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, denied).disposition, 'DENIED_ALLOWLIST');
+  const invalidArguments = [
+    ['non-integer maxSourceRows', {maxSourceRows: '500', typeFamily: 'NUMERIC'}],
+    ['fractional maxSourceRows', {maxSourceRows: 500.5, typeFamily: 'NUMERIC'}],
+    ['maxSourceRows below range', {maxSourceRows: 0, typeFamily: 'NUMERIC'}],
+    ['maxSourceRows above range', {maxSourceRows: 10001, typeFamily: 'NUMERIC'}],
+    ['missing required argument', {typeFamily: 'NUMERIC'}],
+    ['extra raw-value argument', {maxSourceRows: 500, typeFamily: 'NUMERIC', rawValues: ['raw-argument-marker']}],
+    ['credential-shaped value', {maxSourceRows: 'password=[REDACTED]', typeFamily: 'NUMERIC'}],
+    ['invalid typeFamily', {maxSourceRows: 500, typeFamily: 'DECIMAL'}],
+  ];
+  for (const [name, args] of invalidArguments) {
+    for (const [path, request] of [['registered', registered], ['denial', denied]]) {
+      assert.throws(
+        () => typedRequest(analysis, {...input, methodRef: request.methodRef, arguments: args}),
+        /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+        `${name} ${path} sealing`,
+      );
+      assert.throws(
+        () => evaluateProgressiveDrilldownEligibility(analysis, resealTypedRequestArguments(request, args)),
+        /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+        `${name} ${path} eligibility`,
+      );
+    }
+  }
+});
+
+test('typed drilldown validates complete column and relationship targets before sealing on registered and denial paths', async () => {
+  const columnCase = await safeAnalysis({runId: 'fixture-typed-drilldown-column-target-shape', phase: 'SAFE_AGGREGATES'});
+  const columnInput = {target: columnCase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT};
+  const registeredColumn = typedRequest(columnCase.analysis, {
+    ...columnInput, methodRef: safeMethod(columnCase.registry, 'COLUMN_SUMMARY'),
+  });
+  const deniedColumn = typedRequest(columnCase.analysis, {
+    ...columnInput, methodRef: 'mssql.safe.unknown-column-summary@1.0.0',
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(columnCase.analysis, registeredColumn).disposition, 'ELIGIBLE');
+  assert.equal(evaluateProgressiveDrilldownEligibility(columnCase.analysis, deniedColumn).disposition, 'DENIED_ALLOWLIST');
+  const {columnName: _columnName, ...columnWithoutName} = columnCase.targets[0];
+  const invalidColumns = [
+    ['extra key', {...columnCase.targets[0], extra: 'raw-target-marker'}, 'raw-target-marker'],
+    ['missing key', columnWithoutName, columnCase.targets[0].columnName],
+    ['wrong kind', {...columnCase.targets[0], kind: 'TABLE'}, 'TABLE'],
+    ['unsafe identifier', {...columnCase.targets[0], columnName: 'unsafe; SELECT raw-target-marker'}, 'raw-target-marker'],
+    ['credential field', {...columnCase.targets[0], credential: 'target-credential-marker'}, 'target-credential-marker'],
+    ['raw-value field', {...columnCase.targets[0], rawValues: ['raw-target-marker']}, 'raw-target-marker'],
+  ];
+  for (const [name, target, rejectedValue] of invalidColumns) {
+    for (const [path, request] of [['registered', registeredColumn], ['denial', deniedColumn]]) {
+      assertRejectedWithoutEcho(
+        () => typedRequest(columnCase.analysis, {...columnInput, methodRef: request.methodRef, target}),
+        /DB_PROGRESSIVE_SCOPE_DENIED/,
+        rejectedValue,
+        `${name} ${path} sealing`,
+      );
+      assertRejectedWithoutEcho(
+        () => evaluateProgressiveDrilldownEligibility(columnCase.analysis, resealTypedRequestTarget(request, target)),
+        /DB_PROGRESSIVE_SCOPE_DENIED|DB_PROGRESSIVE_CANDIDATE_TARGET_INVALID/,
+        rejectedValue,
+        `${name} ${path} eligibility`,
+      );
+    }
+  }
+
+  const relationshipCase = await safeAnalysis({runId: 'fixture-typed-drilldown-relationship-target-shape', phase: 'RELATIONSHIP_GRAPH'});
+  const endpoint = ({kind: _kind, ...value}) => value;
+  const relationship = {
+    kind: 'RELATIONSHIP', source: endpoint(relationshipCase.targets[0]), target: endpoint(relationshipCase.targets[1]),
+  };
+  const relationshipIntent = {
+    ...NUMERIC_INTENT, probeClass: 'RELATIONSHIP_CHECK', signalKind: 'RELATIONSHIP', grain: 'TABLE',
+  };
+  const relationshipInput = {target: relationship, typeFamily: 'PAIR', intentFeatures: relationshipIntent};
+  const registeredRelationship = typedRequest(relationshipCase.analysis, {
+    ...relationshipInput, methodRef: safeMethod(relationshipCase.registry, 'RELATIONSHIP_OVERLAP'),
+  });
+  const deniedRelationship = typedRequest(relationshipCase.analysis, {
+    ...relationshipInput, methodRef: 'mssql.safe.unknown-relationship@1.0.0',
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(relationshipCase.analysis, registeredRelationship).disposition, 'ELIGIBLE');
+  assert.equal(evaluateProgressiveDrilldownEligibility(relationshipCase.analysis, deniedRelationship).disposition, 'DENIED_ALLOWLIST');
+  const {target: _relationshipTarget, ...relationshipWithoutTarget} = relationship;
+  const {columnName: _targetColumnName, ...targetEndpointWithoutColumn} = relationship.target;
+  const invalidRelationships = [
+    ['extra key', {...relationship, extra: 'raw-target-marker'}, 'raw-target-marker'],
+    ['missing key', relationshipWithoutTarget, relationship.target.columnName],
+    ['wrong kind', {...relationship, kind: 'COLUMN'}, 'COLUMN'],
+    ['endpoint missing key', {...relationship, target: targetEndpointWithoutColumn}, relationship.target.columnName],
+    ['unsafe identifier', {...relationship, target: {...relationship.target, columnName: 'unsafe; SELECT raw-target-marker'}}, 'raw-target-marker'],
+    ['credential field', {...relationship, target: {...relationship.target, credential: 'target-credential-marker'}}, 'target-credential-marker'],
+    ['raw-value field', {...relationship, target: {...relationship.target, rawValue: 'raw-target-marker'}}, 'raw-target-marker'],
+  ];
+  for (const [name, target, rejectedValue] of invalidRelationships) {
+    for (const [path, request] of [['registered', registeredRelationship], ['denial', deniedRelationship]]) {
+      assertRejectedWithoutEcho(
+        () => typedRequest(relationshipCase.analysis, {...relationshipInput, methodRef: request.methodRef, target}),
+        /DB_PROGRESSIVE_SCOPE_DENIED/,
+        rejectedValue,
+        `${name} ${path} sealing`,
+      );
+      assertRejectedWithoutEcho(
+        () => evaluateProgressiveDrilldownEligibility(relationshipCase.analysis, resealTypedRequestTarget(request, target)),
+        /DB_PROGRESSIVE_SCOPE_DENIED|DB_PROGRESSIVE_CANDIDATE_TARGET_INVALID/,
+        rejectedValue,
+        `${name} ${path} eligibility`,
+      );
+    }
+  }
+});
+
+test('typed drilldown eligibility fails closed for authorization, capability, receipt, budget, duplicate, timeout and cancellation gates', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-negative', phase: 'SAFE_AGGREGATES'});
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const valid = typedRequest(analysis, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const invalidArguments = {...valid, arguments: {sql: 'SELECT secret'}};
+  assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
+    phase: valid.phase, methodRef, target: targets[0], arguments: invalidArguments.arguments,
+    intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
+  }), /DB_PROGRESSIVE_METHOD_DENIED|DB_PROGRESSIVE_PROBE_REQUEST_INVALID/);
+  const deniedAllowlistRequest = buildProgressiveTypedDrilldownRequest(analysis, {
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
+    phase: valid.phase, methodRef: 'mssql.safe.model-authored-sql@1.0.0', target: targets[0],
+    arguments: {maxSourceRows: 500, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+    gainInputs: {...fixture.gainInputs.high, evidenceRefs: [identitySha256({fixture: 'denied-allowlist-gain'})]},
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, deniedAllowlistRequest).disposition, 'DENIED_ALLOWLIST');
+  const unsafeDeniedArguments = {value: 'password=[REDACTED]'};
+  assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
+    phase: valid.phase, methodRef: deniedAllowlistRequest.methodRef, target: targets[0],
+    arguments: unsafeDeniedArguments, intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
+  }), /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/);
+  assert.throws(
+    () => evaluateProgressiveDrilldownEligibility(
+      analysis,
+      resealTypedRequestArguments(deniedAllowlistRequest, unsafeDeniedArguments),
+    ),
+    /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+  );
+  assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
+    phase: valid.phase, methodRef, target: targets[0], arguments: {maxSourceRows: 500, credential: 'fixture-secret'},
+    intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
+  }), /DB_PROGRESSIVE_METHOD_DENIED|DB_PROGRESSIVE_PROBE_REQUEST_INVALID/);
+  const unsupported = typedRequest(analysis, {
+    claim: 'unsupported', gap: 'unsupported-gap', methodRef, target: targets[0], typeFamily: 'TEMPORAL', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, unsupported).disposition, 'TERMINATED_UNSUPPORTED_CAPABILITY');
+  const invisible = typedRequest(analysis, {
+    claim: 'invisible', gap: 'invisible-gap', methodRef, target: {...targets[0], columnName: 'NOT_VISIBLE'},
+    typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, invisible).disposition, 'DENIED_SCOPE');
+  const forged = structuredClone(valid);
+  forged.requestSha256 = '0'.repeat(64);
+  assert.throws(() => evaluateProgressiveDrilldownEligibility(analysis, forged), /DB_PROGRESSIVE_DRILLDOWN_REQUEST_TAMPERED/);
+
+  const receiptBase = await safeAnalysis({runId: 'fixture-typed-drilldown-receipt', phase: 'SAFE_AGGREGATES'});
+  const receiptRequest = typedRequest(receiptBase.analysis, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const receiptReservation = reserveProgressiveProbeCandidate(receiptBase.analysis, receiptRequest.candidate, {
+    expectedStateSha256: receiptBase.analysis.stateSha256,
+    claimSha256: receiptRequest.claimSha256, evidenceGapSha256: receiptRequest.evidenceGapSha256,
+  });
+  const receiptEvidence = identitySha256({fixture: 'typed-receipt-counterevidence'});
+  const received = recordProgressiveProbeOutcome(receiptReservation.state, {
+    reservationSha256: receiptReservation.authorization.reservationSha256, resultState: 'SUCCEEDED', evidenceRefs: [receiptEvidence],
+    signal: 'COUNTERS', informationGainBps: 1700, confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
+  });
+  const receiptSha256 = received.controllerRun.receipts[0].receiptSha256;
+  const resumedRequest = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+    resumeReceiptSha256: receiptSha256,
+  });
+  const resumedDecision = evaluateProgressiveDrilldownEligibility(received, resumedRequest);
+  assert.equal(resumedDecision.disposition, 'REUSED_SUCCESS');
+  assert.equal(resumedDecision.trace.receipt.resultState, 'SUCCEEDED');
+  assert.deepEqual(resumedDecision.trace.evidence.evidenceRefs, [receiptEvidence]);
+  assert.deepEqual(resumedDecision.trace.evidence.counterevidenceRefs, [receiptEvidence]);
+  const mismatchedReceipt = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0],
+    typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: '0'.repeat(64),
+  });
+  const mismatchedReceiptDecision = evaluateProgressiveDrilldownEligibility(received, mismatchedReceipt);
+  assert.equal(mismatchedReceiptDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assertNoProjectedReadback(mismatchedReceiptDecision, receiptEvidence);
+  const changedArguments = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC',
+    arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+  });
+  const changedArgumentsDecision = evaluateProgressiveDrilldownEligibility(received, changedArguments);
+  assert.equal(changedArgumentsDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assertNoProjectedReadback(changedArgumentsDecision, receiptEvidence);
+  const changedArgumentsResume = typedRequest(received, {
+    methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'), target: receiptBase.targets[0], typeFamily: 'NUMERIC',
+    arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  const changedArgumentsResumeDecision = evaluateProgressiveDrilldownEligibility(received, changedArgumentsResume);
+  assert.equal(changedArgumentsResumeDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assertNoProjectedReadback(changedArgumentsResumeDecision, receiptEvidence);
+  const crossClaimResume = typedRequest(received, {
+    claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
+    target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  const crossClaimResumeDecision = evaluateProgressiveDrilldownEligibility(received, crossClaimResume);
+  assert.equal(crossClaimResumeDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assertNoProjectedReadback(crossClaimResumeDecision, receiptEvidence);
+  const crossClaimNoResume = typedRequest(received, {
+    claim: 'other-claim', gap: 'gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
+    target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const crossClaimNoResumeDecision = evaluateProgressiveDrilldownEligibility(received, crossClaimNoResume);
+  assert.equal(crossClaimNoResumeDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assertNoProjectedReadback(crossClaimNoResumeDecision, receiptEvidence);
+  const gapSubstitution = typedRequest(received, {
+    claim: 'claim', gap: 'other-gap', methodRef: safeMethod(receiptBase.registry, 'COLUMN_SUMMARY'),
+    target: receiptBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  const gapSubstitutionDecision = evaluateProgressiveDrilldownEligibility(received, gapSubstitution);
+  assert.equal(gapSubstitutionDecision.disposition, 'DENIED_RECEIPT_RESUME');
+  assertNoProjectedReadback(gapSubstitutionDecision, receiptEvidence);
+  const deniedAfterOutcome = typedRequest(received, {
+    methodRef: 'mssql.safe.unknown-column-summary@1.0.0', target: receiptBase.targets[0],
+    typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const deniedAfterOutcomeDecision = evaluateProgressiveDrilldownEligibility(received, deniedAfterOutcome);
+  assert.equal(deniedAfterOutcomeDecision.disposition, 'DENIED_ALLOWLIST');
+  assertNoProjectedReadback(deniedAfterOutcomeDecision, receiptEvidence);
+
+  const reserved = reserveProgressiveProbeCandidate(analysis, valid.candidate, {
+    expectedStateSha256: analysis.stateSha256,
+    claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256,
+  });
+  const duplicateRequest = typedRequest(reserved.state, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const duplicate = evaluateProgressiveDrilldownEligibility(reserved.state, duplicateRequest);
+  assert.equal(duplicate.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.throws(() => evaluateProgressiveDrilldownEligibility(reserved.state, valid), /DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID/);
+  const forgedBudget = structuredClone(valid);
+  forgedBudget.remainingBudget = {...valid.remainingBudget, runProbes: valid.remainingBudget.runProbes + 1};
+  const {requestSha256: _oldRequestHash, ...forgedBudgetBody} = forgedBudget;
+  forgedBudget.requestSha256 = identitySha256(forgedBudgetBody);
+  assert.throws(() => evaluateProgressiveDrilldownEligibility(analysis, forgedBudget), /DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID/);
+  assert.throws(() => reserveProgressiveProbeCandidate(reserved.state, valid.candidate, {
+    expectedStateSha256: reserved.state.stateSha256,
+    claimSha256: identitySha256({fixture: 'other-claim'}), evidenceGapSha256: valid.evidenceGapSha256,
+  }), /DB_PROGRESSIVE_CLAIM_BINDING_INVALID/);
+  assert.throws(() => reserveProgressiveProbeCandidate(reserved.state, valid.candidate, {
+    expectedStateSha256: reserved.state.stateSha256,
+    claimSha256: valid.claimSha256, evidenceGapSha256: null,
+  }), /DB_PROGRESSIVE_CLAIM_BINDING_INVALID/);
+  const exhausted = await safeAnalysis({runId: 'fixture-typed-drilldown-exhausted', phase: 'SAFE_AGGREGATES', maxRunProbes: 1});
+  const exhaustedRequest = typedRequest(exhausted.analysis, {
+    methodRef: safeMethod(exhausted.registry, 'COLUMN_SUMMARY'), target: exhausted.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const exhaustedState = reserveProgressiveProbeCandidate(exhausted.analysis, exhaustedRequest.candidate, {
+    expectedStateSha256: exhausted.analysis.stateSha256,
+    claimSha256: exhaustedRequest.claimSha256, evidenceGapSha256: exhaustedRequest.evidenceGapSha256,
+  }).state;
+  const budget = evaluateProgressiveDrilldownEligibility(exhaustedState, typedRequest(exhaustedState, {
+    claim: 'other', gap: 'other-gap', methodRef: safeMethod(exhausted.registry, 'COLUMN_SUMMARY'), target: exhausted.targets[1], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  }));
+  assert.equal(budget.disposition, 'DENIED_BUDGET');
+
+  const timedOut = recordProgressiveProbeOutcome(reserved.state, {
+    reservationSha256: reserved.authorization.reservationSha256, resultState: 'TIMEOUT', evidenceRefs: [], signal: 'UNKNOWN', informationGainBps: 0,
+    confidenceBounds: {lowerBps: 1500, upperBps: 7500}, reasonCode: 'QUERY_TIMEOUT',
+  });
+  const timedOutRequest = typedRequest(timedOut, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(timedOut, timedOutRequest).disposition, 'TERMINATED_TIMEOUT');
+  const changedArgumentsTimedOutRequest = typedRequest(timedOut, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+  });
+  const changedArgumentsTimedOutDecision = evaluateProgressiveDrilldownEligibility(timedOut, changedArgumentsTimedOutRequest);
+  assert.equal(changedArgumentsTimedOutDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assertNoProjectedReadback(changedArgumentsTimedOutDecision, receiptEvidence);
+  const cancelBase = await safeAnalysis({runId: 'fixture-typed-drilldown-cancel', phase: 'SAFE_AGGREGATES'});
+  const cancelRequest = typedRequest(cancelBase.analysis, {
+    methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const cancelReservation = reserveProgressiveProbeCandidate(cancelBase.analysis, cancelRequest.candidate, {
+    expectedStateSha256: cancelBase.analysis.stateSha256,
+    claimSha256: cancelRequest.claimSha256, evidenceGapSha256: cancelRequest.evidenceGapSha256,
+  });
+  const cancelled = recordProgressiveProbeOutcome(cancelReservation.state, {
+    reservationSha256: cancelReservation.authorization.reservationSha256, resultState: 'CANCELLED', evidenceRefs: [], signal: 'UNKNOWN', informationGainBps: 0,
+    confidenceBounds: {lowerBps: 1500, upperBps: 7500}, reasonCode: 'QUERY_CANCELLED',
+  });
+  const cancelledRequest = typedRequest(cancelled, {
+    methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(cancelled, cancelledRequest).disposition, 'TERMINATED_CANCELLED');
+  const changedArgumentsCancelledRequest = typedRequest(cancelled, {
+    methodRef: safeMethod(cancelBase.registry, 'COLUMN_SUMMARY'), target: cancelBase.targets[0], typeFamily: 'NUMERIC',
+    arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+  });
+  const changedArgumentsCancelledDecision = evaluateProgressiveDrilldownEligibility(cancelled, changedArgumentsCancelledRequest);
+  assert.equal(changedArgumentsCancelledDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assertNoProjectedReadback(changedArgumentsCancelledDecision, receiptEvidence);
+  const staleReceiptRequest = {...valid, resumeReceiptSha256: '0'.repeat(64)};
+  delete staleReceiptRequest.requestSha256;
+  staleReceiptRequest.requestSha256 = identitySha256(staleReceiptRequest);
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, staleReceiptRequest).disposition, 'DENIED_RECEIPT_RESUME');
+});
+
+test('typed drilldown duplicate lookup is bound to the controller probe key across hypothesis and intent changes', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-probe-key', phase: 'SAFE_AGGREGATES'});
+  const secondHypothesis = fixture.hypotheses[1];
+  assert(secondHypothesis, 'expected a second fixture hypothesis');
+  const registered = registerProgressiveHypothesis(analysis, {
+    hypothesisId: secondHypothesis.hypothesisId, hypothesisKind: secondHypothesis.hypothesisKind,
+    target: {kind: 'TABLE', schemaName: targets[0].schemaName, relationName: targets[0].relationName},
+    confidenceBounds: secondHypothesis.confidenceBounds,
+    sourceEvidenceRefs: [identitySha256({fixture: `typed-${secondHypothesis.sourceEvidence}`})],
+  });
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const base = typedRequest(registered, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const reserved = reserveProgressiveProbeCandidate(registered, base.candidate, {
+    expectedStateSha256: registered.stateSha256,
+    claimSha256: base.claimSha256, evidenceGapSha256: base.evidenceGapSha256,
+  });
+  const probeEvidence = identitySha256({fixture: 'typed-probe-key-evidence'});
+  const received = recordProgressiveProbeOutcome(reserved.state, {
+    reservationSha256: reserved.authorization.reservationSha256, resultState: 'SUCCEEDED', evidenceRefs: [probeEvidence],
+    signal: 'COUNTERS', informationGainBps: 1700, confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
+  });
+  const exactReuse = typedRequest(received, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const exactReuseDecision = evaluateProgressiveDrilldownEligibility(received, exactReuse);
+  assert.equal(exactReuseDecision.disposition, 'REUSED_SUCCESS');
+  assert.equal(exactReuseDecision.gates.duplicate, false);
+  assert.deepEqual(exactReuseDecision.trace.evidence.evidenceRefs, [probeEvidence]);
+  const changedIntent = typedRequest(received, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: CARDINALITY_INTENT});
+  const changedIntentDecision = evaluateProgressiveDrilldownEligibility(received, changedIntent);
+  assert.equal(changedIntentDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedIntentDecision.gates.duplicate, false);
+  assertNoProjectedReadback(changedIntentDecision, probeEvidence);
+  const changedHypothesis = buildProgressiveTypedDrilldownRequest(received, {
+    claimSha256: base.claimSha256, evidenceGapSha256: base.evidenceGapSha256,
+    hypothesisId: secondHypothesis.hypothesisId, phase: received.controllerRun.phase, methodRef,
+    target: targets[0], arguments: {maxSourceRows: 500, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+    gainInputs: {...fixture.gainInputs.high, evidenceRefs: [identitySha256({fixture: 'claim-gain'})]},
+  });
+  const changedHypothesisDecision = evaluateProgressiveDrilldownEligibility(received, changedHypothesis);
+  assert.equal(changedHypothesisDecision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(changedHypothesisDecision.gates.duplicate, false);
+  assertNoProjectedReadback(changedHypothesisDecision, probeEvidence);
+});
+
+test('typed drilldown suppresses a mismatched probe receipt without resuming or reusing evidence', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-mismatched-receipt', phase: 'SAFE_AGGREGATES'});
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const original = typedRequest(analysis, {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT});
+  const reserved = reserveProgressiveProbeCandidate(analysis, original.candidate, {
+    expectedStateSha256: analysis.stateSha256,
+    claimSha256: original.claimSha256, evidenceGapSha256: original.evidenceGapSha256,
+  });
+  const evidence = identitySha256({fixture: 'mismatched-receipt-evidence'});
+  const received = recordProgressiveProbeOutcome(reserved.state, {
+    reservationSha256: reserved.authorization.reservationSha256, resultState: 'SUCCEEDED', evidenceRefs: [evidence],
+    signal: 'COUNTERS', informationGainBps: 1700, confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
+  });
+  const receiptSha256 = received.controllerRun.receipts[0].receiptSha256;
+  const mismatched = typedRequest(received, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', arguments: {maxSourceRows: 501, typeFamily: 'NUMERIC'},
+    intentFeatures: NUMERIC_INTENT, resumeReceiptSha256: receiptSha256,
+  });
+  const decision = evaluateProgressiveDrilldownEligibility(received, mismatched);
+  assert.equal(decision.disposition, 'SUPPRESSED_DUPLICATE');
+  assert.equal(decision.gates.receiptResume, false);
+  assertNoProjectedReadback(decision, evidence);
+});
+
+test('typed drilldown projects only the outcome bound to the exact receipt', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-exact-outcome', phase: 'SAFE_AGGREGATES'});
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const counterRequest = typedRequest(analysis, {
+    methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  });
+  const counterReservation = reserveProgressiveProbeCandidate(analysis, counterRequest.candidate, {
+    expectedStateSha256: analysis.stateSha256,
+    claimSha256: counterRequest.claimSha256,
+    evidenceGapSha256: counterRequest.evidenceGapSha256,
+  });
+  const foreignCounterevidence = identitySha256({fixture: 'foreign-counterevidence'});
+  const countered = recordProgressiveProbeOutcome(counterReservation.state, {
+    reservationSha256: counterReservation.authorization.reservationSha256,
+    resultState: 'SUCCEEDED', evidenceRefs: [foreignCounterevidence], signal: 'COUNTERS', informationGainBps: 1700,
+    confidenceBounds: {lowerBps: 500, upperBps: 3500}, reasonCode: 'TYPED_COUNTEREVIDENCE',
+  });
+  const supportRequest = typedRequest(countered, {
+    methodRef, target: targets[1], typeFamily: 'NUMERIC', intentFeatures: CARDINALITY_INTENT,
+  });
+  const supportReservation = reserveProgressiveProbeCandidate(countered, supportRequest.candidate, {
+    expectedStateSha256: countered.stateSha256,
+    claimSha256: supportRequest.claimSha256,
+    evidenceGapSha256: supportRequest.evidenceGapSha256,
+  });
+  const boundEvidence = identitySha256({fixture: 'bound-support-evidence'});
+  const supported = recordProgressiveProbeOutcome(supportReservation.state, {
+    reservationSha256: supportReservation.authorization.reservationSha256,
+    resultState: 'SUCCEEDED', evidenceRefs: [boundEvidence], signal: 'SUPPORTS', informationGainBps: 1900,
+    confidenceBounds: {lowerBps: 4000, upperBps: 8000}, reasonCode: 'TYPED_SUPPORTING_EVIDENCE',
+  });
+  const decision = evaluateProgressiveDrilldownEligibility(supported, typedRequest(supported, {
+    methodRef, target: targets[1], typeFamily: 'NUMERIC', intentFeatures: CARDINALITY_INTENT,
+  }));
+  assert.equal(decision.disposition, 'REUSED_SUCCESS');
+  assert.equal(decision.trace.receipt.resultState, 'SUCCEEDED');
+  assert.deepEqual(decision.trace.evidence.evidenceRefs, [boundEvidence]);
+  assert.deepEqual(decision.trace.evidence.counterevidenceRefs, []);
+  assert.equal(decision.trace.evidence.signal, 'SUPPORTS');
+  assert.equal(JSON.stringify(decision).includes(foreignCounterevidence), false);
+});
+
+test('typed drilldown returns explicit denials for valid phase and allowlist mismatches', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-denial-dispositions', phase: 'SAFE_AGGREGATES'});
+  const validInput = {
+    methodRef: safeMethod(registry, 'COLUMN_SUMMARY'), target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT,
+  };
+  const phaseMismatch = typedRequest(analysis, {...validInput, phase: 'RELATIONSHIP_GRAPH'});
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, phaseMismatch).disposition, 'DENIED_PHASE');
+  const methodPhaseMismatch = typedRequest(analysis, {
+    ...validInput,
+    methodRef: safeMethod(registry, 'QUALITY_INDICATORS'),
+    phase: 'SAFE_AGGREGATES',
+  });
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, methodPhaseMismatch).disposition, 'DENIED_PHASE');
+  const allowlistMismatch = typedRequest(analysis, {...validInput, methodRef: 'mssql.safe.model-authored-sql@1.0.0'});
+  assert.equal(evaluateProgressiveDrilldownEligibility(analysis, allowlistMismatch).disposition, 'DENIED_ALLOWLIST');
 });

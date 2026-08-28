@@ -29,6 +29,28 @@ const OUTPUT_COLUMNS = Object.freeze({
   QUALITY_INDICATORS: Object.freeze(['rowCount', 'nullCount', 'distinctCount']),
   RELATIONSHIP_OVERLAP: Object.freeze(['sourceNonNullCount', 'sourceDistinctCount', 'targetNonNullCount', 'targetDistinctCount', 'matchedDistinctCount']),
 });
+const METHOD_CONTRACTS = Object.freeze({
+  COLUMN_SUMMARY: Object.freeze({slug: 'column-summary', phase: 'SAFE_AGGREGATES', targetKind: 'COLUMN',
+    typeFamilies: Object.freeze(['NUMERIC', 'CATEGORY', 'TEXT', 'BOOLEAN'])}),
+  TEMPORAL_COVERAGE: Object.freeze({slug: 'temporal-coverage', phase: 'SAFE_AGGREGATES', targetKind: 'COLUMN',
+    typeFamilies: Object.freeze(['TEMPORAL'])}),
+  QUALITY_INDICATORS: Object.freeze({slug: 'quality-indicators', phase: 'HYPOTHESIS_VALIDATION', targetKind: 'COLUMN',
+    typeFamilies: Object.freeze(['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN'])}),
+  RELATIONSHIP_OVERLAP: Object.freeze({slug: 'relationship-overlap', phase: 'RELATIONSHIP_GRAPH', targetKind: 'RELATIONSHIP',
+    typeFamilies: Object.freeze(['PAIR'])}),
+});
+
+function expectedCapabilities(engine, semanticMethod) {
+  return METHOD_CONTRACTS[semanticMethod].typeFamilies.map((typeFamily) => {
+    const unsupported = engine === 'oracle' && typeFamily === 'BOOLEAN'
+      && ['COLUMN_SUMMARY', 'QUALITY_INDICATORS'].includes(semanticMethod);
+    return {
+      typeFamily,
+      state: unsupported ? 'UNSUPPORTED' : 'COMPLETE',
+      reasonCode: unsupported ? 'ORACLE_NATIVE_BOOLEAN_COLUMN_UNSUPPORTED' : null,
+    };
+  });
+}
 
 const fail = (code) => {
   const error = new Error(code);
@@ -61,12 +83,16 @@ export function validateSafeAnalysisMethodManifest(manifest, sqlByMethodId) {
   const ids = new Set();
   const semanticMethods = new Set();
   for (const method of manifest.methods) {
+    const contract = METHOD_CONTRACTS[method?.semanticMethod];
     if (!exactKeys(method, [
       'id', 'semanticMethod', 'phase', 'targetKind', 'file', 'templateSha256', 'argumentKeys', 'capabilities',
       'outputColumns', 'readOnly', 'aggregateOnly', 'rowSamples', 'exampleValues', 'maxOutputRows',
       'maxSourceRows', 'timeoutMs', 'provenance', 'engineDifferences',
     ]) || !METHOD_ID.test(method.id) || !method.id.startsWith(`${manifest.engine}.`) || ids.has(method.id)
       || !SEMANTIC_METHODS.has(method.semanticMethod) || semanticMethods.has(method.semanticMethod)
+      || contract === undefined || method.id !== `${manifest.engine}.safe.${contract.slug}`
+      || method.phase !== contract.phase || method.targetKind !== contract.targetKind
+      || canonicalJson(method.capabilities) !== canonicalJson(expectedCapabilities(manifest.engine, method.semanticMethod))
       || !PHASES.has(method.phase) || !TARGET_KINDS.has(method.targetKind)
       || method.targetKind !== (method.semanticMethod === 'RELATIONSHIP_OVERLAP' ? 'RELATIONSHIP' : 'COLUMN')
       || !safeText(method.file, 128) || /[/\\]|\.\./.test(method.file) || !sha256Value(method.templateSha256)

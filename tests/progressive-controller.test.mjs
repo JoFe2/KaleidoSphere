@@ -28,16 +28,17 @@ async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));
 }
 
-async function mssqlInputs() {
-  const [structureManifest, profilingManifest, structureEvidence] = await Promise.all([
+async function mssqlInputs({includeSafeAnalysis = false} = {}) {
+  const [structureManifest, profilingManifest, safeAnalysisManifest, structureEvidence] = await Promise.all([
     readJson(`${MSSQL_DIRECTORY}/manifest.json`),
     readJson(`${MSSQL_DIRECTORY}/profiling-manifest.json`),
+    includeSafeAnalysis ? readJson(`${MSSQL_DIRECTORY}/safe-analysis-manifest.json`) : null,
     runAnalyzeProfile(`${ROOT}/fixtures/mssql-profile-v1.json`, {repositoryRoot: ROOT}),
   ]);
   return {
     engine: 'mssql',
     scope: structureEvidence.profile.scope,
-    registry: buildProgressiveMethodRegistry({structureManifest, profilingManifest}),
+    registry: buildProgressiveMethodRegistry({structureManifest, profilingManifest, safeAnalysisManifest}),
     coverage: buildProgressiveCoverage(structureEvidence),
   };
 }
@@ -138,6 +139,14 @@ function profileMethod(registry, suffix = 'numeric-aggregate') {
 function request(run, methodRef, target, extra = {}) {
   return {phase: run.phase, methodRef, target, arguments: extra};
 }
+
+test('legacy v1 method-registry snapshots remain resumable without new descriptor fields', async () => {
+  const inputs = await mssqlInputs({includeSafeAnalysis: true});
+  const snapshot = JSON.parse(JSON.stringify(newRun(inputs, {runId: 'fixture-v1-registry-resume'})));
+  assert(snapshot.methodRegistry.methods.every((method) => !Object.hasOwn(method, 'semanticMethod')
+    && !Object.hasOwn(method, 'capabilities')));
+  assert.deepEqual(resumeProgressiveRun(snapshot), snapshot);
+});
 
 test('controller derives explicit per-visible-object coverage from existing evidence without absence inference', async () => {
   const mssql = await mssqlInputs();
@@ -255,6 +264,98 @@ test('only existing allowlisted methods and typed scoped identifiers cross the d
   run = recordProgressiveReceipt(cancel.state, {probeKey: cancel.authorization.probeKey, resultState: 'CANCELLED', evidenceRefs: []});
   assert.equal(authorizeProgressiveProbe(run, request(run, methodRef, second.target)).authorization.disposition, 'SUPPRESSED_DUPLICATE');
   assert.equal(run.safety.blindRetryAllowed, false);
+});
+
+test('registered method argument values are controller-validated before authorization', async () => {
+  const inputs = await mssqlInputs({includeSafeAnalysis: true});
+  const first = mssqlColumnTarget(inputs.coverage, 0);
+  const run = advanceTo(newRun(inputs), 'SAFE_AGGREGATES');
+  const method = inputs.registry.methods.find(({methodRef}) => methodRef.includes('safe.column-summary@'));
+  assert(method);
+  const invalidArguments = [
+    {maxSourceRows: '500', typeFamily: 'NUMERIC'},
+    {maxSourceRows: 500.5, typeFamily: 'NUMERIC'},
+    {maxSourceRows: 0, typeFamily: 'NUMERIC'},
+    {maxSourceRows: 10001, typeFamily: 'NUMERIC'},
+    {typeFamily: 'NUMERIC'},
+    {maxSourceRows: 500, typeFamily: 'NUMERIC', rawValues: ['raw-argument-marker']},
+    {maxSourceRows: 'password=[REDACTED]', typeFamily: 'NUMERIC'},
+    {maxSourceRows: 500, typeFamily: 'DECIMAL'},
+  ];
+  for (const args of invalidArguments) {
+    assert.throws(
+      () => authorizeProgressiveProbe(run, request(run, method.methodRef, first.target, args)),
+      /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+    );
+  }
+  assert.equal(
+    authorizeProgressiveProbe(run, request(run, method.methodRef, first.target, {maxSourceRows: 500, typeFamily: 'NUMERIC'})).authorization.disposition,
+    'AUTHORIZED',
+  );
+});
+
+test('registered column and relationship targets require exact value-safe shapes before authorization', async () => {
+  const inputs = await mssqlInputs({includeSafeAnalysis: true});
+  const first = mssqlColumnTarget(inputs.coverage, 0).target;
+  const second = mssqlColumnTarget(inputs.coverage, 1).target;
+  const columnMethod = inputs.registry.methods.find(({methodRef}) => methodRef.includes('safe.column-summary@'));
+  const relationshipMethod = inputs.registry.methods.find(({methodRef}) => methodRef.includes('safe.relationship-overlap@'));
+  assert(columnMethod);
+  assert(relationshipMethod);
+
+  const columnRun = advanceTo(newRun(inputs, {runId: 'fixture-controller-column-target-shape'}), 'SAFE_AGGREGATES');
+  const columnArguments = {maxSourceRows: 500, typeFamily: 'NUMERIC'};
+  assert.equal(
+    authorizeProgressiveProbe(columnRun, request(columnRun, columnMethod.methodRef, first, columnArguments)).authorization.disposition,
+    'AUTHORIZED',
+  );
+  const {columnName: _columnName, ...columnWithoutName} = first;
+  const invalidColumns = [
+    {...first, extra: 'raw-target-marker'},
+    columnWithoutName,
+    {...first, kind: 'TABLE'},
+    {...first, columnName: 'unsafe; SELECT raw-target-marker'},
+    {...first, credential: 'target-credential-marker'},
+    {...first, rawValues: ['raw-target-marker']},
+  ];
+  for (const target of invalidColumns) {
+    assert.throws(
+      () => authorizeProgressiveProbe(columnRun, request(columnRun, columnMethod.methodRef, target, columnArguments)),
+      /DB_PROGRESSIVE_SCOPE_DENIED/,
+    );
+  }
+
+  const endpoint = ({kind: _kind, ...value}) => value;
+  const relationship = {kind: 'RELATIONSHIP', source: endpoint(first), target: endpoint(second)};
+  const relationshipRun = advanceTo(newRun(inputs, {runId: 'fixture-controller-relationship-target-shape'}), 'RELATIONSHIP_GRAPH');
+  const relationshipArguments = {maxSourceRows: 500, typeFamily: 'PAIR'};
+  assert.equal(
+    authorizeProgressiveProbe(
+      relationshipRun,
+      request(relationshipRun, relationshipMethod.methodRef, relationship, relationshipArguments),
+    ).authorization.disposition,
+    'AUTHORIZED',
+  );
+  const {target: _target, ...relationshipWithoutTarget} = relationship;
+  const {columnName: _targetColumnName, ...endpointWithoutColumn} = relationship.target;
+  const invalidRelationships = [
+    {...relationship, extra: 'raw-target-marker'},
+    relationshipWithoutTarget,
+    {...relationship, kind: 'COLUMN'},
+    {...relationship, target: endpointWithoutColumn},
+    {...relationship, target: {...relationship.target, columnName: 'unsafe; SELECT raw-target-marker'}},
+    {...relationship, target: {...relationship.target, credential: 'target-credential-marker'}},
+    {...relationship, target: {...relationship.target, rawValue: 'raw-target-marker'}},
+  ];
+  for (const target of invalidRelationships) {
+    assert.throws(
+      () => authorizeProgressiveProbe(
+        relationshipRun,
+        request(relationshipRun, relationshipMethod.methodRef, target, relationshipArguments),
+      ),
+      /DB_PROGRESSIVE_TARGET_INVALID|DB_PROGRESSIVE_SCOPE_DENIED/,
+    );
+  }
 });
 
 async function terminalMssqlReport() {

@@ -4,6 +4,7 @@ import {
   normalizeJsonValue,
 } from './core.mjs';
 import {
+  PROGRESSIVE_PHASES,
   advanceProgressivePhase,
   authorizeProgressiveProbe,
   buildProgressiveReport,
@@ -19,6 +20,8 @@ export const PROGRESSIVE_RESERVATION_SCHEMA = 'kaleidosphere.analysis/progressiv
 export const PROGRESSIVE_OUTCOME_SCHEMA = 'kaleidosphere.analysis/progressive-probe-outcome/v1';
 export const PROGRESSIVE_RECONCILIATION_SCHEMA = 'kaleidosphere.analysis/progressive-unknown-reconciliation/v1';
 export const PROGRESSIVE_ANALYSIS_REPORT_SCHEMA = 'kaleidosphere.analysis/progressive-analysis-report/v1';
+export const PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA = 'kaleidosphere.analysis/progressive-drilldown-request/v1';
+export const PROGRESSIVE_DRILLDOWN_ELIGIBILITY_SCHEMA = 'kaleidosphere.analysis/progressive-drilldown-eligibility/v1';
 
 const SHA256 = /^[a-f0-9]{64}$/;
 const ID = /^[a-z0-9][a-z0-9._-]{2,127}$/;
@@ -33,6 +36,13 @@ const GRAINS = new Set(['COLUMN', 'TABLE']);
 const OUTCOME_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED', 'TIMEOUT', 'CANCELLED', 'UNKNOWN']);
 const SIGNALS = new Set(['SUPPORTS', 'COUNTERS', 'NO_GAIN', 'INCONCLUSIVE', 'UNKNOWN']);
 const RESOLVED_STATES = new Set(['SUCCEEDED', 'PARTIAL', 'DENIED', 'UNSUPPORTED']);
+const CAPABILITY_STATES = new Set(['COMPLETE', 'UNSUPPORTED']);
+const SAFE_DRILLDOWN_METHODS = new Map([
+  ['column-summary', new Set(['NUMERIC', 'CATEGORY', 'TEXT', 'BOOLEAN'])],
+  ['temporal-coverage', new Set(['TEMPORAL'])],
+  ['quality-indicators', new Set(['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN'])],
+  ['relationship-overlap', new Set(['PAIR'])],
+]);
 
 const fail = (code) => {
   const error = new Error(code);
@@ -108,20 +118,26 @@ function validateIntentFeatures(features) {
   return normalizeJsonValue(features);
 }
 
-function validateDispatchShape(state, {phase, methodRef, target, arguments: args}) {
-  const method = state.controllerRun.methodRegistry.methods.find((entry) => entry.methodRef === methodRef);
-  if (!method || method.phase !== phase || phase !== state.controllerRun.phase || method.readOnly !== true
-    || method.acceptsFreeSql !== false || method.acceptsRawValues !== false || method.acceptsCredentials !== false
-    || !args || typeof args !== 'object' || Array.isArray(args)
-    || canonicalJson(Object.keys(args).sort()) !== canonicalJson(method.allowedArgumentKeys)) {
-    fail('DB_PROGRESSIVE_METHOD_DENIED');
+function validateControllerMethodArguments(args, allowedArgumentKeys) {
+  if (!args || typeof args !== 'object' || Array.isArray(args)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+  for (const [key, value] of Object.entries(args)) {
+    if (!safeText(key, 64) || (typeof value === 'string' && !safeText(value, 64))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    if (key === 'maxSourceRows' && (!Number.isInteger(value) || value < 1 || value > 10000)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    else if (key === 'typeFamily' && !['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN', 'PAIR'].includes(value)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    else if (!['maxSourceRows', 'typeFamily'].includes(key)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
   }
-  if (Object.keys(args).some((key) => !safeText(key, 64) || SECRET_SHAPE.test(key))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
-  if (method.targetKind === 'COLUMN') {
+  if (canonicalJson(Object.keys(args).sort()) !== canonicalJson(allowedArgumentKeys)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+  return args;
+}
+
+function validateDrilldownTarget(state, target, targetKind) {
+  if (targetKind === 'COLUMN') {
     if (!exactKeys(target, ['kind', 'schemaName', 'relationName', 'columnName']) || target.kind !== 'COLUMN'
       || ![target.schemaName, target.relationName, target.columnName].every(identifier)
       || !state.controllerRun.scope.schemas.includes(target.schemaName)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
-  } else if (method.targetKind === 'RELATIONSHIP') {
+    return normalizeJsonValue(target);
+  }
+  if (targetKind === 'RELATIONSHIP') {
     if (!exactKeys(target, ['kind', 'source', 'target']) || target.kind !== 'RELATIONSHIP') fail('DB_PROGRESSIVE_SCOPE_DENIED');
     for (const endpoint of [target.source, target.target]) {
       if (!exactKeys(endpoint, ['schemaName', 'relationName', 'columnName'])
@@ -129,8 +145,32 @@ function validateDispatchShape(state, {phase, methodRef, target, arguments: args
         || !state.controllerRun.scope.schemas.includes(endpoint.schemaName)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
     }
     if (canonicalJson(target.source) === canonicalJson(target.target)) fail('DB_PROGRESSIVE_SCOPE_DENIED');
+    return normalizeJsonValue(target);
+  }
+  fail('DB_PROGRESSIVE_SCOPE_DENIED');
+}
+
+function validateDispatchShape(state, {phase, methodRef, target, arguments: args}, {allowEligibilityDenials = false} = {}) {
+  const method = state.controllerRun.methodRegistry.methods.find((entry) => entry.methodRef === methodRef);
+  if (!PROGRESSIVE_PHASES.includes(phase)
+    || (!method && !allowEligibilityDenials)
+    || (method && (method.readOnly !== true
+    || method.acceptsFreeSql !== false || method.acceptsRawValues !== false || method.acceptsCredentials !== false))) {
+    fail('DB_PROGRESSIVE_METHOD_DENIED');
+  }
+  if (!method) {
+    if (!safeText(methodRef, 180) || !args || typeof args !== 'object' || Array.isArray(args)) {
+      fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+    }
+    validateControllerMethodArguments(args, ['maxSourceRows', 'typeFamily']);
   } else {
-    fail('DB_PROGRESSIVE_SCOPE_DENIED');
+    validateControllerMethodArguments(args, method.allowedArgumentKeys);
+  }
+  validateDrilldownTarget(state, target, method?.targetKind ?? target?.kind);
+  if (!method) return;
+  if ((!allowEligibilityDenials && (method.phase !== phase || phase !== state.controllerRun.phase))
+    || (allowEligibilityDenials && !PROGRESSIVE_PHASES.includes(phase))) {
+    fail('DB_PROGRESSIVE_METHOD_DENIED');
   }
 }
 
@@ -287,14 +327,18 @@ function validateCandidate(candidate, state) {
 
 function validateReservation(reservation, state) {
   assertSealed(reservation, 'reservationSha256', 'DB_PROGRESSIVE_RESERVATION_TAMPERED');
+  const claimBound = 'claimSha256' in reservation;
   if (!exactKeys(reservation, [
     'schemaVersion', 'runId', 'scopeSha256', 'candidateSha256', 'nearDuplicateKey', 'controllerProbeKey',
     'hypothesisId', 'hypothesisDefinitionSha256', 'tableKey', 'methodRef', 'phase', 'target', 'intentFeatures',
     'gainBindingSha256', 'expectedGain', 'reservationDebit', 'dispatched', 'reservationSha256',
+    ...(claimBound ? ['claimSha256', 'evidenceGapSha256'] : []),
   ]) || reservation.schemaVersion !== PROGRESSIVE_RESERVATION_SCHEMA || !sha256Value(reservation.candidateSha256)
     || !sha256Value(reservation.controllerProbeKey) || !sha256Value(reservation.nearDuplicateKey)
     || !ID.test(reservation.hypothesisId) || !sha256Value(reservation.hypothesisDefinitionSha256)
     || !sha256Value(reservation.tableKey) || !sha256Value(reservation.gainBindingSha256)
+    || (claimBound ? !sha256Value(reservation.claimSha256) || !sha256Value(reservation.evidenceGapSha256)
+      : 'evidenceGapSha256' in reservation)
     || reservation.reservationDebit !== 1 || reservation.dispatched !== false
     || !state.controllerRun.probes.some(({probeKey}) => probeKey === reservation.controllerProbeKey)) {
     fail('DB_PROGRESSIVE_RESERVATION_INVALID');
@@ -543,13 +587,13 @@ export function registerProgressiveHypothesis(state, {
   return replaceState(state, {hypothesisLedger: sealLedger([...state.hypothesisLedger.entries, entry])});
 }
 
-export function buildProgressiveProbeCandidate(state, {
+function buildProgressiveProbeCandidateInternal(state, {
   hypothesisId, phase, methodRef, target, arguments: args, intentFeatures, gainInputs,
-}) {
+}, options = {}) {
   validateState(state);
   const hypothesis = state.hypothesisLedger.entries.find((entry) => entry.hypothesisId === hypothesisId);
   if (!hypothesis) fail('DB_PROGRESSIVE_HYPOTHESIS_UNKNOWN');
-  validateDispatchShape(state, {phase, methodRef, target, arguments: args});
+  validateDispatchShape(state, {phase, methodRef, target, arguments: args}, options);
   const normalizedIntent = validateIntentFeatures(intentFeatures);
   const normalizedTarget = normalizeJsonValue(target);
   const normalizedArguments = normalizeJsonValue(args);
@@ -590,6 +634,10 @@ export function buildProgressiveProbeCandidate(state, {
   return seal({...base, nearDuplicateKey, gainBindingSha256, expectedGain: expectedGain(gainInputs, gainBindingSha256)}, 'candidateSha256');
 }
 
+export function buildProgressiveProbeCandidate(state, input) {
+  return buildProgressiveProbeCandidateInternal(state, input);
+}
+
 export function rankProgressiveProbeCandidates(state, candidates) {
   validateState(state);
   if (!Array.isArray(candidates)) fail('DB_PROGRESSIVE_CANDIDATE_INVALID');
@@ -597,6 +645,265 @@ export function rankProgressiveProbeCandidates(state, candidates) {
   if (new Set(candidates.map(({candidateSha256}) => candidateSha256)).size !== candidates.length) fail('DB_PROGRESSIVE_CANDIDATE_DUPLICATE');
   return [...candidates].sort((left, right) => right.expectedGain.expectedInformationGainBps - left.expectedGain.expectedInformationGainBps
     || compare(left.candidateSha256, right.candidateSha256));
+}
+
+function safeDrilldownMethod(methodRef) {
+  const match = /\.safe\.([a-z0-9-]+)@/.exec(methodRef);
+  return match === null ? null : match[1];
+}
+
+function typedCapability(state, methodRef, typeFamily) {
+  const method = state.controllerRun.methodRegistry.methods.find(({methodRef: registered}) => registered === methodRef);
+  const path = safeDrilldownMethod(methodRef);
+  const supported = method !== undefined && path !== null && SAFE_DRILLDOWN_METHODS.get(path)?.has(typeFamily) === true
+    && !(state.controllerRun.engine === 'oracle' && typeFamily === 'BOOLEAN'
+      && ['column-summary', 'quality-indicators'].includes(path));
+  return {
+    typeFamily,
+    state: supported ? 'COMPLETE' : 'UNSUPPORTED',
+    reasonCode: supported ? null : (state.controllerRun.engine === 'oracle' && typeFamily === 'BOOLEAN'
+      ? 'ORACLE_NATIVE_BOOLEAN_COLUMN_UNSUPPORTED' : 'TYPED_CAPABILITY_UNSUPPORTED'),
+  };
+}
+
+function drilldownTargetCoverages(state, target) {
+  const endpoints = target?.kind === 'RELATIONSHIP' ? [target.source, target.target] : [target];
+  return endpoints.map((endpoint) => state.controllerRun.coverage.entries.find((entry) => entry.objectRef.kind === 'COLUMN'
+    && entry.objectRef.schemaName === endpoint.schemaName
+    && entry.objectRef.relationName === endpoint.relationName
+    && entry.objectRef.columnName === endpoint.columnName) ?? null);
+}
+
+function currentDrilldownBudget(state, candidate) {
+  const tableCount = state.budget.tableReservationCounts.find(({tableKey}) => tableKey === candidate.tableKey)?.count ?? 0;
+  const hypothesisCount = state.budget.hypothesisReservationCounts.find(({hypothesisId}) => hypothesisId === candidate.hypothesisId)?.count ?? 0;
+  return normalizeJsonValue({
+    runProbes: state.controllerRun.budget.maxRunProbes - state.controllerRun.budget.authorizedProbeCount,
+    tableProbes: state.budget.maxTableProbes - tableCount,
+    hypothesisProbes: state.budget.maxHypothesisProbes - hypothesisCount,
+  });
+}
+
+function stoppingRuleFor(state, hypothesis) {
+  return normalizeJsonValue({
+    maxConsecutiveNoGain: state.policy.maxConsecutiveNoGain,
+    maxConsecutiveCounterevidence: state.policy.maxConsecutiveCounterevidence,
+    minExpectedGainBps: state.policy.minExpectedGainBps,
+    consecutiveNoGain: hypothesis.consecutiveNoGain,
+    consecutiveCounterevidence: hypothesis.consecutiveCounterevidence,
+  });
+}
+
+function validateDrilldownRequest(request, state) {
+  assertSealed(request, 'requestSha256', 'DB_PROGRESSIVE_DRILLDOWN_REQUEST_TAMPERED');
+  if (!request?.candidate || !exactKeys(request, [
+    'schemaVersion', 'runId', 'scopeSha256', 'claimSha256', 'evidenceGapSha256', 'hypothesisId', 'candidate',
+    'candidateSha256', 'phase', 'methodRef', 'target', 'arguments', 'intentFeatures', 'expectedGain', 'capability',
+    'remainingBudget', 'stoppingRule', 'resumeReceiptSha256', 'dispatchAllowed', 'requestSha256',
+  ]) || request.schemaVersion !== PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA
+    || request.runId !== state.controllerRun.runId || request.scopeSha256 !== state.controllerRun.scopeSha256
+    || !sha256Value(request.claimSha256) || !sha256Value(request.evidenceGapSha256)
+    || request.candidateSha256 !== request.candidate.candidateSha256
+    || request.phase !== request.candidate.phase || request.methodRef !== request.candidate.methodRef
+    || canonicalJson(request.target) !== canonicalJson(request.candidate.target)
+    || canonicalJson(request.arguments) !== canonicalJson(request.candidate.arguments)
+    || canonicalJson(request.intentFeatures) !== canonicalJson(request.candidate.intentFeatures)
+    || canonicalJson(request.expectedGain) !== canonicalJson(request.candidate.expectedGain)
+    || !exactKeys(request.capability, ['typeFamily', 'state', 'reasonCode'])
+    || !CAPABILITY_STATES.has(request.capability.state)
+    || !(request.capability.reasonCode === null || REASON_CODE.test(request.capability.reasonCode))
+    || !(request.resumeReceiptSha256 === null || sha256Value(request.resumeReceiptSha256))
+    || request.dispatchAllowed !== false) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  validateDispatchShape(state, request, {allowEligibilityDenials: true});
+  validateCandidate(request.candidate, state);
+  const expectedCapability = typedCapability(state, request.methodRef, request.arguments.typeFamily);
+  if (canonicalJson(expectedCapability) !== canonicalJson(request.capability)) fail('DB_PROGRESSIVE_DRILLDOWN_CAPABILITY_INVALID');
+  const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === request.hypothesisId);
+  if (!hypothesis || request.candidate.hypothesisId !== request.hypothesisId) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  if (canonicalJson(request.remainingBudget) !== canonicalJson(currentDrilldownBudget(state, request.candidate))
+    || !exactKeys(request.remainingBudget, ['runProbes', 'tableProbes', 'hypothesisProbes'])
+    || !Object.values(request.remainingBudget).every((value) => Number.isSafeInteger(value) && value >= 0)) {
+    fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  }
+  if (!exactKeys(request.stoppingRule, [
+    'maxConsecutiveNoGain', 'maxConsecutiveCounterevidence', 'minExpectedGainBps', 'consecutiveNoGain', 'consecutiveCounterevidence',
+  ]) || canonicalJson(request.stoppingRule) !== canonicalJson(stoppingRuleFor(state, hypothesis))) {
+    fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  }
+  const {requestSha256: _requestHash, ...body} = request;
+  if (identitySha256(body) !== request.requestSha256) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_TAMPERED');
+  return {request, hypothesis};
+}
+
+export function buildProgressiveTypedDrilldownRequest(state, input) {
+  validateState(state);
+  const baseInputKeys = ['claimSha256', 'evidenceGapSha256', 'hypothesisId', 'phase', 'methodRef', 'target', 'arguments', 'intentFeatures', 'gainInputs'];
+  if (!(exactKeys(input, baseInputKeys) || exactKeys(input, [...baseInputKeys, 'resumeReceiptSha256']))
+    || !sha256Value(input.claimSha256) || !sha256Value(input.evidenceGapSha256)
+    || !(input.resumeReceiptSha256 === undefined || input.resumeReceiptSha256 === null || sha256Value(input.resumeReceiptSha256))) {
+    fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  }
+  const candidate = buildProgressiveProbeCandidateInternal(state, input, {allowEligibilityDenials: true});
+  const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === input.hypothesisId);
+  const request = {
+    schemaVersion: PROGRESSIVE_DRILLDOWN_REQUEST_SCHEMA,
+    runId: state.controllerRun.runId,
+    scopeSha256: state.controllerRun.scopeSha256,
+    claimSha256: input.claimSha256,
+    evidenceGapSha256: input.evidenceGapSha256,
+    hypothesisId: input.hypothesisId,
+    candidate,
+    candidateSha256: candidate.candidateSha256,
+    phase: candidate.phase,
+    methodRef: candidate.methodRef,
+    target: candidate.target,
+    arguments: candidate.arguments,
+    intentFeatures: candidate.intentFeatures,
+    expectedGain: candidate.expectedGain,
+    capability: typedCapability(state, candidate.methodRef, candidate.arguments.typeFamily),
+    remainingBudget: currentDrilldownBudget(state, candidate),
+    stoppingRule: stoppingRuleFor(state, hypothesis),
+    resumeReceiptSha256: input.resumeReceiptSha256 ?? null,
+    dispatchAllowed: false,
+  };
+  validateDrilldownRequest({...request, requestSha256: identitySha256(request)}, state);
+  return seal(request, 'requestSha256');
+}
+
+function controllerProbeKeyForRequest(state, request) {
+  return identitySha256({
+    runId: state.controllerRun.runId,
+    scopeSha256: state.controllerRun.scopeSha256,
+    methodRef: request.methodRef,
+    phase: request.phase,
+    target: request.target,
+    arguments: request.arguments,
+    methodRegistrySha256: state.controllerRun.methodRegistry.registrySha256,
+    coverageSha256: state.controllerRun.coverage.coverageSha256,
+  });
+}
+
+function eligibilityTrace(state, request, reservation, outcome, controllerReceipt) {
+  const outcomeEvidenceRefs = outcome?.evidenceRefs ?? [];
+  return normalizeJsonValue({
+    claimSha256: request.claimSha256,
+    evidenceGapSha256: request.evidenceGapSha256,
+    intent: {
+      candidateSha256: request.candidateSha256,
+      phase: request.phase,
+      methodRef: request.methodRef,
+      target: request.target,
+      arguments: request.arguments,
+      intentFeatures: request.intentFeatures,
+    },
+    expectedGain: request.expectedGain,
+    remainingBudget: currentDrilldownBudget(state, request.candidate),
+    stoppingRule: request.stoppingRule,
+    receipt: controllerReceipt === null ? null : {
+      reservationSha256: reservation.reservationSha256,
+      controllerReceiptSha256: controllerReceipt.receiptSha256,
+      resultState: outcome?.resultState ?? controllerReceipt.resultState,
+    },
+    evidence: {
+      evidenceRefs: outcomeEvidenceRefs,
+      counterevidenceRefs: outcome?.signal === 'COUNTERS' ? outcomeEvidenceRefs : [],
+      signal: outcome?.signal ?? null,
+    },
+  });
+}
+
+export function evaluateProgressiveDrilldownEligibility(state, request) {
+  validateState(state);
+  const {request: valid, hypothesis} = validateDrilldownRequest(request, state);
+  const coverages = drilldownTargetCoverages(state, valid.target);
+  const expectedProbeKey = controllerProbeKeyForRequest(state, valid);
+  const exactReservation = state.reservations.find(({candidateSha256}) => candidateSha256 === valid.candidateSha256) ?? null;
+  const reservation = exactReservation
+    ?? state.reservations.find(({nearDuplicateKey}) => nearDuplicateKey === valid.candidate.nearDuplicateKey) ?? null;
+  const probeIdentityReservation = reservation === null
+    ? state.reservations.find(({controllerProbeKey}) => controllerProbeKey === expectedProbeKey) ?? null
+    : null;
+  const probeKeyBound = reservation === null || reservation.controllerProbeKey === expectedProbeKey;
+  const claimBound = reservation === null
+    || (reservation.claimSha256 === valid.claimSha256 && reservation.evidenceGapSha256 === valid.evidenceGapSha256);
+  const outcome = !probeKeyBound || !claimBound ? null : reservation === null ? null
+    : state.outcomes.find(({reservationSha256}) => reservationSha256 === reservation.reservationSha256) ?? null;
+  const controllerReceipt = !probeKeyBound || !claimBound ? null : reservation === null ? null
+    : state.controllerRun.receipts.find(({probeKey}) => probeKey === reservation.controllerProbeKey) ?? null;
+  const receiptResume = probeKeyBound && (valid.resumeReceiptSha256 === null
+    ? claimBound
+    : claimBound && controllerReceipt?.receiptSha256 === valid.resumeReceiptSha256 && reservation.controllerProbeKey === expectedProbeKey);
+  const traceReadbackBound = claimBound && receiptResume;
+  const registeredMethod = state.controllerRun.methodRegistry.methods.find(({methodRef}) => methodRef === valid.methodRef) ?? null;
+  const gates = {
+    phase: valid.phase === state.controllerRun.phase
+      && (registeredMethod === null || registeredMethod.phase === valid.phase),
+    scope: coverages.length === (valid.target.kind === 'RELATIONSHIP' ? 2 : 1) && coverages.every(Boolean)
+      && [valid.target.kind === 'RELATIONSHIP' ? valid.target.source : valid.target].every((endpoint) => state.controllerRun.scope.schemas.includes(endpoint.schemaName)),
+    allowlist: registeredMethod !== null,
+    privilege: state.controllerRun.safety.missingPrivilegeMeansAbsent === false && coverages.length > 0 && coverages.every((entry) => entry?.state === 'COMPLETE'),
+    capability: valid.capability.state === 'COMPLETE',
+    runBudget: currentDrilldownBudget(state, valid.candidate).runProbes > 0,
+    tableBudget: currentDrilldownBudget(state, valid.candidate).tableProbes > 0,
+    hypothesisBudget: currentDrilldownBudget(state, valid.candidate).hypothesisProbes > 0,
+    duplicate: reservation === null && probeIdentityReservation === null,
+    timeout: outcome?.resultState !== 'TIMEOUT',
+    cancellation: outcome?.resultState !== 'CANCELLED',
+    receiptResume,
+    stoppingRule: !probeKeyBound || (!['STOPPED', 'AWAITING_RECONCILIATION'].includes(hypothesis.status)
+      && hypothesis.consecutiveNoGain < valid.stoppingRule.maxConsecutiveNoGain
+      && hypothesis.consecutiveCounterevidence < valid.stoppingRule.maxConsecutiveCounterevidence
+      && valid.expectedGain.expectedInformationGainBps >= valid.stoppingRule.minExpectedGainBps),
+  };
+  let disposition = 'ELIGIBLE';
+  if (!gates.phase) disposition = 'DENIED_PHASE';
+  else if (!gates.scope) disposition = 'DENIED_SCOPE';
+  else if (!gates.allowlist) disposition = 'DENIED_ALLOWLIST';
+  else if (!gates.privilege) disposition = 'DENIED_PRIVILEGE';
+  else if (!gates.capability) disposition = 'TERMINATED_UNSUPPORTED_CAPABILITY';
+  else if (!gates.timeout) disposition = 'TERMINATED_TIMEOUT';
+  else if (!gates.cancellation) disposition = 'TERMINATED_CANCELLED';
+  else if (!gates.stoppingRule) disposition = 'TERMINATED_STOPPING_RULE';
+  else if (!gates.runBudget || !gates.tableBudget || !gates.hypothesisBudget) disposition = 'DENIED_BUDGET';
+  else if (!gates.duplicate && exactReservation === null
+    && (!probeKeyBound || (valid.resumeReceiptSha256 === null && claimBound))) disposition = 'SUPPRESSED_DUPLICATE';
+  else if (!gates.receiptResume) disposition = 'DENIED_RECEIPT_RESUME';
+  else if (!gates.duplicate) disposition = outcome?.resultState === 'SUCCEEDED' ? 'REUSED_SUCCESS' : 'SUPPRESSED_DUPLICATE';
+  const body = {
+    schemaVersion: PROGRESSIVE_DRILLDOWN_ELIGIBILITY_SCHEMA,
+    runId: state.controllerRun.runId,
+    requestSha256: valid.requestSha256,
+    disposition,
+    dispatchAllowed: false,
+    gates,
+    trace: eligibilityTrace(
+      state,
+      valid,
+      reservation,
+      traceReadbackBound ? outcome : null,
+      traceReadbackBound ? controllerReceipt : null,
+    ),
+  };
+  return seal(body, 'eligibilitySha256');
+}
+
+export function rankProgressiveDrilldownRequests(state, requests) {
+  validateState(state);
+  if (!Array.isArray(requests)) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
+  const decisions = requests.map((request) => evaluateProgressiveDrilldownEligibility(state, request));
+  const ranked = [...decisions].sort((left, right) => {
+    const leftGain = left.trace.expectedGain.expectedInformationGainBps;
+    const rightGain = right.trace.expectedGain.expectedInformationGainBps;
+    return (right.disposition === 'ELIGIBLE') - (left.disposition === 'ELIGIBLE')
+      || rightGain - leftGain || compare(left.requestSha256, right.requestSha256);
+  });
+  ranked.eligible = ranked.filter(({disposition}) => disposition === 'ELIGIBLE');
+  ranked.ineligible = ranked.filter(({disposition}) => disposition !== 'ELIGIBLE');
+  ranked.terminalDigestSha256 = identitySha256({
+    eligible: ranked.eligible.map(({requestSha256, eligibilitySha256}) => ({requestSha256, eligibilitySha256})),
+    ineligible: ranked.ineligible.map(({requestSha256, disposition, eligibilitySha256}) => ({requestSha256, disposition, eligibilitySha256})),
+  });
+  return ranked;
 }
 
 function dispositionForExisting(state, reservation) {
@@ -610,22 +917,28 @@ function dispositionForExisting(state, reservation) {
   return outcome.resultState === 'SUCCEEDED' ? 'REUSED_SUCCESS' : 'SUPPRESSED_TERMINAL_OUTCOME';
 }
 
-export function reserveProgressiveProbeCandidate(state, candidate, {expectedStateSha256}) {
+export function reserveProgressiveProbeCandidate(state, candidate, {expectedStateSha256, claimSha256 = null, evidenceGapSha256 = null}) {
   validateState(state);
   if (!sha256Value(expectedStateSha256) || expectedStateSha256 !== state.stateSha256) fail('DB_PROGRESSIVE_STALE_RESERVATION');
+  if ((claimSha256 === null) !== (evidenceGapSha256 === null)
+    || !(claimSha256 === null || sha256Value(claimSha256))
+    || !(evidenceGapSha256 === null || sha256Value(evidenceGapSha256))) fail('DB_PROGRESSIVE_CLAIM_BINDING_INVALID');
   validateCandidate(candidate, state);
   const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === candidate.hypothesisId);
   const existing = state.reservations.find(({candidateSha256}) => candidateSha256 === candidate.candidateSha256);
-  if (existing) return {state, authorization: normalizeJsonValue({
-    disposition: dispositionForExisting(state, existing), candidateSha256: candidate.candidateSha256,
-    reservationSha256: existing.reservationSha256, controllerProbeKey: existing.controllerProbeKey,
-  })};
-  if (hypothesis.status === 'STOPPED' || hypothesis.status === 'AWAITING_RECONCILIATION') fail('DB_PROGRESSIVE_HYPOTHESIS_STOPPED');
+  if (existing) {
+    if ((existing.claimSha256 ?? null) !== claimSha256 || (existing.evidenceGapSha256 ?? null) !== evidenceGapSha256) fail('DB_PROGRESSIVE_CLAIM_BINDING_INVALID');
+    return {state, authorization: normalizeJsonValue({
+      disposition: dispositionForExisting(state, existing), candidateSha256: candidate.candidateSha256,
+      reservationSha256: existing.reservationSha256, controllerProbeKey: existing.controllerProbeKey,
+    })};
+  }
   const near = state.reservations.find(({nearDuplicateKey}) => nearDuplicateKey === candidate.nearDuplicateKey);
   if (near) return {state, authorization: normalizeJsonValue({
     disposition: 'SUPPRESSED_NEAR_DUPLICATE', candidateSha256: candidate.candidateSha256,
     reservationSha256: near.reservationSha256, controllerProbeKey: near.controllerProbeKey,
   })};
+  if (hypothesis.status === 'STOPPED' || hypothesis.status === 'AWAITING_RECONCILIATION') fail('DB_PROGRESSIVE_HYPOTHESIS_STOPPED');
   if (candidate.expectedGain.expectedInformationGainBps < state.policy.minExpectedGainBps) fail('DB_PROGRESSIVE_EXPECTED_GAIN_TOO_LOW');
   const tableCount = state.budget.tableReservationCounts.find(({tableKey}) => tableKey === candidate.tableKey)?.count ?? 0;
   const hypothesisCount = state.budget.hypothesisReservationCounts.find(({hypothesisId}) => hypothesisId === candidate.hypothesisId)?.count ?? 0;
@@ -644,6 +957,7 @@ export function reserveProgressiveProbeCandidate(state, candidate, {expectedStat
     schemaVersion: PROGRESSIVE_RESERVATION_SCHEMA,
     runId: state.controllerRun.runId,
     scopeSha256: state.controllerRun.scopeSha256,
+    ...(claimSha256 === null ? {} : {claimSha256, evidenceGapSha256}),
     candidateSha256: candidate.candidateSha256,
     nearDuplicateKey: candidate.nearDuplicateKey,
     controllerProbeKey: controllerAuthorization.authorization.probeKey,

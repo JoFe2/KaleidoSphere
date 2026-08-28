@@ -33,7 +33,7 @@ KaleidoSphere uses separate, intentionally pinned version axes:
 
 | Layer | Version | Meaning |
 |---|---:|---|
-| Repository release | `v0.24.0` | Current source and release-archive identity |
+| Repository release | `v0.25.0` | Current source and release-archive identity |
 | bi-agent component | `v0.18.1` | Runtime product identity attested by the embedded service |
 | External API contract | `2.0.0` | Closed six-action wire contract |
 | Apache Superset | `6.1.0` | Digest-pinned local projection UI |
@@ -108,7 +108,7 @@ marketplace listing is claimed.
 The AgentSkill above is instruction-only. The optional
 [`JoFe2/kaleidosphere-dsh-plugin`](https://github.com/JoFe2/kaleidosphere-dsh-plugin)
 is a separate **Developer Preview** for DeepSeek Harness rc.8. It is not part
-of the KaleidoSphere v0.24.0 release assets and adds no DSH dependency, loader
+of the KaleidoSphere v0.25.0 release assets and adds no DSH dependency, loader
 or mapping to this repository. The plugin exposes six native
 `kaleidosphere_*` tools and vendors its own exact KaleidoSphere v0.16.0 subset;
 its compatibility, lifecycle and release status are governed in that repository.
@@ -214,7 +214,7 @@ read visibility for the declared schemas. Details are in
 
 ### Local library/contract surfaces
 
-- The v0.24.0 authority-bound local object extension defines
+- The v0.25.0 authority-bound local object extension defines
   `bi.object.search.read`, `bi.object.details.read` and
   `bi.database.overview.read`, with capability-specific bindings and read-only
   Search, Details and Overview handlers. These importable local contracts do
