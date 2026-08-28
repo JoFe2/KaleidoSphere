@@ -28,16 +28,17 @@ async function readJson(file) {
   return JSON.parse(await readFile(file, 'utf8'));
 }
 
-async function mssqlInputs() {
-  const [structureManifest, profilingManifest, structureEvidence] = await Promise.all([
+async function mssqlInputs({includeSafeAnalysis = false} = {}) {
+  const [structureManifest, profilingManifest, safeAnalysisManifest, structureEvidence] = await Promise.all([
     readJson(`${MSSQL_DIRECTORY}/manifest.json`),
     readJson(`${MSSQL_DIRECTORY}/profiling-manifest.json`),
+    includeSafeAnalysis ? readJson(`${MSSQL_DIRECTORY}/safe-analysis-manifest.json`) : null,
     runAnalyzeProfile(`${ROOT}/fixtures/mssql-profile-v1.json`, {repositoryRoot: ROOT}),
   ]);
   return {
     engine: 'mssql',
     scope: structureEvidence.profile.scope,
-    registry: buildProgressiveMethodRegistry({structureManifest, profilingManifest}),
+    registry: buildProgressiveMethodRegistry({structureManifest, profilingManifest, safeAnalysisManifest}),
     coverage: buildProgressiveCoverage(structureEvidence),
   };
 }
@@ -255,6 +256,29 @@ test('only existing allowlisted methods and typed scoped identifiers cross the d
   run = recordProgressiveReceipt(cancel.state, {probeKey: cancel.authorization.probeKey, resultState: 'CANCELLED', evidenceRefs: []});
   assert.equal(authorizeProgressiveProbe(run, request(run, methodRef, second.target)).authorization.disposition, 'SUPPRESSED_DUPLICATE');
   assert.equal(run.safety.blindRetryAllowed, false);
+});
+
+test('registered method argument values are controller-validated before authorization', async () => {
+  const inputs = await mssqlInputs({includeSafeAnalysis: true});
+  const first = mssqlColumnTarget(inputs.coverage, 0);
+  const run = advanceTo(newRun(inputs), 'SAFE_AGGREGATES');
+  const method = inputs.registry.methods.find(({methodRef}) => methodRef.includes('safe.column-summary@'));
+  assert(method);
+  const invalidArguments = [
+    {maxSourceRows: '500', typeFamily: 'NUMERIC'},
+    {maxSourceRows: 'password=[REDACTED]', typeFamily: 'NUMERIC'},
+    {maxSourceRows: 500, typeFamily: 'DECIMAL'},
+  ];
+  for (const args of invalidArguments) {
+    assert.throws(
+      () => authorizeProgressiveProbe(run, request(run, method.methodRef, first.target, args)),
+      /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+    );
+  }
+  assert.equal(
+    authorizeProgressiveProbe(run, request(run, method.methodRef, first.target, {maxSourceRows: 500, typeFamily: 'NUMERIC'})).authorization.disposition,
+    'AUTHORIZED',
+  );
 });
 
 async function terminalMssqlReport() {

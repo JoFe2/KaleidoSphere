@@ -118,14 +118,24 @@ function validateIntentFeatures(features) {
   return normalizeJsonValue(features);
 }
 
+function validateControllerMethodArguments(args, allowedArgumentKeys) {
+  if (!args || typeof args !== 'object' || Array.isArray(args)
+    || canonicalJson(Object.keys(args).sort()) !== canonicalJson(allowedArgumentKeys)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+  for (const [key, value] of Object.entries(args)) {
+    if (SECRET_SHAPE.test(key)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    if (key === 'maxSourceRows' && (!Number.isInteger(value) || value < 1 || value > 10000)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    else if (key === 'typeFamily' && !['NUMERIC', 'TEMPORAL', 'CATEGORY', 'TEXT', 'BOOLEAN', 'PAIR'].includes(value)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+    else if (!['maxSourceRows', 'typeFamily'].includes(key)) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
+  }
+  return args;
+}
+
 function validateDispatchShape(state, {phase, methodRef, target, arguments: args}, {allowEligibilityDenials = false} = {}) {
   const method = state.controllerRun.methodRegistry.methods.find((entry) => entry.methodRef === methodRef);
   if (!PROGRESSIVE_PHASES.includes(phase)
     || (!method && !allowEligibilityDenials)
     || (method && (method.readOnly !== true
-    || method.acceptsFreeSql !== false || method.acceptsRawValues !== false || method.acceptsCredentials !== false
-    || !args || typeof args !== 'object' || Array.isArray(args)
-    || canonicalJson(Object.keys(args).sort()) !== canonicalJson(method.allowedArgumentKeys)))) {
+    || method.acceptsFreeSql !== false || method.acceptsRawValues !== false || method.acceptsCredentials !== false))) {
     fail('DB_PROGRESSIVE_METHOD_DENIED');
   }
   if (!method) {
@@ -135,11 +145,11 @@ function validateDispatchShape(state, {phase, methodRef, target, arguments: args
     if (Object.keys(args).some((key) => !safeText(key, 64) || SECRET_SHAPE.test(key))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
     return;
   }
+  validateControllerMethodArguments(args, method.allowedArgumentKeys);
   if ((!allowEligibilityDenials && (method.phase !== phase || phase !== state.controllerRun.phase))
     || (allowEligibilityDenials && !PROGRESSIVE_PHASES.includes(phase))) {
     fail('DB_PROGRESSIVE_METHOD_DENIED');
   }
-  if (Object.keys(args).some((key) => !safeText(key, 64) || SECRET_SHAPE.test(key))) fail('DB_PROGRESSIVE_PROBE_REQUEST_INVALID');
   if (method.targetKind === 'COLUMN') {
     if (!exactKeys(target, ['kind', 'schemaName', 'relationName', 'columnName']) || target.kind !== 'COLUMN'
       || ![target.schemaName, target.relationName, target.columnName].every(identifier)
@@ -698,6 +708,7 @@ function validateDrilldownRequest(request, state) {
     || !(request.resumeReceiptSha256 === null || sha256Value(request.resumeReceiptSha256))
     || request.dispatchAllowed !== false) fail('DB_PROGRESSIVE_DRILLDOWN_REQUEST_INVALID');
   validateCandidate(request.candidate, state);
+  validateDispatchShape(state, request, {allowEligibilityDenials: true});
   const expectedCapability = typedCapability(state, request.methodRef, request.arguments.typeFamily);
   if (canonicalJson(expectedCapability) !== canonicalJson(request.capability)) fail('DB_PROGRESSIVE_DRILLDOWN_CAPABILITY_INVALID');
   const hypothesis = state.hypothesisLedger.entries.find(({hypothesisId}) => hypothesisId === request.hypothesisId);

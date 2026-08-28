@@ -100,6 +100,36 @@ function typedRequest(state, {
   return buildProgressiveTypedDrilldownRequest(state, input);
 }
 
+function reseal(value, hashKey) {
+  const body = structuredClone(value);
+  delete body[hashKey];
+  return {...body, [hashKey]: identitySha256(body)};
+}
+
+function resealTypedRequestArguments(request, args) {
+  let candidate = structuredClone(request.candidate);
+  candidate.arguments = structuredClone(args);
+  candidate.gainBindingSha256 = identitySha256({
+    runId: candidate.runId,
+    scopeSha256: candidate.scopeSha256,
+    hypothesisDefinitionSha256: candidate.hypothesisDefinitionSha256,
+    phase: candidate.phase,
+    methodRef: candidate.methodRef,
+    target: candidate.target,
+    arguments: candidate.arguments,
+    intentFeatures: candidate.intentFeatures,
+  });
+  candidate.expectedGain = reseal({...candidate.expectedGain, bindingSha256: candidate.gainBindingSha256}, 'expectedGainSha256');
+  candidate = reseal(candidate, 'candidateSha256');
+  return reseal({
+    ...request,
+    candidate,
+    candidateSha256: candidate.candidateSha256,
+    arguments: candidate.arguments,
+    expectedGain: candidate.expectedGain,
+  }, 'requestSha256');
+}
+
 function advanceControllerTo(run, target) {
   let current = run;
   while (current.phase !== target) {
@@ -495,6 +525,27 @@ test('typed drilldown ordering and terminal eligibility digest are independent o
   assert(forward.eligible.every(({dispatchAllowed}) => dispatchAllowed === false));
   if (process.env.KS_PRINT_PROGRESSIVE_ANALYSIS_HASHES === '1') {
     console.log(JSON.stringify({typedDrilldownTerminalDigest: forward.terminalDigestSha256}));
+  }
+});
+
+test('typed drilldown rejects invalid registered argument values before sealing or eligibility', async () => {
+  const {analysis, registry, targets} = await safeAnalysis({runId: 'fixture-typed-drilldown-invalid-values', phase: 'SAFE_AGGREGATES'});
+  const methodRef = safeMethod(registry, 'COLUMN_SUMMARY');
+  const input = {methodRef, target: targets[0], typeFamily: 'NUMERIC', intentFeatures: NUMERIC_INTENT};
+  const valid = typedRequest(analysis, input);
+  const invalidArguments = [
+    ['non-integer maxSourceRows', {maxSourceRows: '500', typeFamily: 'NUMERIC'}],
+    ['credential-shaped value', {maxSourceRows: 'password=[REDACTED]', typeFamily: 'NUMERIC'}],
+    ['invalid typeFamily', {maxSourceRows: 500, typeFamily: 'DECIMAL'}],
+  ];
+  for (const [name, args] of invalidArguments) {
+    assert.throws(() => typedRequest(analysis, {...input, arguments: args}), /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/, name);
+    const previouslySealable = resealTypedRequestArguments(valid, args);
+    assert.throws(
+      () => evaluateProgressiveDrilldownEligibility(analysis, previouslySealable),
+      /DB_PROGRESSIVE_PROBE_REQUEST_INVALID/,
+      `${name} eligibility`,
+    );
   }
 });
 
