@@ -113,6 +113,13 @@ M6-02 and M6-03 interfaces without copying Apache Superset, model, OpenClaw, or 
 runtime source. M6-04 files are ordinary repository-authored hashes under `files`, not derived
 files.
 
+Issue #66's evidence-bound renderer is repository-authored clean-room work. The single closed
+`TABLE`/`JSON` renderer consumes only already verified report or coverage-view projections,
+emits a bounded deterministic export, and has no source, credential, network, browser, SQL,
+executable, or mutation authority. No renderer, chart, export, provider, browser, Superset,
+Hermes, DSH, or third-party runtime source was copied. The renderer module, focused test, and
+decision record are ordinary repository-authored hashes under `files`, not derived files.
+
 The K2 closed-intent conformance pack, deterministic synthetic fixture, negative
 matrix, focused tests and evidence documentation are repository-authored
 clean-room work. They compose the existing External API v2 and K1 contracts
