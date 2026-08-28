@@ -511,7 +511,8 @@ test('typed drilldown eligibility fails closed for authorization, capability, re
   const deniedAllowlistRequest = buildProgressiveTypedDrilldownRequest(analysis, {
     claimSha256: valid.claimSha256, evidenceGapSha256: valid.evidenceGapSha256, hypothesisId: valid.hypothesisId,
     phase: valid.phase, methodRef: 'mssql.safe.model-authored-sql@1.0.0', target: targets[0],
-    arguments: {maxSourceRows: 500, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT, gainInputs: fixture.gainInputs.high,
+    arguments: {maxSourceRows: 500, typeFamily: 'NUMERIC'}, intentFeatures: NUMERIC_INTENT,
+    gainInputs: {...fixture.gainInputs.high, evidenceRefs: [identitySha256({fixture: 'denied-allowlist-gain'})]},
   });
   assert.equal(evaluateProgressiveDrilldownEligibility(analysis, deniedAllowlistRequest).disposition, 'DENIED_ALLOWLIST');
   assert.throws(() => buildProgressiveTypedDrilldownRequest(analysis, {

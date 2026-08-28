@@ -843,7 +843,8 @@ export function evaluateProgressiveDrilldownEligibility(state, request) {
   else if (!gates.cancellation) disposition = 'TERMINATED_CANCELLED';
   else if (!gates.stoppingRule) disposition = 'TERMINATED_STOPPING_RULE';
   else if (!gates.runBudget || !gates.tableBudget || !gates.hypothesisBudget) disposition = 'DENIED_BUDGET';
-  else if (!gates.duplicate && exactReservation === null) disposition = 'SUPPRESSED_DUPLICATE';
+  else if (!gates.duplicate && exactReservation === null
+    && (!probeKeyBound || (valid.resumeReceiptSha256 === null && claimBound))) disposition = 'SUPPRESSED_DUPLICATE';
   else if (!gates.receiptResume) disposition = 'DENIED_RECEIPT_RESUME';
   else if (!gates.duplicate) disposition = outcome?.resultState === 'SUCCEEDED' ? 'REUSED_SUCCESS' : 'SUPPRESSED_DUPLICATE';
   const body = {
