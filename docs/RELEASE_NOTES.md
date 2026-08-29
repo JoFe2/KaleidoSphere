@@ -1,5 +1,35 @@
 # Release Notes
 
+## v0.26.0 - Evidence-bound report visualization and zero-residue lifecycle
+
+Delivers the bounded local issue #66 evidence-bound visualization/report slice.
+The evidence-bound report contract carries one bounded `METRIC`, `TABLE`, or
+typed `DIFFERENTIATOR_PLACEHOLDER` dataset and five opaque evidence bindings;
+its projection digests bind the dataset and report specification without
+promoting the placeholder into a differentiator claim.
+
+The coverage view is the release's coverage differentiator: it deterministically
+projects sealed coverage, capability, result, receipt, and snapshot evidence
+into a report-compatible table with citations and explicit blind spots.
+`DENIED`, `UNSUPPORTED`, and `UNKNOWN` remain non-complete states and cannot be
+upgraded by missing or contradictory evidence.
+
+The sealed renderer accepts only verified report or coverage-view projections
+and exactly the `TABLE`/`JSON` choices, producing a bounded canonical JSON export
+with source bindings and export/render digests. The presentation lifecycle adds
+load, idempotent unload, prepare-then-commit replacement, readback replay,
+checkpoint, rollback, and an exact zero-residue snapshot. It holds no source,
+credential, network, browser, SQL, dispatch, mutation, or arbitrary-code
+authority.
+
+Focused deterministic and fail-closed tests cover projection, coverage,
+renderer, lifecycle, replay, replacement rollback, and residue behavior. This
+release is local evidence-bound contract and presentation evidence only: it
+does not prove source authenticity, freshness, complete coverage, semantic or
+business truth, visual correctness, authorization, or replay prevention, and
+does not claim any issue beyond #66. It adds no production/customer-data,
+deployment, release, provider, Superset, DSH, or external-runtime authority.
+
 ## v0.25.0 - Typed progressive drilldown eligibility
 
 Adds one sealed `progressive-drilldown-request/v1` and one pure, sealed

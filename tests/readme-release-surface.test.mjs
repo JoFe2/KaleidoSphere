@@ -15,7 +15,7 @@ const compact = (value) => value.replace(/\s+/g, ' ').trim();
 function validateReadme(readme) {
   for (const value of [
     'Repository release',
-    '`v0.25.0`',
+    '`v0.26.0`',
     'bi-agent component',
     '`v0.18.1`',
     'External API contract',
@@ -27,7 +27,7 @@ function validateReadme(readme) {
     'synthetic test evidence only',
     'JoFe2/kaleidosphere-dsh-plugin',
     'Developer Preview',
-    'not part of the KaleidoSphere v0.25.0 release assets',
+    'not part of the KaleidoSphere v0.26.0 release assets',
   ]) {
     const pattern = value.split(/\s+/).map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
     assert.match(readme, new RegExp(pattern, 'i'), `README surface missing: ${value}`);
@@ -56,7 +56,7 @@ function validateReadme(readme) {
     - Explicitly allowlisted PostgreSQL null/distinct count profiling and single-column relationship-candidate evidence with observed/computed/inferred separation, deterministic Evidence Store and proposal-only rule plan/reports.
   `));
   assert.equal(compact(dsh), compact(`
-    The AgentSkill above is instruction-only. The optional [\`JoFe2/kaleidosphere-dsh-plugin\`](https://github.com/JoFe2/kaleidosphere-dsh-plugin) is a separate **Developer Preview** for DeepSeek Harness rc.8. It is not part of the KaleidoSphere v0.25.0 release assets and adds no DSH dependency, loader or mapping to this repository. The plugin exposes six native \`kaleidosphere_*\` tools and vendors its own exact KaleidoSphere v0.16.0 subset; its compatibility, lifecycle and release status are governed in that repository.
+    The AgentSkill above is instruction-only. The optional [\`JoFe2/kaleidosphere-dsh-plugin\`](https://github.com/JoFe2/kaleidosphere-dsh-plugin) is a separate **Developer Preview** for DeepSeek Harness rc.8. It is not part of the KaleidoSphere v0.26.0 release assets and adds no DSH dependency, loader or mapping to this repository. The plugin exposes six native \`kaleidosphere_*\` tools and vendors its own exact KaleidoSphere v0.16.0 subset; its compatibility, lifecycle and release status are governed in that repository.
   `));
   assert.equal(compact(synthetic), compact(`
     - Promotion execution, trusted-workflow apply/readback/rollback and ambiguous outcome reconciliation are exercised through local synthetic library tests. They have no shipped CLI or HTTP invocation path and do not authorize production/customer mutation.
@@ -65,7 +65,7 @@ function validateReadme(readme) {
   assert.match(pilots, /not a\s+third `BI_ENGINE` option in the default Compose stack/i);
   assert.match(localContracts, /do\s+not\s+extend\s+External API v2/i);
   assert.match(synthetic, /no shipped CLI or HTTP invocation path/i);
-  assert.match(dsh, /not part\s+of the KaleidoSphere v0\.25\.0 release assets/i);
+  assert.match(dsh, /not part\s+of the KaleidoSphere v0\.26\.0 release assets/i);
   assert.match(readme, /six closed External API v2 (?:actions|intents)/i);
   assert.match(readme, /bounded PostgreSQL[^\n]*pilot/i);
 
@@ -84,7 +84,7 @@ function validateReadme(readme) {
   assert.doesNotMatch(normalized, /BI_ENGINE\s*=\s*postgres|\/v2\/promotion|\.\/bin\/bi\s+promotion\s+apply|promotion(?:-bundle)?\s+(?:execute|apply)/i);
 }
 
-test('README distinguishes the v0.25 release surfaces and optional DSH preview', async () => {
+test('README distinguishes the current release surfaces and optional DSH preview', async () => {
   const [readme, rootPackage, agentPackage, compose, cli, server, contract] = await Promise.all([
     readFile('README.md', 'utf8'),
     readFile('package.json', 'utf8').then(JSON.parse),
@@ -96,7 +96,7 @@ test('README distinguishes the v0.25 release surfaces and optional DSH preview',
   ]);
 
   validateReadme(readme);
-  assert.equal(rootPackage.version, '0.25.0');
+  assert.equal(rootPackage.version, '0.26.0');
   assert.equal(agentPackage.version, '0.18.1');
   assert.doesNotMatch(compose, /BI_ENGINE[^\n]*postgres/i);
   assert.doesNotMatch(cli, /promotion-bundle[^\n]*(?:execute|apply)/i);
@@ -114,8 +114,8 @@ test('README release-surface gate rejects contradictory overclaims', async () =>
     'The default Compose stack now supports\nPostgreSQL as a production engine.',
     'Operators can invoke promotion apply through `./bin/bi promotion apply` and POST `/v2/promotion/apply`.',
     'Operators can invoke promotion\napply through a public CLI.',
-    'The v0.25.0 release archive bundles kaleidosphere-dsh-plugin.',
-    'The v0.25.0 release archive bundles\nthe kaleidosphere-dsh-plugin.',
+    'The v0.26.0 release archive bundles kaleidosphere-dsh-plugin.',
+    'The v0.26.0 release archive bundles\nthe kaleidosphere-dsh-plugin.',
     'Operators can execute promotions through the public CLI.',
     'A public operator command now runs the promotion workflow end to end.',
     'The shipped server lets operators execute synthetic promotions.',
