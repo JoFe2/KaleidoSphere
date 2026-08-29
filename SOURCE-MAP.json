@@ -15,7 +15,6 @@
     "agent-skills/kaleidosphere/references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
     "agent-skills/kaleidosphere/scripts/validate-request.mjs": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509",
     "bin/bi": "bdb02d4085d1740b326d03d9b313d2742385710aeccb8d48ac6bbb71a8253a09",
-    "closure-audits/CLOSURE-KS35-ROOT-DELIVERY-01/exact-head-local-gate-receipt.json": "12659e12434b931fcf06037ba8665ea2e814c9c2f2c229cad6b21fe89327e620",
     "compose.yaml": "de99841c84211c6aa454746e23f693c6efd7d2f1b3bed84bf368856f647afb8f",
     "contracts/assistant-foundation/v1/capability-descriptor.schema.json": "fdb319e61c991e99552934c452b07f013b5fabaf68f5882cae4c4a1a5334867d",
     "contracts/assistant-foundation/v1/control-and-ui.schema.json": "423be096a6de021a9f9bafc00a9c2649ed427a3937df2bb989a5cbbe3100da63",
