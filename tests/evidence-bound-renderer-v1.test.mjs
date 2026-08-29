@@ -163,6 +163,22 @@ test('raw report specs and oversized exports are not renderer inputs', () => {
   assert.throws(() => buildEvidenceBoundRendererV1(largeProjection, options()), /EVIDENCE_BOUND_RENDERER_EXPORT_LIMIT_DENIED/);
 });
 
+test('direct renderer validation rejects a re-digested export with substituted dataset bytes', () => {
+  const rendered = buildEvidenceBoundRendererV1(report(), options());
+  const forged = structuredClone(rendered);
+  const payload = JSON.parse(forged.export);
+  payload.dataset.rows[0][0] = 99;
+  forged.export = JSON.stringify(payload);
+  forged.exportBytes = new TextEncoder().encode(forged.export).byteLength;
+  forged.exportSha256 = sha256(forged.export);
+  const {renderSha256: _old, ...body} = forged;
+  forged.renderSha256 = identitySha256(body);
+  assert.throws(
+    () => validateEvidenceBoundRendererV1(forged),
+    /EVIDENCE_BOUND_RENDERER_DATASET_DIGEST_DENIED/,
+  );
+});
+
 test('verification rejects a re-digested substitution and returns no caller-owned mutable data', () => {
   const source = report();
   const rendered = buildEvidenceBoundRendererV1(source, options());

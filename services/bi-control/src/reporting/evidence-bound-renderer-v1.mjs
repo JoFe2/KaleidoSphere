@@ -304,6 +304,16 @@ function validateRender(value) {
     || payload.evidence.specSha256 !== value.specSha256 || payload.evidence.viewSha256 !== value.viewSha256) {
     fail('EVIDENCE_BOUND_RENDERER_EXPORT_DENIED');
   }
+  validateEvidenceBoundReportV1({
+    schemaVersion: EVIDENCE_BOUND_REPORT_SPEC_SCHEMA_V1,
+    reportId: payload.reportId,
+    title: payload.title,
+    dataset: payload.dataset,
+    bindings: payload.evidence.bindings,
+  });
+  if (identitySha256(payload.dataset) !== payload.evidence.datasetSha256) {
+    fail('EVIDENCE_BOUND_RENDERER_DATASET_DIGEST_DENIED');
+  }
   const {renderSha256: _render, ...body} = value;
   if (identitySha256(body) !== value.renderSha256) fail('EVIDENCE_BOUND_RENDERER_DIGEST_DENIED');
   return value;
