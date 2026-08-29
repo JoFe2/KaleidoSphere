@@ -1,0 +1,47 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/legacy-existing-installation/v1",
+  "before": {
+    "schemaId": "chimpmaera.db/analyze-profile/v1",
+    "environment": {
+      "CM_BI_IMAGE_TAG": "v0.26.0"
+    },
+    "package": "chimpmaera-bi",
+    "persistedPath": ".chimpmaera/catalog",
+    "legacyReaderOutput": {
+      "generation": 1,
+      "status": "READABLE",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "persistedLegacyBytes": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "afterUpgrade": {
+    "legacyReaderOutput": {
+      "generation": 1,
+      "status": "READABLE",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "successorReaderOutput": {
+      "generation": 1,
+      "status": "READABLE",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "persistedLegacyBytes": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "conflictProbe": "DENIED_MISMATCH",
+    "unknownIdentityProbe": "DENIED_UNKNOWN"
+  },
+  "afterRollback": {
+    "schemaId": "chimpmaera.db/analyze-profile/v1",
+    "environment": {
+      "CM_BI_IMAGE_TAG": "v0.26.0"
+    },
+    "package": "chimpmaera-bi",
+    "persistedPath": ".chimpmaera/catalog",
+    "legacyReaderOutput": {
+      "generation": 1,
+      "status": "READABLE",
+      "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "persistedLegacyBytes": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "externalEffects": false
+}

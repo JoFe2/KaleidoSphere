@@ -1,0 +1,5021 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/legacy-technical-identity-inventory/v1",
+  "baseCommit": "a709582278c0d5bc35c09cd2f89808b6b1d242d6",
+  "occurrences": [
+    {
+      "identityClass": "contractAuthority",
+      "value": "https://contracts.chimpmaera.local/assistant-foundation/v1/capability-descriptor.schema.json",
+      "path": "contracts/assistant-foundation/v1/capability-descriptor.schema.json"
+    },
+    {
+      "identityClass": "contractAuthority",
+      "value": "https://contracts.chimpmaera.local/assistant-foundation/v1/control-and-ui.schema.json",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "contractAuthority",
+      "value": "https://contracts.chimpmaera.local/assistant-foundation/v1/event-envelope.schema.json",
+      "path": "contracts/assistant-foundation/v1/event-envelope.schema.json"
+    },
+    {
+      "identityClass": "contractAuthority",
+      "value": "https://contracts.chimpmaera.local/assistant-foundation/v1/plugin-manifest.schema.json",
+      "path": "contracts/assistant-foundation/v1/plugin-manifest.schema.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": ".env.example"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "services/bi-control/fixtures/mssql-profile-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "services/bi-control/fixtures/mssql-results-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/object-inventory-authority-digest-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_IMAGE_TAG",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_IMAGE_TAG",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_IMAGE_TAG",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_IMAGE_TAG",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_RELEASE_ALLOW_DIRTY",
+      "path": "scripts/build-release.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_RELEASE_ALLOW_DIRTY",
+      "path": "scripts/build-release.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_RELEASE_ALLOW_DIRTY",
+      "path": "tests/release.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MSSQL_PASSWORD",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MSSQL_PASSWORD",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MSSQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-inventory-authority-digest-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-name-authority-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-relation-kind-authority-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-search-authority-bound-result-canonical-number.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-search-authority-bound-result-readback-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-search-authority-bound-result-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/object-search-handler-v1.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/progressive-controller.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi",
+      "path": "package.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi",
+      "path": "services/superset/Dockerfile"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi",
+      "path": "services/superset/Dockerfile"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi",
+      "path": "services/superset/Dockerfile"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-clean",
+      "path": "docs/CLEAN_ROOM.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-clean",
+      "path": "docs/CLEAN_ROOM.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-clean",
+      "path": "docs/CLEAN_ROOM.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-control",
+      "path": "services/bi-control/src/superset-fingerprint.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-database-overview",
+      "path": "services/superset/runtime/materialize.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-database-overview",
+      "path": "services/superset/runtime/materialize.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-database-overview",
+      "path": "services/superset/runtime/materialize.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m0",
+      "path": "docs/evidence/M1_ORACLE_RUNTIME.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m1",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m2",
+      "path": ".env.example"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m3-smoke",
+      "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m3-smoke",
+      "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m3-smoke",
+      "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m3-smoke",
+      "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m3-smoke",
+      "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-clean",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-clean",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-clean",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-clean",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-smoke",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-smoke",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-smoke",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4-smoke",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4.tar",
+      "path": "docs/CLEAN_ROOM.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-m4.tar",
+      "path": "docs/CLEAN_ROOM.md"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-mssql",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-oracle",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-portable-mssql-fixture",
+      "path": "services/bi-control/fixtures/mssql-profile-v1.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-postgresql",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/agent",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/agent",
+      "path": "services/bi-agent/package.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/bootstrap.py",
+      "path": "services/superset/runtime/init.sh"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/control",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/control",
+      "path": "services/bi-control/package-lock.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/control",
+      "path": "services/bi-control/package-lock.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/control",
+      "path": "services/bi-control/package.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/healthcheck.py",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/init.sh",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/materializer_server.py",
+      "path": "services/superset/runtime/start.sh"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/metadata",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/metadata",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/metadata",
+      "path": "services/superset/runtime/init.sh"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/metadata",
+      "path": "services/superset/runtime/superset_config.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/metadata",
+      "path": "services/superset/runtime/superset_config.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "services/superset/runtime/bootstrap.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "services/superset/runtime/init.sh"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/projection",
+      "path": "services/superset/runtime/materialize.py"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/receipts",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/receipts",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/receipts",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/start.sh",
+      "path": "services/superset/Dockerfile"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/superset",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/superset",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/superset_config.py",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/superset_config.py",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "contracts/assistant-foundation/v1/capability-descriptor.schema.json"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "contracts/assistant-foundation/v1/event-envelope.schema.json"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "contracts/assistant-foundation/v1/plugin-manifest.schema.json"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "services/bi-agent/Dockerfile"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "services/bi-control/Dockerfile"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": ".chimpmaera",
+      "path": "services/superset/Dockerfile"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "compose.yaml"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/superset/runtime/bootstrap.py"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/superset/runtime/init.sh"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/superset/runtime/init.sh"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/superset/runtime/materialize.py"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/superset/runtime/superset_config.py"
+    },
+    {
+      "identityClass": "persistedPath",
+      "value": "/var/lib/chimpmaera",
+      "path": "services/superset/runtime/superset_config.py"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-candidate-freeze/v1",
+      "path": "docs/evidence/graph-adaptive-v1/candidate-freeze.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-candidate-freeze/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-candidate-freeze/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-candidate-freeze/v1",
+      "path": "scripts/run-graph-adaptive-v1-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-candidate-freeze/v1",
+      "path": "tests/graph-adaptive-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-candidate-freeze/v1",
+      "path": "tests/graph-schema-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-evidence-pack/v1",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/evidence-pack.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-evidence-pack/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-evidence-pack/v1",
+      "path": "services/bi-control/src/graph-pilot/bi-adaptive-investigation-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-graph/v1",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/graph-spec.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-graph/v1",
+      "path": "services/bi-control/src/graph-pilot/bi-adaptive-investigation-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-graph/v1/evidence-pack.schema.json",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/evidence-pack.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-graph/v1/graph-spec.schema.json",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/graph-spec.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-graph/v1/receipt.schema.json",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/receipt.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-graph/v1/state.schema.json",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/state.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/receipt.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-receipt/v1",
+      "path": "services/bi-control/src/graph-pilot/bi-adaptive-investigation-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-sealed-packs/v1",
+      "path": "services/bi-control/fixtures/graph-adaptive-v1/sealed-neutral-packs.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-state/v1",
+      "path": "contracts/bi-adaptive-investigation-graph/v1/state.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-state/v1",
+      "path": "docs/evidence/graph-adaptive-v1/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/adaptive-investigation-state/v1",
+      "path": "services/bi-control/src/graph-pilot/bi-adaptive-investigation-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-context/v1",
+      "path": "services/bi-control/src/trusted-workflow/ambiguous-outcome-reconciliation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/committed-response-lost-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/committed-response-lost-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/committed-response-lost-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/unchanged-safe-to-retry-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/unchanged-safe-to-retry-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/unchanged-safe-to-retry-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/unchanged-safe-to-retry-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal-entry/v1",
+      "path": "services/bi-control/src/trusted-workflow/ambiguous-outcome-reconciliation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/committed-response-lost-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/unchanged-safe-to-retry-journal.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-journal/v1",
+      "path": "services/bi-control/src/trusted-workflow/ambiguous-outcome-reconciliation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-reconciliation-evidence/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ambiguous-outcome-reconciliation-evidence/v1",
+      "path": "scripts/run-ambiguous-outcome-reconciliation-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "services/bi-control/src/catalog.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/catalog.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/discovery-revision-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/discovery.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/promotion-bundle-revision-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/promotion-bundle.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/promotion-execution.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/approval-grant/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/approval-grant/v1",
+      "path": "services/bi-control/src/assistant-foundation/execution-control.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/bi-specialist-development-oracles/v1",
+      "path": "tests/fixtures/bi-specialist-development-oracles-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/bi-specialist-fixture-provenance/v1",
+      "path": "scripts/materialize-bi-specialist-fixtures.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/bi-specialist-fixture-provenance/v1",
+      "path": "services/bi-control/fixtures/bi-specialist/fixture-provenance-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/bi-specialist-fixtures/v1",
+      "path": "services/bi-control/fixtures/bi-specialist/fixture-specs-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/capability-descriptor/v1",
+      "path": "contracts/assistant-foundation/v1/capability-descriptor.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/capability-descriptor/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/static-registry-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/capability-descriptor/v1",
+      "path": "services/bi-control/src/assistant-foundation/capability-registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "services/bi-control/src/catalog.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "tests/catalog.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-promotion-evidence/v1",
+      "path": "services/bi-control/src/promotion-bundle.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-promotion-evidence/v1",
+      "path": "tests/promotion-bundle-revision-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-promotion-evidence/v1",
+      "path": "tests/promotion-bundle.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-promotion-evidence/v1",
+      "path": "tests/promotion-execution.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-search/v1",
+      "path": "services/bi-control/src/catalog.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-search/v1",
+      "path": "tests/catalog.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/ui-action-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "docs/CONFIGURATION.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "docs/evidence/M5_PROMOTION_BUNDLE.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "services/bi-control/src/discovery.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "services/bi-control/src/promotion-bundle.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "tests/discovery-revision-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "tests/discovery.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v1",
+      "path": "tests/smoke.sh"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-brief/v2",
+      "path": "tests/promotion-bundle.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-evidence-pack/v0",
+      "path": "contracts/bi-discovery-readiness-graph/v0/evidence-pack.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-evidence-pack/v0",
+      "path": "docs/evidence/graph-pilot/terminal-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-evidence-pack/v0",
+      "path": "services/bi-control/src/graph-pilot/bi-discovery-readiness-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-graph/v0",
+      "path": "contracts/bi-discovery-readiness-graph/v0/graph-spec.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-graph/v0",
+      "path": "services/bi-control/src/graph-pilot/bi-discovery-readiness-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-graph/v0/evidence-pack.schema.json",
+      "path": "contracts/bi-discovery-readiness-graph/v0/evidence-pack.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-graph/v0/graph-spec.schema.json",
+      "path": "contracts/bi-discovery-readiness-graph/v0/graph-spec.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-graph/v0/receipt.schema.json",
+      "path": "contracts/bi-discovery-readiness-graph/v0/receipt.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-graph/v0/state.schema.json",
+      "path": "contracts/bi-discovery-readiness-graph/v0/state.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "contracts/bi-discovery-readiness-graph/v0/receipt.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "services/bi-control/src/graph-pilot/bi-discovery-readiness-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "tests/graph-schema-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-receipt/v0",
+      "path": "tests/graph-schema-safeint.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-state/v0",
+      "path": "contracts/bi-discovery-readiness-graph/v0/state.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-state/v0",
+      "path": "docs/evidence/graph-pilot/terminal-state.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-readiness-state/v0",
+      "path": "services/bi-control/src/graph-pilot/bi-discovery-readiness-graph.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-response/v1",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-response/v1",
+      "path": "services/bi-control/src/discovery.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-session/v1",
+      "path": "tests/external-api-v2.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-session/v1",
+      "path": "tests/external-intent-evidence-bridge.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-session/v1",
+      "path": "tests/fixtures/closed-intent-conformance-pack-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-state/v1",
+      "path": "docs/evidence/M4_GUIDED_BI_DISCOVERY.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-state/v1",
+      "path": "services/bi-control/src/discovery.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/discovery-state/v1",
+      "path": "tests/discovery.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/event-envelope/v1",
+      "path": "contracts/assistant-foundation/v1/event-envelope.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/event-envelope/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/event-envelope-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/event-envelope/v1",
+      "path": "services/bi-control/src/assistant-foundation/core-contracts.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "services/bi-control/src/catalog.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-candidate-commitment/v1",
+      "path": "tests/evaluator-sealed/m6-03/candidate-commitment.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-candidate-commitment/v2",
+      "path": "tests/evaluator-sealed/m6-03/candidate-commitment-v2.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-core-evidence/v1",
+      "path": "docs/evidence/m6-03-bi-specialist/core-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-core-evidence/v1",
+      "path": "scripts/run-bi-specialist-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-qwen-conformance/v1",
+      "path": "docs/evidence/m6-03-bi-specialist/qwen-conformance-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-qwen-conformance/v1",
+      "path": "scripts/run-qwen-conformance-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-sealed-blind-evaluation/v1",
+      "path": "docs/evidence/m6-03-bi-specialist/sealed-blind-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-sealed-blind-evaluation/v1",
+      "path": "scripts/run-sealed-bi-specialist-evaluation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-sealed-blind-evaluation/v2",
+      "path": "docs/evidence/m6-03-bi-specialist/sealed-blind-v2-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-sealed-blind-evaluation/v2",
+      "path": "scripts/run-sealed-bi-specialist-evaluation-v2.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-terminal-evidence/v1",
+      "path": "docs/evidence/m6-03-bi-specialist/terminal-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-03-terminal-evidence/v1",
+      "path": "scripts/finalize-m6-03-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-04-terminal-evidence/v1",
+      "path": "docs/evidence/m6-04-trusted-workflow/terminal-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-04-terminal-evidence/v1",
+      "path": "scripts/finalize-m6-04-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/m6-05-terminal-evidence/v1",
+      "path": "docs/evidence/m6-05-ambiguous-outcome-reconciliation/terminal-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-bridge-evidence/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-bridge-evidence/v1",
+      "path": "scripts/run-native-superset-bridge-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-browser-evidence/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-browser-evidence/v1",
+      "path": "scripts/finalize-native-superset-visual-review.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-browser-evidence/v1",
+      "path": "scripts/run-native-superset-browser-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-capability-matrix/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-capability-matrix/v1",
+      "path": "services/bi-control/fixtures/native-superset-bridge/capability-matrix-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-direct-pixel-review/v1",
+      "path": "docs/evidence/m6-02-native-visual/direct-pixel-review.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-direct-pixel-review/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-direct-pixel-review/v1",
+      "path": "scripts/finalize-native-superset-visual-review.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-readback/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/native-superset-bridge.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/native-superset-ui-state/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/native-superset-bridge.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/personal-saved-view-request/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/personal-saved-view-request/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/planning-policy/v1",
+      "path": "services/bi-control/src/bi-specialist/planning-policy.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/plugin-manifest/v1",
+      "path": "contracts/assistant-foundation/v1/plugin-manifest.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/plugin-manifest/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/static-registry-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/plugin-manifest/v1",
+      "path": "services/bi-control/src/assistant-foundation/capability-registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/portable-synthetic-seed/v1",
+      "path": "scripts/materialize-native-projection.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/portable-synthetic-seed/v1",
+      "path": "services/bi-control/fixtures/visual-scenario-lab/portable-seed-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/portable-synthetic-seed/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/seed-portability.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/progressive-discovery/v1",
+      "path": "services/bi-control/src/bi-specialist/progressive-discovery.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "docs/evidence/M2_ORACLE_TECHNICAL_INVENTORY.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/real-bi-specialist/v1",
+      "path": "docs/evidence/m6-04-trusted-workflow/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/real-bi-specialist/v1",
+      "path": "services/bi-control/src/bi-specialist/specialist-agent.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/real-bi-specialist/v1",
+      "path": "tests/ambiguous-outcome-reconciliation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/real-bi-specialist/v1",
+      "path": "tests/trusted-workflow.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/resolved-capability-registry/v1",
+      "path": "services/bi-control/src/assistant-foundation/capability-registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/resolved-capability-registry/v1",
+      "path": "tests/assistant-foundation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "services/bi-control/src/assistant-foundation/execution-control.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "tests/assistant-foundation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "tests/assistant-foundation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "tests/assistant-foundation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "tests/assistant-foundation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/retry-policy/v1",
+      "path": "tests/assistant-foundation.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/source-map/v2",
+      "path": "SOURCE-MAP.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/source-map/v2",
+      "path": "contracts/portable-companion/v1/receipt-envelope.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/source-map/v2",
+      "path": "services/bi-control/fixtures/portable-companion/receipt-valid-synthetic.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/source-map/v2",
+      "path": "services/bi-control/fixtures/portable-companion/synthetic-demo-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-fingerprint/v1",
+      "path": "docs/RELEASE_NOTES.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-fingerprint/v1",
+      "path": "docs/evidence/M5_SUPERSET_FINGERPRINT.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-fingerprint/v1",
+      "path": "services/bi-control/src/superset-fingerprint.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-fingerprint/v1",
+      "path": "tests/smoke.sh"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-planning-gate/v1",
+      "path": "docs/ARCHITECTURE.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-planning-gate/v1",
+      "path": "docs/RELEASE_NOTES.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-planning-gate/v1",
+      "path": "docs/evidence/M5_SUPERSET_FINGERPRINT.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-planning-gate/v1",
+      "path": "services/bi-control/src/superset-fingerprint.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-planning-gate/v1",
+      "path": "tests/smoke.sh"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "README.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "contracts/superset-promotion-bundle/v1/promotion-bundle.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "docs/ARCHITECTURE.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "docs/RELEASE_NOTES.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "docs/ROADMAP.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "docs/evidence/M5_PROMOTION_BUNDLE.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "services/bi-control/src/promotion-bundle.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-inspection/v1",
+      "path": "services/bi-control/src/promotion-bundle.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-preflight/v1",
+      "path": "services/bi-control/src/promotion-bundle.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-publication/v1",
+      "path": "services/superset/runtime/materialize.py"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-review-asset/v1",
+      "path": "contracts/superset-promotion-bundle/v1/review-asset.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-review-asset/v1",
+      "path": "services/bi-control/src/promotion-bundle.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-runtime-evidence/v1",
+      "path": "services/bi-control/fixtures/superset-fingerprint-runtime-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-runtime-evidence/v1",
+      "path": "services/bi-control/src/superset-fingerprint.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-runtime-evidence/v1",
+      "path": "services/superset/runtime/materializer_server.py"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/synthetic-superset-promotion-execution/v1",
+      "path": "services/bi-control/src/promotion-execution.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/tool-execution-receipt/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/tool-execution-receipt/v1",
+      "path": "services/bi-control/src/assistant-foundation/execution-control.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-change-plan/v1",
+      "path": "services/bi-control/src/trusted-workflow/trusted-specialist-workflow.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-reconciliation/v1",
+      "path": "services/bi-control/src/trusted-workflow/reviewed-superset-executor.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-rollback-receipt/v1",
+      "path": "docs/evidence/m6-04-trusted-workflow/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-rollback-receipt/v1",
+      "path": "services/bi-control/src/trusted-workflow/reviewed-superset-executor.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-target/v1",
+      "path": "services/bi-control/src/trusted-workflow/trusted-specialist-workflow.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-workflow-evidence/v1",
+      "path": "docs/evidence/m6-04-trusted-workflow/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-workflow-evidence/v1",
+      "path": "scripts/finalize-m6-04-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-workflow-evidence/v1",
+      "path": "scripts/run-trusted-superset-workflow-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-workflow-receipt/v1",
+      "path": "docs/evidence/m6-04-trusted-workflow/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-superset-workflow-receipt/v1",
+      "path": "services/bi-control/src/trusted-workflow/reviewed-superset-executor.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/trusted-workflow-approval/v1",
+      "path": "services/bi-control/src/trusted-workflow/trusted-specialist-workflow.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/typed-specialist-recommendation/v1",
+      "path": "services/bi-control/src/trusted-workflow/trusted-specialist-workflow.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/native-superset-bridge.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action-receipt/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/decisions/M6-01-VISUAL-SCENARIO-LAB.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/ui-action-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/native-superset-bridge.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/native-superset-bridge.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/native-superset-bridge.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "tests/visual-scenario-lab.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/version-identity/v1",
+      "path": "contracts/assistant-foundation/v1/event-envelope.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/version-identity/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/event-envelope-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/version-identity/v1",
+      "path": "services/bi-control/src/assistant-foundation/core-contracts.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-browser-evidence/v1",
+      "path": "docs/evidence/m6-01-visual/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-browser-evidence/v1",
+      "path": "scripts/run-visual-browser-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-diversity-rubric/v1",
+      "path": "docs/evidence/m6-02-native/live-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-diversity-rubric/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/view-compositions.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-review/v1",
+      "path": "docs/evidence/m6-01-visual/visual-review.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-scenario-oracle/v1",
+      "path": "services/bi-control/fixtures/visual-scenario-lab/manufacturing-oracle-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-scenario-result/v1",
+      "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/visual-scenario-suite/v1",
+      "path": "services/bi-control/fixtures/visual-scenario-lab/golden-scenarios-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/voice-stream-event/v1",
+      "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/voice-stream-event/v1",
+      "path": "services/bi-control/fixtures/assistant-foundation/voice-stream-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/voice-stream-event/v1",
+      "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/aggregate-evidence/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "scripts/run-postgresql-e2e.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/fixtures/mssql-profile-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-profile-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "tests/postgresql-wave2-profile-canonical-number.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "tests/postgresql-wave2-profile.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "tests/postgresql-wave2-relationships.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "tests/postgresql-wave2-workflow.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/canonical-identity/v1",
+      "path": "docs/evidence/postgresql-e2e/run-1/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/canonical-identity/v1",
+      "path": "docs/evidence/postgresql-e2e/run-2/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/canonical-identity/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "docs/evidence/postgresql-e2e/run-1/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "docs/evidence/postgresql-e2e/run-2/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "scripts/run-postgresql-e2e.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-profile-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/coverage-ledger/v1",
+      "path": "docs/ARCHITECTURE.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/coverage-ledger/v1",
+      "path": "docs/evidence/postgresql-e2e/run-1/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/coverage-ledger/v1",
+      "path": "docs/evidence/postgresql-e2e/run-2/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/coverage-ledger/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/coverage-ledger/v1",
+      "path": "services/bi-control/src/db-analyzer/progressive-controller.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-inventory-authority-digest/v1",
+      "path": "services/bi-control/src/db-analyzer/object-inventory-authority-digest-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-inventory-authority-envelope/v1",
+      "path": "services/bi-control/src/db-analyzer/object-inventory-authority-digest-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-inventory-identity-envelope/v1",
+      "path": "services/bi-control/src/db-analyzer/object-inventory-authority-digest-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-inventory-snapshot/v1",
+      "path": "services/bi-control/src/db-analyzer/object-search-envelope-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-name-authority-envelope/v1",
+      "path": "services/bi-control/src/db-analyzer/object-name-authority-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-name-authority/v1",
+      "path": "services/bi-control/src/db-analyzer/object-name-authority-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-relation-kind-authority-envelope/v1",
+      "path": "services/bi-control/src/db-analyzer/object-relation-kind-authority-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-relation-kind-authority/v1",
+      "path": "services/bi-control/src/db-analyzer/object-relation-kind-authority-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-search-authority-bound-cursor/v1",
+      "path": "services/bi-control/src/db-analyzer/object-search-authority-bound-result-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-search-authority-bound-result/v1",
+      "path": "services/bi-agent/src/object-capability-contract-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-search-authority-bound-result/v1",
+      "path": "services/bi-control/src/db-analyzer/object-search-authority-bound-result-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-search-cursor/v1",
+      "path": "services/bi-control/src/db-analyzer/object-search-envelope-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-search-envelope/v1",
+      "path": "services/bi-control/src/db-analyzer/object-search-envelope-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/object-search-envelope/v1",
+      "path": "tests/object-search-envelope-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-history/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-invocation/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-knowledge/v1",
+      "path": "services/bi-control/src/db-analyzer/operation-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-lifecycle-backup/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-lifecycle-receipt/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-lifecycle-recovery-receipt/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-lifecycle-store/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-migration-plan/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-migration-receipt/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-output-manifest/v1",
+      "path": "services/bi-control/src/db-analyzer/operation-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-profile-ref/v1",
+      "path": "services/bi-control/src/db-analyzer/registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-resolution/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-resolution/v1",
+      "path": "services/bi-control/src/db-analyzer/registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-resume-checkpoint/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-run-receipt/v1",
+      "path": "services/bi-control/src/db-analyzer/operation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-summary/v1",
+      "path": "services/bi-control/src/db-analyzer/operation-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/operation-superset-result/v1",
+      "path": "services/bi-control/src/db-analyzer/operation-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/parser-enrichment-evidence/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/parser-enrichment-evidence/v1",
+      "path": "services/bi-control/src/db-analyzer/parser-enrichment.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/parser-enrichment-input/v1",
+      "path": "services/bi-control/src/db-analyzer/parser-enrichment.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/parser-enrichment-policy/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/preflight-evidence/v1",
+      "path": "docs/evidence/postgresql-e2e/run-1/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/preflight-evidence/v1",
+      "path": "docs/evidence/postgresql-e2e/run-2/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/preflight-evidence/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-candidate-set/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-coverage-ledger/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-knowledge-pack/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-policy/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-projection-authorization/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-query-manifest/v1",
+      "path": "services/bi-control/query-packs/db-analyzer/v1/mssql/profiling-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-query-manifest/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-review-receipt/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/profiling-superset-result/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-manifest/v1",
+      "path": "services/bi-control/query-packs/db-analyzer/v1/mssql/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-manifest/v1",
+      "path": "services/bi-control/query-packs/db-analyzer/v1/mssql/stored-logic-manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-manifest/v1",
+      "path": "services/bi-control/query-packs/db-analyzer/v1/oracle/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-manifest/v1",
+      "path": "services/bi-control/query-packs/db-analyzer/v1/postgresql/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-manifest/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-safety-audit/v1",
+      "path": "services/bi-control/src/db-analyzer/query-safety.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "services/bi-control/src/db-analyzer/postgresql-runtime.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "services/bi-control/src/db-analyzer/workflow.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "services/bi-control/src/db-analyzer/workflow.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-inventory-authority-digest-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-name-authority-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-relation-kind-authority-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-search-authority-bound-result-canonical-number.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-search-authority-bound-result-readback-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-search-authority-bound-result-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/object-search-handler-v1.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/progressive-controller.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/source-registry/v1",
+      "path": "services/bi-control/src/db-analyzer/registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/stored-logic-evidence/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/stored-logic-impact-report/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/stored-logic-lineage-evidence/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/stored-logic-output-manifest/v1",
+      "path": "services/bi-control/src/db-analyzer/stored-logic-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/stored-logic-policy/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/stored-logic-report/v1",
+      "path": "services/bi-control/src/db-analyzer/stored-logic-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/structural-drift/v1",
+      "path": "services/bi-control/src/db-analyzer/drift.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/structure-map-output-manifest/v1",
+      "path": "services/bi-control/src/db-analyzer/outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/structure-map/v1",
+      "path": "services/bi-control/src/db-analyzer/outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/superset-stored-logic-projection/v1",
+      "path": "services/bi-control/src/db-analyzer/stored-logic-outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/superset-structure-projection/v1",
+      "path": "services/bi-control/src/db-analyzer/outputs.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-aggregate-results/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-query-results/v1",
+      "path": "services/bi-control/fixtures/mssql-results-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-query-results/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-results-incomplete-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-query-results/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-results-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-query-results/v1",
+      "path": "services/bi-control/src/db-analyzer/core.mjs"
+    }
+  ]
+}

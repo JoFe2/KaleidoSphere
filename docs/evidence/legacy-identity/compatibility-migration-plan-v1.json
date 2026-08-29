@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/legacy-identity-compatibility-plan/v1",
+  "issue": 53,
+  "baseCommit": "a709582278c0d5bc35c09cd2f89808b6b1d242d6",
+  "activeDisplayLabel": "KaleidoSphere",
+  "executionAuthorized": false,
+  "bulkReplacementAuthorized": false,
+  "phaseOrder": [
+    "INVENTORY_FREEZE",
+    "DISPLAY_LABEL_GATE",
+    "VERSIONED_SCHEMA_SUCCESSORS",
+    "ENV_PATH_ADAPTERS",
+    "PACKAGE_CONTAINER_SUCCESSORS",
+    "LEGACY_RETIREMENT_REVIEW"
+  ],
+  "matrix": {
+    "contractAuthority": {
+      "disposition": "MIGRATE_ONLY_IN_VERSIONED_SUCCESSOR",
+      "deprecationWindow": "MINIMUM_TWO_REGULAR_RELEASES_AFTER_SUCCESSOR_READBACK",
+      "rollback": "RESTORE_EXACT_LEGACY_READER_AND_BYTES",
+      "identityClass": "contractAuthority",
+      "adapter": "DUAL_SCHEMA_AUTHORITY_READER_BY_EXACT_VERSION",
+      "negativeProbes": [
+        "UNKNOWN_AUTHORITY_DENY",
+        "VERSION_SUBSTITUTION_DENY",
+        "MIXED_AUTHORITY_RECEIPT_DENY"
+      ]
+    },
+    "schemaIdentity": {
+      "disposition": "MIGRATE_ONLY_IN_VERSIONED_SUCCESSOR",
+      "deprecationWindow": "MINIMUM_TWO_REGULAR_RELEASES_AFTER_SUCCESSOR_READBACK",
+      "rollback": "RESTORE_EXACT_LEGACY_READER_AND_BYTES",
+      "identityClass": "schemaIdentity",
+      "adapter": "DUAL_READ_AND_VERSION_TAGGED_WRITE_DURING_WINDOW",
+      "negativeProbes": [
+        "UNKNOWN_SCHEMA_DENY",
+        "CROSS_VERSION_DIGEST_DENY",
+        "UNVERSIONED_WRITE_DENY"
+      ]
+    },
+    "environment": {
+      "disposition": "MIGRATE_ONLY_IN_VERSIONED_SUCCESSOR",
+      "deprecationWindow": "MINIMUM_TWO_REGULAR_RELEASES_AFTER_SUCCESSOR_READBACK",
+      "rollback": "RESTORE_EXACT_LEGACY_READER_AND_BYTES",
+      "identityClass": "environment",
+      "adapter": "LEGACY_AND_SUCCESSOR_ENV_ALIAS_WITH_EQUAL_VALUE_REQUIREMENT",
+      "negativeProbes": [
+        "CONFLICTING_ALIAS_DENY",
+        "UNKNOWN_ENV_DENY",
+        "SECRET_ECHO_DENY"
+      ]
+    },
+    "packageContainer": {
+      "disposition": "MIGRATE_ONLY_IN_VERSIONED_SUCCESSOR",
+      "deprecationWindow": "MINIMUM_TWO_REGULAR_RELEASES_AFTER_SUCCESSOR_READBACK",
+      "rollback": "RESTORE_EXACT_LEGACY_READER_AND_BYTES",
+      "identityClass": "packageContainer",
+      "adapter": "VERSIONED_PACKAGE_IMAGE_AND_COMPOSE_ALIAS",
+      "negativeProbes": [
+        "MUTABLE_TAG_DENY",
+        "PACKAGE_ID_DRIFT_DENY",
+        "ROLLBACK_IMAGE_MISSING_DENY"
+      ]
+    },
+    "persistedPath": {
+      "disposition": "MIGRATE_ONLY_IN_VERSIONED_SUCCESSOR",
+      "deprecationWindow": "MINIMUM_TWO_REGULAR_RELEASES_AFTER_SUCCESSOR_READBACK",
+      "rollback": "RESTORE_EXACT_LEGACY_READER_AND_BYTES",
+      "identityClass": "persistedPath",
+      "adapter": "COPY_VERIFY_ATOMIC_SWITCH_WITH_LEGACY_READER_RETAINED",
+      "negativeProbes": [
+        "PATH_ESCAPE_DENY",
+        "PARTIAL_COPY_DENY",
+        "DIGEST_MISMATCH_DENY"
+      ]
+    }
+  },
+  "preserveWithoutRewrite": [
+    "LEGAL_PROVENANCE",
+    "FROZEN_EVIDENCE",
+    "PERSISTED_RECEIPTS",
+    "STABLE_SCHEMA_IDS",
+    "EXTERNAL_ACCOUNT_HANDLES"
+  ],
+  "releaseDecision": "SOURCE_ONLY_PLAN_RELEASE_NO_RUNTIME_MIGRATION"
+}
