@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": "kaleidosphere/k4c-local-contract-integration-fixture/v1",
+  "package": {
+    "version": "0.26.0",
+    "digest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+    "manifestSha256": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77"
+  },
+  "predecessorReceipts": [
+    {
+      "id": "security-license",
+      "path": "verification/k4c/security-license-receipt-v1.json",
+      "schemaVersion": "kaleidosphere/k4c-security-license-receipt/v1",
+      "sha256": "3e417d7bad6339c4313bc785bd4c606c9c8e599ed1622bbe364120f6968ce9af"
+    },
+    {
+      "id": "codex-isolated-e2e",
+      "path": "verification/k4c/codex-isolated-e2e-v1.json",
+      "schemaVersion": "kaleidosphere/k4c-codex-isolated-e2e/v1",
+      "sha256": "efa866ac86fdb14dec4c73643fae829bb58ee24bfa43ad43e9dbc387b64b5311"
+    }
+  ],
+  "decision": {
+    "outcome": "accepted",
+    "scope": "local-contract-integration"
+  },
+  "executionBoundary": {
+    "localOnly": true,
+    "externalCommandsCalled": false,
+    "portalCalls": false,
+    "directoryCalls": false,
+    "releaseClaimEmitted": false
+  },
+  "nonClaims": [
+    "No portal, directory, marketplace, publication, submission, or release operation is performed by this local integration.",
+    "This receipt binds local predecessor evidence only and does not claim approval, listing, deployment, runtime compatibility, or release completion."
+  ]
+}

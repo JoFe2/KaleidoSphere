@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/docs/release/k4c-anonymous-directory-readback-schema-v1.json",
+  "title": "K4C anonymous directory discovery and install readback receipt",
+  "description": "Credential-free evidence gate for a public listing claim. Acceptance requires anonymous exact discovery before matching-digest install, fresh receipts, and zero residue.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "mode", "fixture", "fixtureSha256", "package", "directory", "timestamps", "boundaryProof", "orderedCommandResults", "negativeAssertions", "evidence", "accepted", "fullReceipt", "publicListingClaim", "nonClaims"],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere/k4c-anonymous-directory-readback/v1"},
+    "mode": {"enum": ["fixture", "manual"]},
+    "fixture": {"type": "string", "minLength": 1},
+    "fixtureSha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+    "package": {"$ref": "#/$defs/package"},
+    "directory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "listingId", "installTarget"],
+      "properties": {"name": {"type": "string", "minLength": 1}, "listingId": {"type": "string", "minLength": 1}, "installTarget": {"type": "string", "minLength": 1}}
+    },
+    "timestamps": {"type": "object", "additionalProperties": false, "required": ["anonymousReceiptAt", "submissionReceiptAt"], "properties": {"anonymousReceiptAt": {"type": "string", "format": "date-time"}, "submissionReceiptAt": {"type": "string", "format": "date-time"}, "discoveryStartedAt": {"type": "string", "format": "date-time"}, "discoveryFinishedAt": {"type": "string", "format": "date-time"}, "installStartedAt": {"type": "string", "format": "date-time"}, "installFinishedAt": {"type": "string", "format": "date-time"}, "commandStartedAt": {"type": "string", "format": "date-time"}, "commandFinishedAt": {"type": "string", "format": "date-time"}}},
+    "boundaryProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["cleanBeforeDiscovery", "credentialFree", "authenticatedConfigDetected", "cachedLocalOnlyDiscovery", "residuePaths", "emptyAfterCleanup", "temporaryBoundaryRemoved"],
+      "properties": {
+        "cleanBeforeDiscovery": {"type": "boolean"}, "credentialFree": {"type": "boolean"}, "authenticatedConfigDetected": {"type": "boolean"}, "cachedLocalOnlyDiscovery": {"type": "boolean"}, "residuePaths": {"type": "array", "items": {"type": "string"}}, "emptyAfterCleanup": {"type": "boolean"}, "temporaryBoundaryRemoved": {"type": "boolean"}
+      }
+    },
+    "orderedCommandResults": {"type": "array", "items": {"$ref": "#/$defs/commandResult"}},
+    "negativeAssertions": {"type": "array", "minItems": 6, "items": {"type": "object", "additionalProperties": false, "required": ["id", "required", "observed"], "properties": {"id": {"type": "string", "minLength": 1}, "required": {"const": true}, "observed": {"type": "string", "minLength": 1}}}},
+    "evidence": {
+      "type": "object", "additionalProperties": false,
+      "required": ["anonymousDiscoveryBeforeInstall", "exactListingReadback", "matchingDigestInstall", "installedDigestReadback", "freshTimestamps", "zeroResidue"],
+      "properties": {"anonymousDiscoveryBeforeInstall": {"type": "boolean"}, "exactListingReadback": {"type": "boolean"}, "matchingDigestInstall": {"type": "boolean"}, "installedDigestReadback": {"type": "boolean"}, "freshTimestamps": {"type": "boolean"}, "zeroResidue": {"type": "boolean"}}
+    },
+    "accepted": {"type": "boolean"},
+    "fullReceipt": {"type": "boolean"},
+    "publicListingClaim": {"type": "boolean"},
+    "nonClaims": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "failure": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "package": {"type": "object", "additionalProperties": false, "required": ["name", "version", "title", "digest"], "properties": {"name": {"type": "string", "minLength": 1}, "version": {"type": "string", "minLength": 1}, "title": {"type": "string", "minLength": 1}, "digest": {"$ref": "#/$defs/sha256"}}},
+    "commandResult": {"type": "object", "additionalProperties": false, "required": ["order", "id", "phase", "command", "expectedOutcome", "startedAt", "finishedAt", "result"], "properties": {"order": {"type": "integer", "minimum": 1}, "id": {"type": "string", "minLength": 1}, "phase": {"type": "string", "minLength": 1}, "command": {"type": "array", "minItems": 1, "items": {"type": "string"}}, "expectedOutcome": {"enum": ["passed", "denied"]}, "assertion": {"type": "string"}, "startedAt": {"type": ["string", "null"], "format": "date-time"}, "finishedAt": {"type": ["string", "null"], "format": "date-time"}, "result": {"type": "object", "additionalProperties": false, "required": ["exitCode", "signal", "stdout", "stderr"], "properties": {"exitCode": {"type": ["integer", "null"]}, "signal": {"type": ["string", "null"]}, "stdout": {"type": "string"}, "stderr": {"type": "string"}, "errorCode": {"type": ["string", "null"]}}}}}
+  }
+}

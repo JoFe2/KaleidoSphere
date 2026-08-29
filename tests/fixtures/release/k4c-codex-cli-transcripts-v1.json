@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": "kaleidosphere/k4c-codex-cli-transcripts/v1",
+  "description": "Deterministic transcript contract for the isolated local Codex CLI K4C E2E.",
+  "codex": {
+    "binary": "codex",
+    "version": "codex-cli 0.144.1",
+    "versionCommand": ["codex", "--version"]
+  },
+  "package": {
+    "version": "0.26.0",
+    "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+    "manifestSha256": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77",
+    "pluginName": "kaleidosphere-agent-skill",
+    "marketplaceName": "ks76-local",
+    "skillPath": "skills/kaleidosphere/SKILL.md",
+    "expectedUseResponse": "KaleidoSphere: WAITING_EXTERNAL",
+    "deniedUseResponse": "KaleidoSphere: REFUSED_UNDECLARED_SKILL"
+  },
+  "boundary": {
+    "cleanProfile": true,
+    "configEnvironment": ["CODEX_HOME", "HOME", "XDG_CONFIG_HOME", "XDG_CACHE_HOME", "XDG_DATA_HOME"],
+    "globalConfigurationMutated": false,
+    "residueAfterCleanup": false
+  },
+  "orderedCommands": [
+    {
+      "id": "generate-package",
+      "phase": "preflight",
+      "command": ["node", "scripts/release/generate-k4c-codex-plugin.mjs", "--out", "<package-root>"],
+      "expectedOutcome": "passed",
+      "assertion": "package digest is bound to the generated receipt",
+      "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}
+    },
+    {
+      "id": "codex-version",
+      "phase": "preflight",
+      "command": ["codex", "--version"],
+      "expectedOutcome": "passed",
+      "result": {"exitCode": 0, "signal": null, "stdout": "codex-cli 0.144.1\n", "stderr": ""}
+    },
+    {
+      "id": "install-marketplace",
+      "phase": "install",
+      "command": ["codex", "plugin", "marketplace", "add", "<marketplace-root>", "--json"],
+      "expectedOutcome": "passed",
+      "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}
+    },
+    {
+      "id": "malformed-install-target-denied",
+      "phase": "negative-install",
+      "command": ["codex", "plugin", "add", "kaleidosphere@", "--json"],
+      "expectedOutcome": "denied",
+      "assertion": "malformed package target is rejected before install",
+      "result": {"exitCode": 2, "signal": null, "stdout": "", "stderr": "invalid plugin target\n"}
+    },
+    {
+      "id": "install-plugin",
+      "phase": "install",
+      "command": ["codex", "plugin", "add", "kaleidosphere@ks76-local", "--json"],
+      "expectedOutcome": "passed",
+      "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}
+    },
+    {
+      "id": "discover-skill",
+      "phase": "discovery",
+      "command": ["codex", "plugin", "list", "--json"],
+      "expectedOutcome": "passed",
+      "assertion": "declared skill kaleidosphere is discoverable",
+      "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}
+    },
+    {
+      "id": "use-declared-skill",
+      "phase": "positive-use",
+      "command": ["codex", "exec", "--ephemeral", "--ignore-user-config", "--skip-git-repo-check", "--json", "Use the kaleidosphere skill for a bounded status request."],
+      "expectedOutcome": "passed",
+      "assertion": "expectedUseResponse is present",
+      "result": {"exitCode": 0, "signal": null, "stdout": "KaleidoSphere: WAITING_EXTERNAL\n", "stderr": ""}
+    },
+    {
+      "id": "use-undeclared-skill-denied",
+      "phase": "negative-use",
+      "command": ["codex", "exec", "--ephemeral", "--ignore-user-config", "--skip-git-repo-check", "--json", "Use the undeclared skill ks76-not-declared."],
+      "expectedOutcome": "denied",
+      "assertion": "negative use assertion is required",
+      "result": {"exitCode": 1, "signal": null, "stdout": "KaleidoSphere: REFUSED_UNDECLARED_SKILL\n", "stderr": ""}
+    },
+    {
+      "id": "remove-plugin",
+      "phase": "removal",
+      "command": ["codex", "plugin", "remove", "kaleidosphere@ks76-local", "--json"],
+      "expectedOutcome": "passed",
+      "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}
+    },
+    {
+      "id": "use-after-removal-denied",
+      "phase": "negative-use-after-removal",
+      "command": ["codex", "exec", "--ephemeral", "--ignore-user-config", "--skip-git-repo-check", "--json", "Use the kaleidosphere skill for a bounded status request."],
+      "expectedOutcome": "denied",
+      "assertion": "successful use after removal must fail",
+      "result": {"exitCode": 1, "signal": null, "stdout": "KaleidoSphere: REFUSED_SKILL_NOT_INSTALLED\n", "stderr": ""}
+    },
+    {
+      "id": "remove-marketplace",
+      "phase": "removal",
+      "command": ["codex", "plugin", "marketplace", "remove", "ks76-local", "--json"],
+      "expectedOutcome": "passed",
+      "result": {"exitCode": 0, "signal": null, "stdout": "", "stderr": ""}
+    },
+    {
+      "id": "zero-residue-readback",
+      "phase": "readback",
+      "command": ["read-boundary", "<codex-home>"],
+      "expectedOutcome": "passed",
+      "assertion": "profile, cache and config roots are empty",
+      "result": {"exitCode": 0, "signal": null, "stdout": "empty\n", "stderr": ""}
+    }
+  ],
+  "requiredNegativeCases": [
+    {"id": "preexisting-profile-residue", "expectedOutcome": "denied", "assertion": "non-empty CODEX_HOME is rejected before install"},
+    {"id": "absent-skill-discovery", "expectedOutcome": "denied", "assertion": "missing declared skill is rejected"},
+    {"id": "undeclared-skill-invocation", "expectedOutcome": "denied", "assertion": "undeclared skill invocation is explicitly denied"},
+    {"id": "malformed-install-target", "expectedOutcome": "denied", "assertion": "malformed package target is rejected before install"},
+    {"id": "successful-use-after-removal", "expectedOutcome": "denied", "assertion": "use cannot succeed after removal"},
+    {"id": "residue-after-cleanup", "expectedOutcome": "denied", "assertion": "any cleanup residue fails the harness"}
+  ],
+  "nonClaims": [
+    "No remote marketplace, publication, release, or portal mutation.",
+    "No global Codex configuration, credentials, provider, service, DSH_HOME, or spill configuration mutation.",
+    "The fixture transcript is not evidence of a live model-provider response; clean-boundary mode owns live CLI execution."
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": "kaleidosphere/k4c-security-license-receipt/v1",
+  "policy": "docs/release/k4c-skills-only-policy-v1.json",
+  "fixture": "tests/fixtures/release/k4c-prohibited-package-inputs-v1.json",
+  "packagePath": "packages/codex/kaleidosphere",
+  "canonicalSource": "agent-skills/kaleidosphere",
+  "packageVersion": "0.26.0",
+  "manifest": {
+    "path": ".codex-plugin/plugin.json",
+    "sha256": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77",
+    "license": "Apache-2.0"
+  },
+  "scannedPaths": {
+    "package": [
+      ".codex-plugin/plugin.json",
+      "skills/kaleidosphere/SKILL.md",
+      "skills/kaleidosphere/references/contract.json",
+      "skills/kaleidosphere/scripts/validate-request.mjs"
+    ],
+    "canonical": [
+      "SKILL.md",
+      "references/contract.json",
+      "scripts/validate-request.mjs"
+    ],
+    "packageDirectories": [
+      ".codex-plugin",
+      "skills",
+      "skills/kaleidosphere",
+      "skills/kaleidosphere/references",
+      "skills/kaleidosphere/scripts"
+    ],
+    "canonicalDirectories": [
+      "references",
+      "scripts"
+    ],
+    "inputs": [
+      "docs/release/k4c-skills-only-policy-v1.json",
+      "tests/fixtures/release/k4c-canonical-skill-digests-v1.json",
+      "tests/fixtures/release/k4c-prohibited-package-inputs-v1.json"
+    ]
+  },
+  "files": [
+    {
+      "path": "skills/kaleidosphere/SKILL.md",
+      "canonicalPath": "agent-skills/kaleidosphere/SKILL.md",
+      "sha256": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c"
+    },
+    {
+      "path": "skills/kaleidosphere/references/contract.json",
+      "canonicalPath": "agent-skills/kaleidosphere/references/contract.json",
+      "sha256": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71"
+    },
+    {
+      "path": "skills/kaleidosphere/scripts/validate-request.mjs",
+      "canonicalPath": "agent-skills/kaleidosphere/scripts/validate-request.mjs",
+      "sha256": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509"
+    }
+  ],
+  "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+  "checks": {
+    "skillsOnly": true,
+    "canonicalBytes": true,
+    "licenseSafe": true,
+    "secretFree": true,
+    "dependencyFree": true,
+    "noExecutablePayloads": true,
+    "noSymlinks": true,
+    "noExternalCommands": true
+  },
+  "dryRun": true,
+  "publicationPerformed": false,
+  "accepted": true,
+  "nonClaims": [
+    "No generator, validator, remote command, publication, submission or portal mutation was performed by this static guard.",
+    "This receipt does not claim marketplace listing, approval, runtime execution or host compatibility."
+  ]
+}

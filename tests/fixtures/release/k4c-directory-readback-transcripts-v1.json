@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "schemaVersion": "kaleidosphere/k4c-directory-readback-transcripts/v1",
+  "mode": "fixture",
+  "package": {
+    "name": "kaleidosphere",
+    "version": "0.26.0",
+    "title": "KaleidoSphere",
+    "digest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a"
+  },
+  "directory": {
+    "name": "public-directory",
+    "listingId": "kaleidosphere",
+    "expectedTitle": "KaleidoSphere",
+    "installTarget": "kaleidosphere@0.26.0",
+    "expectedListing": {
+      "listingId": "kaleidosphere",
+      "title": "KaleidoSphere",
+      "packageName": "kaleidosphere",
+      "packageVersion": "0.26.0",
+      "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+      "source": "anonymous-directory",
+      "anonymous": true,
+      "authenticated": false,
+      "cacheHit": false,
+      "networkAccess": true
+    }
+  },
+  "boundary": {
+    "emptyBeforeDiscovery": true,
+    "authenticatedConfig": false,
+    "cachedLocalOnly": false,
+    "residueAfterCleanup": false,
+    "temporaryRemoved": true
+  },
+  "timestamps": {
+    "submissionReceiptAt": "2026-08-28T18:00:00.000Z",
+    "discoveryStartedAt": "2026-08-28T18:00:01.000Z",
+    "discoveryFinishedAt": "2026-08-28T18:00:02.000Z",
+    "installStartedAt": "2026-08-28T18:00:03.000Z",
+    "installFinishedAt": "2026-08-28T18:00:04.000Z",
+    "anonymousReceiptAt": "2026-08-28T18:00:05.000Z"
+  },
+  "orderedCommands": [
+    {
+      "id": "anonymous-boundary-preflight",
+      "phase": "preflight",
+      "command": ["read-boundary", "<temporary-boundary>", "--anonymous", "--no-credentials"],
+      "expectedOutcome": "passed",
+      "assertion": "empty anonymous boundary is established before discovery",
+      "startedAt": "2026-08-28T18:00:00.000Z",
+      "finishedAt": "2026-08-28T18:00:00.500Z",
+      "result": {"exitCode": 0, "signal": null, "stdout": "empty anonymous boundary\n", "stderr": "", "errorCode": null}
+    },
+    {
+      "id": "anonymous-directory-discovery",
+      "phase": "discovery",
+      "command": ["directory", "discover", "--anonymous", "--no-cache", "--json"],
+      "expectedOutcome": "passed",
+      "assertion": "the exact public listing is discovered without authenticated configuration",
+      "startedAt": "2026-08-28T18:00:01.000Z",
+      "finishedAt": "2026-08-28T18:00:02.000Z",
+      "result": {"exitCode": 0, "signal": null, "stdout": "{\"listingId\":\"kaleidosphere\",\"title\":\"KaleidoSphere\",\"packageName\":\"kaleidosphere\",\"packageVersion\":\"0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\",\"source\":\"anonymous-directory\",\"anonymous\":true,\"authenticated\":false,\"cacheHit\":false,\"networkAccess\":true}\n", "stderr": "", "errorCode": null}
+    },
+    {
+      "id": "exact-listing-readback",
+      "phase": "discovery-readback",
+      "command": ["directory", "readback", "kaleidosphere", "--anonymous", "--json"],
+      "expectedOutcome": "passed",
+      "assertion": "listing title, identity, version, and digest are read back exactly",
+      "startedAt": "2026-08-28T18:00:02.100Z",
+      "finishedAt": "2026-08-28T18:00:02.500Z",
+      "result": {"exitCode": 0, "signal": null, "stdout": "{\"listingId\":\"kaleidosphere\",\"title\":\"KaleidoSphere\",\"packageName\":\"kaleidosphere\",\"packageVersion\":\"0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\",\"source\":\"anonymous-directory\",\"anonymous\":true,\"authenticated\":false,\"cacheHit\":false,\"networkAccess\":true}\n", "stderr": "", "errorCode": null}
+    },
+    {
+      "id": "install-matching-package",
+      "phase": "install",
+      "command": ["directory", "install", "kaleidosphere@0.26.0", "--digest", "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a", "--json"],
+      "expectedOutcome": "passed",
+      "assertion": "install uses the discovered listing and matching package digest",
+      "startedAt": "2026-08-28T18:00:03.000Z",
+      "finishedAt": "2026-08-28T18:00:03.500Z",
+      "result": {"exitCode": 0, "signal": null, "stdout": "{\"installed\":true,\"installTarget\":\"kaleidosphere@0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\"}\n", "stderr": "", "errorCode": null}
+    },
+    {
+      "id": "installed-package-readback",
+      "phase": "install-readback",
+      "command": ["directory", "installed", "kaleidosphere@0.26.0", "--json"],
+      "expectedOutcome": "passed",
+      "assertion": "installed package readback contains the matching digest",
+      "startedAt": "2026-08-28T18:00:03.600Z",
+      "finishedAt": "2026-08-28T18:00:04.000Z",
+      "result": {"exitCode": 0, "signal": null, "stdout": "{\"installed\":true,\"installTarget\":\"kaleidosphere@0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\"}\n", "stderr": "", "errorCode": null}
+    },
+    {
+      "id": "zero-residue-readback",
+      "phase": "readback",
+      "command": ["read-boundary", "<temporary-boundary>", "--empty-after-cleanup"],
+      "expectedOutcome": "passed",
+      "assertion": "temporary directory, configuration, and cache are removed with zero residue",
+      "startedAt": "2026-08-28T18:00:04.100Z",
+      "finishedAt": "2026-08-28T18:00:04.500Z",
+      "result": {"exitCode": 0, "signal": null, "stdout": "{\"emptyAfterCleanup\":true,\"residuePaths\":[]}\n", "stderr": "", "errorCode": null}
+    }
+  ],
+  "negativeCases": [
+    {"id": "authenticated-config", "expectedOutcome": "denied", "assertion": "authenticated config in the isolated boundary fails before discovery", "observed": {"denied": true, "reason": "authenticated config denied"}},
+    {"id": "cached-local-only-discovery", "expectedOutcome": "denied", "assertion": "a local cache hit is not anonymous public discovery", "observed": {"denied": true, "reason": "cached local-only discovery denied"}},
+    {"id": "title-only-mismatch", "expectedOutcome": "denied", "assertion": "a title without the exact package digest cannot identify the listing", "observed": {"denied": true, "reason": "title-only listing mismatch denied"}},
+    {"id": "missing-package-digest", "expectedOutcome": "denied", "assertion": "missing package digest fails closed before install", "observed": {"denied": true, "reason": "package digest missing"}},
+    {"id": "install-failure", "expectedOutcome": "denied", "assertion": "non-zero install result produces no public listing claim", "observed": {"denied": true, "reason": "install failure"}},
+    {"id": "anonymous-receipt-older-than-submission", "expectedOutcome": "denied", "assertion": "an anonymous receipt older than the submission receipt is stale", "observed": {"denied": true, "reason": "anonymous receipt older than submission receipt denied"}}
+  ],
+  "nonClaims": [
+    "No credentials, authenticated directory session, portal submission, publication, or release operation is performed.",
+    "A public listing claim is permitted only when this receipt is complete, accepted, and publicListingClaim is true.",
+    "Fixture transcripts are recorded evidence, not live directory traffic; manual mode owns live command execution."
+  ]
+}

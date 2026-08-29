@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/docs/release/k4c-skills-only-policy-v1.json",
+  "schemaVersion": "kaleidosphere/k4c-skills-only-policy/v1",
+  "description": "Fail-closed static policy for the generated KaleidoSphere Codex skills-only package.",
+  "package": {
+    "root": "packages/codex/kaleidosphere",
+    "manifest": ".codex-plugin/plugin.json",
+    "skillRoot": "skills/kaleidosphere",
+    "skillName": "kaleidosphere",
+    "version": "0.26.0",
+    "license": "Apache-2.0",
+    "manifestSha256": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77"
+  },
+  "canonical": {
+    "source": "agent-skills/kaleidosphere",
+    "digestFixture": "tests/fixtures/release/k4c-canonical-skill-digests-v1.json"
+  },
+  "manifest": {
+    "allowedTopLevelKeys": [
+      "name",
+      "version",
+      "description",
+      "author",
+      "homepage",
+      "repository",
+      "license",
+      "keywords",
+      "skills",
+      "interface"
+    ],
+    "requiredTopLevelKeys": [
+      "name",
+      "version",
+      "description",
+      "author",
+      "homepage",
+      "repository",
+      "license",
+      "keywords",
+      "skills",
+      "interface"
+    ],
+    "forbiddenKeys": [
+      "apps",
+      "agents",
+      "commands",
+      "hooks",
+      "mcp",
+      "mcpServers",
+      "servers",
+      "dependencies",
+      "devDependencies",
+      "peerDependencies",
+      "optionalDependencies",
+      "bundleDependencies",
+      "bundledDependencies",
+      "install",
+      "postinstall",
+      "preinstall"
+    ],
+    "skillsValue": "./skills/"
+  },
+  "packageSurface": {
+    "forbiddenPathComponents": [
+      "apps",
+      "agents",
+      "commands",
+      "hooks",
+      "mcp",
+      "mcp-servers",
+      "mcpServers",
+      "node_modules",
+      "vendor"
+    ],
+    "forbiddenExtensions": [
+      ".bash",
+      ".cjs",
+      ".dll",
+      ".dylib",
+      ".exe",
+      ".fish",
+      ".node",
+      ".ps1",
+      ".py",
+      ".sh",
+      ".so",
+      ".wasm",
+      ".zsh"
+    ],
+    "allowedModulePrefixes": ["node:"],
+    "dependencyDeclarationKeys": [
+      "dependencies",
+      "devDependencies",
+      "peerDependencies",
+      "optionalDependencies",
+      "bundleDependencies",
+      "bundledDependencies"
+    ]
+  },
+  "contentScanners": {
+    "secretPatterns": [
+      "(?:sk|pk|rk)-[A-Za-z0-9]{20,}",
+      "hf_[A-Za-z0-9]{20,}",
+      "ghp_[A-Za-z0-9_]{20,}",
+      "github_pat_[A-Za-z0-9_]{20,}",
+      "xox[baprs]-[A-Za-z0-9-]{20,}",
+      "AIza[0-9A-Za-z_-]{20,}",
+      "-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----",
+      "(?:password|secret|token|api[_-]?key|access[_-]?key)\\s*[:=]\\s*[\\\"']?[^\\s,;\\\"']{8,}"
+    ],
+    "secretEnvironmentPattern": "(?:process\\.env\\.|\\$\\{?)(?:[A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|API[_-]?KEY|PRIVATE[_-]?KEY)[A-Z0-9_]*)",
+    "remoteExecutionPattern": "(?:curl|wget)\\s+[^|;&\\n]+[|]\\s*(?:sh|bash)|npx\\s+-?y\\s+[^@\\s]+@latest",
+    "declarationPatterns": {
+      "app": "(?:^|[,{\\[]\\s*)[\\\"']?(?:apps?|applications?)[\\\"']?\\s*:",
+      "mcp": "[\\\"']?(?:mcp|mcpServers|modelContextProtocol)[\\\"']?\\s*:",
+      "hook": "[\\\"']?(?:hooks?|preinstall|postinstall)[\\\"']?\\s*:"
+    }
+  },
+  "receipt": {
+    "schemaVersion": "kaleidosphere/k4c-security-license-receipt/v1",
+    "packageDigestSchema": "kaleidosphere/k4c-codex-plugin-package-digest/v1",
+    "publicationPerformed": false,
+    "externalCommandsCalled": false
+  },
+  "determinism": {
+    "timestamps": false,
+    "randomValues": false,
+    "secretContentsInReceipt": false
+  }
+}

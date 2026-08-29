@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "kaleidosphere/k4c-plugin-creator-transcripts/v1",
+  "adapter": "@plugin-creator",
+  "validator": {
+    "path": "/home/jo/.openclaw/agents/main/agent/codex-home/skills/.system/plugin-creator/scripts/validate_plugin.py",
+    "toolVersion": "plugin-creator-validator/unversioned-source-recorded",
+    "versionSource": "validator script sha256",
+    "sha256": "ebda00d55d7518b127f675f062fb5c6e7a1ffdc0a99df1a55ac594400d7d3228"
+  },
+  "successTranscript": {
+    "command": "python3 <validator> <plugin-root>",
+    "exitCode": 0,
+    "stdout": "Plugin validation passed: <plugin-root>\n",
+    "stderr": ""
+  },
+  "publicationPerformed": false
+}

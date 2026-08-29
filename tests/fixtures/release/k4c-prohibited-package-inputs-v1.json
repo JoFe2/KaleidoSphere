@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/tests/fixtures/release/k4c-prohibited-package-inputs-v1.json",
+  "schemaVersion": "kaleidosphere/k4c-prohibited-package-inputs/v1",
+  "policy": "docs/release/k4c-skills-only-policy-v1.json",
+  "purpose": "Deterministic negative coverage for the skills-only static guard; values are descriptors, never secret material.",
+  "positiveCase": {
+    "id": "canonical-skill-files-plus-manifest",
+    "expected": "accepted"
+  },
+  "negativeCases": [
+    {
+      "id": "secret-like-value",
+      "class": "secret-free",
+      "input": "secret-shaped text in a scanned package file",
+      "expectedReason": "secret-like value denied"
+    },
+    {
+      "id": "app-declaration",
+      "class": "skills-only",
+      "input": "manifest or package app declaration",
+      "expectedReason": "app declaration denied"
+    },
+    {
+      "id": "mcp-config",
+      "class": "skills-only",
+      "input": "MCP configuration key or path",
+      "expectedReason": "MCP configuration denied"
+    },
+    {
+      "id": "hook",
+      "class": "skills-only",
+      "input": "hook configuration key or path",
+      "expectedReason": "hook declaration denied"
+    },
+    {
+      "id": "executable-payload",
+      "class": "skills-only",
+      "input": "executable file mode, executable extension, shebang, or binary header",
+      "expectedReason": "executable payload denied"
+    },
+    {
+      "id": "symlink-escape",
+      "class": "skills-only",
+      "input": "symlink at any package or canonical tree path",
+      "expectedReason": "symlink denied"
+    },
+    {
+      "id": "undeclared-dependency",
+      "class": "dependency-free",
+      "input": "dependency declaration, package metadata, or non-Codex module import",
+      "expectedReason": "undeclared dependency denied"
+    },
+    {
+      "id": "license-mismatch",
+      "class": "license-safe",
+      "input": "manifest license other than Apache-2.0",
+      "expectedReason": "license mismatch denied"
+    }
+  ],
+  "coverage": {
+    "requiredNegativeCaseIds": [
+      "secret-like-value",
+      "app-declaration",
+      "mcp-config",
+      "hook",
+      "executable-payload",
+      "symlink-escape",
+      "undeclared-dependency",
+      "license-mismatch"
+    ],
+    "receiptMustExclude": ["secret contents", "file contents", "environment values"]
+  }
+}

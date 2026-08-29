@@ -1,0 +1,118 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/docs/release/k4c-terminal-evidence-schema-v1.json",
+  "title": "K4C terminal evidence classifier receipt",
+  "description": "Pure, one-shot local classification of same-digest release evidence. RELEASED requires complete anonymous directory discovery and matching-digest install readback.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "fixture",
+    "fixtureSha256",
+    "package",
+    "validatedInputDigests",
+    "portalOutcome",
+    "anonymousProof",
+    "disposition",
+    "reason",
+    "evidence",
+    "resumeActions",
+    "rollback",
+    "side_effects",
+    "nonClaims"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere/k4c-terminal-evidence-receipt/v1"},
+    "fixture": {"type": "string", "minLength": 1},
+    "fixtureSha256": {"$ref": "#/$defs/sha256"},
+    "package": {"$ref": "#/$defs/package"},
+    "validatedInputDigests": {"$ref": "#/$defs/validatedInputDigests"},
+    "portalOutcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["captured", "disposition", "identityStepRecorded"],
+      "properties": {
+        "captured": {"type": "boolean"},
+        "disposition": {"enum": ["PRECHECK_READY", "NOT_SUBMITTED", null]},
+        "identityStepRecorded": {"type": "boolean"}
+      }
+    },
+    "anonymousProof": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["present", "discovery", "install", "fresh", "boundaryClean", "complete", "publicListingClaim"],
+      "properties": {
+        "present": {"type": "boolean"},
+        "discovery": {"type": "boolean"},
+        "install": {"type": "boolean"},
+        "fresh": {"type": "boolean"},
+        "boundaryClean": {"type": "boolean"},
+        "complete": {"type": "boolean"},
+        "publicListingClaim": {"type": "boolean"}
+      }
+    },
+    "disposition": {"enum": ["RELEASED", "NOT_RELEASED", "REJECTED_WITH_EVIDENCE"]},
+    "reason": {"type": "string", "minLength": 1},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "redactedReason"],
+        "properties": {
+          "code": {"type": "string", "minLength": 1},
+          "redactedReason": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "resumeActions": {
+      "type": "array",
+      "maxItems": 1,
+      "items": {
+        "enum": [
+          "Owner resumes in the official portal UI to verify owner authority and publisher identity.",
+          "Worker resumes by correcting the denied evidence set before requesting a new bounded classification."
+        ]
+      }
+    },
+    "rollback": {"const": "Safe rollback when authorized: remove the local cache, or withdraw the draft and publish the corrected successor."},
+    "side_effects": {"const": []},
+    "nonClaims": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "title", "digest", "manifestSha256"],
+      "properties": {
+        "name": {"type": ["string", "null"]},
+        "version": {"type": ["string", "null"]},
+        "title": {"type": ["string", "null"]},
+        "digest": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "manifestSha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "digestReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "expectedSha256", "observedSha256"],
+      "properties": {
+        "path": {"type": ["string", "null"]},
+        "expectedSha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"},
+        "observedSha256": {"type": ["string", "null"], "pattern": "^[a-f0-9]{64}$"}
+      }
+    },
+    "validatedInputDigests": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["local", "packet", "portal", "anonymous"],
+      "properties": {
+        "local": {"$ref": "#/$defs/digestReference"},
+        "packet": {"$ref": "#/$defs/digestReference"},
+        "portal": {"$ref": "#/$defs/digestReference"},
+        "anonymous": {"$ref": "#/$defs/digestReference"}
+      }
+    }
+  }
+}

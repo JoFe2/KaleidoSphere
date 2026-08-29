@@ -1,0 +1,38 @@
+{
+  "name": "kaleidosphere-agent-skill",
+  "version": "0.26.0",
+  "description": "KaleidoSphere bounded BI AgentSkill distribution",
+  "author": {
+    "name": "JoFe2",
+    "url": "https://github.com/JoFe2"
+  },
+  "homepage": "https://github.com/JoFe2/KaleidoSphere",
+  "repository": "https://github.com/JoFe2/KaleidoSphere",
+  "license": "Apache-2.0",
+  "keywords": [
+    "kaleidosphere",
+    "agent-skill",
+    "business-intelligence",
+    "openclaw"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "KaleidoSphere",
+    "shortDescription": "Bounded BI skill",
+    "longDescription": "Use the KaleidoSphere AgentSkill for bounded status, discovery, analyze, plan, preview and readback requests under the closed authority-free contract.",
+    "developerName": "JoFe2",
+    "category": "Data & Analytics",
+    "capabilities": [
+      "Bounded BI workflows",
+      "Closed action validation",
+      "Readback evidence review"
+    ],
+    "websiteURL": "https://github.com/JoFe2/KaleidoSphere",
+    "defaultPrompt": [
+      "Use KaleidoSphere for BI status.",
+      "Plan a bounded BI preview.",
+      "Review KaleidoSphere readback evidence."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

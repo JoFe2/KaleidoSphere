@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/docs/release/k4c-resume-action-schema-v1.json",
+  "title": "K4C delivery-readback receipt and resume-action policy",
+  "description": "Offline reconciliation of exactly four K4C receipts. The document makes no delivery claim and represents no external operation.",
+  "stateTransitionTable": [
+    {
+      "when": "all four schemas, provenance, task/issue bindings, raw digests, and freshness windows validate; terminal is RELEASED; portal is PRECHECK_READY; anonymous discovery/install is complete",
+      "disposition": "RELEASED",
+      "resumeActions": []
+    },
+    {
+      "when": "all validation succeeds; terminal is NOT_RELEASED; portal is NOT_SUBMITTED; owner portal authority is the single external prerequisite",
+      "disposition": "NOT_RELEASED",
+      "resumeActions": ["Owner resumes in the official portal UI to verify owner authority and publisher identity."]
+    },
+    {
+      "when": "any schema, provenance, identity, digest, freshness, anonymous-proof, or classifier/readback check is denied; or terminal is REJECTED_WITH_EVIDENCE",
+      "disposition": "REJECTED_WITH_EVIDENCE",
+      "resumeActions": []
+    }
+  ],
+  "freshnessPolicy": {
+    "clock": "fixture generated_at only; no wall-clock access is used",
+    "timestampFormat": "canonical RFC 3339 UTC milliseconds",
+    "maximumWindowMilliseconds": 86400000,
+    "generatedAtMustBeWithinEveryInputWindow": true,
+    "noncesMustBeUnique": true,
+    "anonymousReceiptMustBeAfterSubmissionAndWithinAnonymousWindow": true,
+    "replayOrStaleEvidence": "rejected"
+  },
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "generated_at",
+    "task",
+    "fixture",
+    "inputDigests",
+    "bindingDigest",
+    "terminalDisposition",
+    "disposition",
+    "reason",
+    "evidence",
+    "resumeActions",
+    "rollback",
+    "side_effects",
+    "nonClaims"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere/k4c-delivery-readback-receipt/v1"},
+    "generated_at": {"type": "string", "format": "date-time", "x-normalization": "canonical UTC ISO-8601 string; comparison may normalize this field only"},
+    "task": {"$ref": "#/$defs/task"},
+    "fixture": {"type": "string", "minLength": 1},
+    "inputDigests": {"$ref": "#/$defs/inputDigests"},
+    "bindingDigest": {"$ref": "#/$defs/sha256"},
+    "terminalDisposition": {"enum": ["RELEASED", "NOT_RELEASED", "REJECTED_WITH_EVIDENCE", null]},
+    "disposition": {"enum": ["RELEASED", "NOT_RELEASED", "REJECTED_WITH_EVIDENCE"]},
+    "reason": {"type": "string", "minLength": 1},
+    "evidence": {"type": "array", "items": {"type": "object", "additionalProperties": false, "required": ["code", "redactedReason"], "properties": {"code": {"type": "string", "minLength": 1}, "redactedReason": {"type": "string", "minLength": 1}}}},
+    "resumeActions": {"type": "array", "maxItems": 1, "items": {"const": "Owner resumes in the official portal UI to verify owner authority and publisher identity."}},
+    "rollback": {"const": "Delete the owned script, test, fixture, schema, and verification receipt; external rollback is unnecessary because execution is local and read-only."},
+    "side_effects": {"const": []},
+    "nonClaims": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}}
+  },
+  "allOf": [
+    {"if": {"properties": {"disposition": {"const": "RELEASED"}}}, "then": {"properties": {"terminalDisposition": {"const": "RELEASED"}, "resumeActions": {"const": []}}}},
+    {"if": {"properties": {"disposition": {"const": "NOT_RELEASED"}}}, "then": {"properties": {"terminalDisposition": {"const": "NOT_RELEASED"}, "resumeActions": {"const": ["Owner resumes in the official portal UI to verify owner authority and publisher identity."]}}}},
+    {"if": {"properties": {"disposition": {"const": "REJECTED_WITH_EVIDENCE"}}}, "then": {"properties": {"resumeActions": {"const": []}}}}
+  ],
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "task": {"type": "object", "additionalProperties": false, "required": ["id", "issue"], "properties": {"id": {"type": "string", "minLength": 1}, "issue": {"type": "string", "minLength": 1}}},
+    "freshness": {"type": "object", "additionalProperties": false, "required": ["issued_at", "expires_at", "nonce"], "properties": {"issued_at": {"type": "string", "format": "date-time"}, "expires_at": {"type": "string", "format": "date-time"}, "nonce": {"$ref": "#/$defs/sha256"}}},
+    "input": {"type": "object", "additionalProperties": false, "required": ["path", "sha256", "observed_sha256", "schemaVersion", "provenance", "task_id", "issue_id", "freshness"], "properties": {"path": {"type": "string", "minLength": 1}, "sha256": {"$ref": "#/$defs/sha256"}, "observed_sha256": {"$ref": "#/$defs/sha256"}, "schemaVersion": {"type": "string", "minLength": 1}, "provenance": {"type": "string", "minLength": 1}, "task_id": {"type": "string", "minLength": 1}, "issue_id": {"type": "string", "minLength": 1}, "freshness": {"$ref": "#/$defs/freshness"}}},
+    "inputDigests": {"type": "object", "additionalProperties": false, "required": ["local", "portal", "anonymous", "terminal"], "properties": {"local": {"$ref": "#/$defs/input"}, "portal": {"$ref": "#/$defs/input"}, "anonymous": {"$ref": "#/$defs/input"}, "terminal": {"$ref": "#/$defs/input"}}}
+  }
+}
