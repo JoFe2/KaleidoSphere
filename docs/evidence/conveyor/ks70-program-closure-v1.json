@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks70-program-closure/v1",
+  "issue": 70,
+  "currentMainBase": "60698b2888eac05c1bbea52411a2d10c4c676061",
+  "criticalPath": ["plugin#4", 63, 64, 65, 66, 67, 68, 69],
+  "foundation": {
+    "repository": "JoFe2/kaleidosphere-dsh-plugin",
+    "issue": 4,
+    "state": "CLOSED",
+    "release": "v0.1.0-preview.3"
+  },
+  "children": [
+    {
+      "issue": 63,
+      "state": "CLOSED",
+      "dependsOn": ["plugin#4"],
+      "delivery": {"repository": "JoFe2/KaleidoSphere", "pullRequest": 71, "mergeSha": "b4760f68fe942aee2aeca5e5a2e54f783c448df0", "release": "v0.18.1"}
+    },
+    {
+      "issue": 64,
+      "state": "CLOSED",
+      "dependsOn": [63],
+      "delivery": {"repository": "JoFe2/kaleidosphere-dsh-plugin", "pullRequest": 9, "release": "v0.1.0-preview.4"}
+    },
+    {
+      "issue": 65,
+      "state": "CLOSED",
+      "dependsOn": [64],
+      "delivery": {"repository": "JoFe2/kaleidosphere-dsh-plugin", "pullRequest": 12, "mergeSha": "a0c29c6c9c75dfc95924e4c6dbe1dd0bdfd721bd", "release": null, "noReleaseReason": "IMMUTABLE_PREVIEW_TAG_PREDATES_CHANGE"}
+    },
+    {
+      "issue": 66,
+      "state": "CLOSED",
+      "dependsOn": [65],
+      "delivery": {"repository": "JoFe2/KaleidoSphere", "pullRequest": 125, "mergeSha": "d77ed33d062268a8000ff9b0ef5ca9dc9ad3433b", "release": "v0.26.0"}
+    },
+    {
+      "issue": 67,
+      "state": "CLOSED",
+      "dependsOn": [66],
+      "delivery": {"repository": "JoFe2/KaleidoSphere", "pullRequest": 127, "mergeSha": "c32d721bce1e022fa899a0fdfa54582d362211ab", "release": "2026_08_29_v2"}
+    },
+    {
+      "issue": 68,
+      "state": "CLOSED",
+      "dependsOn": [67],
+      "delivery": {"repository": "JoFe2/KaleidoSphere", "pullRequest": 128, "mergeSha": "41a1f5fa1deff64836340d1efd3e8a292bbe34f7", "release": "2026_08_29_v3"}
+    },
+    {
+      "issue": 69,
+      "state": "CLOSED",
+      "dependsOn": [68],
+      "delivery": {"repository": "JoFe2/KaleidoSphere", "pullRequest": 129, "mergeSha": "60698b2888eac05c1bbea52411a2d10c4c676061", "release": "2026_08_29_v4"}
+    }
+  ],
+  "authority": {"mutation": false, "credentials": false, "rawRows": false},
+  "postgresql": {"disposition": "BOUNDED_PILOT_NOT_PROMOTED"},
+  "mysql": {"disposition": "NOT_ADMITTED"},
+  "nonClaims": [
+    "NO_PRODUCTION_READINESS",
+    "NO_LIVE_CUSTOMER_VALIDATION",
+    "NO_STABLE_DSH_ABI",
+    "NO_HOST_WIDE_CONTAINMENT",
+    "NO_ARBITRARY_SQL",
+    "NO_AUTOMATIC_TUNING_OR_MUTATION",
+    "NO_UNIVERSAL_ENGINE_OR_HARNESS_PARITY",
+    "NO_MARKETPLACE_AVAILABILITY"
+  ]
+}
