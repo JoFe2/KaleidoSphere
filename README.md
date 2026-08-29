@@ -33,7 +33,7 @@ KaleidoSphere uses separate, intentionally pinned version axes:
 
 | Layer | Version | Meaning |
 |---|---:|---|
-| Repository release | `v0.25.0` | Current source and release-archive identity |
+| Repository release | `v0.26.0` | Current source and release-archive identity |
 | bi-agent component | `v0.18.1` | Runtime product identity attested by the embedded service |
 | External API contract | `2.0.0` | Closed six-action wire contract |
 | Apache Superset | `6.1.0` | Digest-pinned local projection UI |

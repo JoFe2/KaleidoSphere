@@ -15,7 +15,7 @@ const compact = (value) => value.replace(/\s+/g, ' ').trim();
 function validateReadme(readme) {
   for (const value of [
     'Repository release',
-    '`v0.25.0`',
+    '`v0.26.0`',
     'bi-agent component',
     '`v0.18.1`',
     'External API contract',
@@ -96,7 +96,7 @@ test('README distinguishes the v0.25 release surfaces and optional DSH preview',
   ]);
 
   validateReadme(readme);
-  assert.equal(rootPackage.version, '0.25.0');
+  assert.equal(rootPackage.version, '0.26.0');
   assert.equal(agentPackage.version, '0.18.1');
   assert.doesNotMatch(compose, /BI_ENGINE[^\n]*postgres/i);
   assert.doesNotMatch(cli, /promotion-bundle[^\n]*(?:execute|apply)/i);
