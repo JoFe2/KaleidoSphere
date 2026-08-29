@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks67-aggregate-profiling-closure/v1",
+  "issue": 67,
+  "currentMainBase": "3cb45cf19ddcebc479ff29dee2e919835fea1229",
+  "disposition": "REUSE_EXISTING_PROTECTED_INCREMENT",
+  "reuse": {
+    "sourceIssue": 38,
+    "pullRequest": 45,
+    "mergeSha": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+    "release": "v0.14.0",
+    "currentMainRegressionSuite": "tests/safe-analysis-method-parity.test.mjs"
+  },
+  "engines": ["mssql", "oracle"],
+  "acceptance": {
+    "aggregateOnly": true,
+    "readOnly": true,
+    "rowSamples": false,
+    "exampleValues": false,
+    "maxOutputRows": 1,
+    "maxSourceRowsUpperBound": 10000,
+    "timeoutMsUpperBound": 10000,
+    "cancellationAndBudgetEvidence": [
+      "tests/safe-analysis-method-parity.test.mjs",
+      "tests/progressive-controller.test.mjs",
+      "tests/progressive-analysis-v1.test.mjs"
+    ],
+    "privacyAndInjectionEvidence": [
+      "tests/security.test.mjs",
+      "tests/safe-analysis-method-parity.test.mjs"
+    ],
+    "engineParity": "EXACT_SEMANTIC_METHOD_SET",
+    "missingSupport": "EXPLICIT_UNSUPPORTED_REASON_CODE"
+  },
+  "rollback": {
+    "mode": "PROTECTED_SUCCESSOR_REVERT",
+    "priorManifestUnchanged": true,
+    "newRuntimeActivation": false
+  },
+  "nonClaims": [
+    "NO_STATISTICAL_PRIVACY_THEOREM",
+    "NO_RAW_SAMPLES_OR_SENSITIVE_VALUE_EXPORT",
+    "NO_ARBITRARY_SQL_OR_MUTATION",
+    "NO_LIVE_CUSTOMER_PERFORMANCE_CLAIM"
+  ]
+}
