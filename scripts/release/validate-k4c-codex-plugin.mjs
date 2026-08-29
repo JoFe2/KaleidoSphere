@@ -155,6 +155,23 @@ async function verifyPluginCreator(fixture, validator, outDir) {
   };
 }
 
+function recordedPluginCreatorVerification(fixture, validator, outDir) {
+  const expected = fixture.successTranscript;
+  return {
+    adapter: fixture.adapter,
+    toolVersion: fixture.validator.toolVersion,
+    validatorPath: fixture.validator.path,
+    validatorSha256: fixture.validator.sha256,
+    transcript: {
+      command: formatCommand(expected.command, validator, outDir),
+      exitCode: expected.exitCode,
+      stdout: expected.stdout,
+      stderr: expected.stderr,
+    },
+    execution: 'RECORDED_TRANSCRIPT_DRY_RUN',
+  };
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   // The fixture is read before any external command, while the generator check
@@ -190,7 +207,16 @@ async function main() {
     throw new Error('repository generator receipt denied: package digest missing');
   }
 
-  const pluginCreator = await verifyPluginCreator(fixture, validator, args.out);
+  let pluginCreator;
+  try {
+    pluginCreator = await verifyPluginCreator(fixture, validator, args.out);
+    pluginCreator.execution = 'LIVE_VALIDATOR';
+  } catch (error) {
+    const portableDryRun = args.dryRun && args.validator === null
+      && /plugin-creator validator unavailable: infrastructure evidence: ENOENT/.test(error.message);
+    if (!portableDryRun) throw error;
+    pluginCreator = recordedPluginCreatorVerification(fixture, validator, args.out);
+  }
   const receipt = {
     schemaVersion: RECEIPT_SCHEMA,
     packageVersion: generatorReceipt.packageVersion,

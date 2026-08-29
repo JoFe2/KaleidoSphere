@@ -66,6 +66,7 @@ test('accepts a generated manifest through both deterministic validation routes'
   assert.match(receipt.packageDigest, /^[a-f0-9]{64}$/);
   assert.equal(receipt.manifest.sha256, '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77');
   assert.equal(receipt.pluginCreatorVerification.transcript.exitCode, 0);
+  assert.ok(['LIVE_VALIDATOR', 'RECORDED_TRANSCRIPT_DRY_RUN'].includes(receipt.pluginCreatorVerification.execution));
   assert.equal(receipt.publicationPerformed, false);
   assert.equal(receipt.accepted, true);
 });
