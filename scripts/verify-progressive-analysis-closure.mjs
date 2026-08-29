@@ -6,7 +6,7 @@
 // input) into either a canonical closure receipt (success) or a
 // fail-closed explanation (rejection). The validator is reference-only and
 // local-only: it reads the fixture file and the pinned contract schema,
-// and evaluates the supported-keyword shape walk, the pinned placeholder
+// and evaluates the supported-keyword shape walk, the pinned exact
 // scope policy (E-SCOPE), the content probes, and rules R01-R07 in the
 // fixed first-failure-wins order defined by the contract. It performs no
 // dispatch, no network access, and no writes; --dry-run makes that
@@ -14,7 +14,7 @@
 // only.
 //
 // File-level validation order (first failure wins): E-SHAPE (shape, or a
-// parse failure) -> E-SCOPE (pinned placeholder scope) -> content value
+// parse failure) -> E-SCOPE (pinned exact integration scope) -> content value
 // probes (E-CONTENT-CREDENTIAL / E-CONTENT-SQL / E-CONTENT-RAW) -> R01-R07.
 // E-SCOPE is the fixture-file-level policy layered on the record-level
 // contract validator, which is unchanged.
@@ -43,14 +43,12 @@ import { pathToFileURL } from 'node:url';
 const root = path.resolve(import.meta.dirname, '..');
 const SCHEMA_PATH = path.join(root, 'docs/evidence/progressive-analysis/epic-35-closure.schema.json');
 
-// The pinned placeholder scope recorded by the contract slice receipt (the
-// same placeholder values the reference fixture builder and the focused
-// fixture test use). A materialized fixture whose recorded scope
-// (base_sha/head_sha) has drifted from these placeholders is stale relative
-// to the slice and fails the E-SCOPE fixture policy (scope drift / stale
-// receipt).
-const PINNED_BASE_SHA = '35'.repeat(20);
-const PINNED_HEAD_SHA = '3540'.repeat(10);
+// The exact current-main integration range. The base is the requested local
+// main identity at slice cut; the head is the independently read current
+// origin/main integration head. A materialized fixture whose recorded scope
+// has drifted from either immutable identity fails E-SCOPE.
+const PINNED_BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const PINNED_HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
 
 // ---------------------------------------------------------------------------
 // Canonical serialization and terminal hash input
@@ -529,7 +527,7 @@ function validateSemantics(record) {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture-file-level policy: the pinned placeholder scope (E-SCOPE) and the
+// Fixture-file-level policy: the pinned exact integration scope (E-SCOPE) and the
 // file-level pipeline (parse -> shape -> scope -> content -> semantics).
 // E-SCOPE is fixture policy layered on the materialized files; the
 // record-level contract validator above is unchanged.
@@ -541,7 +539,7 @@ function scopeProbe(record) {
       ok: false,
       code: 'E-SCOPE',
       path: '$.base_sha',
-      detail: `fixture base_sha ${record.base_sha} is stale relative to the pinned placeholder scope ${PINNED_BASE_SHA}`,
+      detail: `fixture base_sha ${record.base_sha} is stale relative to the pinned local-main base ${PINNED_BASE_SHA}`,
     };
   }
   if (record.head_sha !== PINNED_HEAD_SHA) {
@@ -549,7 +547,7 @@ function scopeProbe(record) {
       ok: false,
       code: 'E-SCOPE',
       path: '$.head_sha',
-      detail: `fixture head_sha ${record.head_sha} is stale relative to the pinned placeholder scope ${PINNED_HEAD_SHA}`,
+      detail: `fixture head_sha ${record.head_sha} is stale relative to the pinned current-main integration head ${PINNED_HEAD_SHA}`,
     };
   }
   return null;

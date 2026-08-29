@@ -17,12 +17,12 @@
 // from the reference validator tests/epic-35-closure-schema.test.mjs: same
 // codes, same order, same regexes. On top of it this test layers one
 // fixture-file-level policy, E-SCOPE, which rejects a materialized fixture
-// whose recorded scope (base_sha/head_sha) has drifted from the placeholder
-// scope pinned by the contract (a stale scope/base SHA). E-SCOPE is fixture
+// whose recorded scope (base_sha/head_sha) has drifted from the exact
+// current-main integration scope (a stale scope/base SHA). E-SCOPE is fixture
 // policy, not a contract rule: the record-level validator is unchanged.
 //
 // File-level validation order (first failure wins): E-SHAPE (shape, or a
-// parse failure) -> E-SCOPE (pinned placeholder scope) -> content value
+// parse failure) -> E-SCOPE (pinned exact integration scope) -> content value
 // probes (E-CONTENT-CREDENTIAL / E-CONTENT-SQL / E-CONTENT-RAW) -> R01-R07.
 //
 // The tests prove byte stability (repeated loading and canonical
@@ -44,8 +44,8 @@ const MISSING_PATH = 'fixtures/evidence/progressive-analysis/epic-35-closure-mis
 const FORGED_PATH = 'fixtures/evidence/progressive-analysis/epic-35-closure-forged-receipt.json';
 const TEST_PATH = 'tests/epic-35-closure-fixture.test.mjs';
 const ALLOWED_PATHS = [
-  'SOURCE-MAP.json',
   'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
+  'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
   'docs/evidence/progressive-analysis/epic-35-close-comment.template.md',
   'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
   'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
@@ -57,7 +57,6 @@ const ALLOWED_PATHS = [
   'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
-  'package.json',
   'scripts/prepare-progressive-analysis-release-readback.mjs',
   'scripts/verify-progressive-analysis-closure.mjs',
   'scripts/verify-progressive-analysis-exact-ci.mjs',
@@ -73,16 +72,14 @@ const ALLOWED_PATHS = [
 // fixture and equals the evidence_terminal_hash recorded by the contract
 // slice receipt. The other two are pinned by derivation (see the
 // materialized-negative-fixture test below).
-const EXPECTED_TERMINAL_HASH = '7433474d0964db5baf015461486c4ebf6a0fb26f8fff6a530a40413d82426e1e';
-const MISSING_FOUNDATION_HASH = '27a4820b0672e26647d56989da228574fd83d9dde5fc4f2343fa9b4314773903';
-const FORGED_RECEIPT_HASH = '0433474d0964db5baf015461486c4ebf6a0fb26f8fff6a530a40413d82426e1e';
+const EXPECTED_TERMINAL_HASH = 'bf303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724';
+const MISSING_FOUNDATION_HASH = 'f5b5e745e3daa3bd79dfaf3086e1c6084841a0427c66b03a45f7221d73f7b321';
+const FORGED_RECEIPT_HASH = '0f303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724';
 
-// The fixtures are pinned to the placeholder scope recorded by the contract
-// (the same placeholder values the reference fixture builder uses). A
-// materialized fixture whose base/head SHA has moved off these placeholders
-// is stale relative to the slice and fails the E-SCOPE fixture policy.
-const FIXTURE_BASE_SHA = '35'.repeat(20);
-const FIXTURE_HEAD_SHA = '3540'.repeat(10);
+// The fixtures are pinned to requested local main through the independently
+// read current origin/main integration head.
+const FIXTURE_BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const FIXTURE_HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
 
 // ---------------------------------------------------------------------------
 // Canonical serialization and terminal hash input
@@ -515,7 +512,7 @@ function validateClosureRecord(record, rootSchema) {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture-file-level policy: the pinned placeholder scope (E-SCOPE) and the
+// Fixture-file-level policy: the pinned exact integration scope (E-SCOPE) and the
 // file-level pipeline (parse -> shape -> scope -> content -> semantics).
 // E-SCOPE is fixture policy layered on the materialized files; the
 // record-level contract validator above is unchanged.
@@ -527,7 +524,7 @@ function scopeProbe(record) {
       ok: false,
       code: 'E-SCOPE',
       path: '$.base_sha',
-      detail: `fixture base_sha ${record.base_sha} is stale relative to the pinned placeholder scope ${FIXTURE_BASE_SHA}`,
+      detail: `fixture base_sha ${record.base_sha} is stale relative to the pinned local-main base ${FIXTURE_BASE_SHA}`,
     };
   }
   if (record.head_sha !== FIXTURE_HEAD_SHA) {
@@ -535,7 +532,7 @@ function scopeProbe(record) {
       ok: false,
       code: 'E-SCOPE',
       path: '$.head_sha',
-      detail: `fixture head_sha ${record.head_sha} is stale relative to the pinned placeholder scope ${FIXTURE_HEAD_SHA}`,
+      detail: `fixture head_sha ${record.head_sha} is stale relative to the pinned current-main integration head ${FIXTURE_HEAD_SHA}`,
     };
   }
   return null;
@@ -632,8 +629,9 @@ test('the valid fixture on disk is canonical and its terminal hash is pinned', (
   assert.equal(validText, canonicalize(validRecord) + '\n');
   assert.equal(validRecord.terminal_hash, EXPECTED_TERMINAL_HASH);
   assert.equal(terminalHash(validRecord), EXPECTED_TERMINAL_HASH);
-  assert.ok(validRecord.nonclaims.some((n) => n.includes('fixture placeholders')));
-  assert.ok(validRecord.nonclaims.some((n) => n.includes('does not claim that epic 35 or any child issue is closed')));
+  assert.ok(validRecord.nonclaims.some((n) => n.includes('materialized record')));
+  assert.ok(validRecord.nonclaims.some((n) => n.includes('current origin/main')));
+  assert.ok(validRecord.nonclaims.some((n) => n.includes('5ffad599118cade30ce66264d529259f63d1bc45')));
 });
 
 test('the valid fixture validates OK at the record level and the fixture-file level', () => {
@@ -641,8 +639,8 @@ test('the valid fixture validates OK at the record level and the fixture-file le
   assert.deepEqual(validateFixture(validText), {ok: true, code: 'OK'});
 });
 
-test('each child carries its delivery evidence: protected merged PR or durable rationale, exact-head/exact-main CI, release decision, public readback', () => {
-  for (const issue of [36, 37, 38, 39]) {
+test('each child carries its protected delivery, exact-head/exact-main CI, release decision, and public readback', () => {
+  for (const issue of [36, 37, 38, 39, 40]) {
     const child = childOf(validRecord, issue);
     assert.ok(child.evidence_refs.length >= 1, `child ${issue}: deterministic evidence refs`);
     assert.equal(child.disposition, `merged`, `child ${issue} is merged`);
@@ -661,13 +659,8 @@ test('each child carries its delivery evidence: protected merged PR or durable r
     assert.match(child.release_decision.tag_sha, /^[0-9a-f]{40}$/, `child ${issue}: public tag anchor SHA readback`);
   }
   const c40 = childOf(validRecord, 40);
-  assert.ok(c40.evidence_refs.length >= 1, 'child 40: deterministic evidence refs');
-  assert.equal(c40.disposition, 'closed_no_delivery');
-  assert.match(c40.closed_rationale.reason_code, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'child 40: durable rationale reason code');
-  assert.ok(c40.closed_rationale.evidence_refs.length >= 1, 'child 40: rationale evidence refs');
-  assert.equal(c40.merged_pr, null, 'child 40: PR must be null when not delivered');
-  assert.equal(c40.ci_decision, null, 'child 40: CI decision must be null when not delivered');
-  assert.equal(c40.release_decision, null, 'child 40: release decision must be null when not delivered');
+  assert.equal(c40.merged_pr.number, 123, 'child 40: protected delivery PR');
+  assert.equal(c40.release_decision.tag, 'v0.25.0', 'child 40: public release disposition');
 });
 
 test('critical path 36 -> 37 -> 38 -> 39 -> 40 and the #40 breadth/receipt foundation are represented', () => {

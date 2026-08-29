@@ -7,7 +7,7 @@
     "epic_issue": 35,
     "verdict": "CLOSE_READY_NO_REMOTE_MUTATION",
     "reason_code": "ALL_FIVE_CHILDREN_TERMINAL_RECEIPT_READY",
-    "summary": "Issues #36 through #40 have terminal delivery evidence from the live repository and public readbacks. This receipt is ready for independent Root-QS and makes no remote closure mutation.",
+    "summary": "Issues #36 through #40 have terminal delivery evidence from the exact local-main through current-origin/main integration range and public readbacks. This receipt is ready for independent Root-QS and makes no remote closure mutation.",
     "closure_evidence_boundary": "Accept a child claim only when its issue-state index joins to immutable repository evidence at the declared base, authoritative pull-request merge data, SHA-bound CI data, an explicit release or no-release decision, and tag/release/public readback when released. Issue prose alone is never closure evidence.",
     "eligible_children": [
       36,
@@ -21,9 +21,12 @@
   "repository_snapshot": {
     "repository": "JoFe2/KaleidoSphere",
     "remote_url": "https://github.com/JoFe2/KaleidoSphere.git",
-    "ref": "refs/heads/main",
-    "immutable_base_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
-    "base_commit_url": "https://github.com/JoFe2/KaleidoSphere/commit/d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "requested_ref": "refs/heads/main",
+    "immutable_base_sha": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+    "base_commit_url": "https://github.com/JoFe2/KaleidoSphere/commit/173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+    "requested_local_main_sha": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+    "current_main_integration_head_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "integration_range": "173e2f7e19049a705bcdaf0269c33a5bd7f70206...d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
     "local_head_before_receipt": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
     "local_origin_main_before_receipt": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
     "remote_main_readback_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
@@ -106,6 +109,10 @@
       {
         "class": "reserved_child_40_forward_work",
         "reason": "Task KALEIDOSPHERE-40-QWEN-FORWARD-02 is a separately owned forward package. This reconciliation neither implements, duplicates, accepts, nor terminalizes it."
+      },
+      {
+        "class": "closure_tooling_commit_as_product_integration_head",
+        "reason": "Commit 5ffad599118cade30ce66264d529259f63d1bc45 is outside the exact current-main product integration range and its local main...head artifact violates its declared closure-audit path boundary. It is a negative regression subject, not an accepted head."
       }
     ],
     "fail_closed_join_rules": [
@@ -821,7 +828,7 @@
       {
         "ancestor": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
         "descendant": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
-        "edge": "#40 release -> declared current origin/main base",
+        "edge": "#40 release -> exact current origin/main integration head",
         "result": "PASS"
       }
     ],
@@ -876,7 +883,7 @@
       {
         "case": "Current origin/main tree and existing #40 task provenance.",
         "result": "PASS",
-        "evidence": "Remote, local origin/main, and pre-receipt HEAD all equal immutable current-main base d6b9adb5be1e475cdba71c548a71fc900aa3fdff; #40 owner provenance is comment 5435124548 for KALEIDOSPHERE-40-QWEN-01, and its delivery readback is PR #123 / merge 5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6. KALEIDOSPHERE-40-QWEN-FORWARD-02 remains excluded by controller directive."
+        "evidence": "The requested local main base is 173e2f7e19049a705bcdaf0269c33a5bd7f70206 and the independently read current origin/main integration head is d6b9adb5be1e475cdba71c548a71fc900aa3fdff. #40 owner provenance is comment 5435124548 for KALEIDOSPHERE-40-QWEN-01, and its delivery readback is PR #123 / merge 5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6. KALEIDOSPHERE-40-QWEN-FORWARD-02 remains excluded by controller directive."
       }
     ],
     "negative": [
@@ -894,6 +901,16 @@
         "case": "A prerequisite edge or persisted breadth/receipt foundation is absent, unverifiable, or bypassed.",
         "result": "REJECTED_FAIL_CLOSED",
         "evidence": "Immutable decision/evidence blobs and ancestry establish the delivered edges. Any future forward receipt must repeat those joins; absence or bypass remains disqualifying."
+      },
+      {
+        "case": "The immutable local main...5ffad599118cade30ce66264d529259f63d1bc45 artifact is offered despite its declared closure-audit-only path boundary.",
+        "result": "REJECTED_FAIL_CLOSED",
+        "evidence": "The range changes 39 paths, the declared closure-audits/CLOSURE-KS35-ROOT-DELIVERY-01 directory is absent, and zero changed paths are admitted."
+      },
+      {
+        "case": "A closure packet substitutes 5ffad599118cade30ce66264d529259f63d1bc45 or its parent for either exact endpoint of the requested integration range.",
+        "result": "REJECTED_FAIL_CLOSED",
+        "evidence": "The only accepted top-level identities are local main 173e2f7e19049a705bcdaf0269c33a5bd7f70206 and current origin/main d6b9adb5be1e475cdba71c548a71fc900aa3fdff; per-child CI remains bound to each protected PR head and merge."
       }
     ]
   },
@@ -903,6 +920,7 @@
     "This receipt does not implement, duplicate, accept, or terminalize KALEIDOSPHERE-40-QWEN-FORWARD-02.",
     "Owner authorization for KALEIDOSPHERE-40-QWEN-01 is separate from, and does not expand, the independently read-back delivery evidence recorded for child #40.",
     "No claim is made that the #40 delivery changes issue #35 state or authorizes the reserved forward task; its deterministic fixture, fail-closed probes, protected merge, exact-main result, and release disposition are claimed only as recorded in child #40.",
+    "The rejected closure-tooling commit 5ffad599118cade30ce66264d529259f63d1bc45 is not treated as a product-integration head or as valid evidence under its historical path boundary.",
     "Historic releases v0.12.0, v0.13.0, v0.14.0, and v0.17.0 are public regular releases; this receipt does not claim that any is the repository's current Latest release.",
     "The #39 local candidate's original no-release statement is not rewritten; later PR #60 and release v0.17.0 are separate successor evidence.",
     "No production or customer database access, deployment, runtime activation, performance certification, universal completeness, business-semantic truth, inferred foreign-key truth, causal role/cluster truth, automatic remediation, or mutation authority is claimed.",

@@ -8,7 +8,7 @@
 // a canonical decision receipt (success) or a fail-closed explanation
 // (rejection). The harness is reference-only and local-only: it reads the
 // fixture file and evaluates the embedded contract shape spec (preflighted
-// before any record is accepted), the pinned placeholder scope policy
+// before any record is accepted), the pinned exact integration scope policy
 // (E-SCOPE), the content probes, and rules R01-R08 in the fixed
 // first-failure-wins order defined by the contract. The contract shape spec
 // is embedded in this file: this slice is self-contained and reads no
@@ -17,7 +17,7 @@
 // the output. Node builtins only.
 //
 // File-level validation order (first failure wins): E-SHAPE (shape, or a
-// parse failure) -> E-SCOPE (pinned placeholder scope) -> content value
+// parse failure) -> E-SCOPE (pinned exact integration scope) -> content value
 // probes (E-CONTENT-CREDENTIAL / E-CONTENT-SQL / E-CONTENT-RAW; the key
 // probe E-CONTENT-KEY runs inside the shape walk) -> R01-R08.
 //
@@ -54,13 +54,11 @@ import process from 'node:process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-// The pinned fixture scope recorded by the slice receipt. The base remains the
-// deterministic fixture placeholder, while the head is the immutable
-// reviewed task head. A materialized fixture whose recorded scope
-// (base_sha/head_sha) has drifted from these pins is stale relative to the
-// slice and fails the E-SCOPE fixture policy (scope drift / stale receipt).
-const PINNED_BASE_SHA = '35'.repeat(20);
-const PINNED_HEAD_SHA = 'de5facf183b8b85cd7bd455359541fc29f69e43e';
+// The exact current-main integration scope: requested local main through the
+// independently read origin/main head. Per-child exact CI is separately bound
+// to each protected pull-request head and merge commit by R02.
+const PINNED_BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const PINNED_HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
 
 // ---------------------------------------------------------------------------
 // Canonical serialization and terminal hash input
@@ -427,8 +425,8 @@ function contentProbe(value, path) {
 // unsupported keyword cannot silently become a future validation
 // capability.
 //
-// Every child carries the exact CI pair (head_sha/main_sha bound to the
-// record scope, distinct positive check ids, success-only conclusions, and
+// Every child carries the exact CI pair (head_sha/main_sha bound to its
+// protected PR head/merge, distinct positive check ids, success-only conclusions, and
 // the coverage/budget/negative receipt identifiers) and exactly one
 // delivery state: a protected merged PR with an explicit release decision
 // (public readback when released), or a durable closed rationale. The epic
@@ -613,24 +611,25 @@ function validateSemantics(record) {
   if (!deepEqual([...issues].sort((a, b) => a - b), CRITICAL_PATH)) {
     return semanticFailure('R01', '$.children', `children must be exactly the issues [36,37,38,39,40] once each; got ${JSON.stringify(issues)}`);
   }
-  // R02: CI lineage exactness. Every child's exact CI is bound to the
-  // record's exact head and exact main scope: a child whose exact CI names
-  // any other head or main SHA is a lineage mismatch (the receipt cannot be
-  // attributed to the recorded exact-head/exact-main run pair).
+  // R02: CI lineage exactness. Every delivered child's exact-head CI is bound
+  // to that child's protected PR head and its exact-main CI is bound to that
+  // child's merge commit. Top-level base/head identify the integration range.
   for (const child of record.children) {
     const issue = child.child_issue;
-    if (child.exact_ci.head_sha !== record.head_sha) {
+    const expectedHead = child.merged_pr?.head_sha ?? record.head_sha;
+    const expectedMain = child.merged_pr?.merge_sha ?? record.base_sha;
+    if (child.exact_ci.head_sha !== expectedHead) {
       return semanticFailure(
         'R02',
         `$.children[${issue}].exact_ci.head_sha`,
-        `child ${issue} exact CI head ${child.exact_ci.head_sha} must equal the record head ${record.head_sha} (exact-head CI)`
+        `child ${issue} exact CI head ${child.exact_ci.head_sha} must equal its protected PR head ${expectedHead}`
       );
     }
-    if (child.exact_ci.main_sha !== record.base_sha) {
+    if (child.exact_ci.main_sha !== expectedMain) {
       return semanticFailure(
         'R02',
         `$.children[${issue}].exact_ci.main_sha`,
-        `child ${issue} exact CI main ${child.exact_ci.main_sha} must equal the record base ${record.base_sha} (exact-main CI)`
+        `child ${issue} exact CI main ${child.exact_ci.main_sha} must equal its protected merge ${expectedMain}`
       );
     }
   }
@@ -735,7 +734,7 @@ function validateSemantics(record) {
 }
 
 // ---------------------------------------------------------------------------
-// Fixture-file-level policy: the pinned placeholder scope (E-SCOPE) and the
+// Fixture-file-level policy: the pinned exact integration scope (E-SCOPE) and the
 // file-level pipeline (parse -> shape -> scope -> content -> semantics).
 // E-SCOPE is fixture policy layered on the materialized files; the
 // record-level contract validator above is unchanged.
@@ -747,7 +746,7 @@ function scopeProbe(record) {
       ok: false,
       code: 'E-SCOPE',
       path: '$.base_sha',
-      detail: `fixture base_sha ${record.base_sha} is stale relative to the pinned placeholder scope ${PINNED_BASE_SHA}`,
+      detail: `fixture base_sha ${record.base_sha} is stale relative to the pinned local-main base ${PINNED_BASE_SHA}`,
     };
   }
   if (record.head_sha !== PINNED_HEAD_SHA) {
@@ -755,7 +754,7 @@ function scopeProbe(record) {
       ok: false,
       code: 'E-SCOPE',
       path: '$.head_sha',
-      detail: `fixture head_sha ${record.head_sha} is stale relative to the pinned reviewed task head ${PINNED_HEAD_SHA}`,
+      detail: `fixture head_sha ${record.head_sha} is stale relative to the pinned current-main integration head ${PINNED_HEAD_SHA}`,
     };
   }
   return null;

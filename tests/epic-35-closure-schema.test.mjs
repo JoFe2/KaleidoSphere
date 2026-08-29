@@ -16,10 +16,11 @@ import test from 'node:test';
 
 const SCHEMA_PATH = 'docs/evidence/progressive-analysis/epic-35-closure.schema.json';
 const CONTRACT_PATH = 'docs/evidence/progressive-analysis/epic-35-closure-contract.md';
+const VALID_PATH = 'fixtures/evidence/progressive-analysis/epic-35-closure-valid.json';
 const TEST_PATH = 'tests/epic-35-closure-schema.test.mjs';
 const ALLOWED_PATHS = [
-  'SOURCE-MAP.json',
   'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
+  'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
   'docs/evidence/progressive-analysis/epic-35-close-comment.template.md',
   'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
   'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
@@ -31,7 +32,6 @@ const ALLOWED_PATHS = [
   'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
-  'package.json',
   'scripts/prepare-progressive-analysis-release-readback.mjs',
   'scripts/verify-progressive-analysis-closure.mjs',
   'scripts/verify-progressive-analysis-exact-ci.mjs',
@@ -468,13 +468,12 @@ function validateClosureRecord(record, rootSchema) {
 }
 
 // ---------------------------------------------------------------------------
-// Canonical five-child fixture. Concrete identifier placeholders only: the
-// record claims no live merge, CI, or release state, and it does not close
-// epic 35 or issue 40. It represents the critical path 36 -> 37 -> 38 -> 39
-// -> 40 and the #40 breadth/receipt foundation.
+// Synthetic closed/no-delivery alternative retained only to prove that branch
+// of the contract. The primary fixture below is the materialized exact-state
+// record loaded from disk.
 // ---------------------------------------------------------------------------
 
-function buildFixture() {
+function buildClosedNoDeliveryAlternative() {
   const body = {
     base_sha: '35'.repeat(20),
     child_40_foundation: {
@@ -618,11 +617,12 @@ function buildFixture() {
   return {...body, terminal_hash: terminalHash(body)};
 }
 
-// Pinned terminal hash of the canonical fixture. Recompute with:
+// Pinned terminal hash of the materialized fixture. Recompute with:
 //   node tests/epic-35-closure-schema.test.mjs --print-terminal-hash
-const EXPECTED_TERMINAL_HASH = '7433474d0964db5baf015461486c4ebf6a0fb26f8fff6a530a40413d82426e1e';
+const EXPECTED_TERMINAL_HASH = 'bf303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724';
 
-const fixture = buildFixture();
+const fixture = JSON.parse(await readFile(VALID_PATH, 'utf8'));
+const closedNoDeliveryAlternative = buildClosedNoDeliveryAlternative();
 
 if (process.argv.includes('--print-terminal-hash')) {
   console.log(terminalHash(fixture));
@@ -638,6 +638,18 @@ function mutateRecord(mutate) {
   const record = structuredClone(fixture);
   mutate(record);
   return record;
+}
+
+function setClosedNoDelivery(record, issue = 40) {
+  const child = childOf(record, issue);
+  child.disposition = 'closed_no_delivery';
+  child.merged_pr = null;
+  child.ci_decision = null;
+  child.release_decision = null;
+  child.closed_rationale = {
+    evidence_refs: ['docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json'],
+    reason_code: 'durable-no-delivery',
+  };
 }
 
 function expectRejection(label, record, code) {
@@ -712,6 +724,7 @@ test('canonical five-child fixture validates deterministically', () => {
   assert.deepEqual(validateClosureRecord(fixture, schema), {ok: true, code: 'OK'});
   assert.equal(fixture.terminal_hash, EXPECTED_TERMINAL_HASH);
   assert.equal(terminalHash(fixture), EXPECTED_TERMINAL_HASH);
+  assert.deepEqual(validateClosureRecord(closedNoDeliveryAlternative, schema), {ok: true, code: 'OK'}, 'the durable no-delivery alternative remains supported');
 });
 
 test('critical path 36 -> 37 -> 38 -> 39 -> 40 and the #40 breadth/receipt foundation are represented', () => {
@@ -740,8 +753,9 @@ test('canonical serialization is stable across a JSON round trip and the nonclai
   assert.equal(roundTrip.terminal_hash, EXPECTED_TERMINAL_HASH);
   assert.deepEqual(validateClosureRecord(roundTrip, schema), {ok: true, code: 'OK'});
   assert.ok(fixture.nonclaims.length >= 1);
-  assert.ok(fixture.nonclaims.some((n) => n.includes('fixture placeholders')));
-  assert.ok(fixture.nonclaims.some((n) => n.includes('neither implements, duplicates, accepts nor terminalizes issue 40 work')));
+  assert.ok(fixture.nonclaims.some((n) => n.includes('materialized record')));
+  assert.ok(fixture.nonclaims.some((n) => n.includes('current origin/main')));
+  assert.ok(fixture.nonclaims.some((n) => n.includes('5ffad599118cade30ce66264d529259f63d1bc45')));
 });
 
 // ---------------------------------------------------------------------------
@@ -785,7 +799,10 @@ test('fail-closed: missing PR-or-rationale rejects', () => {
   expectRejection('merged child without merged PR', mutateRecord((r) => { childOf(r, 36).merged_pr = null; }), 'E-R04');
   expectRejection(
     'closed-no-delivery child without rationale',
-    mutateRecord((r) => { childOf(r, 40).closed_rationale = null; }),
+    mutateRecord((r) => {
+      setClosedNoDelivery(r);
+      childOf(r, 40).closed_rationale = null;
+    }),
     'E-R04'
   );
 });
@@ -796,7 +813,10 @@ test('fail-closed: missing CI or release decision rejects', () => {
   expectRejection('released decision without tag', mutateRecord((r) => { childOf(r, 39).release_decision.tag = null; }), 'E-R05');
   expectRejection(
     'closed-no-delivery child carrying a release decision',
-    mutateRecord((r) => { childOf(r, 40).release_decision = {decision: 'no_release', tag: null, tag_sha: null}; }),
+    mutateRecord((r) => {
+      setClosedNoDelivery(r);
+      childOf(r, 40).release_decision = {decision: 'no_release', tag: null, tag_sha: null};
+    }),
     'E-R05'
   );
 });
@@ -879,14 +899,17 @@ test('receipt: the current-main replay changes exactly the canonical closure pat
     assert.fail(`expected at most one slice commit in origin/main..HEAD, found ${sliceCandidates.length}`);
   }
 
-  const baseInContract = contract.match(/base_commit_sha:\s*`?([0-9a-f]{40})`?/);
+  const requestedMainInContract = contract.match(/requested_main_sha:\s*`?([0-9a-f]{40})`?/);
   const originInContract = contract.match(/origin_main_sha:\s*`?([0-9a-f]{40})`?/);
+  const repairParentInContract = contract.match(/repair_parent_sha:\s*`?([0-9a-f]{40})`?/);
   const evidenceInContract = contract.match(/evidence_terminal_hash:\s*`?([0-9a-f]{64})`?/);
-  assert.ok(baseInContract, 'contract must record base_commit_sha');
+  assert.ok(requestedMainInContract, 'contract must record requested_main_sha');
   assert.ok(originInContract, 'contract must record origin_main_sha');
+  assert.ok(repairParentInContract, 'contract must record repair_parent_sha');
   assert.ok(evidenceInContract, 'contract must record evidence_terminal_hash');
-  assert.equal(baseInContract[1], sliceBase, 'contract base_commit_sha must equal the verified slice base');
+  assert.equal(requestedMainInContract[1], git(['rev-parse', 'main']), 'contract requested_main_sha must equal the exact local main identity');
   assert.equal(originInContract[1], originMain, 'contract origin_main_sha must equal the live origin/main');
+  assert.equal(repairParentInContract[1], sliceBase, 'contract repair_parent_sha must equal the verified finalizer parent');
   assert.equal(evidenceInContract[1], EXPECTED_TERMINAL_HASH, 'contract evidence_terminal_hash must equal the canonical fixture terminal hash');
 
   console.log(`[epic-35-closure receipt] base_sha=${sliceBase} head=${JSON.stringify(receipt)} changed_paths=${JSON.stringify(ALLOWED_PATHS)}`);

@@ -68,8 +68,8 @@ const VALID_PATH = 'fixtures/evidence/progressive-analysis/epic-35-exact-ci-vali
 const MISMATCH_PATH = 'fixtures/evidence/progressive-analysis/epic-35-exact-ci-mismatch.json';
 const TEST_PATH = 'tests/verify-progressive-analysis-exact-ci.test.mjs';
 const ALLOWED_PATHS = [
-  'SOURCE-MAP.json',
   'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
+  'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
   'docs/evidence/progressive-analysis/epic-35-close-comment.template.md',
   'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
   'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
@@ -81,7 +81,6 @@ const ALLOWED_PATHS = [
   'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
-  'package.json',
   'scripts/prepare-progressive-analysis-release-readback.mjs',
   'scripts/verify-progressive-analysis-closure.mjs',
   'scripts/verify-progressive-analysis-exact-ci.mjs',
@@ -93,11 +92,11 @@ const ALLOWED_PATHS = [
   'tests/verify-progressive-analysis-exact-ci.test.mjs',
 ].sort();
 
-const EXPECTED_TERMINAL_HASH = 'd60a6ab9e0cd409c183d0e938a9eab71dafa07f36ddea972af7e8c8a994a6c61';
-const MISMATCH_TERMINAL_HASH = '74b2fd6d67345e681ba707cebca4eb8ba109602cc305ee09bb2e91c89ce5f75f';
-const MISMATCH_CHILD_36_HEAD = '3636'.repeat(10);
-const FIXTURE_BASE_SHA = '35'.repeat(20);
-const FIXTURE_HEAD_SHA = 'b1f4d0c7a794a159ff468820d62559231c5d8d2b';
+const EXPECTED_TERMINAL_HASH = '8ec63e6523b8b1c1b55ef3282f676925f303b7d385ca0932b8293fe9b8e1be6b';
+const MISMATCH_TERMINAL_HASH = '976252115d823a9f9c2ac68148c3c7579c93a28df522d17d14730aa898e671c3';
+const MISMATCH_CHILD_36_HEAD = '5ffad599118cade30ce66264d529259f63d1bc45';
+const FIXTURE_BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const FIXTURE_HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
 
 const validText = await readFile(VALID_PATH, 'utf8');
 const validRecord = JSON.parse(validText);
@@ -114,6 +113,19 @@ function mutateValid(mutate) {
   const record = structuredClone(validRecord);
   mutate(record);
   return record;
+}
+
+function setClosedNoDelivery(record, issue = 40) {
+  const child = childOf(record, issue);
+  child.disposition = 'closed_no_delivery';
+  child.merged_pr = null;
+  child.release_decision = null;
+  child.closed_rationale = {
+    evidence_refs: ['docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json'],
+    reason_code: 'durable-no-delivery',
+  };
+  child.exact_ci.head_sha = record.head_sha;
+  child.exact_ci.main_sha = record.base_sha;
 }
 
 function expectRejection(label, record, code) {
@@ -139,7 +151,7 @@ test('the mismatch fixture is rejected by the lineage rule while its digest stay
   assert.equal(result.ok, false, 'the mismatch fixture must be rejected');
   assert.equal(result.code, 'E-R02', 'the denial is the exact-CI lineage rule, not the digest rule');
   assert.equal(result.path, '$.children[36].exact_ci.head_sha');
-  assert.equal(result.detail, `child 36 exact CI head ${MISMATCH_CHILD_36_HEAD} must equal the record head ${FIXTURE_HEAD_SHA} (exact-head CI)`);
+  assert.equal(result.detail, `child 36 exact CI head ${MISMATCH_CHILD_36_HEAD} must equal its protected PR head ${childOf(validRecord, 36).merged_pr.head_sha}`);
   assert.equal(mismatchRecord.terminal_hash, MISMATCH_TERMINAL_HASH, 'the fixture declares the pinned mismatch hash');
   assert.equal(terminalHash(mismatchRecord), MISMATCH_TERMINAL_HASH, 'the mismatch fixture carries a self-consistent digest, so the denial is semantic, not a digest failure');
   assert.equal(mismatchText, canonicalize(mismatchRecord) + '\n', 'on-disk bytes are the canonical serialization plus a trailing newline');
@@ -173,11 +185,11 @@ test('the receipt is byte-stable and carries the stable hash, lineage, and five 
     assert.deepEqual(child.closed_rationale, original.closed_rationale, `child ${child.child_issue} closed_rationale`);
     assert.deepEqual(child.release_decision, original.release_decision, `child ${child.child_issue} release_decision`);
     assert.deepEqual(child.evidence_refs, original.evidence_refs, `child ${child.child_issue} evidence_refs`);
-    assert.equal(child.exact_ci.head_sha, FIXTURE_HEAD_SHA, `child ${child.child_issue} exact CI is bound to the exact record head`);
-    assert.equal(child.exact_ci.main_sha, FIXTURE_BASE_SHA, `child ${child.child_issue} exact CI is bound to the exact record base`);
-    assert.equal(child.exact_ci.coverage_receipt, `cov-${child.child_issue}-exact`, `child ${child.child_issue} coverage receipt identifier is retained`);
-    assert.equal(child.exact_ci.budget_receipt, `budget-${child.child_issue}-exact`, `child ${child.child_issue} budget receipt identifier is retained`);
-    assert.equal(child.exact_ci.negative_receipt, `neg-${child.child_issue}-exact`, `child ${child.child_issue} negative receipt identifier is retained`);
+    assert.equal(child.exact_ci.head_sha, child.merged_pr.head_sha, `child ${child.child_issue} exact CI is bound to its protected PR head`);
+    assert.equal(child.exact_ci.main_sha, child.merged_pr.merge_sha, `child ${child.child_issue} exact CI is bound to its protected merge`);
+    assert.equal(child.exact_ci.coverage_receipt, `child-${child.child_issue}-deterministic-fixture-receipt`, `child ${child.child_issue} coverage receipt identifier is retained`);
+    assert.equal(child.exact_ci.budget_receipt, `child-${child.child_issue}-budget-receipt`, `child ${child.child_issue} budget receipt identifier is retained`);
+    assert.equal(child.exact_ci.negative_receipt, `child-${child.child_issue}-fail-closed-negative-probe`, `child ${child.child_issue} negative receipt identifier is retained`);
   }
 });
 
@@ -186,10 +198,10 @@ test('the receipt is byte-stable and carries the stable hash, lineage, and five 
 // no-delivery child
 // ---------------------------------------------------------------------------
 
-test('the protected merged children and the durable no-delivery child are represented with distinct statuses', () => {
+test('the live exact-state receipt represents all five protected merged children', () => {
   const receipt = buildReceipt(validRecord, true);
-  assert.deepEqual([...new Set(receipt.children.map((child) => child.disposition))].sort(), ['closed_no_delivery', 'merged'], 'the two delivery states are both present and distinct');
-  for (const issue of [36, 37, 38, 39]) {
+  assert.deepEqual([...new Set(receipt.children.map((child) => child.disposition))], ['merged']);
+  for (const issue of [36, 37, 38, 39, 40]) {
     const child = childOf(receipt, issue);
     assert.equal(child.disposition, 'merged');
     assert.ok(child.merged_pr !== null, `child ${issue} carries the merged PR`);
@@ -198,13 +210,10 @@ test('the protected merged children and the durable no-delivery child are repres
     assert.equal(child.release_decision.decision, 'released', `child ${issue} was released`);
     assert.ok(child.release_decision.tag !== null, `child ${issue} release carries the tag`);
     assert.ok(child.release_decision.tag_sha !== null, `child ${issue} release carries the tag SHA`);
-    assert.equal(child.release_decision.public_readback, `readback-${child.release_decision.tag}`, `child ${issue} public readback is recorded when released`);
+    assert.equal(child.release_decision.public_readback, `github-release-${child.release_decision.tag}-anonymous-readback`, `child ${issue} public readback is recorded when released`);
   }
-  const child40 = childOf(receipt, 40);
-  assert.equal(child40.disposition, 'closed_no_delivery');
-  assert.equal(child40.merged_pr, null, 'child 40 carries no merged PR');
-  assert.equal(child40.release_decision, null, 'child 40 carries no release decision');
-  assert.ok(child40.closed_rationale !== null, 'child 40 carries the durable closed rationale');
+  assert.equal(childOf(receipt, 40).merged_pr.number, 123);
+  assert.equal(childOf(receipt, 40).release_decision.tag, 'v0.25.0');
 
   const noRelease = mutateValid((r) => {
     childOf(r, 39).release_decision = {decision: 'no_release', tag: null, tag_sha: null, public_readback: null};
@@ -219,22 +228,29 @@ test('the protected merged children and the durable no-delivery child are repres
 // ---------------------------------------------------------------------------
 
 test('the durable no-delivery rationale is accepted only when explicitly typed and complete', () => {
-  const rationale = childOf(validRecord, 40).closed_rationale;
+  const closedRecord = mutateValid((record) => setClosedNoDelivery(record));
+  closedRecord.terminal_hash = terminalHash(closedRecord);
+  const mutateClosed = (change) => {
+    const record = structuredClone(closedRecord);
+    change(record);
+    return record;
+  };
+  const rationale = childOf(closedRecord, 40).closed_rationale;
   assert.equal(typeof rationale, 'object', 'the rationale is a structured object, not prose');
   assert.ok(Array.isArray(rationale.evidence_refs) && rationale.evidence_refs.length >= 1, 'the rationale carries at least one evidence ref');
   assert.match(rationale.reason_code, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'the rationale carries a well-formed reason code');
-  assert.deepEqual(validateFixtureFile(validText), {ok: true, code: 'OK'}, 'the typed, complete rationale on an otherwise canonical record is accepted');
+  assert.deepEqual(validateFixtureFile(canonicalize(closedRecord)), {ok: true, code: 'OK'}, 'the typed, complete rationale is accepted as the alternative disposition');
 
-  expectRejection('untyped prose rationale', mutateValid((r) => {
+  expectRejection('untyped prose rationale', mutateClosed((r) => {
     childOf(r, 40).closed_rationale = 'closed because the controller state receipt is nonterminal';
   }), 'E-SHAPE');
-  expectRejection('rationale missing the reason code', mutateValid((r) => {
+  expectRejection('rationale missing the reason code', mutateClosed((r) => {
     delete childOf(r, 40).closed_rationale.reason_code;
   }), 'E-SHAPE');
-  expectRejection('rationale without evidence refs', mutateValid((r) => {
+  expectRejection('rationale without evidence refs', mutateClosed((r) => {
     childOf(r, 40).closed_rationale.evidence_refs = [];
   }), 'E-SHAPE');
-  expectRejection('malformed reason code', mutateValid((r) => {
+  expectRejection('malformed reason code', mutateClosed((r) => {
     childOf(r, 40).closed_rationale.reason_code = 'Not A Code';
   }), 'E-SHAPE');
 });
@@ -258,10 +274,10 @@ test('fail-closed: the child set must be exactly {36..40} once each', () => {
 });
 
 test('fail-closed: exact-CI lineage mismatches and scope drift are rejected', () => {
-  expectRejection('child exact CI head differs from the record head', mutateValid((r) => {
+  expectRejection('child exact CI head differs from its protected PR head', mutateValid((r) => {
     childOf(r, 36).exact_ci.head_sha = MISMATCH_CHILD_36_HEAD;
   }), 'E-R02');
-  expectRejection('child exact CI main differs from the record base', mutateValid((r) => {
+  expectRejection('child exact CI main differs from its protected merge', mutateValid((r) => {
     childOf(r, 37).exact_ci.main_sha = '3434'.repeat(10);
   }), 'E-R02');
   expectRejection('floating ref instead of an exact head SHA', mutateValid((r) => {
@@ -373,18 +389,24 @@ test('fail-closed: disposition pairing violations are rejected', () => {
     };
   }), 'E-R06');
   expectRejection('closed-no-delivery child carrying a merged PR', mutateValid((r) => {
-    childOf(r, 40).merged_pr = {
+    const child = childOf(r, 40);
+    setClosedNoDelivery(r);
+    child.merged_pr = {
       base_ref: 'main',
       head_sha: '3636'.repeat(10),
       merge_sha: '3610'.repeat(10),
       number: 5,
       protected: true,
     };
+    child.exact_ci.head_sha = child.merged_pr.head_sha;
+    child.exact_ci.main_sha = child.merged_pr.merge_sha;
   }), 'E-R06');
   expectRejection('closed-no-delivery child without the durable rationale', mutateValid((r) => {
+    setClosedNoDelivery(r);
     childOf(r, 40).closed_rationale = null;
   }), 'E-R06');
   expectRejection('closed-no-delivery child carrying a release decision', mutateValid((r) => {
+    setClosedNoDelivery(r);
     childOf(r, 40).release_decision = {
       decision: 'no_release',
       tag: null,
@@ -562,7 +584,7 @@ test('run(): the valid fixture yields exit 0 with the canonical receipt; the mis
   assert.equal(mismatchEnvelope.ok, false);
   assert.equal(mismatchEnvelope.code, 'E-R02');
   assert.equal(mismatchEnvelope.path, '$.children[36].exact_ci.head_sha');
-  assert.equal(mismatchEnvelope.detail, `child 36 exact CI head ${MISMATCH_CHILD_36_HEAD} must equal the record head ${FIXTURE_HEAD_SHA} (exact-head CI)`);
+  assert.equal(mismatchEnvelope.detail, `child 36 exact CI head ${MISMATCH_CHILD_36_HEAD} must equal its protected PR head ${childOf(validRecord, 36).merged_pr.head_sha}`);
   assert.equal(mismatchEnvelope.terminal_hash, MISMATCH_TERMINAL_HASH, 'the envelope reports the digest the fixture itself declared');
   assert.equal(mismatchEnvelope.dry_run, false);
 });

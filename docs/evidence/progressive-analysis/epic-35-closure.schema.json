@@ -18,7 +18,7 @@
   ],
   "properties": {
     "base_sha": {
-      "description": "SHA-256 commit identifier (40 lowercase hex) of the immutable base at which the slice was cut. For the origin/main lineage this is the merge base.",
+      "description": "Commit identifier (40 lowercase hex) of the exact requested local-main base. It is identity-bound independently from the current origin/main integration head.",
       "type": "string",
       "pattern": "^[0-9a-f]{40}$"
     },
@@ -85,7 +85,7 @@
     },
     "epic_issue": { "const": 35 },
     "head_sha": {
-      "description": "SHA-256 commit identifier (40 lowercase hex) of the slice head at which the record is evaluated.",
+      "description": "Commit identifier (40 lowercase hex) of the exact current origin/main product-integration head. Closure-tooling commits are not substituted for this identity.",
       "type": "string",
       "pattern": "^[0-9a-f]{40}$"
     },
@@ -139,7 +139,7 @@
       "properties": {
         "child_issue": { "$ref": "#/$defs/child_issue" },
         "ci_decision": {
-          "description": "For a merged child: the exact-head and exact-main CI pair, both concluded success. For a closed-no-delivery child: null (semantic rule R05).",
+          "description": "For a merged child: the successful exact-head and exact-main CI run pair joined through merged_pr to the protected PR head and merge SHA. For a closed-no-delivery child: null (semantic rule R05).",
           "type": ["object", "null"],
           "additionalProperties": false,
           "required": [

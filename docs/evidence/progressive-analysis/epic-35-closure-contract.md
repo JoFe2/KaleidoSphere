@@ -11,13 +11,27 @@ evidence.
 
 - Defines the deterministic, fail-closed shape of the closure-evidence record
   that the controller consumes to decide whether epic #35 may be closed.
-- Defines no product behavior and implements nothing. It does not implement,
-  duplicate, accept, or terminalize child issue #40 work.
+- Defines no product behavior and implements nothing. It records the
+  independently read protected merge, exact CI, release, and public-readback
+  evidence for child #40 without performing or authorizing that work.
 - The record is reference-only: identifiers, SHAs, CI run ids, release tags,
   repository-relative evidence paths, reason codes, and explicit nonclaim
   prose. It never embeds source row material, credentials, or query text.
 - A completion claim supported only by issue body or comment prose is not
   admissible evidence; each child must carry structured delivery state.
+
+## Exact identity boundary
+
+- `base_sha` is the requested local `main` identity
+  `173e2f7e19049a705bcdaf0269c33a5bd7f70206`.
+- `head_sha` is the independently read current `origin/main` product-integration
+  identity `d6b9adb5be1e475cdba71c548a71fc900aa3fdff`.
+- The top-level range is not a substitute for per-child CI lineage. Each
+  exact-head run binds its protected PR head and each exact-main run binds its
+  protected merge SHA.
+- Closure-tooling commit `5ffad599118cade30ce66264d529259f63d1bc45`
+  is deliberately excluded as a product-integration head. It is retained as a
+  fail-closed stale-head and historical path-boundary regression subject.
 
 ## Record shape and canonical field ordering
 
@@ -168,29 +182,39 @@ Every category below must reject a record that is otherwise canonical:
 | terminal hash mismatch | `E-R07` |
 | unknown field at any depth | `E-SHAPE` (`additionalProperties`) |
 
-## Fixture and nonclaims
+## Materialized fixture and nonclaims
 
-The focused test carries the canonical five-child fixture. All PR numbers, CI
-run ids, commit SHAs, and tag anchor SHAs in the fixture are concrete
-placeholder values accepted only as fixture values; the fixture's explicit
-`nonclaims` state that it claims no live merge, CI, or release state and does
-not close epic #35 or any child. The critical path `36 -> 37 -> 38 -> 39 ->
-40` and the #40 breadth/receipt foundation are represented in the fixture and
-asserted by the tests.
+`fixtures/evidence/progressive-analysis/epic-35-closure-valid.json` is the
+canonical materialized record. Its provider identifiers are joined to
+`docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json`: all five children
+are protected merged deliveries, and child #40 is PR #123 with successful
+exact-head run `33201128462`, successful exact-main run `33201173088`, and
+released disposition `v0.25.0` at
+`5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6`. The deterministic
+closed/no-delivery branch remains a contract alternative only; it is not the
+materialized child #40 state. The critical path `36 -> 37 -> 38 -> 39 -> 40`,
+the #40 breadth/receipt foundation, and remaining nonclaims are asserted by
+the focused tests.
 
-## Slice receipt
+## Finalizer slice receipt
 
-- task_id: `CLOSURE-KS35-CURRENT-MAIN-REPLAY-01`
-- base_commit_sha: `d6b9adb5be1e475cdba71c548a71fc900aa3fdff`
+- task_id: `CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01`
+- requested_main_sha: `173e2f7e19049a705bcdaf0269c33a5bd7f70206`
 - origin_main_sha: `d6b9adb5be1e475cdba71c548a71fc900aa3fdff`
-- evidence_terminal_hash: `7433474d0964db5baf015461486c4ebf6a0fb26f8fff6a530a40413d82426e1e`
-- head_commit_sha: the unique commit in `origin/main..HEAD` whose diff names
-  exactly the allowed paths; computed and printed by the focused test at
-  verification (the slice commit's own tree SHA is not recordable in this
-  file without self-reference, so the head binding is the evidence terminal
-  hash above plus the verified slice commit).
-- changed_paths: the canonical current-main replay paths and nothing else:
-  `SOURCE-MAP.json`, `docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json`,
+- repair_parent_sha: `5ffad599118cade30ce66264d529259f63d1bc45`
+- evidence_terminal_hash: `bf303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724`
+- rejected_artifact: local
+  `main...5ffad599118cade30ce66264d529259f63d1bc45` changes 39 paths,
+  while its declared boundary admits only
+  `closure-audits/CLOSURE-KS35-ROOT-DELIVERY-01/**`; that directory is absent
+  and zero changed paths are admitted. The artifact is rejected, not
+  grandfathered.
+- finalizer_head_commit_sha: the unique child of `repair_parent_sha` whose
+  diff names exactly the finalizer paths below; computed by the focused tests
+  after commit to avoid a self-reference.
+- changed_paths: the finalizer allowlist and nothing else:
+  `docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json`,
+  `docs/evidence/conveyor/terra-ks-35-root-qs-01.json`,
   `docs/evidence/progressive-analysis/epic-35-close-comment.template.md`,
   `docs/evidence/progressive-analysis/epic-35-closure-contract.md`,
   `docs/evidence/progressive-analysis/epic-35-closure.schema.json`,
@@ -202,7 +226,7 @@ asserted by the tests.
   `fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json`,
   `fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json`,
   `fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json`,
-  `package.json`, `scripts/prepare-progressive-analysis-release-readback.mjs`,
+  `scripts/prepare-progressive-analysis-release-readback.mjs`,
   `scripts/verify-progressive-analysis-closure.mjs`,
   `scripts/verify-progressive-analysis-exact-ci.mjs`,
   `tests/epic-35-closure-fixture.test.mjs`,
@@ -215,6 +239,14 @@ asserted by the tests.
 Verification:
 
 ```sh
-node --test tests/epic-35-closure-schema.test.mjs
+npm run test:epic-35-closure
+npm test
+npm run test:security
+npm run test:source
 git diff --check origin/main...HEAD
 ```
+
+The local container's unmitigated Node 24 isolate startup may terminate with
+the reviewed V8 `SetPermissions` errno 12 / exit 133 infrastructure failure.
+`NODE_OPTIONS=--jitless` is the local execution workaround; authoritative
+pinned-Node gates remain the controller's responsibility.

@@ -1,20 +1,49 @@
-// Synthetic, dependency-free tests for the final epic #35 local delivery /
-// closure packet template. No provider, network, repository fixture, or live
-// release state is consulted. The validator below is deliberately local and
-// fail-closed so the acceptance cases remain executable and auditable.
+// Dependency-free tests for the materialized epic #35 delivery packet and its
+// synthetic fail-closed variants. No network or mutable provider state is
+// consulted; all joins use checked-in evidence and immutable git identities.
 
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
 const PACKET_TEMPLATE = 'docs/evidence/progressive-analysis/epic-35-delivery-packet.template.json';
 const COMMENT_TEMPLATE = 'docs/evidence/progressive-analysis/epic-35-close-comment.template.md';
+const CLOSURE_FIXTURE = 'fixtures/evidence/progressive-analysis/epic-35-closure-valid.json';
+const EXACT_CI_FIXTURE = 'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json';
+const RELEASE_FIXTURE = 'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json';
+const STATE_RECEIPT = 'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json';
+const LOCAL_MAIN_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const INTEGRATION_HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
+const REJECTED_ARTIFACT_SHA = '5ffad599118cade30ce66264d529259f63d1bc45';
+const REJECTED_ALLOWED_PREFIX = 'closure-audits/CLOSURE-KS35-ROOT-DELIVERY-01/';
+const MATERIALIZED_TERMINAL_HASH = '47eca1080db5c41b1960728f3e30d10bb0feb0829429701e7cb81baa9091342f';
 const ALLOWED_PATHS = [
+  'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
+  'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
   COMMENT_TEMPLATE,
+  'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
+  'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
   PACKET_TEMPLATE,
+  'fixtures/evidence/progressive-analysis/epic-35-closure-forged-receipt.json',
+  'fixtures/evidence/progressive-analysis/epic-35-closure-missing-foundation.json',
+  'fixtures/evidence/progressive-analysis/epic-35-closure-valid.json',
+  'fixtures/evidence/progressive-analysis/epic-35-exact-ci-mismatch.json',
+  'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
+  'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
+  'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
+  'scripts/prepare-progressive-analysis-release-readback.mjs',
+  'scripts/verify-progressive-analysis-closure.mjs',
+  'scripts/verify-progressive-analysis-exact-ci.mjs',
+  'tests/epic-35-closure-fixture.test.mjs',
+  'tests/epic-35-closure-schema.test.mjs',
   'tests/epic-35-delivery-packet.test.mjs',
+  'tests/prepare-progressive-analysis-release-readback.test.mjs',
+  'tests/verify-progressive-analysis-closure.test.mjs',
+  'tests/verify-progressive-analysis-exact-ci.test.mjs',
 ].sort();
+const materializedPacket = JSON.parse(await readFile(PACKET_TEMPLATE, 'utf8'));
 const CHILDREN = [36, 37, 38, 39, 40];
 const DEPENDENCIES = {
   36: [],
@@ -37,6 +66,7 @@ const terminalHash = (packet) => {
 };
 const childOf = (packet, issue) => packet.children.find((child) => child.child_issue === issue);
 const clone = (value) => structuredClone(value);
+const git = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 const ref = (issue, name) => `fixtures/synthetic/epic-35/child-${issue}/${name}.json`;
 const noReleaseRationaleRef = 'fixtures/synthetic/epic-35/no-release-rationale.json';
 const reverseKeys = (value) => {
@@ -131,7 +161,7 @@ function buildSyntheticPacket({ released = true } = {}) {
     { evidence_ref: noReleaseRationaleRef, kind: 'decision', owner_issue: 35 },
   ];
   const packet = {
-    artifact_kind: 'epic-35-local-delivery-closure-packet',
+    artifact_kind: 'epic-35-materialized-delivery-closure-packet',
     children,
     claim_boundary: {
       allowed: 'Only claims joined to exact provider identifiers, SHAs, decisions, and repository-relative evidence refs in this packet.',
@@ -202,9 +232,9 @@ function buildSyntheticPacket({ released = true } = {}) {
       base_sha: baseSha,
       changed_paths: ALLOWED_PATHS,
       diff_check: 'git diff --check origin/main...HEAD',
-      focused_test: 'node --test tests/epic-35-delivery-packet.test.mjs',
+      focused_test: 'npm run test:epic-35-closure',
       head_sha: reviewedHeadSha,
-      task_id: 'QWEN-KS-35-DELIVERY-PACKET-06',
+      task_id: 'CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01',
     },
   };
   packet.external_actions.forEach((action) => {
@@ -414,6 +444,18 @@ function validatePacket(packet) {
   return { ok: true, code: 'OK' };
 }
 
+function validateMaterializedPacket(packet, sourceText = canonicalize(packet)) {
+  const packetResult = validatePacket(packet);
+  if (!packetResult.ok) return packetResult;
+  if (packet.artifact_kind !== 'epic-35-materialized-delivery-closure-packet') return failure('E-MATERIALIZATION', '$.artifact_kind');
+  if (packet.work_receipt.task_id !== 'CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01') return failure('E-MATERIALIZATION', '$.work_receipt.task_id');
+  if (canonicalize(packet.work_receipt.changed_paths) !== canonicalize(ALLOWED_PATHS)) return failure('E-PATH', '$.work_receipt.changed_paths');
+  if (packet.lineage.base_sha !== LOCAL_MAIN_SHA || packet.lineage.head_sha !== INTEGRATION_HEAD_SHA) return failure('E-IDENTITY', '$.lineage');
+  if (packet.children.some((child) => child.disposition !== 'merged')) return failure('E-STATE', '$.children');
+  if (/<[^>\n]+>|\{\{[^}\n]+\}\}/.test(sourceText)) return failure('E-MATERIALIZATION', '$');
+  return { ok: true, code: 'OK' };
+}
+
 function expectRejected(label, packet, code) {
   const result = validatePacket(packet);
   assert.equal(result.ok, false, `${label} must fail closed`);
@@ -428,21 +470,117 @@ function assertCanonicalKeys(value, path = '$') {
   }
 }
 
-test('the template names every child, exact lineage fields, evidence joins, and the allowed work receipt', async () => {
+test('the allowlisted packet path contains one canonical materialized exact-state packet', async () => {
   const template = JSON.parse(await readFile(PACKET_TEMPLATE, 'utf8'));
   const comment = await readFile(COMMENT_TEMPLATE, 'utf8');
   assertCanonicalKeys(template);
+  assert.deepEqual(validateMaterializedPacket(template, await readFile(PACKET_TEMPLATE, 'utf8')), { ok: true, code: 'OK' });
+  assert.equal(template.terminal_hash, MATERIALIZED_TERMINAL_HASH);
+  assert.equal(template.terminal_hash, terminalHash(template));
   assert.deepEqual(template.children.map((child) => child.child_issue), CHILDREN);
   assert.deepEqual(template.epic.critical_path, CHILDREN);
   assert.deepEqual(template.work_receipt.changed_paths, ALLOWED_PATHS);
-  assert.equal(template.work_receipt.task_id, 'QWEN-KS-35-DELIVERY-PACKET-06');
+  assert.equal(template.work_receipt.task_id, 'CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01');
   assert.equal(template.lineage.base_sha, template.work_receipt.base_sha);
   assert.equal(template.lineage.head_sha, template.work_receipt.head_sha);
+  assert.equal(template.lineage.base_sha, LOCAL_MAIN_SHA);
+  assert.equal(template.lineage.head_sha, INTEGRATION_HEAD_SHA);
+  assert.doesNotMatch(await readFile(PACKET_TEMPLATE, 'utf8'), /<[^>\n]+>|\{\{[^}\n]+\}\}/);
   assert.match(comment, /exact-head CI/);
   assert.match(comment, /exact-main CI/);
-  assert.match(comment, /external_actions/);
-  assert.match(comment, /No-release branch/);
-  assert.match(comment, /causal overclaim/);
+  assert.match(comment, /External readback receipts/);
+  assert.match(comment, /Release\/defer disposition/);
+  assert.match(comment, /Reviewed fail-closed findings/);
+  assert.match(comment, new RegExp(MATERIALIZED_TERMINAL_HASH));
+  assert.doesNotMatch(comment, /<[^>\n]+>|\{\{[^}\n]+\}\}/);
+
+  for (const child of template.children) {
+    const fixtureText = await readFile(child.evidence.deterministic_fixture.evidence_ref, 'utf8');
+    assert.equal(sha256(fixtureText), child.evidence.deterministic_fixture.sha256, `child ${child.child_issue} deterministic evidence digest`);
+  }
+});
+
+test('closure, exact-CI, release, packet, and state receipts agree for every child including #40', async () => {
+  const [closure, exactCi, release, state] = await Promise.all(
+    [CLOSURE_FIXTURE, EXACT_CI_FIXTURE, RELEASE_FIXTURE, STATE_RECEIPT].map(async (path) => JSON.parse(await readFile(path, 'utf8')))
+  );
+  assert.equal(closure.base_sha, LOCAL_MAIN_SHA);
+  assert.equal(closure.head_sha, INTEGRATION_HEAD_SHA);
+  assert.equal(exactCi.base_sha, LOCAL_MAIN_SHA);
+  assert.equal(exactCi.head_sha, INTEGRATION_HEAD_SHA);
+  assert.equal(release.base_sha, LOCAL_MAIN_SHA);
+  assert.equal(release.head_sha, INTEGRATION_HEAD_SHA);
+  assert.equal(state.repository_snapshot.requested_local_main_sha, LOCAL_MAIN_SHA);
+  assert.equal(state.repository_snapshot.current_main_integration_head_sha, INTEGRATION_HEAD_SHA);
+
+  for (const issue of CHILDREN) {
+    const packetChild = childOf(materializedPacket, issue);
+    const closureChild = childOf(closure, issue);
+    const exactChild = childOf(exactCi, issue);
+    const releaseChild = childOf(release, issue);
+    assert.equal(packetChild.disposition, 'merged');
+    assert.equal(closureChild.disposition, 'merged');
+    assert.equal(exactChild.disposition, 'merged');
+    assert.equal(releaseChild.disposition, 'merged');
+    assert.deepEqual(packetChild.merged_pr, closureChild.merged_pr);
+    assert.deepEqual(exactChild.merged_pr, closureChild.merged_pr);
+    assert.deepEqual(releaseChild.merged_pr, closureChild.merged_pr);
+    assert.equal(packetChild.ci.exact_head.run_id, String(exactChild.exact_ci.exact_head_check_id));
+    assert.equal(packetChild.ci.exact_main.run_id, String(exactChild.exact_ci.exact_main_check_id));
+    assert.equal(packetChild.ci.exact_head.sha, exactChild.exact_ci.exact_head_sha);
+    assert.equal(packetChild.ci.exact_main.sha, exactChild.exact_ci.exact_main_sha);
+    assert.equal(packetChild.release_decision.decision, releaseChild.release_decision.decision);
+    assert.equal(packetChild.release_decision.tag, releaseChild.release_decision.tag);
+    assert.equal(packetChild.release_decision.tag_sha, releaseChild.release_decision.tag_sha);
+
+    const stateChild = state.children[String(issue)];
+    const statePr = issue === 40 ? stateChild.accepted_chain_readback.protected_merged_pull_request : stateChild.feature_delivery;
+    const stateHeadCi = issue === 40 ? stateChild.accepted_chain_readback.exact_head_ci : stateChild.feature_delivery.exact_head_ci;
+    const stateMainCi = issue === 40 ? stateChild.accepted_chain_readback.exact_main_ci : stateChild.feature_delivery.exact_main_ci;
+    const stateRelease = issue === 40 ? stateChild.accepted_chain_readback.public_release_readback : stateChild.release_delivery.release;
+    assert.equal(packetChild.merged_pr.number, statePr.pull_number);
+    assert.equal(packetChild.merged_pr.head_sha, statePr.head_sha);
+    assert.equal(packetChild.merged_pr.merge_sha, statePr.merge_sha);
+    assert.equal(packetChild.ci.exact_head.run_id, String(stateHeadCi.run_id));
+    assert.equal(packetChild.ci.exact_main.run_id, String(stateMainCi.run_id));
+    assert.equal(packetChild.release_decision.tag, stateRelease.tag);
+    assert.equal(packetChild.release_decision.tag_sha, stateRelease.target_sha);
+  }
+  assert.equal(state.children['40'].completion_claim, true);
+  assert.equal(state.children['40'].durable_closed_no_delivery_rationale, null);
+
+  const inconsistent = clone(materializedPacket);
+  const child40 = childOf(inconsistent, 40);
+  child40.disposition = 'closed_no_delivery';
+  child40.merged_pr = null;
+  child40.ci = null;
+  child40.release_decision = null;
+  child40.closed_rationale = {
+    evidence_refs: [STATE_RECEIPT],
+    reason_code: 'child-40-nonterminal',
+    statement: 'Child 40 is declared to have no delivered increment.',
+  };
+  inconsistent.terminal_hash = terminalHash(inconsistent);
+  assert.equal(validateMaterializedPacket(inconsistent).code, 'E-STATE', 'a child #40 disposition mismatch must block closure');
+});
+
+test('the immutable reviewed artifact fails its historical path and identity boundaries', () => {
+  const changedPaths = git(['diff', '--name-only', `${LOCAL_MAIN_SHA}...${REJECTED_ARTIFACT_SHA}`]).split('\n').filter(Boolean);
+  const admitted = changedPaths.filter((path) => path.startsWith(REJECTED_ALLOWED_PREFIX));
+  const allowedTree = git(['ls-tree', '-r', '--name-only', REJECTED_ARTIFACT_SHA, '--', REJECTED_ALLOWED_PREFIX]);
+  assert.equal(git(['rev-parse', 'main']), LOCAL_MAIN_SHA);
+  assert.equal(git(['rev-parse', `${REJECTED_ARTIFACT_SHA}^`]), INTEGRATION_HEAD_SHA);
+  assert.notEqual(LOCAL_MAIN_SHA, INTEGRATION_HEAD_SHA);
+  assert.equal(changedPaths.length, 39);
+  assert.deepEqual(admitted, []);
+  assert.equal(allowedTree, '', 'the declared closure-audit directory must be absent from the reviewed artifact');
+
+  const stale = clone(materializedPacket);
+  stale.lineage.head_sha = REJECTED_ARTIFACT_SHA;
+  stale.work_receipt.head_sha = REJECTED_ARTIFACT_SHA;
+  stale.terminal_hash = terminalHash(stale);
+  assert.equal(validatePacket(stale).code, 'OK', 'internal equality alone does not establish the requested identity');
+  assert.equal(validateMaterializedPacket(stale).code, 'E-IDENTITY', 'the rejected tooling head must fail the identity-bound materialized check');
 });
 
 test('a fully populated synthetic packet is canonical, joins every child receipt, and is valid', () => {

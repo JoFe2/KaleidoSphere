@@ -59,8 +59,8 @@ const MISSING_PATH = 'fixtures/evidence/progressive-analysis/epic-35-closure-mis
 const FORGED_PATH = 'fixtures/evidence/progressive-analysis/epic-35-closure-forged-receipt.json';
 const TEST_PATH = 'tests/verify-progressive-analysis-closure.test.mjs';
 const ALLOWED_PATHS = [
-  'SOURCE-MAP.json',
   'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
+  'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
   'docs/evidence/progressive-analysis/epic-35-close-comment.template.md',
   'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
   'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
@@ -72,7 +72,6 @@ const ALLOWED_PATHS = [
   'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
   'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
-  'package.json',
   'scripts/prepare-progressive-analysis-release-readback.mjs',
   'scripts/verify-progressive-analysis-closure.mjs',
   'scripts/verify-progressive-analysis-exact-ci.mjs',
@@ -84,11 +83,11 @@ const ALLOWED_PATHS = [
   'tests/verify-progressive-analysis-exact-ci.test.mjs',
 ].sort();
 
-const EXPECTED_TERMINAL_HASH = '7433474d0964db5baf015461486c4ebf6a0fb26f8fff6a530a40413d82426e1e';
-const MISSING_FOUNDATION_HASH = '27a4820b0672e26647d56989da228574fd83d9dde5fc4f2343fa9b4314773903';
-const FORGED_RECEIPT_HASH = '0433474d0964db5baf015461486c4ebf6a0fb26f8fff6a530a40413d82426e1e';
-const FIXTURE_BASE_SHA = '35'.repeat(20);
-const FIXTURE_HEAD_SHA = '3540'.repeat(10);
+const EXPECTED_TERMINAL_HASH = 'bf303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724';
+const MISSING_FOUNDATION_HASH = 'f5b5e745e3daa3bd79dfaf3086e1c6084841a0427c66b03a45f7221d73f7b321';
+const FORGED_RECEIPT_HASH = '0f303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724';
+const FIXTURE_BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const FIXTURE_HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
 
 const schema = JSON.parse(await readFile(SCHEMA_PATH, 'utf8'));
 const validText = await readFile(VALID_PATH, 'utf8');
@@ -104,6 +103,18 @@ function mutateValid(mutate) {
   const record = structuredClone(validRecord);
   mutate(record);
   return record;
+}
+
+function setClosedNoDelivery(record, issue = 40) {
+  const child = childOf(record, issue);
+  child.disposition = 'closed_no_delivery';
+  child.merged_pr = null;
+  child.ci_decision = null;
+  child.release_decision = null;
+  child.closed_rationale = {
+    evidence_refs: ['docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json'],
+    reason_code: 'durable-no-delivery',
+  };
 }
 
 function expectRejection(label, record, code) {
@@ -163,23 +174,30 @@ test('the receipt is byte-stable and carries the stable hash, lineage, and five 
 // and complete
 // ---------------------------------------------------------------------------
 
-test('the durable no-delivery rationale is accepted only when explicitly typed and complete', () => {
-  const rationale = childOf(validRecord, 40).closed_rationale;
+test('the durable no-delivery alternative is accepted only when explicitly typed and complete', () => {
+  const closedRecord = mutateValid((record) => setClosedNoDelivery(record));
+  closedRecord.terminal_hash = terminalHash(closedRecord);
+  const mutateClosed = (change) => {
+    const record = structuredClone(closedRecord);
+    change(record);
+    return record;
+  };
+  const rationale = childOf(closedRecord, 40).closed_rationale;
   assert.equal(typeof rationale, 'object', 'the rationale is a structured object, not prose');
   assert.ok(Array.isArray(rationale.evidence_refs) && rationale.evidence_refs.length >= 1, 'the rationale carries at least one evidence ref');
   assert.match(rationale.reason_code, /^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'the rationale carries a well-formed reason code');
-  assert.deepEqual(validateFixtureFile(validText, schema), {ok: true, code: 'OK'}, 'the typed, complete rationale on an otherwise canonical record is accepted');
+  assert.deepEqual(validateFixtureFile(canonicalize(closedRecord), schema), {ok: true, code: 'OK'}, 'the typed, complete rationale is accepted as an alternative disposition');
 
-  expectRejection('untyped prose rationale', mutateValid((r) => {
+  expectRejection('untyped prose rationale', mutateClosed((r) => {
     childOf(r, 40).closed_rationale = 'closed because the controller state receipt is nonterminal';
   }), 'E-SHAPE');
-  expectRejection('rationale missing the reason code', mutateValid((r) => {
+  expectRejection('rationale missing the reason code', mutateClosed((r) => {
     delete childOf(r, 40).closed_rationale.reason_code;
   }), 'E-SHAPE');
-  expectRejection('rationale without evidence refs', mutateValid((r) => {
+  expectRejection('rationale without evidence refs', mutateClosed((r) => {
     childOf(r, 40).closed_rationale.evidence_refs = [];
   }), 'E-SHAPE');
-  expectRejection('malformed reason code', mutateValid((r) => {
+  expectRejection('malformed reason code', mutateClosed((r) => {
     childOf(r, 40).closed_rationale.reason_code = 'Not A Code';
   }), 'E-SHAPE');
   expectRejection('merged child carrying a closed rationale', mutateValid((r) => {
@@ -188,7 +206,7 @@ test('the durable no-delivery rationale is accepted only when explicitly typed a
       reason_code: 'no-delivery',
     };
   }), 'E-R04');
-  expectRejection('closed child carrying a merged PR', mutateValid((r) => {
+  expectRejection('closed child carrying a merged PR', mutateClosed((r) => {
     childOf(r, 40).merged_pr = {
       base_ref: 'main',
       head_sha: '3636'.repeat(10),
@@ -249,6 +267,7 @@ test('fail-closed: missing merge or rationale is rejected', () => {
     childOf(r, 36).merged_pr = null;
   }), 'E-R04');
   expectRejection('closed child without the durable rationale', mutateValid((r) => {
+    setClosedNoDelivery(r);
     childOf(r, 40).closed_rationale = null;
   }), 'E-R04');
   expectRejection('merged PR with identical head and merge SHA', mutateValid((r) => {
@@ -275,6 +294,7 @@ test('fail-closed: missing CI, missing release decision, and released-without-re
     };
   }), 'E-R05');
   expectRejection('closed child carrying a CI decision', mutateValid((r) => {
+    setClosedNoDelivery(r);
     childOf(r, 40).ci_decision = {
       exact_head_conclusion: 'success',
       exact_head_run_id: 9,

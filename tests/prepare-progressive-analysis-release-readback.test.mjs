@@ -21,10 +21,10 @@ import {
 const SCRIPT = 'scripts/prepare-progressive-analysis-release-readback.mjs';
 const RELEASE_PATH = 'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json';
 const NO_RELEASE_PATH = 'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json';
-const BASE_SHA = '35'.repeat(20);
-const HEAD_SHA = 'de5facf183b8b85cd7bd455359541fc29f69e43e';
-const RELEASE_HASH = 'd5ef25e4b9fed6f1a04f57dfbfedd20b2c3e2beaf3ee87f289d2b1321adf6168';
-const NO_RELEASE_HASH = '49b00dfcd99890156ec11cbd1cf2ff2fbe441e3bc909f6e41181eeafdbff5426';
+const BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
+const HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
+const RELEASE_HASH = 'b577d7742855544dcb28cee2097859bbc64759205960136e78f59b13708b9b09';
+const NO_RELEASE_HASH = '066a35c6d26c90ef83172c8f2e2339ecca7206501e6daf054e7a702334ce5861';
 
 const releaseText = await readFile(RELEASE_PATH, 'utf8');
 const noReleaseText = await readFile(NO_RELEASE_PATH, 'utf8');
@@ -64,8 +64,8 @@ test('both canonical fixtures validate and retain exact base/head lineage', () =
     assert.equal(record.head_sha, HEAD_SHA);
     assert.deepEqual(record.children.map((child) => child.child_issue), [36, 37, 38, 39, 40]);
     for (const child of record.children) {
-      assert.equal(child.exact_ci.head_sha, HEAD_SHA, `child ${child.child_issue} exact-head lineage`);
-      assert.equal(child.exact_ci.main_sha, BASE_SHA, `child ${child.child_issue} exact-main lineage`);
+      assert.equal(child.exact_ci.head_sha, child.merged_pr.head_sha, `child ${child.child_issue} exact-head lineage`);
+      assert.equal(child.exact_ci.main_sha, child.merged_pr.merge_sha, `child ${child.child_issue} exact-main lineage`);
       assert.equal(child.exact_ci.exact_head_conclusion, 'success');
       assert.equal(child.exact_ci.exact_main_conclusion, 'success');
     }
@@ -82,23 +82,23 @@ test('released synthetic record yields a deterministic public-readback checklist
   assert.equal(first.decision, 'released');
   assert.equal(first.public_release_claims, 'authorized');
   assert.deepEqual(first.release, {
-    artifact: 'dist/progressive-analysis-v0.18.0',
-    tag: 'v0.18.0',
-    tag_sha: '4120412041204120412041204120412041204120',
+    artifact: 'KaleidoSphere-v0.25.0.tar.gz',
+    tag: 'v0.25.0',
+    tag_sha: '5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6',
   });
   assert.deepEqual(first.public_readback, {
-    receipt: 'readback-epic-35-release',
+    receipt: 'github-release-v0.25.0-anonymous-readback',
     status: 'success',
     checklist: buildChecklist(releaseRecord),
   });
   assert.equal(first.public_readback.checklist.length, 55, 'five release identifiers plus ten identifiers per child');
 
   const expectedByChild = {
-    36: ['v0.12.0', '3620362036203620362036203620362036203620', 'readback-v0.12.0', '3610361036103610361036103610361036103610', '1', '1', '2', 'cov-36-readback', 'budget-36-readback', 'neg-36-readback'],
-    37: ['v0.13.0', '3720372037203720372037203720372037203720', 'readback-v0.13.0', '3710371037103710371037103710371037103710', '2', '3', '4', 'cov-37-readback', 'budget-37-readback', 'neg-37-readback'],
-    38: ['v0.14.0', '3820382038203820382038203820382038203820', 'readback-v0.14.0', '3810381038103810381038103810381038103810', '3', '5', '6', 'cov-38-readback', 'budget-38-readback', 'neg-38-readback'],
-    39: ['v0.17.0', '3920392039203920392039203920392039203920', 'readback-v0.17.0', '3910391039103910391039103910391039103910', '4', '7', '8', 'cov-39-readback', 'budget-39-readback', 'neg-39-readback'],
-    40: ['v0.18.0', '4020402040204020402040204020402040204020', 'readback-v0.18.0', '4010401040104010401040104010401040104010', '5', '9', '10', 'cov-40-readback', 'budget-40-readback', 'neg-40-readback'],
+    36: ['v0.12.0', 'a65e3e7dfe4484fb50c6ad956592892b8bcb1b83', 'github-release-v0.12.0-anonymous-readback', 'a681f1868f1678c38a46fcd7ca09256edeb4445d', '41', '32270143367', '32270208181', 'child-36-deterministic-fixture-receipt', 'child-36-budget-receipt', 'child-36-fail-closed-negative-probe'],
+    37: ['v0.13.0', '5c4e919b73a04a2825b5ecfb1b36167e5098296d', 'github-release-v0.13.0-anonymous-readback', '1e12007d9c2094a34abd2d97156943ab6fedb2e2', '43', '32272856706', '32272955909', 'child-37-deterministic-fixture-receipt', 'child-37-budget-receipt', 'child-37-fail-closed-negative-probe'],
+    38: ['v0.14.0', '8cad5b979e65d151d583442eed4accd38c40a527', 'github-release-v0.14.0-anonymous-readback', '70eed40a59e81ef796e0bcb5a552ba64270f8d14', '45', '32279661221', '32279763731', 'child-38-deterministic-fixture-receipt', 'child-38-budget-receipt', 'child-38-fail-closed-negative-probe'],
+    39: ['v0.17.0', '8e120496a8685c4abf5fb5d3a0e98adcc8fef16f', 'github-release-v0.17.0-anonymous-readback', '9cea957fb25938eda7c77b0e92df3989141571e0', '59', '32401150190', '32401255771', 'child-39-deterministic-fixture-receipt', 'child-39-budget-receipt', 'child-39-fail-closed-negative-probe'],
+    40: ['v0.25.0', '5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6', 'github-release-v0.25.0-anonymous-readback', '5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6', '123', '33201128462', '33201173088', 'child-40-deterministic-fixture-receipt', 'child-40-budget-receipt', 'child-40-fail-closed-negative-probe'],
   };
   for (const child of first.children) {
     const source = childOf(releaseRecord, child.child_issue);
@@ -134,7 +134,7 @@ test('no-release synthetic record yields a deterministic rationale packet and su
   assert.deepEqual(first.rationale_packet, noReleaseRecord.no_release);
   assert.match(first.rationale_packet.rationale, /no public release/i);
   assert.deepEqual(first.children.map((child) => child.child_issue), [36, 37, 38, 39, 40]);
-  for (const issue of [36, 37, 38, 39]) {
+  for (const issue of [36, 37, 38, 39, 40]) {
     const child = childOf(first, issue);
     assert.equal(child.disposition, 'merged');
     assert.equal(child.release_decision.decision, 'no_release');
@@ -142,14 +142,8 @@ test('no-release synthetic record yields a deterministic rationale packet and su
     assert.equal(child.release_decision.tag_sha, null);
     assert.equal(child.release_decision.public_readback, null);
   }
-  const child40 = childOf(first, 40);
-  assert.equal(child40.disposition, 'closed_no_delivery');
-  assert.equal(child40.merged_pr, null);
-  assert.equal(child40.release_decision, null);
-  assert.deepEqual(child40.closed_rationale, {
-    evidence_refs: ['docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json'],
-    reason_code: 'child-40-nonterminal',
-  });
+  assert.equal(childOf(first, 40).merged_pr.number, 123);
+  assert.equal(childOf(first, 40).closed_rationale, null);
   assert.deepEqual(first.nonclaims, noReleaseRecord.nonclaims);
 });
 
@@ -245,11 +239,11 @@ test('exact-head and exact-main identifiers are required, successful, distinct, 
   }), 'E-R02');
 });
 
-test('fail-closed negatives reject scope drift from the pinned reviewed task head', () => {
-  expectRejection('stale head against the pinned reviewed task head', mutate(releaseRecord, (record) => {
+test('fail-closed negatives reject scope drift from the exact current-main integration range', () => {
+  expectRejection('stale head against the pinned current-main integration head', mutate(releaseRecord, (record) => {
     record.head_sha = '3540'.repeat(10);
   }), 'E-SCOPE');
-  expectRejection('stale base against the pinned fixture placeholder', mutate(releaseRecord, (record) => {
+  expectRejection('stale base against the pinned local-main identity', mutate(releaseRecord, (record) => {
     record.base_sha = '34'.repeat(20);
   }), 'E-SCOPE');
 });
@@ -303,8 +297,8 @@ test('CLI subprocess emits one deterministic public-readback line for the releas
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
   const git = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
   const allowed = [
-    'SOURCE-MAP.json',
     'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
+    'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
     'docs/evidence/progressive-analysis/epic-35-close-comment.template.md',
     'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
     'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
@@ -316,7 +310,6 @@ test('receipt: the current-main replay changes exactly the canonical closure pat
     'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
     'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
     'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
-    'package.json',
     'scripts/prepare-progressive-analysis-release-readback.mjs',
     'scripts/verify-progressive-analysis-closure.mjs',
     'scripts/verify-progressive-analysis-exact-ci.mjs',

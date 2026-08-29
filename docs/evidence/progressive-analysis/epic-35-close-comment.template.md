@@ -1,134 +1,108 @@
-# Epic 35 local delivery / closure comment draft
+# Epic #35 close comment — materialized local packet
 
-Contract: `epic-35-delivery-packet/v1`
+Delivery packet: `docs/evidence/progressive-analysis/epic-35-delivery-packet.template.json`
 
-This comment is a pointer to the committed packet, not a second authority.
-The packet is the canonical SHA-bound record. Replace every placeholder before
-posting. Use exact provider identifiers and repository-relative evidence refs;
-do not paste source records, sensitive material, statement text, or unjoined
-provider prose.
+- Packet contract: `epic-35-delivery-packet/v1`
+- Packet terminal hash: `47eca1080db5c41b1960728f3e30d10bb0feb0829429701e7cb81baa9091342f`
+- Finalizer task: `CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01`
+- Mutation authority: none; this checked-in comment is evidence text only
 
-## Packet and slice lineage
+## Exact lineage
 
-- packet path: `docs/evidence/progressive-analysis/epic-35-delivery-packet.json`
-- packet terminal hash: `<64-lowercase-hex-sha256>`
-- exact base SHA (`origin/main` at slice cut): `<40-lowercase-hex>`
-- exact reviewed task head SHA: `<40-lowercase-hex>`
-- contract version: `epic-35-delivery-packet/v1`
-- task id: `QWEN-KS-35-DELIVERY-PACKET-06`
-- changed paths: the three paths listed in `work_receipt.changed_paths`
-- critical path: `#36 -> #37 -> #38 -> #39 -> #40`
-- closure decision: `<eligible|not_eligible>`
+- Requested local `main`: `173e2f7e19049a705bcdaf0269c33a5bd7f70206`
+- Current `origin/main` integration head: `d6b9adb5be1e475cdba71c548a71fc900aa3fdff`
+- Product integration range: `173e2f7e19049a705bcdaf0269c33a5bd7f70206...d6b9adb5be1e475cdba71c548a71fc900aa3fdff`
+- Rejected closure-tooling artifact: `5ffad599118cade30ce66264d529259f63d1bc45`
+- Canonical state receipt: `docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json`
 
-The packet terminal hash is recomputed after all substitutions. The exact base
-and reviewed-head SHAs must be equal to both `lineage` and `work_receipt`; no
-branch name or moving ref is a substitute.
+The rejected artifact is not substituted for either product-integration
+endpoint. Its parent is the current integration head, while local `main` is the
+requested base above.
 
-## Child delivery join
+## Child delivery matrix
 
-Copy one row for each of **#36, #37, #38, #39, and #40**, in ascending issue
-order. Every row must link the exact evidence refs recorded in the packet.
+| Child | Disposition | Protected merge | Exact-head CI | Exact-main CI | Release and public readback |
+|---|---|---|---|---|---|
+| #36 | merged | PR #41; `a681f1868f1678c38a46fcd7ca09256edeb4445d` | run `32270143367` at `cf72cb745abe942bafbb758b24b680819dea74b5` | run `32270208181` at merge SHA | `v0.12.0`; `github-release-v0.12.0-anonymous-readback` |
+| #37 | merged | PR #43; `1e12007d9c2094a34abd2d97156943ab6fedb2e2` | run `32272856706` at `7d8222ad0d7b9e515ce2e4c747a278f5fbfd947e` | run `32272955909` at merge SHA | `v0.13.0`; `github-release-v0.13.0-anonymous-readback` |
+| #38 | merged | PR #45; `70eed40a59e81ef796e0bcb5a552ba64270f8d14` | run `32279661221` at `30fd64397223726759004885be2a30b989397a4b` | run `32279763731` at merge SHA | `v0.14.0`; `github-release-v0.14.0-anonymous-readback` |
+| #39 | merged | PR #59; `9cea957fb25938eda7c77b0e92df3989141571e0` | run `32401150190` at `00ff853723798cabf9514e35a5f909b1244cddfa` | run `32401255771` at merge SHA | `v0.17.0`; `github-release-v0.17.0-anonymous-readback` |
+| #40 | merged | PR #123; `5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6` | run `33201128462` at `8f592ad5dac358fb3fc0501d83b8c2adfeae299d` | run `33201173088` at merge SHA | `v0.25.0`; `github-release-v0.25.0-anonymous-readback` |
 
-| child | dependencies | disposition | protected PR or durable no-delivery rationale | deterministic fixture + SHA-256 | rejected negative-probe receipt | exact-head CI (run + SHA + success) | exact-main CI (run + SHA + success) | release decision | public readback |
-|---|---|---|---|---|---|---|---|---|---|
-| #36 | `[]` | `<merged|closed_no_delivery>` | `<PR number + head/merge SHA, or rationale reason code + evidence ref>` | `<fixture ref + 64-hex digest>` | `<probe id + evidence ref>` | `<run id + PR head SHA>` | `<run id + merge SHA>` | `<released|no_release>` | `<readback id + tag/tag SHA, or null>` |
-| #37 | `[36]` | `<merged|closed_no_delivery>` | `<PR number + head/merge SHA, or rationale reason code + evidence ref>` | `<fixture ref + 64-hex digest>` | `<probe id + evidence ref>` | `<run id + PR head SHA>` | `<run id + merge SHA>` | `<released|no_release>` | `<readback id + tag/tag SHA, or null>` |
-| #38 | `[36, 37]` | `<merged|closed_no_delivery>` | `<PR number + head/merge SHA, or rationale reason code + evidence ref>` | `<fixture ref + 64-hex digest>` | `<probe id + evidence ref>` | `<run id + PR head SHA>` | `<run id + merge SHA>` | `<released|no_release>` | `<readback id + tag/tag SHA, or null>` |
-| #39 | `[36, 37, 38]` | `<merged|closed_no_delivery>` | `<PR number + head/merge SHA, or rationale reason code + evidence ref>` | `<fixture ref + 64-hex digest>` | `<probe id + evidence ref>` | `<run id + PR head SHA>` | `<run id + merge SHA>` | `<released|no_release>` | `<readback id + tag/tag SHA, or null>` |
-| #40 | `[36, 37, 38, 39]` | `<merged|closed_no_delivery>` | `<PR number + head/merge SHA, or rationale reason code + evidence ref>` | `<fixture ref + 64-hex digest>` | `<probe id + evidence ref>` | `<run id + PR head SHA>` | `<run id + merge SHA>` | `<released|no_release>` | `<readback id + tag/tag SHA, or null>` |
+Each row has deterministic evidence, a fail-closed negative probe, a protected
+merge, exact-head and exact-main successful CI, an explicit release decision,
+and anonymous public readback in the packet and canonical state receipt.
 
-A merged child requires `base_ref=main`, `protected=true`, distinct exact
-head and merge SHAs, successful exact-head and exact-main CI bound to those
-SHAs, deterministic fixture evidence, at least one rejected negative probe,
-and an explicit release decision. A `closed_no_delivery` child requires a
-durable structured rationale with a stable reason code and evidence refs; its
-PR, CI, and release fields are null. Never infer no-delivery from an open issue
-or from missing data.
+## Dependency and foundation proof
 
-## Dependency and foundation gate
+- Critical path: `#36 -> #37 -> #38 -> #39 -> #40`.
+- The controller breadth gate is owned by child #36 and is referenced by
+  `docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md`.
+- The receipt foundation is owned by children #36 and #37 and is referenced by
+  `docs/evidence/PROGRESSIVE_ANALYSIS_V1.md`.
+- Parity depth work for #38 depends on both foundation children.
+- Role/cluster work for #39 depends on #36, #37, and #38.
+- Adaptive drilldown for #40 depends on all four earlier children.
 
-- breadth gate receipt: `<repository-relative evidence ref>`; gated by child
-  `36`
-- evidence/receipt foundation refs: `<repository-relative evidence refs>`;
-  gated by children `[36, 37]`
-- parity depth (#38) does not bypass the #36 controller breadth gate
-- adaptive drilldown (#40) follows the #36/#37 evidence and receipt
-  foundations and the complete preceding edge set
+## Release/defer disposition
 
-Any absent edge, foundation, or merged dependency is a fail-closed denial; the
-comment must not upgrade a child or epic decision beyond the packet.
+- Closure decision: `eligible`.
+- Release decision: `released`.
+- Epic public release: `v0.25.0` at
+  `5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6`.
+- Public readback: `github-release-v0.25.0-anonymous-readback`, status
+  `success`.
 
-## Release branch
+## Reviewed fail-closed findings
 
-### Released branch
+- The immutable local
+  `main...5ffad599118cade30ce66264d529259f63d1bc45` range changes 39
+  paths. Its declared boundary admits only
+  `closure-audits/CLOSURE-KS35-ROOT-DELIVERY-01/**`; that directory does not
+  exist in the artifact and no changed path is admitted. Result: rejected.
+- Local `main` is `173e2f7e19049a705bcdaf0269c33a5bd7f70206`, the
+  rejected artifact's parent is
+  `d6b9adb5be1e475cdba71c548a71fc900aa3fdff`, and those identities are not
+  interchangeable. Result: stale or substituted endpoint blocks closure.
+- Child #40 is consistently merged/released in the state receipt, canonical
+  closure fixture, exact-CI fixture, release fixture, and this materialized
+  packet. A `closed_no_delivery` substitution blocks closure.
+- Any remaining criterion, missing CI run, release-disposition mismatch,
+  missing public readback, stale identity, or broken evidence join blocks
+  closure.
 
-Use this branch only when the packet has an explicit `released` decision. Copy
-the exact epic release tag, tag-target SHA, and successful public readback
-receipt from the packet. Each released child must carry the same three kinds of
-anchors in its own release decision. The public claim is limited to those
-identifiers; it does not assert performance, causality, or customer outcome.
+## External readback receipts
 
-- epic release tag: `<tag>`
-- epic tag-target SHA: `<40-lowercase-hex>`
-- epic public readback receipt: `<stable-readback-id>`
-- public release claim: `authorized only by the packet terminal hash`
+Read-only GitHub state for children #36 through #40 and all five public release
+readbacks are indexed through
+`docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json`. No remote mutation
+is performed or authorized by this packet.
 
-### No-release branch
+## Final verification
 
-Use this branch when no public release is made. It is valid only when the
-packet contains a durable structured rationale with a stable reason code,
-at least one repository-relative evidence ref, and a nonclaim-safe statement.
-Set `decision.public_release_claim` to `null`, set the epic release decision
-to `no_release`, and set every merged child's release decision to `no_release`
-with null tag, tag SHA, and public readback. A closed-no-delivery child has
-null CI and release fields and its own durable rationale. Do not write a
-release URL, tag, or release-success claim in this branch.
+The finalizer requires:
 
-- epic release decision: `no_release`
-- rationale reason code: `<lowercase-kebab-case>`
-- rationale evidence refs: `<repository-relative refs>`
-- durable rationale statement: `<nonclaim-safe statement>`
-- public release claim: `null`
+- `npm run test:epic-35-closure`
+- `npm test`
+- `npm run test:security`
+- `npm run test:source`
+- `git diff --check origin/main...HEAD`
 
-## External-action readbacks
-
-List every read-only provider action in `external_actions`. For each action,
-copy its stable `action_id`, provider, exact observed provider-object
-identifier and result, and repository-relative receipt ref. An action without
-an exact identifier and joined evidence ref is not a claim and cannot authorize
-closure. This record authorizes no dispatch or mutation.
+The local container's ordinary Node 24 isolate startup can terminate before
+test execution with V8 `SetPermissions` errno 12 and exit 133. Local execution
+uses `NODE_OPTIONS=--jitless`; the controller remains responsible for the
+authoritative pinned-Node gates.
 
 ## Remaining nonclaims
 
-Repeat every material nonclaim from the packet here. Safe boundary examples:
-
-- `<this packet does not establish product performance, customer outcome, or causality>`
-- `<fixture identifiers are synthetic unless independently read back>`
-- `<no action is authorized by this comment; the packet records readbacks only>`
-- `<unreleased or closed-no-delivery children remain nonclaims exactly as recorded>`
-
-Do not turn a nonclaim into a causal, performance, completeness, or customer
-outcome assertion.
-
-## Posting gate
-
-Before posting, verify that:
-
-1. the packet has exactly children #36 through #40 and the exact dependency
-   edge set;
-2. every child has either a protected merged PR or a durable closed/no-delivery
-   rationale;
-3. every merged child has deterministic fixture evidence, a rejected negative
-   probe, exact-head/exact-main CI, and an explicit release decision;
-4. every released child and the released epic have a successful public
-   readback joined to exact tag and tag-target SHA identifiers;
-5. a no-release packet has a durable rationale and a null public-release claim;
-6. terminal hash, exact base/head lineage, and `work_receipt.changed_paths`
-   match the committed packet; and
-7. every external action is represented by an exact identifier plus an evidence
-   ref, with no raw values, credentials, DDL/DML, free SQL, or causal overclaim.
-
-Missing child, edge, foundation, CI decision, release decision, released
-readback, rationale, or terminal-hash match is a fail-closed denial. Keep this
-comment synchronized with the committed packet and do not add a stronger
-claim in prose than the packet joins.
+- This file is not a remote issue-close action and grants no mutation authority.
+- The reserved forward package `KALEIDOSPHERE-40-QWEN-FORWARD-02` remains out
+  of scope.
+- No production or customer database access, deployment, runtime activation,
+  performance certification, universal completeness, business-semantic truth,
+  inferred relationship truth, automatic remediation, or customer outcome is
+  claimed.
+- No source rows, sensitive material, connection strings, or executable
+  statement text are included.
+- The `.template.md` filename is retained because it is the allowlisted
+  canonical path; this content has no substitution markers.
