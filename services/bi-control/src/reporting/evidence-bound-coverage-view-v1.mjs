@@ -254,7 +254,9 @@ function stateRows(source) {
     const boundResult = boundCapability ? results.get(boundCapability.capabilityId) : null;
     let state = entry.state;
     let reasonCode = entry.reasonCode;
-    let capabilityId = boundCapability?.capabilityId ?? `unbound.${entry.sourceQueryId}`;
+    const unboundId = `unbound.${entry.sourceQueryId}`;
+    let capabilityId = boundCapability?.capabilityId
+      ?? (ID.test(unboundId) ? unboundId : `unbound.${identitySha256({sourceQueryId: entry.sourceQueryId})}`);
     if (!boundCapability || !boundResult) {
       state = 'UNKNOWN';
       reasonCode = 'EVIDENCE_BINDING_MISSING';
@@ -307,9 +309,11 @@ function buildBody(source) {
     ],
     rows: states.map((row) => DATASET_ROW_KEYS.map((key) => row[STATE_KEY_BY_DATASET_KEY[key]])), differentiator: null,
   });
+  const candidateViewId = `${source.report.reportId}-coverage`;
   return normalizeJsonValue({
     schemaVersion: EVIDENCE_BOUND_COVERAGE_VIEW_SCHEMA_V1, viewKind: EVIDENCE_BOUND_COVERAGE_VIEW_KIND,
-    viewId: `${source.report.reportId}-coverage`, reportId: source.report.reportId, bindings: source.bindings,
+    viewId: ID.test(candidateViewId) ? candidateViewId : `coverage.${identitySha256({reportId: source.report.reportId})}`,
+    reportId: source.report.reportId, bindings: source.bindings,
     metrics, states, blindSpots: states.filter(({state}) => state !== 'COMPLETE'), claims: {...CLAIMS}, authority: {...AUTHORITY}, dataset,
   });
 }
@@ -366,7 +370,9 @@ export function buildEvidenceBoundCoverageViewV1(input) {
   const source = validateInput(input);
   const body = buildBody(source);
   const projection = {...body, datasetSha256: identitySha256(body.dataset)};
-  return freeze({...projection, viewSha256: identitySha256(projection)});
+  const view = {...projection, viewSha256: identitySha256(projection)};
+  validateView(view);
+  return freeze(view);
 }
 
 function buildFromValidated(source) {

@@ -326,6 +326,38 @@ test('the pure build and replay boundary leaves no lifecycle residue', () => {
   assert.equal(Object.keys(globalThis).some((key) => /coverage|credential|connection|renderer/i.test(key)), false);
 });
 
+test('maximum accepted source identifiers derive bounded valid view and unbound capability identifiers', () => {
+  const maxReportSource = input();
+  maxReportSource.report = buildEvidenceBoundReportV1({
+    schemaVersion: EVIDENCE_BOUND_REPORT_SPEC_SCHEMA_V1,
+    reportId: `r${'x'.repeat(127)}`,
+    title: maxReportSource.report.title,
+    dataset: maxReportSource.report.dataset,
+    bindings: maxReportSource.report.bindings,
+  });
+  const maxReportView = buildEvidenceBoundCoverageViewV1(maxReportSource);
+  assert(maxReportView.viewId.length <= 128);
+  assert.match(maxReportView.viewId, /^[a-z][a-z0-9._:-]{2,127}$/);
+  verifyEvidenceBoundCoverageViewV1(maxReportView, maxReportSource);
+
+  const maxQuerySource = input();
+  const maxQueryId = `mssql.q${'x'.repeat(127)}`;
+  maxQuerySource.coverage.entries[0].sourceQueryId = maxQueryId;
+  maxQuerySource.coverage.queryCoverage[0].queryId = maxQueryId;
+  maxQuerySource.coverage = redactDigest(maxQuerySource.coverage, 'coverageSha256');
+  maxQuerySource.result = resultEvidence(maxQuerySource.coverage, maxQuerySource.capability);
+  maxQuerySource.receipt = receiptEvidence(
+    maxQuerySource.coverage, maxQuerySource.capability, maxQuerySource.result, maxQuerySource.snapshot,
+  );
+  maxQuerySource.report = reportFor(maxQuerySource);
+  const maxQueryView = buildEvidenceBoundCoverageViewV1(maxQuerySource);
+  const unbound = maxQueryView.states.find(({sourceQueryId}) => sourceQueryId === maxQueryId);
+  assert(unbound);
+  assert(unbound.capabilityId.length <= 128);
+  assert.match(unbound.capabilityId, /^unbound\.[a-f0-9]{64}$/);
+  verifyEvidenceBoundCoverageViewV1(maxQueryView, maxQuerySource);
+});
+
 test('renderer and lifecycle replay verify a real coverage view against its authoritative evidence input', () => {
   const source = input();
   const view = buildEvidenceBoundCoverageViewV1(source);
