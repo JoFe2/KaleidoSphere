@@ -147,7 +147,7 @@
     "docs/SUPERSET_6_1_UPGRADE.md": "603e85e4f26ccc7f40c9014f900d074f2b80e288e98cc31d6e0bd42049af8958",
     "LICENSE": "835083c307550077500f6817fa1d3ecbcb5f559d41029ff34f2ccacf5c3bbe07",
     "NOTICE": "d450ed03544412c411173e098a89976228d98f9a76634b0ec09e19134382ef74",
-    "package.json": "468e3ebade006ceab0906509911994cec124cdd3c4cff95127b78da70c9d240e",
+    "package.json": "eeaa6e950e19d68ab9abfd0de5d923df9f4459a67e488748059cdcba66d39b4b",
     "README.md": "326d5c4e5f69450c9144fe5e5531c3837f1ff4585a40178d0753c351843f287e",
     "scripts/build-agent-skill-distribution.mjs": "264a16c39dc1c383a2b743268cf1a4e299b51c6b262970c8f2eaacabec0328fe",
     "scripts/build-release.mjs": "69e806b8a1fc823b04f89a596795bad89e68a7258706cb6636d40fe1c45520ca",
