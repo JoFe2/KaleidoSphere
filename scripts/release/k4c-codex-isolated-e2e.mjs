@@ -274,11 +274,16 @@ async function prepareBoundary(requested) {
 async function writeMarketplace(roots, fixture) {
   const marketplace = {
     name: fixture.package.marketplaceName,
-    owner: { name: 'JoFe2' },
-    plugins: [{ name: fixture.package.pluginName, source: './plugins/kaleidosphere' }],
+    interface: { displayName: 'KaleidoSphere local validation' },
+    plugins: [{
+      name: fixture.package.pluginName,
+      source: { source: 'local', path: './plugins/kaleidosphere' },
+      policy: { installation: 'AVAILABLE', authentication: 'ON_INSTALL' },
+      category: 'Data & Analytics',
+    }],
   };
-  await mkdir(path.join(roots.marketplaceRoot, '.codex-plugin'), { recursive: true });
-  await writeFile(path.join(roots.marketplaceRoot, '.codex-plugin', 'marketplace.json'), `${JSON.stringify(marketplace, null, 2)}\n`);
+  await mkdir(path.join(roots.marketplaceRoot, '.agents', 'plugins'), { recursive: true });
+  await writeFile(path.join(roots.marketplaceRoot, '.agents', 'plugins', 'marketplace.json'), `${JSON.stringify(marketplace, null, 2)}\n`);
 }
 
 function parseGeneratorReceipt(stdout) {
@@ -392,7 +397,13 @@ async function runClean(fixture, args) {
   } catch (error) {
     failed = error;
   } finally {
-    if (failed || !finalProof) {
+    if (failed) {
+      for (const base of [...roots.configRoots, ...roots.cacheRoots, roots.marketplaceRoot]) {
+        await rm(base, { recursive: true, force: true });
+        await mkdir(base, { recursive: true });
+      }
+    }
+    if (!finalProof || failed) {
       finalProof = await readBoundaryProof(boundary, roots);
     }
     if (owned) await rm(boundary, { recursive: true, force: true });

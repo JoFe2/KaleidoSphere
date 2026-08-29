@@ -12,7 +12,7 @@ const canonical = path.join(root, 'agent-skills', 'kaleidosphere');
 const generator = path.join(root, 'scripts', 'release', 'generate-k4c-codex-plugin.mjs');
 const fixturePath = path.join(root, 'tests', 'fixtures', 'release', 'k4c-canonical-skill-digests-v1.json');
 const pluginValidator = '/home/jo/.openclaw/agents/main/agent/codex-home/skills/.system/plugin-creator/scripts/validate_plugin.py';
-const FROZEN_MANIFEST_SHA256 = 'beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75';
+const FROZEN_MANIFEST_SHA256 = '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77';
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: 'utf8', ...options });
@@ -48,7 +48,7 @@ test('generated package view is an exact copied view of the canonical skill', as
   const { dir, receipt } = await build();
 
   assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-codex-plugin-receipt/v1');
-  assert.equal(receipt.packageVersion, '0.24.0');
+  assert.equal(receipt.packageVersion, '0.26.0');
   assert.equal(receipt.canonicalSource, 'agent-skills/kaleidosphere');
   assert.deepEqual(receipt.manifest, { path: '.codex-plugin/plugin.json', sha256: FROZEN_MANIFEST_SHA256 });
   assert.equal(receipt.manifest.sha256, FROZEN_MANIFEST_SHA256);

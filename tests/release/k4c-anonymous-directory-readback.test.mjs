@@ -84,10 +84,10 @@ test('manual one-shot mode runs argument-array commands without credentials and 
   const helperDirectory = await mkdtemp(path.join(tmpdir(), 'ks76-directory-helper-'));
   const helper = path.join(helperDirectory, 'directory-helper.mjs');
   await writeFile(helper, `
-const digest = '9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4';
-const target = 'kaleidosphere@0.24.0';
+const digest = 'e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a';
+const target = 'kaleidosphere@0.26.0';
 const action = process.argv[2];
-if (action === 'discover' || action === 'readback') process.stdout.write(JSON.stringify({listingId:'kaleidosphere',title:'KaleidoSphere',packageName:'kaleidosphere',packageVersion:'0.24.0',packageDigest:digest,source:'anonymous-directory',anonymous:true,authenticated:false,cacheHit:false,networkAccess:true}) + '\\n');
+if (action === 'discover' || action === 'readback') process.stdout.write(JSON.stringify({listingId:'kaleidosphere',title:'KaleidoSphere',packageName:'kaleidosphere',packageVersion:'0.26.0',packageDigest:digest,source:'anonymous-directory',anonymous:true,authenticated:false,cacheHit:false,networkAccess:true}) + '\\n');
 else if (action === 'install') process.stdout.write(JSON.stringify({installed:true,installTarget:target,packageDigest:digest}) + '\\n');
 else if (action === 'installed') process.stdout.write(JSON.stringify({installed:true,installTarget:target,packageDigest:digest}) + '\\n');
 else process.exitCode = 2;
@@ -117,12 +117,12 @@ test('manual mode rejects cached or title-only discovery and install failure', a
   const helperDirectory = await mkdtemp(path.join(tmpdir(), 'ks76-directory-negative-helper-'));
   const helper = path.join(helperDirectory, 'directory-helper.mjs');
   await writeFile(helper, `
-const digest = '9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4';
+const digest = 'e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a';
 const action = process.argv[2];
-if (action === 'cached') process.stdout.write(JSON.stringify({listingId:'kaleidosphere',title:'KaleidoSphere',packageName:'kaleidosphere',packageVersion:'0.24.0',packageDigest:digest,source:'local-cache',anonymous:false,authenticated:false,cacheHit:true,networkAccess:false}) + '\\n');
+if (action === 'cached') process.stdout.write(JSON.stringify({listingId:'kaleidosphere',title:'KaleidoSphere',packageName:'kaleidosphere',packageVersion:'0.26.0',packageDigest:digest,source:'local-cache',anonymous:false,authenticated:false,cacheHit:true,networkAccess:false}) + '\\n');
 else if (action === 'title') process.stdout.write(JSON.stringify({listingId:'kaleidosphere',title:'KaleidoSphere'}) + '\\n');
 else if (action === 'fail') process.exitCode = 7;
-else process.stdout.write(JSON.stringify({installed:true,installTarget:'kaleidosphere@0.24.0',packageDigest:digest}) + '\\n');
+else process.stdout.write(JSON.stringify({installed:true,installTarget:'kaleidosphere@0.26.0',packageDigest:digest}) + '\\n');
 `);
   const command = (action) => JSON.stringify([process.execPath, helper, action]);
   const runManual = (discover, install = 'ok') => run([

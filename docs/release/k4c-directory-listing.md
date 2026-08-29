@@ -3,12 +3,12 @@
 ## Claims
 
 - Claim: KaleidoSphere is distributed as a skills-only Codex plugin.
-- Claim: The package version is `0.24.0`.
+- Claim: The package version is `0.26.0`.
 - Claim: The package declares the `kaleidosphere` skill at `skills/kaleidosphere/SKILL.md`.
 - Claim: The skill accepts only `status`, `discovery`, `analyze`, `plan`, `preview`, and `readback` actions.
 - Claim: When no trusted KaleidoSphere transport is configured, the skill returns `WAITING_EXTERNAL` after local validation.
-- Claim: The package SHA-256 digest is `9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4`.
-- Claim: The plugin manifest SHA-256 digest is `beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75`.
+- Claim: The package SHA-256 digest is `e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a`.
+- Claim: The plugin manifest SHA-256 digest is `64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77`.
 
 ## Description
 
@@ -24,10 +24,10 @@ dependencies.
 ## Evidence binding
 
 - Package: `packages/codex/kaleidosphere`
-- Version: `0.24.0`
+- Version: `0.26.0`
 - License: `Apache-2.0`
-- Package digest: `9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4`
-- Manifest digest: `beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75`
+- Package digest: `e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a`
+- Manifest digest: `64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77`
 - Receipt: `verification/k4c/security-license-receipt-v1.json`
 - Receipt: `verification/k4c/codex-isolated-e2e-v1.json`
 

@@ -2,17 +2,17 @@
   "schemaVersion": "kaleidosphere/k4c-anonymous-directory-readback/v1",
   "mode": "fixture",
   "fixture": "tests/fixtures/release/k4c-directory-readback-transcripts-v1.json",
-  "fixtureSha256": "9d300e8c09868216f479e0bd77412c4933e904c7d30e00dcaae6a059d278a97b",
+  "fixtureSha256": "32561881432ab56894efcb91a3998f872f475c616691d52ad0381724ccb97501",
   "package": {
     "name": "kaleidosphere",
-    "version": "0.24.0",
+    "version": "0.26.0",
     "title": "KaleidoSphere",
-    "digest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+    "digest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a"
   },
   "directory": {
     "name": "public-directory",
     "listingId": "kaleidosphere",
-    "installTarget": "kaleidosphere@0.24.0"
+    "installTarget": "kaleidosphere@0.26.0"
   },
   "timestamps": {
     "submissionReceiptAt": "2026-08-28T18:00:00.000Z",
@@ -72,7 +72,7 @@
       "result": {
         "exitCode": 0,
         "signal": null,
-        "stdout": "{\"listingId\":\"kaleidosphere\",\"title\":\"KaleidoSphere\",\"packageName\":\"kaleidosphere\",\"packageVersion\":\"0.24.0\",\"packageDigest\":\"9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4\",\"source\":\"anonymous-directory\",\"anonymous\":true,\"authenticated\":false,\"cacheHit\":false,\"networkAccess\":true}\n",
+        "stdout": "{\"listingId\":\"kaleidosphere\",\"title\":\"KaleidoSphere\",\"packageName\":\"kaleidosphere\",\"packageVersion\":\"0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\",\"source\":\"anonymous-directory\",\"anonymous\":true,\"authenticated\":false,\"cacheHit\":false,\"networkAccess\":true}\n",
         "stderr": "",
         "errorCode": null
       }
@@ -95,7 +95,7 @@
       "result": {
         "exitCode": 0,
         "signal": null,
-        "stdout": "{\"listingId\":\"kaleidosphere\",\"title\":\"KaleidoSphere\",\"packageName\":\"kaleidosphere\",\"packageVersion\":\"0.24.0\",\"packageDigest\":\"9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4\",\"source\":\"anonymous-directory\",\"anonymous\":true,\"authenticated\":false,\"cacheHit\":false,\"networkAccess\":true}\n",
+        "stdout": "{\"listingId\":\"kaleidosphere\",\"title\":\"KaleidoSphere\",\"packageName\":\"kaleidosphere\",\"packageVersion\":\"0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\",\"source\":\"anonymous-directory\",\"anonymous\":true,\"authenticated\":false,\"cacheHit\":false,\"networkAccess\":true}\n",
         "stderr": "",
         "errorCode": null
       }
@@ -107,9 +107,9 @@
       "command": [
         "directory",
         "install",
-        "kaleidosphere@0.24.0",
+        "kaleidosphere@0.26.0",
         "--digest",
-        "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
+        "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
         "--json"
       ],
       "expectedOutcome": "passed",
@@ -119,7 +119,7 @@
       "result": {
         "exitCode": 0,
         "signal": null,
-        "stdout": "{\"installed\":true,\"installTarget\":\"kaleidosphere@0.24.0\",\"packageDigest\":\"9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4\"}\n",
+        "stdout": "{\"installed\":true,\"installTarget\":\"kaleidosphere@0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\"}\n",
         "stderr": "",
         "errorCode": null
       }
@@ -131,7 +131,7 @@
       "command": [
         "directory",
         "installed",
-        "kaleidosphere@0.24.0",
+        "kaleidosphere@0.26.0",
         "--json"
       ],
       "expectedOutcome": "passed",
@@ -141,7 +141,7 @@
       "result": {
         "exitCode": 0,
         "signal": null,
-        "stdout": "{\"installed\":true,\"installTarget\":\"kaleidosphere@0.24.0\",\"packageDigest\":\"9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4\"}\n",
+        "stdout": "{\"installed\":true,\"installTarget\":\"kaleidosphere@0.26.0\",\"packageDigest\":\"e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a\"}\n",
         "stderr": "",
         "errorCode": null
       }

@@ -39,9 +39,9 @@ test('accepts the complete receipt-bound directory submission packet', () => {
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   const receipt = parse(result.stdout);
   assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-reviewer-test-cases/v1');
-  assert.equal(receipt.packageVersion, '0.24.0');
-  assert.equal(receipt.packageDigest, '9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4');
-  assert.equal(receipt.manifestSha256, 'beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75');
+  assert.equal(receipt.packageVersion, '0.26.0');
+  assert.equal(receipt.packageDigest, 'e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a');
+  assert.equal(receipt.manifestSha256, '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77');
   assert.equal(receipt.positiveCaseCount, 6);
   assert.equal(receipt.negativeCaseCount, 3);
   assert.equal(receipt.publicationPerformed, false);

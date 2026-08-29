@@ -38,8 +38,8 @@ const FIXTURE_SCHEMA = 'kaleidosphere/k4c-canonical-skill-digests/v1';
 const PACKAGE_DIGEST_SCHEMA = 'kaleidosphere/k4c-codex-plugin-package-digest/v1';
 const FORBIDDEN_SURFACES = ['hooks', 'mcpServers', 'apps', 'commands', 'agents'];
 const FROZEN_MANIFEST = {
-  version: '0.24.0',
-  sha256: 'beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75',
+  version: '0.26.0',
+  sha256: '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77',
 };
 const denySecret = /(?:sk-[A-Za-z0-9]{20,}|hf_[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9_]{20,}|BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY|password\s*=|token\s*=|secret\s*=)/i;
 const remoteExecution = /(?:curl|wget)\s+[^|;&\n]+[|]\s*(?:sh|bash)|npx\s+-?y\s+[^@\s]+@latest/i;

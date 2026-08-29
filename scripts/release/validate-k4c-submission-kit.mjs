@@ -16,9 +16,9 @@ const securityReceipt = path.join(root, 'verification', 'k4c', 'security-license
 const e2eReceipt = path.join(root, 'verification', 'k4c', 'codex-isolated-e2e-v1.json');
 const manifest = path.join(root, 'packages', 'codex', 'kaleidosphere', '.codex-plugin', 'plugin.json');
 const SCHEMA = 'kaleidosphere/k4c-reviewer-test-cases/v1';
-const PACKAGE_DIGEST = '9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4';
-const MANIFEST_DIGEST = 'beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75';
-const VERSION = '0.24.0';
+const PACKAGE_DIGEST = 'e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a';
+const MANIFEST_DIGEST = '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77';
+const VERSION = '0.26.0';
 const SHA256 = /^[a-f0-9]{64}$/;
 const REQUIRED_POSITIVE_IDS = [
   'manifest-validation',
@@ -162,7 +162,7 @@ function assertListing(listing) {
 }
 
 function assertReleaseNotes(notes) {
-  if (!notes.includes('# KaleidoSphere 0.24.0 release notes') || !notes.includes('## Receipt binding')) {
+  if (!notes.includes('# KaleidoSphere 0.26.0 release notes') || !notes.includes('## Receipt binding')) {
     throw new Error('release notes denied: required heading missing');
   }
   for (const value of [VERSION, PACKAGE_DIGEST, MANIFEST_DIGEST, 'verification/k4c/security-license-receipt-v1.json', 'verification/k4c/codex-isolated-e2e-v1.json']) {

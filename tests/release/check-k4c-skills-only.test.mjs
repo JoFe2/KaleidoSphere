@@ -58,7 +58,7 @@ test('positive: canonical skill bytes plus the matching Apache-2.0 manifest pass
   const actual = receipt(result);
 
   assert.equal(actual.schemaVersion, 'kaleidosphere/k4c-security-license-receipt/v1');
-  assert.equal(actual.packageVersion, '0.24.0');
+  assert.equal(actual.packageVersion, '0.26.0');
   assert.equal(actual.manifest.license, 'Apache-2.0');
   assert.equal(actual.packageDigest.length, 64);
   assert.deepEqual(actual.scannedPaths.package, [

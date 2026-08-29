@@ -1,34 +1,34 @@
 {
   "schemaVersion": "kaleidosphere/k4c-local-contract-integration/v1",
   "fixture": "tests/fixtures/release/k4c-local-contract-integration-v1.json",
-  "fixtureSha256": "c8619d94cc43993d2b0d72d1b200e73f39a1f3b4af7a3a6b545aaca4e3a2cd58",
+  "fixtureSha256": "d4d6ed7b25df251e8734437fbd25fddfd5bb56d46dc1b46a66008ea834329885",
   "package": {
-    "version": "0.24.0",
-    "digest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
-    "manifestSha256": "beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75"
+    "version": "0.26.0",
+    "digest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+    "manifestSha256": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77"
   },
   "predecessorReceipts": [
     {
       "id": "codex-isolated-e2e",
       "path": "verification/k4c/codex-isolated-e2e-v1.json",
       "schemaVersion": "kaleidosphere/k4c-codex-isolated-e2e/v1",
-      "sha256": "1a20208058c9ab4031bc2b8467c09d3f19d4837ea8f3343792f2dffc6fb820b7",
-      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+      "sha256": "efa866ac86fdb14dec4c73643fae829bb58ee24bfa43ad43e9dbc387b64b5311",
+      "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a"
     },
     {
       "id": "security-license",
       "path": "verification/k4c/security-license-receipt-v1.json",
       "schemaVersion": "kaleidosphere/k4c-security-license-receipt/v1",
-      "sha256": "44106cffcfa0e245b46923d1e1c0ae6fdb316001a066b1459e832accaba5e165",
-      "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4"
+      "sha256": "3e417d7bad6339c4313bc785bd4c606c9c8e599ed1622bbe364120f6968ce9af",
+      "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a"
     }
   ],
-  "bindingDigest": "360a04fb4cfb8a2e5db5cf65358450f7065f135645cc276ae28a7e8c139749d6",
+  "bindingDigest": "b3fb06c61e72cdf114f00415ba853e425ce0097e75123dd699a1bcef7b57bfa8",
   "decision": {
     "outcome": "accepted",
     "scope": "local-contract-integration",
-    "packageDigest": "9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4",
-    "bindingDigest": "360a04fb4cfb8a2e5db5cf65358450f7065f135645cc276ae28a7e8c139749d6",
+    "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+    "bindingDigest": "b3fb06c61e72cdf114f00415ba853e425ce0097e75123dd699a1bcef7b57bfa8",
     "releaseClaimEmitted": false
   },
   "executionBoundary": {

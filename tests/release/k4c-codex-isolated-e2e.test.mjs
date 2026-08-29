@@ -38,7 +38,7 @@ test('fixture mode records the complete ordered install/discover/use/deny/remove
   assert.equal(receipt.mode, 'fixture');
   assert.equal(receipt.codex.version, 'codex-cli 0.144.1');
   assert.match(receipt.package.packageDigest, /^[a-f0-9]{64}$/);
-  assert.equal(receipt.package.manifestSha256, 'beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75');
+  assert.equal(receipt.package.manifestSha256, '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77');
   assert.equal(receipt.boundaryProof.emptyAfterCleanup, true);
   assert.equal(receipt.boundaryProof.globalConfigurationMutated, false);
   assert.deepEqual(receipt.orderedCommandResults.map((item) => item.id), [
@@ -97,6 +97,11 @@ test('clean-boundary implementation uses isolated Codex roots and never targets 
   assert.match(source, /XDG_DATA_HOME/);
   assert.match(source, /ignore-user-config/);
   assert.doesNotMatch(source, /process\.env\.HOME\s*=\s*['"]\//);
+  assert.match(source, /\.agents', 'plugins', 'marketplace\.json'/);
+  assert.match(source, /source: \{ source: 'local', path: '\.\/plugins\/kaleidosphere' \}/);
+  assert.match(source, /installation: 'AVAILABLE', authentication: 'ON_INSTALL'/);
+  assert.doesNotMatch(source, /marketplaceRoot, '\.codex-plugin'/);
+  assert.match(source, /if \(failed\) \{[\s\S]*roots\.configRoots[\s\S]*rm\(base, \{ recursive: true, force: true \}\)/);
 });
 
 test('receipt schema is closed and names the required evidence fields', async () => {

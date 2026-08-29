@@ -1,9 +1,9 @@
-# KaleidoSphere 0.24.0 release notes
+# KaleidoSphere 0.26.0 release notes
 
 ## Summary
 
 This packet documents the skills-only KaleidoSphere Codex distribution at version
-`0.24.0`. The release surface is the generated plugin manifest plus the
+`0.26.0`. The release surface is the generated plugin manifest plus the
 canonical `kaleidosphere` AgentSkill and its declared reference and validation
 files.
 
@@ -21,9 +21,9 @@ files.
 
 ## Receipt binding
 
-- Package version: `0.24.0`
-- Package SHA-256 digest: `9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4`
-- Plugin manifest SHA-256 digest: `beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75`
+- Package version: `0.26.0`
+- Package SHA-256 digest: `e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a`
+- Plugin manifest SHA-256 digest: `64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77`
 - Security receipt: `verification/k4c/security-license-receipt-v1.json`
 - Isolated E2E receipt: `verification/k4c/codex-isolated-e2e-v1.json`
 - Reviewer case matrix: `docs/release/k4c-reviewer-test-cases-v1.json`

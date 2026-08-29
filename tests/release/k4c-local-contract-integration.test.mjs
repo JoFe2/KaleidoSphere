@@ -47,14 +47,14 @@ test('accepts and deterministically cryptographically binds every local predeces
   assert.deepEqual(JSON.parse(await readFile(secondPath, 'utf8')), receipt);
 
   assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-local-contract-integration/v1');
-  assert.equal(receipt.package.digest, '9482367f2c671665651ed1ec55f6aa852bacfc151a36f14eb9807afbf3c185f4');
+  assert.equal(receipt.package.digest, 'e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a');
   assert.match(receipt.fixtureSha256, /^[a-f0-9]{64}$/);
   assert.match(receipt.bindingDigest, /^[a-f0-9]{64}$/);
   assert.deepEqual(receipt.predecessorReceipts.map((item) => item.id), ['codex-isolated-e2e', 'security-license']);
   assert.deepEqual(receipt.predecessorReceipts.map((item) => item.packageDigest), [receipt.package.digest, receipt.package.digest]);
   assert.deepEqual(receipt.predecessorReceipts.map((item) => item.sha256), [
-    '1a20208058c9ab4031bc2b8467c09d3f19d4837ea8f3343792f2dffc6fb820b7',
-    '44106cffcfa0e245b46923d1e1c0ae6fdb316001a066b1459e832accaba5e165',
+    'efa866ac86fdb14dec4c73643fae829bb58ee24bfa43ad43e9dbc387b64b5311',
+    '3e417d7bad6339c4313bc785bd4c606c9c8e599ed1622bbe364120f6968ce9af',
   ]);
   assert.equal(receipt.accepted, true);
 });

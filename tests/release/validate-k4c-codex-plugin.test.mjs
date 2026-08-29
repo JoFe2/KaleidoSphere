@@ -64,7 +64,7 @@ test('accepts a generated manifest through both deterministic validation routes'
   assert.equal(receipt.pluginCreatorVerification.validatorSha256, 'ebda00d55d7518b127f675f062fb5c6e7a1ffdc0a99df1a55ac594400d7d3228');
   assert.equal(receipt.packageDigest, generated.packageDigest);
   assert.match(receipt.packageDigest, /^[a-f0-9]{64}$/);
-  assert.equal(receipt.manifest.sha256, 'beb78cef8fbedb1817fbf3fc61c96177a7e1a7e28b910838b7bf5070eb47fc75');
+  assert.equal(receipt.manifest.sha256, '64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77');
   assert.equal(receipt.pluginCreatorVerification.transcript.exitCode, 0);
   assert.equal(receipt.publicationPerformed, false);
   assert.equal(receipt.accepted, true);
