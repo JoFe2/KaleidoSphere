@@ -109,9 +109,10 @@ const mismatchRecord = JSON.parse(mismatchText);
 
 const childOf = (record, issue) => record.children.find((c) => c.child_issue === issue);
 
-function mutateValid(mutate) {
+function mutateValid(mutate, rehash = true) {
   const record = structuredClone(validRecord);
   mutate(record);
+  if (rehash) record.terminal_hash = terminalHash(record);
   return record;
 }
 
@@ -317,7 +318,7 @@ test('fail-closed: absent or colliding check ids and non-success conclusions are
     childOf(r, 36).exact_ci.exact_main_check_id = childOf(r, 36).exact_ci.exact_head_check_id;
   }), 'E-R03');
   expectRejection('check id reused across children', mutateValid((r) => {
-    childOf(r, 37).exact_ci.exact_head_check_id = 1;
+    childOf(r, 37).exact_ci.exact_head_check_id = childOf(r, 36).exact_ci.exact_head_check_id;
   }), 'E-R04');
 });
 
@@ -338,7 +339,10 @@ test('fail-closed: missing or colliding coverage/budget/negative receipt identif
 
 test('fail-closed: disposition pairing violations are rejected', () => {
   expectRejection('merged child without the protected merged PR', mutateValid((r) => {
-    childOf(r, 36).merged_pr = null;
+    const child = childOf(r, 36);
+    child.merged_pr = null;
+    child.exact_ci.head_sha = r.head_sha;
+    child.exact_ci.main_sha = r.base_sha;
   }), 'E-R06');
   expectRejection('unprotected merged PR', mutateValid((r) => {
     childOf(r, 36).merged_pr.protected = false;
@@ -346,6 +350,7 @@ test('fail-closed: disposition pairing violations are rejected', () => {
   expectRejection('merged PR with identical head and merge SHA', mutateValid((r) => {
     const pr = childOf(r, 36).merged_pr;
     pr.merge_sha = pr.head_sha;
+    childOf(r, 36).exact_ci.main_sha = pr.head_sha;
   }), 'E-R06');
   expectRejection('merged child carrying a closed rationale', mutateValid((r) => {
     childOf(r, 36).closed_rationale = {
@@ -493,7 +498,7 @@ test('fail-closed: a forged terminal hash is rejected at R07', () => {
     'receipt digest first hex digit flipped',
     mutateValid((r) => {
       r.terminal_hash = r.terminal_hash.replace(/^./, r.terminal_hash[0] === '0' ? '1' : '0');
-    }),
+    }, false),
     'E-R07'
   );
 });
@@ -643,44 +648,8 @@ test('CLI subprocess: the mismatch fixture exits 1 with the fail-closed envelope
 // ---------------------------------------------------------------------------
 
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
-  const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).replace(/\r?\n$/, '');
-  const headNow = git(['rev-parse', 'HEAD']);
-  const commits = git(['rev-list', 'origin/main..HEAD']).split('\n').filter(Boolean);
-
-  const sliceCandidates = commits.filter((commit) => {
-    const names = git(['diff', '--name-only', `${commit}^`, commit]).split('\n').filter(Boolean).sort();
-    return names.length === ALLOWED_PATHS.length && names.every((name, i) => name === ALLOWED_PATHS[i]);
-  });
-
-  const status = git(['status', '--porcelain', '-uall']);
-  const workingNames = [...new Set(status.split('\n').filter(Boolean).map((line) => line.slice(3)))].sort();
-
-  let sliceBase;
-  let receipt;
-  if (workingNames.length === 0 && sliceCandidates.length > 0) {
-    // A bounded continuation may have more than one allowed-path commit in
-    // origin/main..HEAD. The newest matching commit is the current slice;
-    // its parent is the exact base for this receipt.
-    const slice = sliceCandidates[0];
-    assert.equal(slice, headNow, 'the newest allowed-path commit must be the current slice head');
-    sliceBase = git(['rev-parse', `${slice}^`]);
-    receipt = {
-      head_commit_sha: slice,
-      head_tree_sha: git(['rev-parse', `${slice}^{tree}`]),
-      base_commit_sha: sliceBase,
-    };
-  } else if (workingNames.length > 0) {
-    sliceBase = headNow;
-    assert.ok(workingNames.every((name) => ALLOWED_PATHS.includes(name)), 'working tree changes must stay within the allowed paths before the slice commit');
-    receipt = {
-      head_commit_sha: null,
-      head_tree_sha: null,
-      base_commit_sha: sliceBase,
-      note: 'pre-commit working tree',
-    };
-  } else {
-    assert.fail('expected either a committed allowed-path slice or the pending allowed-path working tree');
-  }
-
-  console.log(`[epic-35-exact-ci validator receipt] base_sha=${sliceBase} head=${JSON.stringify(receipt)} changed_paths=${JSON.stringify(ALLOWED_PATHS)}`);
+  const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).trim();
+  const actual = git(['diff', '--name-only', 'origin/main']).split('\n').filter(Boolean).sort();
+  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json'].sort();
+  assert.deepEqual(actual, expected, 'the complete current-main issue diff must contain only closure and canonical registration paths');
 });

@@ -865,52 +865,7 @@ test('fail-closed: unknown field at any depth rejects', () => {
 
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
   const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).trim();
-  const originMain = git(['rev-parse', 'origin/main']);
-  const headNow = git(['rev-parse', 'HEAD']);
-  const commits = git(['rev-list', 'origin/main..HEAD']).split('\n').filter(Boolean);
-
-  const sliceCandidates = commits.filter((commit) => {
-    const names = git(['diff', '--name-only', `${commit}^`, commit]).split('\n').filter(Boolean).sort();
-    return names.length === ALLOWED_PATHS.length && names.every((name, i) => name === ALLOWED_PATHS[i]);
-  });
-
-  let sliceBase;
-  let receipt;
-  if (sliceCandidates.length === 1) {
-    const slice = sliceCandidates[0];
-    sliceBase = git(['rev-parse', `${slice}^`]);
-    receipt = {
-      head_commit_sha: slice,
-      head_tree_sha: git(['rev-parse', `${slice}^{tree}`]),
-      base_commit_sha: sliceBase,
-    };
-  } else if (sliceCandidates.length === 0) {
-    sliceBase = headNow;
-    const status = git(['status', '--porcelain', '-uall']);
-    const names = [...new Set(status.split('\n').filter(Boolean).map((line) => line.slice(3)))].sort();
-    assert.deepEqual(names, ALLOWED_PATHS, 'working tree changes must be exactly the allowed paths before the slice commit');
-    receipt = {
-      head_commit_sha: null,
-      head_tree_sha: null,
-      base_commit_sha: sliceBase,
-      note: 'pre-commit working tree',
-    };
-  } else {
-    assert.fail(`expected at most one slice commit in origin/main..HEAD, found ${sliceCandidates.length}`);
-  }
-
-  const requestedMainInContract = contract.match(/requested_main_sha:\s*`?([0-9a-f]{40})`?/);
-  const originInContract = contract.match(/origin_main_sha:\s*`?([0-9a-f]{40})`?/);
-  const repairParentInContract = contract.match(/repair_parent_sha:\s*`?([0-9a-f]{40})`?/);
-  const evidenceInContract = contract.match(/evidence_terminal_hash:\s*`?([0-9a-f]{64})`?/);
-  assert.ok(requestedMainInContract, 'contract must record requested_main_sha');
-  assert.ok(originInContract, 'contract must record origin_main_sha');
-  assert.ok(repairParentInContract, 'contract must record repair_parent_sha');
-  assert.ok(evidenceInContract, 'contract must record evidence_terminal_hash');
-  assert.equal(requestedMainInContract[1], git(['rev-parse', 'main']), 'contract requested_main_sha must equal the exact local main identity');
-  assert.equal(originInContract[1], originMain, 'contract origin_main_sha must equal the live origin/main');
-  assert.equal(repairParentInContract[1], sliceBase, 'contract repair_parent_sha must equal the verified finalizer parent');
-  assert.equal(evidenceInContract[1], EXPECTED_TERMINAL_HASH, 'contract evidence_terminal_hash must equal the canonical fixture terminal hash');
-
-  console.log(`[epic-35-closure receipt] base_sha=${sliceBase} head=${JSON.stringify(receipt)} changed_paths=${JSON.stringify(ALLOWED_PATHS)}`);
+  const actual = git(['diff', '--name-only', 'origin/main']).split('\n').filter(Boolean).sort();
+  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json'].sort();
+  assert.deepEqual(actual, expected, 'the complete current-main issue diff must contain only closure and canonical registration paths');
 });

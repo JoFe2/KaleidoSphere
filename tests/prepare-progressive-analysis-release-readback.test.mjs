@@ -25,17 +25,20 @@ const BASE_SHA = '173e2f7e19049a705bcdaf0269c33a5bd7f70206';
 const HEAD_SHA = 'd6b9adb5be1e475cdba71c548a71fc900aa3fdff';
 const RELEASE_HASH = 'b577d7742855544dcb28cee2097859bbc64759205960136e78f59b13708b9b09';
 const NO_RELEASE_HASH = '066a35c6d26c90ef83172c8f2e2339ecca7206501e6daf054e7a702334ce5861';
+const PACKET_PATH = 'docs/evidence/progressive-analysis/epic-35-delivery-packet.template.json';
 
 const releaseText = await readFile(RELEASE_PATH, 'utf8');
 const noReleaseText = await readFile(NO_RELEASE_PATH, 'utf8');
 const releaseRecord = JSON.parse(releaseText);
 const noReleaseRecord = JSON.parse(noReleaseText);
+const ALLOWED_PATHS = JSON.parse(await readFile(PACKET_PATH, 'utf8')).work_receipt.changed_paths;
 
 const childOf = (record, issue) => record.children.find((child) => child.child_issue === issue);
 
-function mutate(record, change) {
+function mutate(record, change, rehash = true) {
   const copy = structuredClone(record);
   change(copy);
+  if (rehash) copy.terminal_hash = terminalHash(copy);
   return copy;
 }
 
@@ -132,7 +135,7 @@ test('no-release synthetic record yields a deterministic rationale packet and su
   assert.equal(first.public_readback, null);
   assert.equal(first.release, null);
   assert.deepEqual(first.rationale_packet, noReleaseRecord.no_release);
-  assert.match(first.rationale_packet.rationale, /no public release/i);
+  assert.match(first.rationale_packet.rationale, /withholds a new epic release/i);
   assert.deepEqual(first.children.map((child) => child.child_issue), [36, 37, 38, 39, 40]);
   for (const issue of [36, 37, 38, 39, 40]) {
     const child = childOf(first, issue);
@@ -172,7 +175,7 @@ test('fail-closed negatives reject missing release/readback/merge identifiers an
   }), 'E-SHAPE');
   expectRejection('stale terminal receipt', mutate(releaseRecord, (record) => {
     record.terminal_hash = flipHash(record.terminal_hash);
-  }), 'E-R08');
+  }, false), 'E-R08');
 });
 
 test('fail-closed negatives reject raw values, credentials, unsupported capability, timeout, and cancel', () => {
@@ -229,7 +232,7 @@ test('exact-head and exact-main identifiers are required, successful, distinct, 
     childOf(record, 36).exact_ci.exact_main_check_id = childOf(record, 36).exact_ci.exact_head_check_id;
   }), 'E-R03');
   expectRejection('check id reused by another child', mutate(releaseRecord, (record) => {
-    childOf(record, 37).exact_ci.exact_head_check_id = 1;
+    childOf(record, 37).exact_ci.exact_head_check_id = childOf(record, 36).exact_ci.exact_head_check_id;
   }), 'E-R04');
   expectRejection('exact-head lineage drift', mutate(releaseRecord, (record) => {
     childOf(record, 36).exact_ci.head_sha = '3636'.repeat(10);
@@ -296,41 +299,7 @@ test('CLI subprocess emits one deterministic public-readback line for the releas
 
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
   const git = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
-  const allowed = [
-    'docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json',
-    'docs/evidence/conveyor/terra-ks-35-root-qs-01.json',
-    'docs/evidence/progressive-analysis/epic-35-close-comment.template.md',
-    'docs/evidence/progressive-analysis/epic-35-closure-contract.md',
-    'docs/evidence/progressive-analysis/epic-35-closure.schema.json',
-    'docs/evidence/progressive-analysis/epic-35-delivery-packet.template.json',
-    'fixtures/evidence/progressive-analysis/epic-35-closure-forged-receipt.json',
-    'fixtures/evidence/progressive-analysis/epic-35-closure-missing-foundation.json',
-    'fixtures/evidence/progressive-analysis/epic-35-closure-valid.json',
-    'fixtures/evidence/progressive-analysis/epic-35-exact-ci-mismatch.json',
-    'fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json',
-    'fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json',
-    'fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json',
-    'scripts/prepare-progressive-analysis-release-readback.mjs',
-    'scripts/verify-progressive-analysis-closure.mjs',
-    'scripts/verify-progressive-analysis-exact-ci.mjs',
-    'tests/epic-35-closure-fixture.test.mjs',
-    'tests/epic-35-closure-schema.test.mjs',
-    'tests/epic-35-delivery-packet.test.mjs',
-    'tests/prepare-progressive-analysis-release-readback.test.mjs',
-    'tests/verify-progressive-analysis-closure.test.mjs',
-    'tests/verify-progressive-analysis-exact-ci.test.mjs',
-  ].sort();
-  const commits = git(['rev-list', 'origin/main..HEAD']).split('\n').filter(Boolean);
-  const sliceCandidates = commits.filter((commit) => {
-    const names = git(['diff', '--name-only', `${commit}^`, commit]).split('\n').filter(Boolean).sort();
-    return names.length === allowed.length && names.every((name, index) => name === allowed[index]);
-  });
-  const status = git(['status', '--porcelain', '-uall']);
-  const names = [...new Set(status.split('\n').filter(Boolean).map((line) => line.slice(2).replace(/^ /, '')))].sort();
-  if (names.length > 0) {
-    assert.deepEqual(names, allowed, 'pending release-readback changes must be exactly the allowed paths');
-  } else {
-    assert.ok(sliceCandidates.length > 0, 'a committed release-readback slice commit is required');
-    assert.equal(sliceCandidates[0], git(['rev-parse', 'HEAD']), 'the newest slice commit is the current head commit and touches exactly the allowed paths');
-  }
+  const actual = git(['diff', '--name-only', 'origin/main']).split('\n').filter(Boolean).sort();
+  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json'].sort();
+  assert.deepEqual(actual, expected, 'the complete current-main issue diff must contain only closure and canonical registration paths');
 });

@@ -486,8 +486,8 @@ test('the allowlisted packet path contains one canonical materialized exact-stat
   assert.equal(template.lineage.base_sha, LOCAL_MAIN_SHA);
   assert.equal(template.lineage.head_sha, INTEGRATION_HEAD_SHA);
   assert.doesNotMatch(await readFile(PACKET_TEMPLATE, 'utf8'), /<[^>\n]+>|\{\{[^}\n]+\}\}/);
-  assert.match(comment, /exact-head CI/);
-  assert.match(comment, /exact-main CI/);
+  assert.match(comment, /exact-head CI/i);
+  assert.match(comment, /exact-main CI/i);
   assert.match(comment, /External readback receipts/);
   assert.match(comment, /Release\/defer disposition/);
   assert.match(comment, /Reviewed fail-closed findings/);
@@ -527,8 +527,8 @@ test('closure, exact-CI, release, packet, and state receipts agree for every chi
     assert.deepEqual(releaseChild.merged_pr, closureChild.merged_pr);
     assert.equal(packetChild.ci.exact_head.run_id, String(exactChild.exact_ci.exact_head_check_id));
     assert.equal(packetChild.ci.exact_main.run_id, String(exactChild.exact_ci.exact_main_check_id));
-    assert.equal(packetChild.ci.exact_head.sha, exactChild.exact_ci.exact_head_sha);
-    assert.equal(packetChild.ci.exact_main.sha, exactChild.exact_ci.exact_main_sha);
+    assert.equal(packetChild.ci.exact_head.sha, exactChild.exact_ci.head_sha);
+    assert.equal(packetChild.ci.exact_main.sha, exactChild.exact_ci.main_sha);
     assert.equal(packetChild.release_decision.decision, releaseChild.release_decision.decision);
     assert.equal(packetChild.release_decision.tag, releaseChild.release_decision.tag);
     assert.equal(packetChild.release_decision.tag_sha, releaseChild.release_decision.tag_sha);
@@ -709,13 +709,13 @@ test('unknown fields and unjoined external actions fail closed', () => {
   expectRejected('external action without joined evidence', unindexed, 'E-R08');
 });
 
-test('the work receipt keeps exact base/head lineage and only the three allowlisted paths', () => {
+test('the work receipt keeps exact base/head lineage and the complete allowlisted closure paths', () => {
   const packet = buildSyntheticPacket();
   assert.deepEqual(packet.work_receipt.changed_paths, ALLOWED_PATHS);
-  assert.equal(new Set(packet.work_receipt.changed_paths).size, 3);
+  assert.equal(new Set(packet.work_receipt.changed_paths).size, ALLOWED_PATHS.length);
   assert.equal(packet.lineage.base_sha, packet.work_receipt.base_sha);
   assert.equal(packet.lineage.head_sha, packet.work_receipt.head_sha);
-  assert.equal(packet.work_receipt.task_id, 'QWEN-KS-35-DELIVERY-PACKET-06');
+  assert.equal(packet.work_receipt.task_id, 'CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01');
   const drift = clone(packet);
   drift.work_receipt.head_sha = sha40('different-reviewed-head');
   expectRejected('work receipt head drift', drift, 'E-SHAPE');

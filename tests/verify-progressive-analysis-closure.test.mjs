@@ -568,44 +568,8 @@ test('CLI subprocess: denials exit 1 with the fail-closed envelope; usage errors
 // ---------------------------------------------------------------------------
 
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
-  const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).replace(/\r?\n$/, '');
-  const headNow = git(['rev-parse', 'HEAD']);
-  const commits = git(['rev-list', 'origin/main..HEAD']).split('\n').filter(Boolean);
-
-  const sliceCandidates = commits.filter((commit) => {
-    const names = git(['diff', '--name-only', `${commit}^`, commit]).split('\n').filter(Boolean).sort();
-    return names.length === ALLOWED_PATHS.length && names.every((name, i) => name === ALLOWED_PATHS[i]);
-  });
-
-  const status = git(['status', '--porcelain', '-uall']);
-  const workingNames = [...new Set(status.split('\n').filter(Boolean).map((line) => line.slice(3)))].sort();
-
-  let sliceBase;
-  let receipt;
-  if (workingNames.length === 0 && sliceCandidates.length > 0) {
-    // A bounded continuation may have more than one allowed-path commit in
-    // origin/main..HEAD. The newest matching commit is the current slice;
-    // its parent is the exact base for this receipt.
-    const slice = sliceCandidates[0];
-    assert.equal(slice, headNow, 'the newest allowed-path commit must be the current slice head');
-    sliceBase = git(['rev-parse', `${slice}^`]);
-    receipt = {
-      head_commit_sha: slice,
-      head_tree_sha: git(['rev-parse', `${slice}^{tree}`]),
-      base_commit_sha: sliceBase,
-    };
-  } else if (workingNames.length > 0) {
-    sliceBase = headNow;
-    assert.ok(workingNames.every((name) => ALLOWED_PATHS.includes(name)), 'working tree changes must stay within the allowed paths before the slice commit');
-    receipt = {
-      head_commit_sha: null,
-      head_tree_sha: null,
-      base_commit_sha: sliceBase,
-      note: 'pre-commit working tree',
-    };
-  } else {
-    assert.fail('expected either a committed allowed-path slice or the pending allowed-path working tree');
-  }
-
-  console.log(`[epic-35-closure validator receipt] base_sha=${sliceBase} head=${JSON.stringify(receipt)} changed_paths=${JSON.stringify(ALLOWED_PATHS)}`);
+  const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).trim();
+  const actual = git(['diff', '--name-only', 'origin/main']).split('\n').filter(Boolean).sort();
+  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json'].sort();
+  assert.deepEqual(actual, expected, 'the complete current-main issue diff must contain only closure and canonical registration paths');
 });

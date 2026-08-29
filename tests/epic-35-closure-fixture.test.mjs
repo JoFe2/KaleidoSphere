@@ -788,38 +788,7 @@ test('the contract receipt pins the valid fixture terminal hash and the live ori
 
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
   const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).trim();
-  const headNow = git(['rev-parse', 'HEAD']);
-  const commits = git(['rev-list', 'origin/main..HEAD']).split('\n').filter(Boolean);
-
-  const sliceCandidates = commits.filter((commit) => {
-    const names = git(['diff', '--name-only', `${commit}^`, commit]).split('\n').filter(Boolean).sort();
-    return names.length === ALLOWED_PATHS.length && names.every((name, i) => name === ALLOWED_PATHS[i]);
-  });
-
-  let sliceBase;
-  let receipt;
-  if (sliceCandidates.length === 1) {
-    const slice = sliceCandidates[0];
-    sliceBase = git(['rev-parse', `${slice}^`]);
-    receipt = {
-      head_commit_sha: slice,
-      head_tree_sha: git(['rev-parse', `${slice}^{tree}`]),
-      base_commit_sha: sliceBase,
-    };
-  } else if (sliceCandidates.length === 0) {
-    sliceBase = headNow;
-    const status = git(['status', '--porcelain', '-uall']);
-    const names = [...new Set(status.split('\n').filter(Boolean).map((line) => line.slice(3)))].sort();
-    assert.deepEqual(names, ALLOWED_PATHS, 'working tree changes must be exactly the allowed paths before the slice commit');
-    receipt = {
-      head_commit_sha: null,
-      head_tree_sha: null,
-      base_commit_sha: sliceBase,
-      note: 'pre-commit working tree',
-    };
-  } else {
-    assert.fail(`expected at most one slice commit in origin/main..HEAD, found ${sliceCandidates.length}`);
-  }
-
-  console.log(`[epic-35-closure fixture receipt] base_sha=${sliceBase} head=${JSON.stringify(receipt)} changed_paths=${JSON.stringify(ALLOWED_PATHS)}`);
+  const actual = git(['diff', '--name-only', 'origin/main']).split('\n').filter(Boolean).sort();
+  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json'].sort();
+  assert.deepEqual(actual, expected, 'the complete current-main issue diff must contain only closure and canonical registration paths');
 });

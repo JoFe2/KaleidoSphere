@@ -200,7 +200,7 @@ the focused tests.
 
 - task_id: `CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01`
 - requested_main_sha: `173e2f7e19049a705bcdaf0269c33a5bd7f70206`
-- origin_main_sha: `d6b9adb5be1e475cdba71c548a71fc900aa3fdff`
+- origin_main_sha: `d77ed33d062268a8000ff9b0ef5ca9dc9ad3433b`
 - repair_parent_sha: `5ffad599118cade30ce66264d529259f63d1bc45`
 - evidence_terminal_hash: `bf303ff740bc91f8d05603db2556a60eb83c3d76371b6bade1018787eca28724`
 - rejected_artifact: local
