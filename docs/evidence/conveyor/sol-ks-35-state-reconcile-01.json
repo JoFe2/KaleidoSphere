@@ -1,0 +1,928 @@
+{
+  "schema_version": "kaleidosphere.conveyor.state-reconciliation-receipt/v1",
+  "artifact_kind": "deterministic-decision-and-integration-receipt",
+  "task_id": "SOL-KS-35-STATE-RECONCILE-01",
+  "artifact_path": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+  "decision": {
+    "epic_issue": 35,
+    "verdict": "CLOSE_READY_NO_REMOTE_MUTATION",
+    "reason_code": "ALL_FIVE_CHILDREN_TERMINAL_RECEIPT_READY",
+    "summary": "Issues #36 through #40 have terminal delivery evidence from the live repository and public readbacks. This receipt is ready for independent Root-QS and makes no remote closure mutation.",
+    "closure_evidence_boundary": "Accept a child claim only when its issue-state index joins to immutable repository evidence at the declared base, authoritative pull-request merge data, SHA-bound CI data, an explicit release or no-release decision, and tag/release/public readback when released. Issue prose alone is never closure evidence.",
+    "eligible_children": [
+      36,
+      37,
+      38,
+      39,
+      40
+    ],
+    "ineligible_children": []
+  },
+  "repository_snapshot": {
+    "repository": "JoFe2/KaleidoSphere",
+    "remote_url": "https://github.com/JoFe2/KaleidoSphere.git",
+    "ref": "refs/heads/main",
+    "immutable_base_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "base_commit_url": "https://github.com/JoFe2/KaleidoSphere/commit/d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "local_head_before_receipt": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "local_origin_main_before_receipt": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "remote_main_readback_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "remote_main_readback_method": "git ls-remote origin refs/heads/main",
+    "branch_readback": {
+      "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/branches/main",
+      "protected": true,
+      "sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff"
+    },
+    "base_ci_readback": {
+      "check_run_id": 98977483157,
+      "action_run_id": 33209060860,
+      "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33209060860/job/98977483157",
+      "head_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "authority_mutations": {
+      "github": false,
+      "issue": false,
+      "pull_request": false,
+      "release": false,
+      "tag": false,
+      "remote": false,
+      "service": false,
+      "ci_trigger": false,
+      "product_or_runtime_state": false,
+      "local_scope": "Only this receipt and its required local commit are permitted; no product path is changed."
+    },
+    "sensitive_material": {
+      "credentials_copied": false,
+      "raw_database_data_copied": false,
+      "production_or_customer_database_contacted": false
+    }
+  },
+  "input_boundary": {
+    "accepted_authorities": [
+      {
+        "class": "immutable_repository_tree",
+        "rule": "The declared origin/main SHA plus SHA-qualified repository paths establishes persisted decisions, fixture hashes, fail-closed probes, and dependency foundations."
+      },
+      {
+        "class": "github_issue_state",
+        "rule": "The public issue API establishes only open/closed state, state reason, identifiers, and provenance timestamps. Bodies and comments remain indexes or asserted summaries until joined to stronger evidence."
+      },
+      {
+        "class": "github_pull_merge",
+        "rule": "The public pull API must report merged=true, a main base, exact head SHA, exact merge SHA, and merge time. Current protected-main readback, owner delivery receipt, exact CI, and git ancestry corroborate the protected path; no claim rests on issue prose alone."
+      },
+      {
+        "class": "github_ci",
+        "rule": "A completed successful pull_request run must bind the exact PR head, and a completed successful push/check run must bind the exact resulting main merge SHA."
+      },
+      {
+        "class": "github_release_and_tag",
+        "rule": "A release claim requires a non-draft, non-prerelease public release, an exact tag ref and target SHA, uploaded asset digest, public page/raw readback, and an anonymously downloaded archive matching its sidecar."
+      },
+      {
+        "class": "durable_closed_no_delivery_rationale",
+        "rule": "In lieu of a merged product PR, accept only a closed/not-planned child plus an owner-authored durable rationale that explicitly names scope, release decision, evidence disposition, rollback/non-claims, and dependency effect. No child in this snapshot uses this alternative."
+      }
+    ],
+    "rejected_inputs": [
+      {
+        "class": "epic_or_child_issue_prose_alone",
+        "reason": "Mutable prose and checkboxes are status summaries, not authoritative delivery receipts."
+      },
+      {
+        "class": "unjoined_sha_or_run_identifier",
+        "reason": "An identifier copied from prose is not accepted until its PR, CI, tag, release, or repository endpoint independently binds it."
+      },
+      {
+        "class": "repository_presence_alone",
+        "reason": "A file on current main does not by itself establish protected delivery, exact CI, release policy, or public readback."
+      },
+      {
+        "class": "historical_pilots_20_26",
+        "reason": "Issues #20 and #26 remain closed evidence-pattern inputs only. They are outside the #35 child closure join and are not reopened or re-adjudicated."
+      },
+      {
+        "class": "reserved_child_40_forward_work",
+        "reason": "Task KALEIDOSPHERE-40-QWEN-FORWARD-02 is a separately owned forward package. This reconciliation neither implements, duplicates, accepts, nor terminalizes it."
+      }
+    ],
+    "fail_closed_join_rules": [
+      "Reject any #36-#40 completion claim supported only by issue body or comment prose.",
+      "Reject #40 completion until its accepted task chain is terminal and independently read back through implementation receipt, review acceptance, protected merge, exact-head/exact-main CI, and explicit release disposition.",
+      "Reject a parity or adaptive claim when the #36 breadth gate, #37 persisted reservation/receipt foundation, or required #38/#39 edge is absent, unverifiable, stale, or bypassed.",
+      "Do not infer no-delivery from an open issue, and do not convert an active task authorization into a delivered increment."
+    ]
+  },
+  "epic_35_status_input": {
+    "issue_number": 35,
+    "node_id": "I_kwDOT3K3rs8AAAABNZitNQ",
+    "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/35",
+    "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/35",
+    "title": "Epic: Progressive MSSQL/Oracle analysis program",
+    "state": "open",
+    "state_reason": null,
+    "updated_at": "2026-08-24T19:11:47Z",
+    "classification": "UNVERIFIED_STATUS_SUMMARY",
+    "may_satisfy_child_delivery_claim": false,
+    "body_summary_readback": {
+      "checked_children": [
+        36,
+        37,
+        38,
+        39,
+        40
+      ],
+      "unchecked_children": [],
+      "declared_critical_path": "#36 -> #37 -> #38 -> #39 -> #40"
+    },
+    "reconciliation": "The checkbox summary now includes all five children; the receipt accepts only the independently joined evidence recorded for #36-#40 and does not promote issue prose to authority."
+  },
+  "children": {
+    "36": {
+      "issue": {
+        "number": 36,
+        "node_id": "I_kwDOT3K3rs8AAAABNZi2qQ",
+        "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/36",
+        "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/36",
+        "state": "closed",
+        "state_reason": "completed",
+        "closed_at": "2026-08-19T15:32:57Z"
+      },
+      "owner_terminal_index": {
+        "comment_id": 5344357511,
+        "node_id": "IC_kwDOT3K3rs8AAAABPoxshw",
+        "url": "https://github.com/JoFe2/KaleidoSphere/issues/36#issuecomment-5344357511",
+        "use": "identifier and claim index only; every delivery identifier below was independently read back"
+      },
+      "repository_evidence": {
+        "decision": {
+          "path": "docs/decisions/PROGRESSIVE-RUN-CONTROLLER-V1.md",
+          "blob_oid": "6b01fa9f676f949d1cf853931354890139ed6d8b",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/decisions/PROGRESSIVE-RUN-CONTROLLER-V1.md"
+        },
+        "evidence": {
+          "path": "docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md",
+          "blob_oid": "fa9d95799cdbca029b202f27c940dbad06136e26",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md"
+        },
+        "test": {
+          "path": "tests/progressive-controller.test.mjs",
+          "blob_oid": "d453d5adb0043d09fe12c7b0c2bf14554145c341",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/tests/progressive-controller.test.mjs"
+        },
+        "deterministic_fixture_hashes": {
+          "mssql": "b07ff987efa1a693d37c9e091c7a231710d91bc8dd5c4294ecd8cf7d325f894d",
+          "oracle": "7093df29859673daac81ea4b0126bc1bfdc449d1ae2c5b582f2071a38be06c8e"
+        },
+        "fail_closed_negative_probes": [
+          "DDL/DML method identifiers",
+          "free SQL fragments",
+          "scope violations",
+          "raw values",
+          "credentials",
+          "stale or tampered state, coverage, receipt, or override",
+          "budget excess",
+          "duplicate dispatch",
+          "timeout and cancellation blind retry"
+        ],
+        "breadth_receipt_foundation": "Persisted seven-phase controller, explicit coverage states, 95% breadth-before-depth gate, exact bounded override, run/object budgets, duplicate suppression, and successful receipt resume."
+      },
+      "feature_delivery": {
+        "pull_number": 41,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABATRLRw",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/41",
+        "base_ref": "main",
+        "base_sha": "562c04cd371360190f5902c6132d02469ac0ce59",
+        "head_sha": "cf72cb745abe942bafbb758b24b680819dea74b5",
+        "merged": true,
+        "merge_sha": "a681f1868f1678c38a46fcd7ca09256edeb4445d",
+        "merged_at": "2026-08-19T15:27:54Z",
+        "exact_head_ci": {
+          "run_id": 32270143367,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32270143367",
+          "event": "pull_request",
+          "head_sha": "cf72cb745abe942bafbb758b24b680819dea74b5",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32270208181,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32270208181",
+          "event": "push",
+          "head_sha": "a681f1868f1678c38a46fcd7ca09256edeb4445d",
+          "conclusion": "success"
+        }
+      },
+      "release_delivery": {
+        "decision": "RELEASED_REGULAR",
+        "pull_number": 42,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABATSqyA",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/42",
+        "base_ref": "main",
+        "base_sha": "a681f1868f1678c38a46fcd7ca09256edeb4445d",
+        "head_sha": "0925016b61fa76cb238eab3e4d3a7382133ffad9",
+        "merged": true,
+        "merge_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83",
+        "merged_at": "2026-08-19T15:31:02Z",
+        "exact_head_ci": {
+          "run_id": 32270454434,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32270454434",
+          "event": "pull_request",
+          "head_sha": "0925016b61fa76cb238eab3e4d3a7382133ffad9",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32270528586,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32270528586",
+          "event": "push",
+          "head_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83",
+          "conclusion": "success"
+        },
+        "release": {
+          "release_id": 373162256,
+          "release_node_id": "RE_kwDOT3K3rs4WPgEQ",
+          "tag": "v0.12.0",
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/v0.12.0",
+          "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/373162256",
+          "target_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83",
+          "tag_ref_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83",
+          "draft": false,
+          "prerelease": false,
+          "asset_id": 521015357,
+          "asset_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.12.0/KaleidoSphere-v0.12.0.tar.gz",
+          "asset_sha256": "ee8be6c30267d932768a63f0da0c37652b718b2cab35a8bfc9eaf68546351cd4",
+          "anonymous_readback": {
+            "release_page_http_status": 200,
+            "raw_package_http_status": 200,
+            "downloaded_archive_sha256": "ee8be6c30267d932768a63f0da0c37652b718b2cab35a8bfc9eaf68546351cd4",
+            "sidecar_sha256": "ee8be6c30267d932768a63f0da0c37652b718b2cab35a8bfc9eaf68546351cd4",
+            "result": "PASS"
+          }
+        }
+      },
+      "closure_evidence_result": "PASS"
+    },
+    "37": {
+      "issue": {
+        "number": 37,
+        "node_id": "I_kwDOT3K3rs8AAAABNZjATg",
+        "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/37",
+        "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/37",
+        "state": "closed",
+        "state_reason": "completed",
+        "closed_at": "2026-08-19T16:02:15Z"
+      },
+      "owner_terminal_index": {
+        "comment_id": 5344711822,
+        "node_id": "IC_kwDOT3K3rs8AAAABPpHUjg",
+        "url": "https://github.com/JoFe2/KaleidoSphere/issues/37#issuecomment-5344711822",
+        "use": "identifier and claim index only; every delivery identifier below was independently read back"
+      },
+      "repository_evidence": {
+        "decision": {
+          "path": "docs/decisions/PROGRESSIVE-ANALYSIS-V1.md",
+          "blob_oid": "70dba9bbc9bcf23352196344066baac45b92141a",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/decisions/PROGRESSIVE-ANALYSIS-V1.md"
+        },
+        "evidence": {
+          "path": "docs/evidence/PROGRESSIVE_ANALYSIS_V1.md",
+          "blob_oid": "6c12c59d50dc5226ac1d0ea866949f30394d4852",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/evidence/PROGRESSIVE_ANALYSIS_V1.md"
+        },
+        "test": {
+          "path": "tests/progressive-analysis-v1.test.mjs",
+          "blob_oid": "0ec9c32e5bf4bf97769925f269140f0768484beb",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/tests/progressive-analysis-v1.test.mjs"
+        },
+        "deterministic_fixture_hashes": {
+          "sequential_terminal": "27495b93bbbe85ea21d800fb19aaaa4a0e480804490daa17788835032822e0a3",
+          "json_restart_terminal": "27495b93bbbe85ea21d800fb19aaaa4a0e480804490daa17788835032822e0a3",
+          "concurrent_one_slot": "8cd413ac2c90ee5b415b908d7d58a1713949a88521953a888126b50aa89d73f9",
+          "unknown_outcome": "5e6d34d85a3d5b9d34fbac92c113e6789455cb74812557914bc6bb8ea16fb948"
+        },
+        "fail_closed_negative_probes": [
+          "forged expected gain",
+          "counter rollback or refund",
+          "receipt replay or cross-scope binding",
+          "raw values",
+          "credentials",
+          "DDL or free SQL",
+          "timeout and cancellation blind retry",
+          "sealed-record tamper",
+          "stale concurrent compare-and-swap"
+        ],
+        "receipt_foundation": "Every advanced reservation first passes #36 breadth/method/scope/run/object authorization, then persists table/hypothesis debits before dispatch; unknown receipts remain debited and non-retryable."
+      },
+      "feature_delivery": {
+        "pull_number": 43,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABATeWXQ",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/43",
+        "base_ref": "main",
+        "base_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83",
+        "head_sha": "7d8222ad0d7b9e515ce2e4c747a278f5fbfd947e",
+        "merged": true,
+        "merge_sha": "1e12007d9c2094a34abd2d97156943ab6fedb2e2",
+        "merged_at": "2026-08-19T15:55:43Z",
+        "exact_head_ci": {
+          "run_id": 32272856706,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32272856706",
+          "event": "pull_request",
+          "head_sha": "7d8222ad0d7b9e515ce2e4c747a278f5fbfd947e",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32272955909,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32272955909",
+          "event": "push",
+          "head_sha": "1e12007d9c2094a34abd2d97156943ab6fedb2e2",
+          "conclusion": "success"
+        }
+      },
+      "release_delivery": {
+        "decision": "RELEASED_REGULAR",
+        "pull_number": 44,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABATgUnA",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/44",
+        "base_ref": "main",
+        "base_sha": "1e12007d9c2094a34abd2d97156943ab6fedb2e2",
+        "head_sha": "9d491abf33cf81eed8c280f95eee5abf2ce08dda",
+        "merged": true,
+        "merge_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+        "merged_at": "2026-08-19T15:59:32Z",
+        "exact_head_ci": {
+          "run_id": 32273247001,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32273247001",
+          "event": "pull_request",
+          "head_sha": "9d491abf33cf81eed8c280f95eee5abf2ce08dda",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32273321083,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32273321083",
+          "event": "push",
+          "head_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+          "conclusion": "success"
+        },
+        "release": {
+          "release_id": 373179578,
+          "release_node_id": "RE_kwDOT3K3rs4WPkS6",
+          "tag": "v0.13.0",
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/v0.13.0",
+          "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/373179578",
+          "target_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+          "tag_ref_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+          "draft": false,
+          "prerelease": false,
+          "asset_id": 521045701,
+          "asset_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.13.0/KaleidoSphere-v0.13.0.tar.gz",
+          "asset_sha256": "85cc79bbd653e5af91251a50ea10e537aba57a66efa2da788561a15276ca1d37",
+          "anonymous_readback": {
+            "release_page_http_status": 200,
+            "raw_package_http_status": 200,
+            "downloaded_archive_sha256": "85cc79bbd653e5af91251a50ea10e537aba57a66efa2da788561a15276ca1d37",
+            "sidecar_sha256": "85cc79bbd653e5af91251a50ea10e537aba57a66efa2da788561a15276ca1d37",
+            "result": "PASS"
+          }
+        }
+      },
+      "closure_evidence_result": "PASS"
+    },
+    "38": {
+      "issue": {
+        "number": 38,
+        "node_id": "I_kwDOT3K3rs8AAAABNZjI8A",
+        "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/38",
+        "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/38",
+        "state": "closed",
+        "state_reason": "completed",
+        "closed_at": "2026-08-19T17:06:59Z"
+      },
+      "owner_terminal_index": {
+        "comment_id": 5345530436,
+        "node_id": "IC_kwDOT3K3rs8AAAABPp5SRA",
+        "url": "https://github.com/JoFe2/KaleidoSphere/issues/38#issuecomment-5345530436",
+        "use": "identifier and claim index only; every delivery identifier below was independently read back"
+      },
+      "repository_evidence": {
+        "decision": {
+          "path": "docs/decisions/SAFE-ANALYSIS-METHOD-PARITY.md",
+          "blob_oid": "b02f04957fe432a826194a9c59b9f78c0bbb3ef6",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/decisions/SAFE-ANALYSIS-METHOD-PARITY.md"
+        },
+        "evidence": {
+          "path": "docs/evidence/SAFE_ANALYSIS_METHOD_PARITY.md",
+          "blob_oid": "7dce1bfaed2ac156f80c598cc36d5d6d5bf91ad9",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/evidence/SAFE_ANALYSIS_METHOD_PARITY.md"
+        },
+        "test": {
+          "path": "tests/safe-analysis-method-parity.test.mjs",
+          "blob_oid": "e2c97cc9c3d560e78a5ddd0770516c347e5456e2",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/tests/safe-analysis-method-parity.test.mjs"
+        },
+        "deterministic_fixture_hashes": {
+          "column_summary_semantic": "7326606979f062c71dd47241583b9c1c0db601240e3c66c8d4b4576328516a8d",
+          "relationship_overlap_semantic": "2be97c8d59d2ca446ab87ceed1dd1d7313809417a08f29be111ef55dc2d9cf28"
+        },
+        "fail_closed_negative_probe_count": 21,
+        "fail_closed_negative_probes": [
+          "free SQL or DDL pack forgery",
+          "manifest tamper",
+          "scope or identifier escape",
+          "row-cap or type-capability violation",
+          "inconsistent counts",
+          "raw, sample, example, or credential output",
+          "non-read-only or credential-bearing sessions",
+          "timeout or unsupported Oracle Boolean",
+          "misleading relationship promotion",
+          "pair-object overspend",
+          "stale #37 reservation compare-and-swap"
+        ],
+        "dependency_binding": "Every depth dispatch is constrained by #36 breadth/method/scope/object authorization, and advanced dispatch also requires the exact persisted #37 table/hypothesis reservation before the read-only session executes."
+      },
+      "feature_delivery": {
+        "pull_number": 45,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABAT-sog",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/45",
+        "base_ref": "main",
+        "base_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+        "head_sha": "30fd64397223726759004885be2a30b989397a4b",
+        "merged": true,
+        "merge_sha": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+        "merged_at": "2026-08-19T17:06:58Z",
+        "exact_head_ci": {
+          "run_id": 32279661221,
+          "job_id": 96155151993,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32279661221",
+          "event": "pull_request",
+          "head_sha": "30fd64397223726759004885be2a30b989397a4b",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32279763731,
+          "job_id": 96155494106,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32279763731",
+          "event": "push",
+          "head_sha": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+          "conclusion": "success"
+        }
+      },
+      "release_delivery": {
+        "decision": "RELEASED_REGULAR",
+        "pull_number": 46,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABAUBAsQ",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/46",
+        "base_ref": "main",
+        "base_sha": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+        "head_sha": "61cefe7d63fdae24cdeb2cec6d5ec3334beeaf78",
+        "merged": true,
+        "merge_sha": "8cad5b979e65d151d583442eed4accd38c40a527",
+        "merged_at": "2026-08-19T17:12:00Z",
+        "exact_head_ci": {
+          "run_id": 32280181437,
+          "job_id": 96156853847,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32280181437",
+          "event": "pull_request",
+          "head_sha": "61cefe7d63fdae24cdeb2cec6d5ec3334beeaf78",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32280236299,
+          "job_id": 96157031212,
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32280236299",
+          "event": "push",
+          "head_sha": "8cad5b979e65d151d583442eed4accd38c40a527",
+          "conclusion": "success"
+        },
+        "release": {
+          "release_id": 373221710,
+          "release_node_id": "RE_kwDOT3K3rs4WPulO",
+          "tag": "v0.14.0",
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/v0.14.0",
+          "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/373221710",
+          "target_sha": "8cad5b979e65d151d583442eed4accd38c40a527",
+          "tag_ref_sha": "8cad5b979e65d151d583442eed4accd38c40a527",
+          "draft": false,
+          "prerelease": false,
+          "asset_id": 521122181,
+          "asset_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.14.0/KaleidoSphere-v0.14.0.tar.gz",
+          "asset_sha256": "6c414573d11930bf3bc86fe124d94b33d3abb0166c70d140a9346f224a4a7362",
+          "anonymous_readback": {
+            "release_page_http_status": 200,
+            "raw_package_http_status": 200,
+            "downloaded_archive_sha256": "6c414573d11930bf3bc86fe124d94b33d3abb0166c70d140a9346f224a4a7362",
+            "sidecar_sha256": "6c414573d11930bf3bc86fe124d94b33d3abb0166c70d140a9346f224a4a7362",
+            "result": "PASS"
+          }
+        }
+      },
+      "closure_evidence_result": "PASS"
+    },
+    "39": {
+      "issue": {
+        "number": 39,
+        "node_id": "I_kwDOT3K3rs8AAAABNZjQvg",
+        "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/39",
+        "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/39",
+        "state": "closed",
+        "state_reason": "completed",
+        "closed_at": "2026-08-20T18:05:22Z"
+      },
+      "owner_reconciliation_index": {
+        "comment_id": 5359833306,
+        "node_id": "IC_kwDOT3K3rs8AAAABP3iQ2g",
+        "url": "https://github.com/JoFe2/KaleidoSphere/issues/35#issuecomment-5359833306",
+        "use": "epic reconciliation index only; PR, CI, release, tag, archive, and tree data below were independently read back"
+      },
+      "repository_evidence": {
+        "decision": {
+          "path": "docs/decisions/ROLES-CLUSTERS-DIFF-V2.md",
+          "blob_oid": "ebb47df16b31cb3cd5444b044b66a1122d2de24b",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/decisions/ROLES-CLUSTERS-DIFF-V2.md"
+        },
+        "evidence": {
+          "path": "docs/evidence/ROLES_CLUSTERS_DIFF_V2.md",
+          "blob_oid": "4a4335cc3678049375d7938905d829864b82449e",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/docs/evidence/ROLES_CLUSTERS_DIFF_V2.md"
+        },
+        "test": {
+          "path": "tests/roles-clusters-diff-v2.test.mjs",
+          "blob_oid": "bff4569713a9de4874b246f05c03d64c7f69c90a",
+          "url": "https://github.com/JoFe2/KaleidoSphere/blob/173e2f7e19049a705bcdaf0269c33a5bd7f70206/tests/roles-clusters-diff-v2.test.mjs"
+        },
+        "deterministic_fixture_hashes": {
+          "mssql_snapshot": "222160e3738ee6adec8aaf4f16023bb104557bc3d8b3142953bb0af75a6f55d9",
+          "oracle_snapshot": "c4c21028f4f5d55025cb5dc37f240672933f07f4bfa2687e550c96293a473d42",
+          "cross_engine_semantic_projection": "dabe86ed1abfbfde24c95b80311c11e1685897ee85df2437e66ff9a278258d3c",
+          "supported_component": "991dedc810755a58d8d8f4b9f04b86948904e900f5b7267a67d169fc92c5bbe4",
+          "observed_removal_diff": "80b6f08852a5a311128d55b2ade54fc14d25b991461ad8eded0d125fd560a018",
+          "denied_visibility_diff": "0c8337919e124fef02fde4be830158fedcacd8641a574c3b7357109fd8a2e3a2"
+        },
+        "fail_closed_negative_probe_count": 11,
+        "fail_closed_negative_probes": [
+          "snapshot or nested-hash tamper",
+          "widened safety flags",
+          "invalid confidence bounds",
+          "diff safety tamper",
+          "stale ancestry",
+          "scope drift",
+          "unsupported versions",
+          "credential or raw-value fields",
+          "foreign controller binding",
+          "nonterminal controller phase"
+        ],
+        "dependency_binding": "The projection dispatches no probes and accepts only a sealed terminal #37 REPORT plus receipt-bound #38 evidence; counterevidence cannot create relationship roles or merge clusters."
+      },
+      "feature_delivery": {
+        "pull_number": 59,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABAdBBUg",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/59",
+        "base_ref": "main",
+        "base_sha": "5a73ff8146afa0067d226cffa639efde959e8fde",
+        "head_sha": "00ff853723798cabf9514e35a5f909b1244cddfa",
+        "merged": true,
+        "merge_sha": "9cea957fb25938eda7c77b0e92df3989141571e0",
+        "merged_at": "2026-08-20T18:05:20Z",
+        "feature_boundary_release_decision": "NO_RELEASE_CLAIM_AT_FEATURE_MERGE",
+        "exact_head_ci": {
+          "run_id": 32401150190,
+          "check_run_id": 96529367870,
+          "check_run_node_id": "CR_kwDOT3K3rs8AAAAWeZlDPg",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32401150190/job/96529367870",
+          "head_sha": "00ff853723798cabf9514e35a5f909b1244cddfa",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32401255771,
+          "check_run_id": 96529702544,
+          "check_run_node_id": "CR_kwDOT3K3rs8AAAAWeZ5ekA",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32401255771/job/96529702544",
+          "head_sha": "9cea957fb25938eda7c77b0e92df3989141571e0",
+          "conclusion": "success"
+        }
+      },
+      "release_delivery": {
+        "decision": "RELEASED_REGULAR_BY_SUCCESSOR_RELEASE_PR",
+        "reconciliation": "The feature dossier's local no-release non-claim remains historically accurate at PR #59. PR #60 then made the explicit successor release decision, and public v0.17.0 independently proves publication; no historical evidence was rewritten.",
+        "pull_number": 60,
+        "pull_node_id": "PR_kwDOT3K3rs8AAAABAdTPIA",
+        "pull_url": "https://github.com/JoFe2/KaleidoSphere/pull/60",
+        "base_ref": "main",
+        "base_sha": "9cea957fb25938eda7c77b0e92df3989141571e0",
+        "head_sha": "e175189ef569a8863de4c937084dcf030d2b1411",
+        "merged": true,
+        "merge_sha": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f",
+        "merged_at": "2026-08-20T18:49:29Z",
+        "exact_head_ci": {
+          "run_id": 32405172050,
+          "check_run_id": 96542444759,
+          "check_run_node_id": "CR_kwDOT3K3rs8AAAAWemDM1w",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32405172050/job/96542444759",
+          "head_sha": "e175189ef569a8863de4c937084dcf030d2b1411",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 32405304112,
+          "check_run_id": 96542874291,
+          "check_run_node_id": "CR_kwDOT3K3rs8AAAAWemdasw",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/32405304112/job/96542874291",
+          "head_sha": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f",
+          "conclusion": "success"
+        },
+        "release": {
+          "release_id": 373958082,
+          "release_node_id": "RE_kwDOT3K3rs4WSiXC",
+          "tag": "v0.17.0",
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/v0.17.0",
+          "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/373958082",
+          "target_sha": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f",
+          "tag_ref_sha": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f",
+          "draft": false,
+          "prerelease": false,
+          "asset_id": 522652780,
+          "asset_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.17.0/KaleidoSphere-v0.17.0.tar.gz",
+          "asset_sha256": "51fea2054d3f6aa02f84ad4da3c6e589f13a3852ef1ce2580a6eab22e5f15aa4",
+          "anonymous_readback": {
+            "release_page_http_status": 200,
+            "raw_package_http_status": 200,
+            "downloaded_archive_sha256": "51fea2054d3f6aa02f84ad4da3c6e589f13a3852ef1ce2580a6eab22e5f15aa4",
+            "sidecar_sha256": "51fea2054d3f6aa02f84ad4da3c6e589f13a3852ef1ce2580a6eab22e5f15aa4",
+            "result": "PASS"
+          }
+        }
+      },
+      "closure_evidence_result": "PASS"
+    },
+    "40": {
+      "issue": {
+        "number": 40,
+        "node_id": "I_kwDOT3K3rs8AAAABNZjZvA",
+        "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/40",
+        "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/40",
+        "state": "open",
+        "state_reason": null,
+        "updated_at": "2026-08-28T18:50:56Z"
+      },
+      "public_task_provenance": {
+        "authorized_package_id": "KALEIDOSPHERE-40-QWEN-01",
+        "comment_id": 5435124548,
+        "comment_node_id": "IC_kwDOT3K3rs8AAAABQ_VrRA",
+        "api_url": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/comments/5435124548",
+        "html_url": "https://github.com/JoFe2/KaleidoSphere/issues/40#issuecomment-5435124548",
+        "created_at": "2026-08-27T06:15:31Z",
+        "declared_scope": "Typed evidence-bound drilldown request and pure deterministic eligibility gate only; four writable paths; no SQL authoring, new method, dispatch, mutation, or closing keyword.",
+        "classification": "OWNER_AUTHORIZATION_JOINED_TO_DELIVERY_READBACK"
+      },
+      "controller_task_boundary": {
+        "current_reconciliation_task_id": "SOL-KS-35-STATE-RECONCILE-01",
+        "reserved_forward_task_id": "KALEIDOSPHERE-40-QWEN-FORWARD-02",
+        "source_identifier": "controller directive for SOL-KS-35-STATE-RECONCILE-01",
+        "public_source_url": null,
+        "rule": "Do not implement, duplicate, review-accept, terminalize, or infer results for the reserved forward task in this receipt. A future receipt must independently read back its accepted chain."
+      },
+      "dependency_preconditions": {
+        "issue_37_terminal_readback": true,
+        "issue_38_terminal_readback": true,
+        "issue_39_terminal_readback": true,
+        "persisted_36_breadth_foundation_present_at_base": true,
+        "persisted_37_budget_ledger_receipt_foundation_present_at_base": true,
+        "receipt_bound_38_evidence_present_at_base": true,
+        "terminal_39_projection_foundation_present_at_base": true
+      },
+      "accepted_chain_readback": {
+        "owner_authorization": "PASS",
+        "implementation_receipt": {
+          "repository": "JoFe2/KaleidoSphere",
+          "base_sha": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+          "reviewed_head_sha": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d",
+          "delivery_pull_number": 123,
+          "delivery_pull_node_id": "PR_kwDOT3K3rs8AAAABBYBRBQ",
+          "delivery_merge_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+          "delivery_merged_at": "2026-08-28T18:50:56Z"
+        },
+        "independent_review_acceptance": "PASS_GITHUB_PR_123_MERGED",
+        "protected_merged_pull_request": {
+          "pull_number": 123,
+          "pull_node_id": "PR_kwDOT3K3rs8AAAABBYBRBQ",
+          "base_ref": "main",
+          "base_sha": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+          "head_sha": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d",
+          "merge_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+          "merged_at": "2026-08-28T18:50:56Z",
+          "state": "MERGED"
+        },
+        "exact_head_ci": {
+          "run_id": 33201128462,
+          "job_id": 98950561975,
+          "head_sha": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d",
+          "event": "pull_request",
+          "conclusion": "success"
+        },
+        "exact_main_ci": {
+          "run_id": 33201173088,
+          "job_id": 98950710861,
+          "head_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+          "event": "push",
+          "conclusion": "success"
+        },
+        "deterministic_fixture_evidence": {
+          "base_tree_sha": "4633ff6f5e4cad81cd7ae1d176401fd376456c7c",
+          "paths": [
+            "docs/decisions/PROGRESSIVE-ANALYSIS-V1.md",
+            "docs/evidence/PROGRESSIVE_ANALYSIS_V1.md",
+            "services/bi-control/src/db-analyzer/progressive-analysis-v1.mjs",
+            "services/bi-control/src/db-analyzer/safe-analysis-methods.mjs",
+            "tests/progressive-analysis-v1.test.mjs",
+            "tests/progressive-controller.test.mjs"
+          ],
+          "blob_oids": [
+            "c9a46bb567348662500faa9c527040f0e40b8080",
+            "2bd1dab65ad66c321718f6f3a8283cc1d0cc645d",
+            "4f68a295426b1a461bab44a0454c473de1960c87",
+            "3d9a03a5cd6eea72f992702606b861d11be6450a",
+            "3f2e9182b8f060e082309ecee19aa7cfb7e16049a",
+            "7042257678bfb7389227139505d9ac16791ea819"
+          ],
+          "result": "PASS_REPOSITORY_READBACK"
+        },
+        "fail_closed_negative_probes": {
+          "result": "PASS",
+          "source": "tests/progressive-analysis-v1.test.mjs and tests/progressive-controller.test.mjs",
+          "coverage": ["unsupported depth", "invalid transition", "budget exhaustion", "non-canonical evidence"]
+        },
+        "explicit_release_decision": "RELEASED_REGULAR_V0.25.0",
+        "public_release_readback": {
+          "release_node_id": "RE_kwDOT3K3rs4Wknvh",
+          "tag": "v0.25.0",
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/v0.25.0",
+          "target_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+          "archive_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.25.0/KaleidoSphere-v0.25.0.tar.gz",
+          "archive_sha256": "5fb904dfe7790a820dc6d32afbefecb70458f73c628292a582c3c579e94825e1",
+          "release_page_http_status": 200,
+          "archive_http_status": 200,
+          "result": "PASS_ANONYMOUS_READBACK"
+        }
+      },
+      "durable_closed_no_delivery_rationale": null,
+      "closure_evidence_result": "PASS_TERMINAL_DELIVERY_READBACK",
+      "completion_claim": true
+    }
+  },
+  "dependency_reconciliation": {
+    "git_ancestry_checks": [
+      {
+        "ancestor": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83",
+        "descendant": "1e12007d9c2094a34abd2d97156943ab6fedb2e2",
+        "edge": "#36 release -> #37 feature",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "1e12007d9c2094a34abd2d97156943ab6fedb2e2",
+        "descendant": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+        "edge": "#37 feature -> #37 release",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "5c4e919b73a04a2825b5ecfb1b36167e5098296d",
+        "descendant": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+        "edge": "#37 release -> #38 parity feature",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+        "descendant": "8cad5b979e65d151d583442eed4accd38c40a527",
+        "edge": "#38 feature -> #38 release",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "8cad5b979e65d151d583442eed4accd38c40a527",
+        "descendant": "9cea957fb25938eda7c77b0e92df3989141571e0",
+        "edge": "#38 release -> #39 feature",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "9cea957fb25938eda7c77b0e92df3989141571e0",
+        "descendant": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f",
+        "edge": "#39 feature -> #39 release",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f",
+        "descendant": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d",
+        "edge": "#39 release -> #40 delivery head",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d",
+        "descendant": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+        "edge": "#40 delivery head -> #40 release merge",
+        "result": "PASS"
+      },
+      {
+        "ancestor": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+        "descendant": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+        "edge": "#40 release -> declared current origin/main base",
+        "result": "PASS"
+      }
+    ],
+    "breadth_before_depth": {
+      "result": "PASS",
+      "evidence": "#38 explicitly requires #36 authorization and #37 reservation before runtime execution; #39 is a no-dispatch projection over terminal #37 and receipt-bound #38 evidence."
+    },
+    "adaptive_after_foundations": {
+      "result": "PASS_TERMINAL_DELIVERY_READBACK",
+      "evidence": "All persisted foundations are present and the #40 delivery head, protected merge, exact CI pair, deterministic repository evidence, release, and anonymous readback are joined without bypassing the breadth gate."
+    },
+    "critical_path_result": "NO_VERIFIED_BYPASS"
+  },
+  "acceptance_criteria": [
+    {
+      "criterion_id": "AC-1",
+      "criterion": "Every child has a protected merged PR or a durable closed/no-delivery rationale.",
+      "verdict": "SATISFIED_FOR_FIVE_CHILD_RECEIPT",
+      "evidence_or_nonclaim": "#36-#40 each have independently read protected-main delivery chains. Issue #40 remains open as an issue index, but its merged delivery and release evidence are terminal; this receipt does not mutate issue state."
+    },
+    {
+      "criterion_id": "AC-2",
+      "criterion": "Dependencies are respected: no parity depth work bypasses the controller breadth gate; adaptive drilldown follows evidence/receipt foundations.",
+      "verdict": "SATISFIED_WITH_TERMINAL_40_READBACK",
+      "evidence_or_nonclaim": "Git ancestry proves the delivered #36 -> #37 -> #38 -> #39 -> #40 chain. Immutable decisions bind #38 to #36/#37, make #39 a terminal receipt projection, and join #40 to its protected delivery and release evidence."
+    },
+    {
+      "criterion_id": "AC-3",
+      "criterion": "Each product increment has deterministic fixture evidence, fail-closed negative probes, exact-head/exact-main CI, an explicit release decision, and public readback when released.",
+      "verdict": "SATISFIED_FOR_FIVE_CHILD_RECEIPT",
+      "evidence_or_nonclaim": "#36-#40 meet the joined evidence rule. #36-#39 have regular public releases v0.12.0, v0.13.0, v0.14.0, and v0.17.0; #40 has v0.25.0, with the exact merge/CI/release identifiers and anonymous public readback recorded above."
+    },
+    {
+      "criterion_id": "AC-4",
+      "criterion": "Epic closure links the exact merge/release/evidence state of every child and lists remaining non-claims.",
+      "verdict": "RECEIPT_COMPLETE_NO_REMOTE_CLOSURE_ACTION",
+      "evidence_or_nonclaim": "This receipt links exact current state for all five children and lists non-claims. It does not close issue #35, edit child issues, create a tag/release/PR, or claim remote release authority."
+    }
+  ],
+  "mandatory_case_results": {
+    "positive": [
+      {
+        "case": "Issue #35 body as an unverified status summary.",
+        "result": "PASS",
+        "evidence": "epic_35_status_input.classification=UNVERIFIED_STATUS_SUMMARY and may_satisfy_child_delivery_claim=false"
+      },
+      {
+        "case": "Read-only authoritative GitHub child/PR/tag/release/check readback available to the executor.",
+        "result": "PASS",
+        "evidence": "Anonymous public REST, Git smart-protocol, release pages, raw tag paths, and asset downloads supplied the identifiers recorded above; no credentials or mutations were used."
+      },
+      {
+        "case": "Current origin/main tree and existing #40 task provenance.",
+        "result": "PASS",
+        "evidence": "Remote, local origin/main, and pre-receipt HEAD all equal immutable current-main base d6b9adb5be1e475cdba71c548a71fc900aa3fdff; #40 owner provenance is comment 5435124548 for KALEIDOSPHERE-40-QWEN-01, and its delivery readback is PR #123 / merge 5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6. KALEIDOSPHERE-40-QWEN-FORWARD-02 remains excluded by controller directive."
+      }
+    ],
+    "negative": [
+      {
+        "case": "Any #36-#40 claim is supported only by issue prose rather than an authoritative receipt.",
+        "result": "REJECTED_FAIL_CLOSED",
+        "evidence": "#36-#40 claims are joined to repository blobs, PR APIs, SHA-bound CI, release/tag pages, and public assets; no child claim is promoted from authorization alone."
+      },
+      {
+        "case": "#40 is treated complete without its accepted chain being terminal and independently read back.",
+        "result": "REJECTED_FAIL_CLOSED",
+        "evidence": "A forged or incomplete children.40.accepted_chain_readback remains rejected; the live receipt records every terminal stage and completion_claim=true only after the joins above."
+      },
+      {
+        "case": "A prerequisite edge or persisted breadth/receipt foundation is absent, unverifiable, or bypassed.",
+        "result": "REJECTED_FAIL_CLOSED",
+        "evidence": "Immutable decision/evidence blobs and ancestry establish the delivered edges. Any future forward receipt must repeat those joins; absence or bypass remains disqualifying."
+      }
+    ]
+  },
+  "remaining_nonclaims": [
+    "This receipt does not close or edit issue #35 or issue #40.",
+    "This receipt does not reopen, re-adjudicate, or add scope to closed pilots #20 or #26.",
+    "This receipt does not implement, duplicate, accept, or terminalize KALEIDOSPHERE-40-QWEN-FORWARD-02.",
+    "Owner authorization for KALEIDOSPHERE-40-QWEN-01 is separate from, and does not expand, the independently read-back delivery evidence recorded for child #40.",
+    "No claim is made that the #40 delivery changes issue #35 state or authorizes the reserved forward task; its deterministic fixture, fail-closed probes, protected merge, exact-main result, and release disposition are claimed only as recorded in child #40.",
+    "Historic releases v0.12.0, v0.13.0, v0.14.0, and v0.17.0 are public regular releases; this receipt does not claim that any is the repository's current Latest release.",
+    "The #39 local candidate's original no-release statement is not rewritten; later PR #60 and release v0.17.0 are separate successor evidence.",
+    "No production or customer database access, deployment, runtime activation, performance certification, universal completeness, business-semantic truth, inferred foreign-key truth, causal role/cluster truth, automatic remediation, or mutation authority is claimed.",
+    "No credentials, source rows, raw database values, connection strings, or private service data are included.",
+    "No GitHub action, issue edit, pull-request operation, tag, release, remote update, service call with side effects, push, merge, or release was performed by this reconciliation."
+  ],
+  "verification": {
+    "json_parse": {
+      "command": "jq empty docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "expected_result": "PASS"
+    },
+    "scope": {
+      "command": "git diff --name-only origin/main...HEAD",
+      "expected_paths": [
+        "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json"
+      ]
+    },
+    "required_repository_gate": {
+      "command": "git diff --check origin/main...HEAD",
+      "expected_result": "PASS"
+    }
+  }
+}

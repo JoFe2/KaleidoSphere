@@ -1,0 +1,416 @@
+{
+  "artifact_kind": "epic-35-local-delivery-closure-packet",
+  "children": [
+    {
+      "child_issue": 36,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-36-exact-head-receipt>.json",
+          "run_id": "<child-36-exact-head-ci-run-id>",
+          "sha": "<child-36-protected-pr-head-sha>"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-36-exact-main-receipt>.json",
+          "run_id": "<child-36-exact-main-ci-run-id>",
+          "sha": "<child-36-merged-main-sha>"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-36-fixture>.json",
+          "sha256": "<64-lowercase-hex-child-36-fixture-digest>"
+        },
+        "evidence_refs": [
+          "fixtures/evidence/progressive-analysis/<child-36-fixture>.json",
+          "fixtures/evidence/progressive-analysis/<child-36-negative-probe>.json",
+          "fixtures/evidence/progressive-analysis/<child-36-exact-head-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-36-exact-main-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-36-public-readback-receipt>.json"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "fixtures/evidence/progressive-analysis/<child-36-negative-probe>.json",
+            "probe_id": "<stable-child-36-negative-probe-id>",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "<child-36-protected-pr-head-sha>",
+        "merge_sha": "<child-36-merged-main-sha>",
+        "number": "<child-36-pull-request-number>",
+        "protected": true
+      },
+      "nonclaims": [
+        "<child-36 explicit remaining nonclaim>"
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-36-public-readback-receipt>.json",
+          "readback_id": "<child-36-public-readback-receipt-id>",
+          "status": "success",
+          "tag": "<child-36-release-tag>",
+          "tag_sha": "<child-36-release-tag-target-sha>"
+        },
+        "tag": "<child-36-release-tag>",
+        "tag_sha": "<child-36-release-tag-target-sha>"
+      }
+    },
+    {
+      "child_issue": 37,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-37-exact-head-receipt>.json",
+          "run_id": "<child-37-exact-head-ci-run-id>",
+          "sha": "<child-37-protected-pr-head-sha>"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-37-exact-main-receipt>.json",
+          "run_id": "<child-37-exact-main-ci-run-id>",
+          "sha": "<child-37-merged-main-sha>"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-37-fixture>.json",
+          "sha256": "<64-lowercase-hex-child-37-fixture-digest>"
+        },
+        "evidence_refs": [
+          "fixtures/evidence/progressive-analysis/<child-37-fixture>.json",
+          "fixtures/evidence/progressive-analysis/<child-37-negative-probe>.json",
+          "fixtures/evidence/progressive-analysis/<child-37-exact-head-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-37-exact-main-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-37-public-readback-receipt>.json"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "fixtures/evidence/progressive-analysis/<child-37-negative-probe>.json",
+            "probe_id": "<stable-child-37-negative-probe-id>",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "<child-37-protected-pr-head-sha>",
+        "merge_sha": "<child-37-merged-main-sha>",
+        "number": "<child-37-pull-request-number>",
+        "protected": true
+      },
+      "nonclaims": [
+        "<child-37 explicit remaining nonclaim>"
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-37-public-readback-receipt>.json",
+          "readback_id": "<child-37-public-readback-receipt-id>",
+          "status": "success",
+          "tag": "<child-37-release-tag>",
+          "tag_sha": "<child-37-release-tag-target-sha>"
+        },
+        "tag": "<child-37-release-tag>",
+        "tag_sha": "<child-37-release-tag-target-sha>"
+      }
+    },
+    {
+      "child_issue": 38,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-38-exact-head-receipt>.json",
+          "run_id": "<child-38-exact-head-ci-run-id>",
+          "sha": "<child-38-protected-pr-head-sha>"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-38-exact-main-receipt>.json",
+          "run_id": "<child-38-exact-main-ci-run-id>",
+          "sha": "<child-38-merged-main-sha>"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36,
+        37
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-38-fixture>.json",
+          "sha256": "<64-lowercase-hex-child-38-fixture-digest>"
+        },
+        "evidence_refs": [
+          "fixtures/evidence/progressive-analysis/<child-38-fixture>.json",
+          "fixtures/evidence/progressive-analysis/<child-38-negative-probe>.json",
+          "fixtures/evidence/progressive-analysis/<child-38-exact-head-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-38-exact-main-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-38-public-readback-receipt>.json"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "fixtures/evidence/progressive-analysis/<child-38-negative-probe>.json",
+            "probe_id": "<stable-child-38-negative-probe-id>",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "<child-38-protected-pr-head-sha>",
+        "merge_sha": "<child-38-merged-main-sha>",
+        "number": "<child-38-pull-request-number>",
+        "protected": true
+      },
+      "nonclaims": [
+        "<child-38 explicit remaining nonclaim>"
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-38-public-readback-receipt>.json",
+          "readback_id": "<child-38-public-readback-receipt-id>",
+          "status": "success",
+          "tag": "<child-38-release-tag>",
+          "tag_sha": "<child-38-release-tag-target-sha>"
+        },
+        "tag": "<child-38-release-tag>",
+        "tag_sha": "<child-38-release-tag-target-sha>"
+      }
+    },
+    {
+      "child_issue": 39,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-39-exact-head-receipt>.json",
+          "run_id": "<child-39-exact-head-ci-run-id>",
+          "sha": "<child-39-protected-pr-head-sha>"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-39-exact-main-receipt>.json",
+          "run_id": "<child-39-exact-main-ci-run-id>",
+          "sha": "<child-39-merged-main-sha>"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36,
+        37,
+        38
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-39-fixture>.json",
+          "sha256": "<64-lowercase-hex-child-39-fixture-digest>"
+        },
+        "evidence_refs": [
+          "fixtures/evidence/progressive-analysis/<child-39-fixture>.json",
+          "fixtures/evidence/progressive-analysis/<child-39-negative-probe>.json",
+          "fixtures/evidence/progressive-analysis/<child-39-exact-head-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-39-exact-main-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-39-public-readback-receipt>.json"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "fixtures/evidence/progressive-analysis/<child-39-negative-probe>.json",
+            "probe_id": "<stable-child-39-negative-probe-id>",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "<child-39-protected-pr-head-sha>",
+        "merge_sha": "<child-39-merged-main-sha>",
+        "number": "<child-39-pull-request-number>",
+        "protected": true
+      },
+      "nonclaims": [
+        "<child-39 explicit remaining nonclaim>"
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-39-public-readback-receipt>.json",
+          "readback_id": "<child-39-public-readback-receipt-id>",
+          "status": "success",
+          "tag": "<child-39-release-tag>",
+          "tag_sha": "<child-39-release-tag-target-sha>"
+        },
+        "tag": "<child-39-release-tag>",
+        "tag_sha": "<child-39-release-tag-target-sha>"
+      }
+    },
+    {
+      "child_issue": 40,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-40-exact-head-receipt>.json",
+          "run_id": "<child-40-exact-head-ci-run-id>",
+          "sha": "<child-40-protected-pr-head-sha>"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-40-exact-main-receipt>.json",
+          "run_id": "<child-40-exact-main-ci-run-id>",
+          "sha": "<child-40-merged-main-sha>"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36,
+        37,
+        38,
+        39
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-40-fixture>.json",
+          "sha256": "<64-lowercase-hex-child-40-fixture-digest>"
+        },
+        "evidence_refs": [
+          "fixtures/evidence/progressive-analysis/<child-40-fixture>.json",
+          "fixtures/evidence/progressive-analysis/<child-40-negative-probe>.json",
+          "fixtures/evidence/progressive-analysis/<child-40-exact-head-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-40-exact-main-receipt>.json",
+          "fixtures/evidence/progressive-analysis/<child-40-public-readback-receipt>.json"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "fixtures/evidence/progressive-analysis/<child-40-negative-probe>.json",
+            "probe_id": "<stable-child-40-negative-probe-id>",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "<child-40-protected-pr-head-sha>",
+        "merge_sha": "<child-40-merged-main-sha>",
+        "number": "<child-40-pull-request-number>",
+        "protected": true
+      },
+      "nonclaims": [
+        "<child-40 explicit remaining nonclaim>"
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "fixtures/evidence/progressive-analysis/<child-40-public-readback-receipt>.json",
+          "readback_id": "<child-40-public-readback-receipt-id>",
+          "status": "success",
+          "tag": "<child-40-release-tag>",
+          "tag_sha": "<child-40-release-tag-target-sha>"
+        },
+        "tag": "<child-40-release-tag>",
+        "tag_sha": "<child-40-release-tag-target-sha>"
+      }
+    }
+  ],
+  "claim_boundary": {
+    "allowed": "Only claims joined to exact provider identifiers, SHAs, decisions, and repository-relative evidence refs in this packet.",
+    "prohibited": "Do not add source records, sensitive material, statement text, causal outcome claims, or unjoined provider prose."
+  },
+  "contract_version": "epic-35-delivery-packet/v1",
+  "decision": {
+    "closure": "eligible",
+    "public_release_claim": {
+      "evidence_ref": "fixtures/evidence/progressive-analysis/<epic-public-readback-receipt>.json",
+      "readback_id": "<epic-public-readback-receipt-id>",
+      "status": "success",
+      "tag": "<epic-release-tag>",
+      "tag_sha": "<epic-release-tag-target-sha>"
+    },
+    "rationale": null,
+    "release": "released"
+  },
+  "epic": {
+    "critical_path": [
+      36,
+      37,
+      38,
+      39,
+      40
+    ],
+    "issue": 35,
+    "repository": "JoFe2/KaleidoSphere"
+  },
+  "evidence_index": [
+    {
+      "evidence_ref": "<repository-relative-evidence-ref>",
+      "kind": "fixture|negative_probe|ci|foundation|external_action|readback|decision",
+      "owner_issue": "<35-or-child-issue-number>"
+    }
+  ],
+  "external_actions": [
+    {
+      "action": "<read-only-external-action-kind>",
+      "action_id": "<stable-action-id>",
+      "child_issue": "<child-issue-number-or-null>",
+      "evidence_ref": "<repository-relative-action-receipt>",
+      "observed": {
+        "identifier": "<exact-provider-object-identifier>",
+        "result": "<exact-observed-result>"
+      },
+      "provider": "github"
+    }
+  ],
+  "foundations": {
+    "breadth_gate": {
+      "evidence_refs": [
+        "fixtures/evidence/progressive-analysis/<breadth-gate-receipt>.json"
+      ],
+      "gated_by_child": 36
+    },
+    "receipt_foundation": {
+      "evidence_refs": [
+        "fixtures/evidence/progressive-analysis/<receipt-foundation>.json"
+      ],
+      "gated_by_children": [
+        36,
+        37
+      ]
+    }
+  },
+  "lineage": {
+    "base_sha": "<40-lowercase-hex-origin-main-base-sha>",
+    "head_sha": "<40-lowercase-hex-reviewed-task-head-sha>"
+  },
+  "nonclaims": [
+    "<explicit remaining nonclaim>",
+    "<fixture identifiers are synthetic unless independently read back>",
+    "<this packet does not establish product performance, customer outcome, or causality>"
+  ],
+  "terminal_hash": "<64-lowercase-hex-sha256-of-canonical-packet-without-terminal_hash>",
+  "work_receipt": {
+    "base_sha": "<40-lowercase-hex-origin-main-base-sha>",
+    "changed_paths": [
+      "docs/evidence/progressive-analysis/epic-35-close-comment.template.md",
+      "docs/evidence/progressive-analysis/epic-35-delivery-packet.template.json",
+      "tests/epic-35-delivery-packet.test.mjs"
+    ],
+    "diff_check": "git diff --check origin/main...HEAD",
+    "focused_test": "node --test tests/epic-35-delivery-packet.test.mjs",
+    "head_sha": "<40-lowercase-hex-reviewed-task-head-sha>",
+    "task_id": "QWEN-KS-35-DELIVERY-PACKET-06"
+  }
+}

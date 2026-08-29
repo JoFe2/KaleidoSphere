@@ -1,0 +1,223 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "kaleidosphere/epic-35-closure/v1",
+  "title": "Epic 35 closure evidence record",
+  "description": "Deterministic, fail-closed closure-evidence contract for epic 35 (progressive-analysis). The record references only: identifiers, SHAs, CI run ids, release tags, repository-relative evidence paths, reason codes, and explicit nonclaim prose. It never embeds source row material, credentials, or query text. Field order is canonical: the code-unit lexicographic order of field names, applied recursively. The companion prose is docs/evidence/progressive-analysis/epic-35-closure-contract.md and the focused validator is tests/epic-35-closure-schema.test.mjs. This schema uses only the supported keyword subset listed in the contract: type, enum, const, required, properties, additionalProperties (false only), items, minItems, maxItems, uniqueItems, pattern, minimum, maximum, minLength, maxLength. The focused validator rejects any other validation keyword.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "base_sha",
+    "child_40_foundation",
+    "children",
+    "contract_version",
+    "critical_path",
+    "epic_issue",
+    "head_sha",
+    "nonclaims",
+    "terminal_hash"
+  ],
+  "properties": {
+    "base_sha": {
+      "description": "SHA-256 commit identifier (40 lowercase hex) of the immutable base at which the slice was cut. For the origin/main lineage this is the merge base.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "child_40_foundation": {
+      "description": "Breadth and receipt foundations that child 40 (adaptive drilldown) must present. Authorization of issue 40 alone does not admit closure evidence.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["breadth_gate", "receipt_foundation"],
+      "properties": {
+        "breadth_gate": {
+          "description": "The controller breadth gate. Parity depth work (38) and adaptive drilldown (40) may not bypass it.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence_refs", "gated_by_child"],
+          "properties": {
+            "evidence_refs": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/evidence_ref" }
+            },
+            "gated_by_child": { "const": 36 }
+          }
+        },
+        "receipt_foundation": {
+          "description": "The evidence and receipt foundations that adaptive drilldown (40) follows.",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["evidence_refs", "gated_by_children"],
+          "properties": {
+            "evidence_refs": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/evidence_ref" }
+            },
+            "gated_by_children": {
+              "description": "Canonical ascending set; must be exactly [36, 37] (semantic rule R06).",
+              "type": "array",
+              "minItems": 2,
+              "maxItems": 2,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/child_issue" }
+            }
+          }
+        }
+      }
+    },
+    "children": {
+      "description": "Exactly the five children of epic 35, one entry each for issues 36 through 40 (semantic rule R01).",
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": { "$ref": "#/$defs/child" }
+    },
+    "contract_version": { "const": "epic-35-closure/v1" },
+    "critical_path": {
+      "description": "The declared dependency critical path. Must be exactly [36, 37, 38, 39, 40] in that order (semantic rule R02).",
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/child_issue" }
+    },
+    "epic_issue": { "const": 35 },
+    "head_sha": {
+      "description": "SHA-256 commit identifier (40 lowercase hex) of the slice head at which the record is evaluated.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "nonclaims": {
+      "description": "Explicit nonclaim prose. Each entry states what the record does not claim. The record must carry at least one nonclaim.",
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/nonclaim" }
+    },
+    "terminal_hash": {
+      "description": "Lowercase hex SHA-256 of the canonical serialization of the record with the terminal_hash member removed (semantic rule R07).",
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "$defs": {
+    "child_issue": {
+      "type": "integer",
+      "minimum": 36,
+      "maximum": 40
+    },
+    "run_id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "evidence_ref": {
+      "description": "A repository-relative path (letters, digits, underscore, dot, dash, slash) or a 40-hex OID. Colons are excluded so URLs and credential material cannot pass.",
+      "type": "string",
+      "minLength": 4,
+      "maxLength": 256,
+      "pattern": "^(?:[A-Za-z0-9_][A-Za-z0-9_.\\-/]*)$|^[0-9a-f]{40}$"
+    },
+    "nonclaim": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 512
+    },
+    "child": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "child_issue",
+        "ci_decision",
+        "closed_rationale",
+        "depends_on",
+        "disposition",
+        "evidence_refs",
+        "merged_pr",
+        "release_decision"
+      ],
+      "properties": {
+        "child_issue": { "$ref": "#/$defs/child_issue" },
+        "ci_decision": {
+          "description": "For a merged child: the exact-head and exact-main CI pair, both concluded success. For a closed-no-delivery child: null (semantic rule R05).",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": [
+            "exact_head_conclusion",
+            "exact_head_run_id",
+            "exact_main_conclusion",
+            "exact_main_run_id"
+          ],
+          "properties": {
+            "exact_head_conclusion": { "type": "string", "enum": ["success"] },
+            "exact_head_run_id": { "$ref": "#/$defs/run_id" },
+            "exact_main_conclusion": { "type": "string", "enum": ["success"] },
+            "exact_main_run_id": { "$ref": "#/$defs/run_id" }
+          }
+        },
+        "closed_rationale": {
+          "description": "For a closed-no-delivery child: the durable closed/no-delivery rationale. For a merged child: null (semantic rule R04).",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["evidence_refs", "reason_code"],
+          "properties": {
+            "evidence_refs": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/evidence_ref" }
+            },
+            "reason_code": {
+              "type": "string",
+              "minLength": 3,
+              "maxLength": 64,
+              "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+            }
+          }
+        },
+        "depends_on": {
+          "description": "Canonical ascending dependency set. Must match the dependency map exactly (semantic rule R02).",
+          "type": "array",
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/child_issue" }
+        },
+        "disposition": {
+          "type": "string",
+          "enum": ["closed_no_delivery", "merged"]
+        },
+        "evidence_refs": {
+          "description": "Repository-relative evidence paths or 40-hex OIDs supporting this child's closure state.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/evidence_ref" }
+        },
+        "merged_pr": {
+          "description": "For a merged child: the protected merged PR. For a closed-no-delivery child: null (semantic rule R04).",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["base_ref", "head_sha", "merge_sha", "number", "protected"],
+          "properties": {
+            "base_ref": { "const": "main" },
+            "head_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "merge_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+            "number": { "type": "integer", "minimum": 1 },
+            "protected": { "const": true }
+          }
+        },
+        "release_decision": {
+          "description": "For a merged child: an explicit release decision. For a closed-no-delivery child: null (semantic rule R05).",
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "required": ["decision", "tag", "tag_sha"],
+          "properties": {
+            "decision": { "type": "string", "enum": ["no_release", "released"] },
+            "tag": { "type": ["string", "null"], "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$" },
+            "tag_sha": { "type": ["string", "null"], "pattern": "^[0-9a-f]{40}$" }
+          }
+        }
+      }
+    }
+  }
+}
