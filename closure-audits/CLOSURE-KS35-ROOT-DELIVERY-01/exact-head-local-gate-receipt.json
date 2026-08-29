@@ -7,8 +7,8 @@
     "url": "https://github.com/JoFe2/KaleidoSphere/issues/35"
   },
   "baseCommit": "d77ed33d062268a8000ff9b0ef5ca9dc9ad3433b",
-  "testedHead": "fcc3c3340bc7dffd36d3f8b3871b022b09c48fd9",
-  "testedTree": "dfb1b04cc588fd08973a22c58dda19b228b45d42",
+  "testedHead": "3bdbc3983dfc43a2df9e2779271d964f8cc82b20",
+  "testedTree": "fd9d758379b0a12af04a438061217e1640aede7b",
   "children": {
     "36": "CLOSED_RELEASED_v0.12.0",
     "37": "CLOSED_RELEASED_v0.13.0",
