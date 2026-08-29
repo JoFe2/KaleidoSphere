@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v1",
+  "taskId": "CLOSURE-KS68-ROOT-DELIVERY-01",
+  "sourceIssue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 68,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/68"
+  },
+  "baseCommit": "c32d721bce1e022fa899a0fdfa54582d362211ab",
+  "testedHead": "dd1094ca640f646480d336b3ad582a69e3def7f2",
+  "testedTree": "86d24f4d6f9f804ea42ee97ab195aa944174ea42",
+  "gates": [
+    { "command": "npm test", "outcome": "PASS", "tests": 688, "passed": 688 },
+    { "command": "npm run test:performance-intelligence", "outcome": "PASS", "tests": 6, "passed": 6 },
+    { "command": "npm run test:security", "outcome": "PASS", "tests": 7, "passed": 7 },
+    { "command": "npm run test:source", "outcome": "PASS", "tests": 1, "passed": 1 },
+    { "command": "git diff --check", "outcome": "PASS" }
+  ],
+  "authority": {
+    "proposalOnly": true,
+    "mutationAuthority": "NONE",
+    "executionRoute": null
+  },
+  "delivery": {
+    "readyForPr": true,
+    "releaseRequired": true,
+    "publicReadbackRequired": true,
+    "issueCloseRequired": true
+  }
+}
