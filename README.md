@@ -108,7 +108,7 @@ marketplace listing is claimed.
 The AgentSkill above is instruction-only. The optional
 [`JoFe2/kaleidosphere-dsh-plugin`](https://github.com/JoFe2/kaleidosphere-dsh-plugin)
 is a separate **Developer Preview** for DeepSeek Harness rc.8. It is not part
-of the KaleidoSphere v0.25.0 release assets and adds no DSH dependency, loader
+of the KaleidoSphere v0.26.0 release assets and adds no DSH dependency, loader
 or mapping to this repository. The plugin exposes six native
 `kaleidosphere_*` tools and vendors its own exact KaleidoSphere v0.16.0 subset;
 its compatibility, lifecycle and release status are governed in that repository.

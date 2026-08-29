@@ -17,6 +17,7 @@ export const EVIDENCE_BOUND_PRESENTATION_LIFECYCLE_RESIDUE_SCHEMA_V1 =
 
 const HASH = /^[a-f0-9]{64}$/;
 const LOAD_KEYS = Object.freeze(['projection', 'rendererKind', 'exportFormat']);
+const COVERAGE_LOAD_KEYS = Object.freeze([...LOAD_KEYS, 'coverageInput']);
 const REPLAY_KEYS = Object.freeze(['receipt', 'snapshot']);
 const CHECKPOINT_KEYS = Object.freeze(['schemaVersion', 'state', 'renderSha256', 'residueSha256']);
 const RESIDUE_KEYS = Object.freeze([
@@ -73,21 +74,20 @@ function residueSnapshot() {
 
 function parseLoad(value, suppliedOptions) {
   if (suppliedOptions !== undefined || !plain(value) || !Object.hasOwn(value, 'projection')) {
-    return {projection: value, suppliedOptions};
+    return {rendererInput: value, projection: value, suppliedOptions};
   }
-  exact(value, LOAD_KEYS, 'EVIDENCE_BOUND_PRESENTATION_LIFECYCLE_INPUT_DENIED');
-  const options = {};
-  if (Object.hasOwn(value, 'rendererKind')) options.rendererKind = value.rendererKind;
-  if (Object.hasOwn(value, 'exportFormat')) options.exportFormat = value.exportFormat;
-  return {projection: value.projection, suppliedOptions: options};
+  exact(value, Object.hasOwn(value, 'coverageInput') ? COVERAGE_LOAD_KEYS : LOAD_KEYS,
+    'EVIDENCE_BOUND_PRESENTATION_LIFECYCLE_INPUT_DENIED');
+  return {rendererInput: value, projection: value.projection, suppliedOptions: undefined};
 }
 
 function prepare(value, suppliedOptions) {
-  const {projection, suppliedOptions: options} = parseLoad(value, suppliedOptions);
-  const rendered = buildEvidenceBoundRendererV1(projection, options);
+  const {rendererInput, projection, suppliedOptions: options} = parseLoad(value, suppliedOptions);
+  const rendered = buildEvidenceBoundRendererV1(rendererInput, options);
   // The renderer has already closed and verified the projection. Keep an isolated
   // copy for later replay so caller mutation cannot alter lifecycle state.
   return {
+    rendererInput: frozen(rendererInput),
     projection: frozen(projection),
     rendered,
     options: {
@@ -163,9 +163,9 @@ export function createEvidenceBoundPresentationLifecycleV1() {
     exact(replayEvidence, REPLAY_KEYS, 'EVIDENCE_BOUND_PRESENTATION_REPLAY_DENIED');
     return verifyEvidenceBoundRendererReplayV1(
       current.rendered,
-      current.projection,
+      current.rendererInput,
       replayEvidence,
-      current.options,
+      undefined,
     );
   };
 

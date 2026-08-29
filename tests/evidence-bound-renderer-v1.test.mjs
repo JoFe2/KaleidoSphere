@@ -121,17 +121,9 @@ test('the renderer accepts the object-form input and replay verifies receipt and
   }, options()), /EVIDENCE_BOUND_RENDERER_REPLAY_SNAPSHOT_DIGEST_DENIED/);
 });
 
-test('a verified coverage-view projection uses the same closed renderer and carries view provenance', () => {
+test('coverage-view projection without authoritative evidence input is denied before rendering', () => {
   const source = coverageView();
-  const rendered = buildEvidenceBoundRendererV1(source, options());
-  const replayed = buildEvidenceBoundRendererV1(structuredClone(source), options());
-  assert.deepEqual(replayed, rendered);
-  assert.equal(rendered.inputKind, 'COVERAGE_VIEW');
-  assert.equal(rendered.datasetSha256, source.datasetSha256);
-  assert.equal(rendered.specSha256, null);
-  assert.equal(rendered.viewSha256, source.viewSha256);
-  assert.deepEqual(JSON.parse(rendered.export).dataset, source.dataset);
-  assert.deepEqual(verifyEvidenceBoundRendererV1(rendered, source, options()), rendered);
+  assert.throws(() => buildEvidenceBoundRendererV1(source, options()), /EVIDENCE_BOUND_RENDERER_COVERAGE_INPUT_REQUIRED/);
 });
 
 test('unsupported renderer, format, injection, URLs, SQL, code and authority surfaces fail closed', () => {

@@ -14,6 +14,11 @@ import {
   EVIDENCE_BOUND_REPORT_SPEC_SCHEMA_V1,
   buildEvidenceBoundReportV1,
 } from '../services/bi-control/src/reporting/evidence-bound-report-v1.mjs';
+import {
+  buildEvidenceBoundRendererV1,
+  verifyEvidenceBoundRendererReplayV1,
+} from '../services/bi-control/src/reporting/evidence-bound-renderer-v1.mjs';
+import {createEvidenceBoundPresentationLifecycleV1} from '../services/bi-control/src/reporting/evidence-bound-presentation-lifecycle-v1.mjs';
 
 const H = (character) => character.repeat(64);
 const SCOPE = H('a');
@@ -133,6 +138,10 @@ function input(overrides = {}) {
   return {
     report: reportFor(boundEvidence), ...boundEvidence, ...overrides,
   };
+}
+
+function rendererInput(projection, coverageInput) {
+  return {projection, coverageInput, rendererKind: 'TABLE', exportFormat: 'JSON'};
 }
 
 function reordered(value) {
@@ -315,4 +324,30 @@ test('the pure build and replay boundary leaves no lifecycle residue', () => {
     receipt: source.receipt, snapshot: source.snapshot,
   });
   assert.equal(Object.keys(globalThis).some((key) => /coverage|credential|connection|renderer/i.test(key)), false);
+});
+
+test('renderer and lifecycle replay verify a real coverage view against its authoritative evidence input', () => {
+  const source = input();
+  const view = buildEvidenceBoundCoverageViewV1(source);
+  const rendererSource = rendererInput(view, source);
+  const rendered = buildEvidenceBoundRendererV1(rendererSource);
+  assert.deepEqual(verifyEvidenceBoundRendererReplayV1(rendered, rendererSource, {
+    receipt: source.receipt, snapshot: source.snapshot,
+  }), rendered);
+  const lifecycle = createEvidenceBoundPresentationLifecycleV1();
+  const loaded = lifecycle.load(rendererSource);
+  assert.deepEqual(lifecycle.replay({receipt: source.receipt, snapshot: source.snapshot}), loaded);
+  lifecycle.unload();
+});
+
+test('renderer rejects a fully re-digested semantic coverage-view substitution against unchanged evidence', () => {
+  const source = input();
+  const forged = structuredClone(buildEvidenceBoundCoverageViewV1(source));
+  forged.metrics.completeCount += 1;
+  const {viewSha256: _old, ...body} = forged;
+  forged.viewSha256 = identitySha256(body);
+  assert.throws(
+    () => buildEvidenceBoundRendererV1(rendererInput(forged, source)),
+    /EVIDENCE_BOUND_COVERAGE_VIEW_MISMATCH/,
+  );
 });

@@ -7,6 +7,8 @@ import {
 } from './evidence-bound-report-v1.mjs';
 import {
   EVIDENCE_BOUND_COVERAGE_VIEW_SCHEMA_V1,
+  verifyEvidenceBoundCoverageViewReplayV1,
+  verifyEvidenceBoundCoverageViewV1,
 } from './evidence-bound-coverage-view-v1.mjs';
 
 export const EVIDENCE_BOUND_RENDERER_SCHEMA_V1 = 'kaleidosphere.reporting/evidence-bound-renderer/v1';
@@ -19,6 +21,7 @@ export const EVIDENCE_BOUND_RENDERER_FORMATS_V1 = Object.freeze([EVIDENCE_BOUND_
 const HASH = /^[a-f0-9]{64}$/;
 const ID = /^[a-z][a-z0-9._:-]{2,127}$/;
 const INPUT_KEYS = Object.freeze(['projection', 'rendererKind', 'exportFormat']);
+const COVERAGE_INPUT_KEYS = Object.freeze([...INPUT_KEYS, 'coverageInput']);
 const OPTIONS_KEYS = Object.freeze(['rendererKind', 'exportFormat']);
 const PROJECTION_ALLOWED_KEYS = new Set([
   'specSha256', 'sourceQueryId', 'credentials', 'sourceConnections', 'renderer', 'sql', 'mutation',
@@ -123,10 +126,11 @@ function options(value) {
   return {rendererKind: EVIDENCE_BOUND_RENDERER_KIND_V1, exportFormat: EVIDENCE_BOUND_RENDERER_FORMAT_V1};
 }
 
-function verifiedProjection(value) {
+function verifiedProjection(value, coverageInput) {
   inspectSurface(value, 'EVIDENCE_BOUND_RENDERER_SURFACE_DENIED', PROJECTION_ALLOWED_KEYS);
   if (!plain(value)) fail('EVIDENCE_BOUND_RENDERER_PROJECTION_DENIED');
   if (value.schemaVersion === EVIDENCE_BOUND_REPORT_SPEC_SCHEMA_V1) {
+    if (coverageInput !== undefined) fail('EVIDENCE_BOUND_RENDERER_COVERAGE_INPUT_DENIED');
     if (!Object.hasOwn(value, 'datasetSha256') || !Object.hasOwn(value, 'specSha256')) {
       fail('EVIDENCE_BOUND_RENDERER_PROJECTION_REQUIRED');
     }
@@ -142,7 +146,8 @@ function verifiedProjection(value) {
     };
   }
   if (value.schemaVersion === EVIDENCE_BOUND_COVERAGE_VIEW_SCHEMA_V1) {
-    const projection = validateCoverageProjection(value);
+    if (coverageInput === undefined) fail('EVIDENCE_BOUND_RENDERER_COVERAGE_INPUT_REQUIRED');
+    const projection = verifyEvidenceBoundCoverageViewV1(value, coverageInput);
     if (identitySha256(projection.dataset) !== projection.datasetSha256) {
       fail('EVIDENCE_BOUND_RENDERER_DATASET_DIGEST_DENIED');
     }
@@ -210,12 +215,13 @@ function validateCoverageProjection(value) {
 
 function parseBuildArguments(value, suppliedOptions) {
   if (suppliedOptions !== undefined || !plain(value) || !Object.hasOwn(value, 'projection')) {
-    return {projection: value, selected: options(suppliedOptions)};
+    return {projection: value, coverageInput: undefined, selected: options(suppliedOptions)};
   }
-  inspectSurface(value, 'EVIDENCE_BOUND_RENDERER_INPUT_DENIED', new Set([...INPUT_KEYS, ...PROJECTION_ALLOWED_KEYS]));
-  exact(value, INPUT_KEYS, 'EVIDENCE_BOUND_RENDERER_INPUT_DENIED');
+  const keys = Object.hasOwn(value, 'coverageInput') ? COVERAGE_INPUT_KEYS : INPUT_KEYS;
+  exact(value, keys, 'EVIDENCE_BOUND_RENDERER_INPUT_DENIED');
   return {
     projection: value.projection,
+    coverageInput: value.coverageInput,
     selected: options({rendererKind: value.rendererKind, exportFormat: value.exportFormat}),
   };
 }
@@ -304,8 +310,8 @@ function validateRender(value) {
 }
 
 export function buildEvidenceBoundRendererV1(value, suppliedOptions) {
-  const {projection, selected} = parseBuildArguments(value, suppliedOptions);
-  const source = verifiedProjection(projection);
+  const {projection, coverageInput, selected} = parseBuildArguments(value, suppliedOptions);
+  const source = verifiedProjection(projection, coverageInput);
   return buildFromSource(source, selected);
 }
 
@@ -327,7 +333,12 @@ export function verifyEvidenceBoundRendererReplayV1(rendered, projection, replay
   inspectSurface(replayEvidence.receipt, 'EVIDENCE_BOUND_RENDERER_REPLAY_RECEIPT_DENIED');
   inspectSurface(replayEvidence.snapshot, 'EVIDENCE_BOUND_RENDERER_REPLAY_SNAPSHOT_DENIED');
   const verified = verifyEvidenceBoundRendererV1(rendered, projection, suppliedOptions);
-  const source = verifiedProjection(projection);
+  const parsed = parseBuildArguments(projection, suppliedOptions);
+  const source = verifiedProjection(parsed.projection, parsed.coverageInput);
+  if (source.inputKind === 'COVERAGE_VIEW') {
+    verifyEvidenceBoundCoverageViewReplayV1(parsed.projection, parsed.coverageInput, replayEvidence);
+    return verified;
+  }
   if (identitySha256(replayEvidence.receipt) !== source.projection.bindings.receiptSha256) {
     fail('EVIDENCE_BOUND_RENDERER_REPLAY_RECEIPT_DIGEST_DENIED');
   }
