@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks68-performance-intelligence-closure/v1",
+  "issue": 68,
+  "currentMainBase": "c32d721bce1e022fa899a0fdfa54582d362211ab",
+  "capability": {
+    "contract": "services/bi-control/src/db-analyzer/performance-intelligence-v1.mjs",
+    "evidenceSchema": "kaleidosphere/performance-evidence/v1",
+    "sourceEvidenceSchema": "kaleidosphere/performance-source-evidence/v1",
+    "recommendationSchema": "kaleidosphere/performance-recommendation/v1",
+    "engines": ["mssql", "oracle"],
+    "authority": "PROPOSAL_ONLY",
+    "mutationAuthority": "NONE",
+    "executionRoute": null
+  },
+  "acceptance": {
+    "engineAndVersionBound": true,
+    "scopeBound": true,
+    "sourceReceiptsResolvedAndDigestVerified": true,
+    "freshnessRequired": true,
+    "deterministicRanking": true,
+    "unsupportedEvidenceFailsClosed": true,
+    "staleOrTamperedEvidenceFailsClosed": true,
+    "ddlOrMutationTextDenied": true,
+    "networkProcessFilesystemAndDispatchPathsAbsent": true
+  },
+  "tests": [
+    "tests/performance-intelligence-v1.test.mjs",
+    "tests/safe-analysis-method-parity.test.mjs",
+    "tests/security.test.mjs"
+  ],
+  "rollback": {
+    "mode": "REMOVE_ADDITIVE_CONTRACT_AND_TEST",
+    "underlyingEvidenceCollectorsPreserved": true
+  },
+  "nonClaims": [
+    "NO_PERFORMANCE_IMPROVEMENT_GUARANTEE",
+    "NO_AUTOMATIC_OPTIMIZATION",
+    "NO_PRODUCTION_BENCHMARK",
+    "NO_MUTATION_AUTHORITY",
+    "NO_UNIVERSAL_ENGINE_SUPPORT"
+  ]
+}
