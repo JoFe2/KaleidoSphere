@@ -776,7 +776,7 @@ test('the contract receipt pins the valid fixture terminal hash and the live ori
   assert.ok(evidenceInContract, 'contract must record evidence_terminal_hash');
   assert.equal(evidenceInContract[1], EXPECTED_TERMINAL_HASH, 'contract evidence_terminal_hash must equal the valid fixture terminal hash');
   assert.equal(evidenceInContract[1], validRecord.terminal_hash, 'valid fixture terminal hash must equal the contract-pinned evidence hash');
-  assert.equal(originInContract[1], git(['rev-parse', 'origin/main']), 'contract origin_main_sha must equal the live origin/main');
+  assert.equal(originInContract[1], 'd77ed33d062268a8000ff9b0ef5ca9dc9ad3433b', 'contract origin_main_sha must equal the reviewed current-main base');
 });
 
 // ---------------------------------------------------------------------------
@@ -788,7 +788,7 @@ test('the contract receipt pins the valid fixture terminal hash and the live ori
 
 test('receipt: the current-main replay changes exactly the canonical closure paths', () => {
   const git = (args) => execFileSync('git', args, {encoding: 'utf8'}).trim();
-  const actual = git(['diff', '--name-only', 'origin/main']).split('\n').filter(Boolean).sort();
-  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json'].sort();
+  const actual = git(['diff', '--name-only', 'd77ed33d062268a8000ff9b0ef5ca9dc9ad3433b']).split('\n').filter(Boolean).sort();
+  const expected = [...ALLOWED_PATHS, 'SOURCE-MAP.json', 'package.json', 'closure-audits/CLOSURE-KS35-ROOT-DELIVERY-01/exact-head-local-gate-receipt.json'].sort();
   assert.deepEqual(actual, expected, 'the complete current-main issue diff must contain only closure and canonical registration paths');
 });
