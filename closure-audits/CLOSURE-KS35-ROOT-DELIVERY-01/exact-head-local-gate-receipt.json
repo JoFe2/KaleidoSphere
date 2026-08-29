@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v1",
+  "taskId": "CLOSURE-KS35-ROOT-DELIVERY-01",
+  "sourceIssue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 35,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/35"
+  },
+  "baseCommit": "d77ed33d062268a8000ff9b0ef5ca9dc9ad3433b",
+  "testedHead": "3bdbc3983dfc43a2df9e2779271d964f8cc82b20",
+  "testedTree": "fd9d758379b0a12af04a438061217e1640aede7b",
+  "children": {
+    "36": "CLOSED_RELEASED_v0.12.0",
+    "37": "CLOSED_RELEASED_v0.13.0",
+    "38": "CLOSED_RELEASED_v0.14.0",
+    "39": "CLOSED_RELEASED_v0.17.0",
+    "40": "CLOSED_RELEASED_v0.25.0"
+  },
+  "rootFindings": {
+    "pathBoundary": "CLOSED_BY_THIS_ALLOWLISTED_RECEIPT",
+    "baseIdentity": "CLOSED_BY_CURRENT_MAIN_REPLAY",
+    "child40Disposition": "CLOSED_AS_MERGED_RELEASED_WITH_PUBLIC_READBACK",
+    "nodeGate": "CLOSED_ON_HOST_NODE_V24_19_0"
+  },
+  "gates": [
+    { "command": "npm test", "outcome": "PASS", "tests": 679, "passed": 679 },
+    { "command": "npm run test:epic-35-closure", "outcome": "PASS", "tests": 102, "passed": 102 },
+    { "command": "npm run test:security", "outcome": "PASS", "tests": 7, "passed": 7 },
+    { "command": "npm run test:source", "outcome": "PASS", "tests": 1, "passed": 1 },
+    { "command": "git diff --check origin/main...HEAD", "outcome": "PASS" }
+  ],
+  "delivery": {
+    "readyForPr": true,
+    "releaseRequired": true,
+    "publicReadbackRequired": true,
+    "issueCloseRequired": true
+  },
+  "nonClaims": [
+    "NO_PRODUCTION_OR_CUSTOMER_DATABASE_ACCESS",
+    "NO_UNIVERSAL_COMPLETENESS",
+    "NO_BUSINESS_SEMANTIC_TRUTH",
+    "NO_AUTOMATIC_REMEDIATION"
+  ]
+}

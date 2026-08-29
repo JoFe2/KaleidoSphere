@@ -1,0 +1,515 @@
+{
+  "artifact_kind": "epic-35-materialized-delivery-closure-packet",
+  "children": [
+    {
+      "child_issue": 36,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32270143367",
+          "sha": "cf72cb745abe942bafbb758b24b680819dea74b5"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32270208181",
+          "sha": "a681f1868f1678c38a46fcd7ca09256edeb4445d"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md",
+          "sha256": "d72b897e0d3338405d20e1d278e2b1fce14c598bccbde05066d41c8a8f8405cd"
+        },
+        "evidence_refs": [
+          "docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md",
+          "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "tests/progressive-controller.test.mjs"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "tests/progressive-controller.test.mjs",
+            "probe_id": "child-36-fail-closed-negative-probe",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "cf72cb745abe942bafbb758b24b680819dea74b5",
+        "merge_sha": "a681f1868f1678c38a46fcd7ca09256edeb4445d",
+        "number": 41,
+        "protected": true
+      },
+      "nonclaims": [
+        "Child 36 evidence is limited to the recorded protected delivery and public release identifiers."
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "readback_id": "github-release-v0.12.0-anonymous-readback",
+          "status": "success",
+          "tag": "v0.12.0",
+          "tag_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83"
+        },
+        "tag": "v0.12.0",
+        "tag_sha": "a65e3e7dfe4484fb50c6ad956592892b8bcb1b83"
+      }
+    },
+    {
+      "child_issue": 37,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32272856706",
+          "sha": "7d8222ad0d7b9e515ce2e4c747a278f5fbfd947e"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32272955909",
+          "sha": "1e12007d9c2094a34abd2d97156943ab6fedb2e2"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "docs/evidence/PROGRESSIVE_ANALYSIS_V1.md",
+          "sha256": "f270b98996efea683992b8729b06b3e05d8d583ed0a547fe93eb76547fb79223"
+        },
+        "evidence_refs": [
+          "docs/evidence/PROGRESSIVE_ANALYSIS_V1.md",
+          "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "tests/progressive-analysis-v1.test.mjs"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "tests/progressive-analysis-v1.test.mjs",
+            "probe_id": "child-37-fail-closed-negative-probe",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "7d8222ad0d7b9e515ce2e4c747a278f5fbfd947e",
+        "merge_sha": "1e12007d9c2094a34abd2d97156943ab6fedb2e2",
+        "number": 43,
+        "protected": true
+      },
+      "nonclaims": [
+        "Child 37 evidence is limited to the recorded protected delivery and public release identifiers."
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "readback_id": "github-release-v0.13.0-anonymous-readback",
+          "status": "success",
+          "tag": "v0.13.0",
+          "tag_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d"
+        },
+        "tag": "v0.13.0",
+        "tag_sha": "5c4e919b73a04a2825b5ecfb1b36167e5098296d"
+      }
+    },
+    {
+      "child_issue": 38,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32279661221",
+          "sha": "30fd64397223726759004885be2a30b989397a4b"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32279763731",
+          "sha": "70eed40a59e81ef796e0bcb5a552ba64270f8d14"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36,
+        37
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "docs/evidence/SAFE_ANALYSIS_METHOD_PARITY.md",
+          "sha256": "56dfcd92ca5aa01f46e40b3d6d396566b7d6468ef7bd8925cbd5e5e7c8f66082"
+        },
+        "evidence_refs": [
+          "docs/evidence/SAFE_ANALYSIS_METHOD_PARITY.md",
+          "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "tests/safe-analysis-method-parity.test.mjs"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "tests/safe-analysis-method-parity.test.mjs",
+            "probe_id": "child-38-fail-closed-negative-probe",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "30fd64397223726759004885be2a30b989397a4b",
+        "merge_sha": "70eed40a59e81ef796e0bcb5a552ba64270f8d14",
+        "number": 45,
+        "protected": true
+      },
+      "nonclaims": [
+        "Child 38 evidence is limited to the recorded protected delivery and public release identifiers."
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "readback_id": "github-release-v0.14.0-anonymous-readback",
+          "status": "success",
+          "tag": "v0.14.0",
+          "tag_sha": "8cad5b979e65d151d583442eed4accd38c40a527"
+        },
+        "tag": "v0.14.0",
+        "tag_sha": "8cad5b979e65d151d583442eed4accd38c40a527"
+      }
+    },
+    {
+      "child_issue": 39,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32401150190",
+          "sha": "00ff853723798cabf9514e35a5f909b1244cddfa"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "32401255771",
+          "sha": "9cea957fb25938eda7c77b0e92df3989141571e0"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36,
+        37,
+        38
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "docs/evidence/ROLES_CLUSTERS_DIFF_V2.md",
+          "sha256": "bcf9c2ebc7507b7c9e3ac29104c8505f6e114681ff2ecb8acc7fe8207f0a32e4"
+        },
+        "evidence_refs": [
+          "docs/evidence/ROLES_CLUSTERS_DIFF_V2.md",
+          "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "tests/roles-clusters-diff-v2.test.mjs"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "tests/roles-clusters-diff-v2.test.mjs",
+            "probe_id": "child-39-fail-closed-negative-probe",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "00ff853723798cabf9514e35a5f909b1244cddfa",
+        "merge_sha": "9cea957fb25938eda7c77b0e92df3989141571e0",
+        "number": 59,
+        "protected": true
+      },
+      "nonclaims": [
+        "Child 39 evidence is limited to the recorded protected delivery and public release identifiers."
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "readback_id": "github-release-v0.17.0-anonymous-readback",
+          "status": "success",
+          "tag": "v0.17.0",
+          "tag_sha": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f"
+        },
+        "tag": "v0.17.0",
+        "tag_sha": "8e120496a8685c4abf5fb5d3a0e98adcc8fef16f"
+      }
+    },
+    {
+      "child_issue": 40,
+      "ci": {
+        "exact_head": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "33201128462",
+          "sha": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d"
+        },
+        "exact_main": {
+          "conclusion": "success",
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "run_id": "33201173088",
+          "sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6"
+        }
+      },
+      "closed_rationale": null,
+      "depends_on": [
+        36,
+        37,
+        38,
+        39
+      ],
+      "disposition": "merged",
+      "evidence": {
+        "deterministic_fixture": {
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "sha256": "1c8bf8c24766f19807558f951521464c20a2efafb2f14c426fb016357f7d07fb"
+        },
+        "evidence_refs": [
+          "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "tests/verify-progressive-analysis-exact-ci.test.mjs"
+        ],
+        "negative_probes": [
+          {
+            "evidence_ref": "tests/verify-progressive-analysis-exact-ci.test.mjs",
+            "probe_id": "child-40-fail-closed-negative-probe",
+            "result": "rejected"
+          }
+        ]
+      },
+      "merged_pr": {
+        "base_ref": "main",
+        "head_sha": "8f592ad5dac358fb3fc0501d83b8c2adfeae299d",
+        "merge_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+        "number": 123,
+        "protected": true
+      },
+      "nonclaims": [
+        "Child 40 evidence is limited to the recorded protected delivery and public release identifiers."
+      ],
+      "release_decision": {
+        "decision": "released",
+        "public_readback": {
+          "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+          "readback_id": "github-release-v0.25.0-anonymous-readback",
+          "status": "success",
+          "tag": "v0.25.0",
+          "tag_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6"
+        },
+        "tag": "v0.25.0",
+        "tag_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6"
+      }
+    }
+  ],
+  "claim_boundary": {
+    "allowed": "Only claims joined to exact provider identifiers, SHAs, decisions, and repository-relative evidence refs in this packet.",
+    "prohibited": "Do not add source records, sensitive material, statement text, causal outcome claims, or unjoined provider prose."
+  },
+  "contract_version": "epic-35-delivery-packet/v1",
+  "decision": {
+    "closure": "eligible",
+    "public_release_claim": {
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "readback_id": "github-release-v0.25.0-anonymous-readback",
+      "status": "success",
+      "tag": "v0.25.0",
+      "tag_sha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6"
+    },
+    "rationale": null,
+    "release": "released"
+  },
+  "epic": {
+    "critical_path": [
+      36,
+      37,
+      38,
+      39,
+      40
+    ],
+    "issue": 35,
+    "repository": "JoFe2/KaleidoSphere"
+  },
+  "evidence_index": [
+    {
+      "evidence_ref": "docs/evidence/PROGRESSIVE_ANALYSIS_V1.md",
+      "kind": "fixture",
+      "owner_issue": 37
+    },
+    {
+      "evidence_ref": "docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md",
+      "kind": "foundation",
+      "owner_issue": 36
+    },
+    {
+      "evidence_ref": "docs/evidence/ROLES_CLUSTERS_DIFF_V2.md",
+      "kind": "fixture",
+      "owner_issue": 39
+    },
+    {
+      "evidence_ref": "docs/evidence/SAFE_ANALYSIS_METHOD_PARITY.md",
+      "kind": "fixture",
+      "owner_issue": 38
+    },
+    {
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "kind": "readback",
+      "owner_issue": 35
+    },
+    {
+      "evidence_ref": "tests/progressive-analysis-v1.test.mjs",
+      "kind": "negative_probe",
+      "owner_issue": 37
+    },
+    {
+      "evidence_ref": "tests/progressive-controller.test.mjs",
+      "kind": "negative_probe",
+      "owner_issue": 36
+    },
+    {
+      "evidence_ref": "tests/roles-clusters-diff-v2.test.mjs",
+      "kind": "negative_probe",
+      "owner_issue": 39
+    },
+    {
+      "evidence_ref": "tests/safe-analysis-method-parity.test.mjs",
+      "kind": "negative_probe",
+      "owner_issue": 38
+    },
+    {
+      "evidence_ref": "tests/verify-progressive-analysis-exact-ci.test.mjs",
+      "kind": "negative_probe",
+      "owner_issue": 40
+    }
+  ],
+  "external_actions": [
+    {
+      "action": "read_provider_state",
+      "action_id": "readback-child-36",
+      "child_issue": 36,
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "observed": {
+        "identifier": "github-pr-41-release-v0.12.0",
+        "result": "readback-success"
+      },
+      "provider": "github"
+    },
+    {
+      "action": "read_provider_state",
+      "action_id": "readback-child-37",
+      "child_issue": 37,
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "observed": {
+        "identifier": "github-pr-43-release-v0.13.0",
+        "result": "readback-success"
+      },
+      "provider": "github"
+    },
+    {
+      "action": "read_provider_state",
+      "action_id": "readback-child-38",
+      "child_issue": 38,
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "observed": {
+        "identifier": "github-pr-45-release-v0.14.0",
+        "result": "readback-success"
+      },
+      "provider": "github"
+    },
+    {
+      "action": "read_provider_state",
+      "action_id": "readback-child-39",
+      "child_issue": 39,
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "observed": {
+        "identifier": "github-pr-59-release-v0.17.0",
+        "result": "readback-success"
+      },
+      "provider": "github"
+    },
+    {
+      "action": "read_provider_state",
+      "action_id": "readback-child-40",
+      "child_issue": 40,
+      "evidence_ref": "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "observed": {
+        "identifier": "github-pr-123-release-v0.25.0",
+        "result": "readback-success"
+      },
+      "provider": "github"
+    }
+  ],
+  "foundations": {
+    "breadth_gate": {
+      "evidence_refs": [
+        "docs/evidence/PROGRESSIVE_RUN_CONTROLLER_V1.md"
+      ],
+      "gated_by_child": 36
+    },
+    "receipt_foundation": {
+      "evidence_refs": [
+        "docs/evidence/PROGRESSIVE_ANALYSIS_V1.md"
+      ],
+      "gated_by_children": [
+        36,
+        37
+      ]
+    }
+  },
+  "lineage": {
+    "base_sha": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+    "head_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff"
+  },
+  "nonclaims": [
+    "This packet reports repository and public provider identifiers and authorizes no mutation.",
+    "The rejected closure-tooling commit 5ffad599118cade30ce66264d529259f63d1bc45 is not the product-integration head.",
+    "The legacy template filename is retained only because it is the allowlisted canonical packet path; the JSON content is fully materialized.",
+    "This packet does not establish product performance, customer outcome, or causality.",
+    "No source rows, sensitive material, connection strings, or executable statement text are included."
+  ],
+  "terminal_hash": "47eca1080db5c41b1960728f3e30d10bb0feb0829429701e7cb81baa9091342f",
+  "work_receipt": {
+    "base_sha": "173e2f7e19049a705bcdaf0269c33a5bd7f70206",
+    "changed_paths": [
+      "docs/evidence/conveyor/sol-ks-35-state-reconcile-01.json",
+      "docs/evidence/conveyor/terra-ks-35-root-qs-01.json",
+      "docs/evidence/progressive-analysis/epic-35-close-comment.template.md",
+      "docs/evidence/progressive-analysis/epic-35-closure-contract.md",
+      "docs/evidence/progressive-analysis/epic-35-closure.schema.json",
+      "docs/evidence/progressive-analysis/epic-35-delivery-packet.template.json",
+      "fixtures/evidence/progressive-analysis/epic-35-closure-forged-receipt.json",
+      "fixtures/evidence/progressive-analysis/epic-35-closure-missing-foundation.json",
+      "fixtures/evidence/progressive-analysis/epic-35-closure-valid.json",
+      "fixtures/evidence/progressive-analysis/epic-35-exact-ci-mismatch.json",
+      "fixtures/evidence/progressive-analysis/epic-35-exact-ci-valid.json",
+      "fixtures/evidence/progressive-analysis/epic-35-no-release-valid.json",
+      "fixtures/evidence/progressive-analysis/epic-35-release-readback-valid.json",
+      "scripts/prepare-progressive-analysis-release-readback.mjs",
+      "scripts/verify-progressive-analysis-closure.mjs",
+      "scripts/verify-progressive-analysis-exact-ci.mjs",
+      "tests/epic-35-closure-fixture.test.mjs",
+      "tests/epic-35-closure-schema.test.mjs",
+      "tests/epic-35-delivery-packet.test.mjs",
+      "tests/prepare-progressive-analysis-release-readback.test.mjs",
+      "tests/verify-progressive-analysis-closure.test.mjs",
+      "tests/verify-progressive-analysis-exact-ci.test.mjs"
+    ],
+    "diff_check": "git diff --check origin/main...HEAD",
+    "focused_test": "npm run test:epic-35-closure",
+    "head_sha": "d6b9adb5be1e475cdba71c548a71fc900aa3fdff",
+    "task_id": "CLOSURE-KS35-ROOT-DELIVERY-01-FINALIZER-01"
+  }
+}

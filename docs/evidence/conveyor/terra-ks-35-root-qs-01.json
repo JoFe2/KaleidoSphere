@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "development-conveyor/terra-root-qs-receipt/v1",
+  "taskId": "TERRA-KS-35-ROOT-QS-01",
+  "sourceIssue": "https://github.com/JoFe2/KaleidoSphere/issues/35",
+  "currentMainBase": "d77ed33d062268a8000ff9b0ef5ca9dc9ad3433b",
+  "children": [36, 37, 38, 39, 40],
+  "childState": "ALL_PUBLICLY_CLOSED",
+  "criticalPath": [36, 37, 38, 39, 40],
+  "child40": {
+    "pullRequest": 123,
+    "mergeSha": "5fee1a92aefa7bdd4cc51da2c324a9cc7ca19cb6",
+    "release": "v0.25.0",
+    "publicReadback": "PASS"
+  },
+  "rootFindings": {
+    "pathBoundary": "SUPERSEDED_BY_CURRENT_MAIN_REPLAY",
+    "identityBinding": "CURRENT_MAIN_BOUND",
+    "child40Disposition": "MERGED_RELEASED",
+    "localGates": "PENDING_EXACT_HEAD_RECEIPT"
+  },
+  "authorityGranted": false,
+  "deliveryClaimed": false
+}
