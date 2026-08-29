@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks69-engine-harness-expansion-closure/v1",
+  "issue": 69,
+  "currentMainBase": "41a1f5fa1deff64836340d1efd3e8a292bbe34f7",
+  "disposition": "MEASURED_EXPANSION_WITH_EXPLICIT_NON_PROMOTION",
+  "engines": {
+    "mssql": "SUPPORTED_READ_ONLY",
+    "oracle": "SUPPORTED_READ_ONLY",
+    "postgresql": "BOUNDED_PILOT_NOT_PROMOTED",
+    "mysql": "NOT_ADMITTED"
+  },
+  "postgresqlEvidence": {
+    "fixture": "services/bi-control/fixtures/postgresql-structure-profile-v1.json",
+    "runtimeTest": "tests/postgresql-e2e.test.mjs",
+    "wave2Test": "tests/postgresql-wave2-workflow.test.mjs",
+    "defaultComposeEngine": false,
+    "productionClaim": false
+  },
+  "hosts": {
+    "openclaw": "RUNTIME_VALIDATED",
+    "codex": "INSTALLER_ROUNDTRIP_VALIDATED",
+    "claude-code": "INSTALLER_ONLY_BINARY_UNAVAILABLE",
+    "hermes": "STRUCTURE_ONLY_RUNTIME_UNAVAILABLE"
+  },
+  "dsh": {
+    "repository": "JoFe2/kaleidosphere-dsh-plugin",
+    "release": "v0.1.0-preview.3",
+    "releaseUrl": "https://github.com/JoFe2/kaleidosphere-dsh-plugin/releases/tag/v0.1.0-preview.3",
+    "disposition": "SEPARATE_DEVELOPER_PREVIEW",
+    "bundledInCoreRelease": false
+  },
+  "sharedContract": {
+    "path": "agent-skills/kaleidosphere",
+    "businessLogicCopies": 1,
+    "externalApiV2Intents": ["status", "discovery", "analyze", "plan", "preview", "readback"],
+    "runtimeDispatch": false,
+    "marketplaceApprovalClaim": false
+  },
+  "rollback": {
+    "enginesIndependent": true,
+    "hostsIndependent": true,
+    "sharedContractUnchanged": true
+  },
+  "nonClaims": [
+    "NO_UNIVERSAL_ENGINE_PARITY",
+    "NO_MARKETPLACE_LISTING",
+    "NO_UNAVAILABLE_RUNTIME_E2E",
+    "NO_PRODUCTION_OR_LIVE_CUSTOMER_EVIDENCE",
+    "NO_ARBITRARY_SQL_OR_MUTATION"
+  ]
+}
