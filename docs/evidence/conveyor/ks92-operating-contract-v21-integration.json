@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks92-operating-contract-v21-integration/v1",
+  "issue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 92
+  },
+  "currentMainBase": "664447988841eed2f9023f29ab7ba7025562e524",
+  "acceptedRunHeads": [
+    "5406665d5a5bbf285a548007faa8488a0ab4f5fc",
+    "b9999c66cbe73fdf84fce9610f95cf7daa63cff9"
+  ],
+  "acceptance": {
+    "SPIKE_PLAN": "PASS",
+    "SYNTHETIC_ISOLATION": "PASS",
+    "GO_NO_GO": "PASS",
+    "NEGATIVE": "PASS",
+    "ROLLBACK_CLEANUP": "PASS"
+  },
+  "disposition": "REJECTED_WITH_EVIDENCE",
+  "executionDecision": "NO_GO",
+  "canonicalRegistration": {
+    "dedicatedScript": "npm run test:ks92-spike-plan",
+    "mainSuite": "npm test",
+    "sourceMap": "SOURCE-MAP.json"
+  },
+  "semanticSeparation": {
+    "internalPlanFixtureStatus": "VALIDATED",
+    "packageTerminalOutcome": "REJECTED_WITH_EVIDENCE",
+    "spikeExecutionDecision": "NO_GO"
+  },
+  "nonClaims": [
+    "NO_CONNECTOR_OR_MCP_EXECUTION",
+    "NO_PUBLIC_ENDPOINT",
+    "NO_CREDENTIALS",
+    "NO_CUSTOMER_OR_PROVIDER_DATA",
+    "NO_MUTATION",
+    "NO_NETWORK_OR_DEPLOYMENT",
+    "NO_COMPLIANCE_OR_PRODUCTION_READINESS",
+    "NO_IMPLEMENTATION_AUTHORIZATION",
+    "NO_GATE_RESULT_SELF_ATTESTATION"
+  ]
+}
