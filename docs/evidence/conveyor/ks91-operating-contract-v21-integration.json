@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks91-operating-contract-v21-integration/v1",
+  "issue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 91
+  },
+  "currentMainBase": "5f75e1261585bf5464ef8b3fa3d4d220c21dde9a",
+  "acceptedRunHead": "33e135a6b70314a3fc26a18fbc11afc42a63c643",
+  "acceptance": {
+    "DATA_RETENTION": "PASS",
+    "TENANT_ISOLATION": "PASS",
+    "EGRESS": "PASS",
+    "SECRET_CUSTODY": "PASS",
+    "COMPLIANCE_UNKNOWNS": "PASS",
+    "NEGATIVE": "PASS"
+  },
+  "disposition": "REJECTED_WITH_EVIDENCE",
+  "canonicalRegistration": {
+    "dedicatedScript": "npm run test:ks91-data-boundary",
+    "mainSuite": "npm test",
+    "sourceMap": "SOURCE-MAP.json"
+  },
+  "nonClaims": [
+    "NO_RUNTIME_TENANT_ISOLATION",
+    "NO_RESIDENCY_OR_RETENTION_GUARANTEE",
+    "NO_SECRET_MANAGEMENT_SYSTEM",
+    "NO_NETWORK_EGRESS",
+    "NO_CUSTOMER_DATA",
+    "NO_DEPLOYMENT",
+    "NO_COMPLIANCE_OR_PRODUCTION_READINESS",
+    "NO_IMPLEMENTATION_AUTHORIZATION",
+    "NO_GATE_RESULT_SELF_ATTESTATION"
+  ]
+}
