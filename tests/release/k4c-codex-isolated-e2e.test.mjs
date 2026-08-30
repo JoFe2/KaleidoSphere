@@ -104,6 +104,19 @@ test('clean-boundary implementation uses isolated Codex roots and never targets 
   assert.match(source, /if \(failed\) \{[\s\S]*roots\.configRoots[\s\S]*rm\(base, \{ recursive: true, force: true \}\)/);
 });
 
+test('clean-boundary auth import fails closed before Codex when the source is absent', async () => {
+  const receiptPath = await temporaryReceipt('ks76-codex-auth-denied-');
+  const result = run([
+    '--fixture', fixture,
+    '--clean-boundary',
+    '--auth-file', '/definitely-missing-codex-auth.json',
+    '--receipt', receiptPath,
+  ]);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /auth file denied/);
+  assert.doesNotMatch(result.stderr, /unknown argument/);
+});
+
 test('receipt schema is closed and names the required evidence fields', async () => {
   const document = JSON.parse(await readFile(schema, 'utf8'));
   assert.equal(document.additionalProperties, false);

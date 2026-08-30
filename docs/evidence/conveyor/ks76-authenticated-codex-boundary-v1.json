@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "kaleidosphere/k4c-authenticated-codex-boundary/v1",
+  "issue": 76,
+  "codexVersion": "codex-cli 0.144.1",
+  "package": {
+    "version": "0.26.0",
+    "packageDigest": "e513393ed4ee72098968be99da34941fd87fc95ea0046c30b73f8378c25d821a",
+    "pluginId": "kaleidosphere-agent-skill"
+  },
+  "boundary": {
+    "oauthImportedEphemerally": true,
+    "globalConfigurationMutated": false,
+    "emptyAfterCleanup": true,
+    "residuePaths": []
+  },
+  "results": {
+    "packageGeneration": "PASS",
+    "marketplaceInstall": "PASS",
+    "malformedTargetDenied": "PASS",
+    "pluginInstall": "PASS",
+    "skillDiscovery": "PASS",
+    "providerUse": "WAITING_USER_REAUTH",
+    "providerReason": "TOKEN_EXPIRED_INVALID_REFRESH_TOKEN",
+    "cleanupReadback": "PASS"
+  },
+  "resumeAction": "Run interactive `codex login`, then rerun the isolated authenticated boundary and complete the official Directory portal submission.",
+  "nonClaims": [
+    "No valid provider response was obtained.",
+    "No official Directory submission or portal mutation occurred.",
+    "No public listing or anonymous Directory discovery is claimed.",
+    "No credential value or reusable authentication material is retained."
+  ]
+}
