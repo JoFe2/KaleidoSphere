@@ -1,0 +1,171 @@
+{
+  "schemaVersion": "kaleidosphere.remote-connector/data-classification-retention/v1",
+  "contractId": "KS91-DATA-CLASSIFICATION-RETENTION-01",
+  "status": "FROZEN_FUTURE_SURFACE",
+  "evidenceClass": "synthetic-fixture-only",
+  "policy": {
+    "default": "DENY",
+    "syntheticOnly": true,
+    "liveCustomerDataAllowed": false,
+    "unknownCategoryHandling": "REJECT",
+    "unknownRegionHandling": "REJECT",
+    "unboundedRetentionAllowed": false,
+    "unspecifiedRetentionAllowed": false,
+    "tenantBoundaryRequired": true,
+    "residencyChoiceRequired": true,
+    "maximumRetentionDays": 90
+  },
+  "regionChoices": [
+    {
+      "id": "synthetic-eu-1",
+      "residencyLabel": "synthetic-eu",
+      "permittedTenantBoundaries": ["synthetic-tenant-alpha-isolated", "synthetic-tenant-gamma-isolated"]
+    },
+    {
+      "id": "synthetic-us-1",
+      "residencyLabel": "synthetic-us",
+      "permittedTenantBoundaries": ["synthetic-tenant-beta-isolated"]
+    }
+  ],
+  "retentionPolicies": [
+    {
+      "id": "dispose-after-intake",
+      "trigger": "synthetic-intake-complete",
+      "durationDays": 1,
+      "reviewAfterDays": 1,
+      "reviewOwner": "synthetic-data-governance",
+      "missingReviewOutcome": "REJECT_AND_DELETE",
+      "deletionVerification": "synthetic-manifest-absent-and-digest-zero"
+    },
+    {
+      "id": "dispose-after-review",
+      "trigger": "synthetic-review-decision-recorded",
+      "durationDays": 30,
+      "reviewAfterDays": 14,
+      "reviewOwner": "synthetic-data-governance",
+      "missingReviewOutcome": "REJECT_AND_DELETE",
+      "deletionVerification": "synthetic-manifest-absent-and-digest-zero"
+    },
+    {
+      "id": "dispose-after-closure",
+      "trigger": "synthetic-decision-closed",
+      "durationDays": 90,
+      "reviewAfterDays": 60,
+      "reviewOwner": "synthetic-data-governance",
+      "missingReviewOutcome": "REJECT_AND_DELETE",
+      "deletionVerification": "synthetic-manifest-absent-and-digest-zero"
+    }
+  ],
+  "matrix": [
+    {
+      "id": "synthetic-aggregate-alpha",
+      "dataOrigin": "synthetic",
+      "dataCategory": "synthetic-aggregate",
+      "sensitivity": "synthetic-low",
+      "tenantBoundary": "synthetic-tenant-alpha-isolated",
+      "permittedRegionChoice": "synthetic-eu-1",
+      "retentionPolicyId": "dispose-after-intake",
+      "retentionTrigger": "synthetic-intake-complete",
+      "retentionDurationDays": 1,
+      "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+      "owner": "synthetic-data-governance",
+      "unknown": "REJECT"
+    },
+    {
+      "id": "synthetic-identifier-beta",
+      "dataOrigin": "synthetic",
+      "dataCategory": "synthetic-identifier",
+      "sensitivity": "synthetic-moderate",
+      "tenantBoundary": "synthetic-tenant-beta-isolated",
+      "permittedRegionChoice": "synthetic-us-1",
+      "retentionPolicyId": "dispose-after-review",
+      "retentionTrigger": "synthetic-review-decision-recorded",
+      "retentionDurationDays": 30,
+      "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+      "owner": "synthetic-data-governance",
+      "unknown": "REJECT"
+    },
+    {
+      "id": "synthetic-sensitive-metric-gamma",
+      "dataOrigin": "synthetic",
+      "dataCategory": "synthetic-sensitive-metric",
+      "sensitivity": "synthetic-high",
+      "tenantBoundary": "synthetic-tenant-gamma-isolated",
+      "permittedRegionChoice": "synthetic-eu-1",
+      "retentionPolicyId": "dispose-after-closure",
+      "retentionTrigger": "synthetic-decision-closed",
+      "retentionDurationDays": 90,
+      "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+      "owner": "synthetic-data-governance",
+      "unknown": "REJECT"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "reject-unbounded-retention",
+      "expectedCode": "KS91_RETENTION_UNBOUNDED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "dataCategory": "synthetic-aggregate",
+        "sensitivity": "synthetic-low",
+        "tenantBoundary": "synthetic-tenant-alpha-isolated",
+        "permittedRegionChoice": "synthetic-eu-1",
+        "retentionPolicyId": "unbounded",
+        "retentionTrigger": "synthetic-intake-complete",
+        "retentionDurationDays": null,
+        "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+        "owner": "synthetic-data-governance",
+        "unknown": "REJECT"
+      }
+    },
+    {
+      "id": "reject-unspecified-retention",
+      "expectedCode": "KS91_RETENTION_UNSPECIFIED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "dataCategory": "synthetic-aggregate",
+        "sensitivity": "synthetic-low",
+        "tenantBoundary": "synthetic-tenant-alpha-isolated",
+        "permittedRegionChoice": "synthetic-eu-1",
+        "retentionTrigger": "synthetic-intake-complete",
+        "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+        "owner": "synthetic-data-governance",
+        "unknown": "REJECT"
+      }
+    },
+    {
+      "id": "reject-region-residency-mismatch",
+      "expectedCode": "KS91_RESIDENCY_MISMATCH_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "dataCategory": "synthetic-aggregate",
+        "sensitivity": "synthetic-low",
+        "tenantBoundary": "synthetic-tenant-alpha-isolated",
+        "permittedRegionChoice": "synthetic-us-1",
+        "retentionPolicyId": "dispose-after-intake",
+        "retentionTrigger": "synthetic-intake-complete",
+        "retentionDurationDays": 1,
+        "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+        "owner": "synthetic-data-governance",
+        "unknown": "REJECT"
+      }
+    },
+    {
+      "id": "reject-live-origin",
+      "expectedCode": "KS91_LIVE_DATA_DENIED",
+      "candidate": {
+        "dataOrigin": "live",
+        "dataCategory": "synthetic-aggregate",
+        "sensitivity": "synthetic-low",
+        "tenantBoundary": "synthetic-tenant-alpha-isolated",
+        "permittedRegionChoice": "synthetic-eu-1",
+        "retentionPolicyId": "dispose-after-intake",
+        "retentionTrigger": "synthetic-intake-complete",
+        "retentionDurationDays": 1,
+        "deletionVerification": "synthetic-manifest-absent-and-digest-zero",
+        "owner": "synthetic-data-governance",
+        "unknown": "REJECT"
+      }
+    }
+  ]
+}
