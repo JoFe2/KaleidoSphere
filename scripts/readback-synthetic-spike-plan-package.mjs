@@ -168,7 +168,7 @@ export function evaluateLocalPackage(localPackage, { dryRun } = {}) {
 
   const validation = validateContracts(localPackage.planText, localPackage.fixture);
   checks.push(check('PLAN-FIXTURE-INTERNAL', 'plan and fixture pass internal offline contract validation',
-    validation.outcome === 'RELEASED' && validation.valid === true && validation.failedCount === 0,
+    validation.outcome === 'VALIDATED' && validation.valid === true && validation.failedCount === 0,
     'plan or fixture internal validation failed'));
 
   const packetText = localPackage.authorizationPacket;

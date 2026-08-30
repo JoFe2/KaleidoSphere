@@ -124,7 +124,7 @@ function assertLocalFixturePath(fixturePath) {
 
 function buildPreflight(planReport, fixtureReport, predecessorEvidence) {
   const predecessorPass = predecessorEvidence === undefined
-    ? planReport.outcome === 'RELEASED' && fixtureReport.outcome === 'RELEASED'
+    ? planReport.outcome === 'VALIDATED' && fixtureReport.outcome === 'VALIDATED'
     : predecessorEvidence === true;
   return {
     status: 'NO-GO',
@@ -225,7 +225,7 @@ export async function runDryRun(options) {
   const planReport = validatePlanText(planText);
   const fixtureReport = validateFixtureContract(fixture);
   const preflight = buildPreflight(planReport, fixtureReport, predecessorEvidence);
-  if (planReport.outcome !== 'RELEASED' || fixtureReport.outcome !== 'RELEASED' || preflight.predecessorEvidence.present !== true) {
+  if (planReport.outcome !== 'VALIDATED' || fixtureReport.outcome !== 'VALIDATED' || preflight.predecessorEvidence.present !== true) {
     return noGo(
       [...new Set(['PREFLIGHT-NO-GO', ...findFailedIds(planReport), ...findFailedIds(fixtureReport)])],
       'internal plan/fixture evidence is incomplete or failed; no simulated action was created',

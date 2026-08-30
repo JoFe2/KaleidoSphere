@@ -24,19 +24,19 @@ function failingIds(result) {
   return result.findings.filter(({ status }) => status === 'FAIL').map(({ id }) => id);
 }
 
-test('committed plan and synthetic fixture validate RELEASED offline', () => {
+test('committed plan and synthetic fixture are internally VALIDATED offline', () => {
   const result = validateContracts(planText, fixture);
   assert.equal(result.schemaVersion, 'kaleidosphere/synthetic-connector-spike-validation/v1');
-  assert.equal(result.outcome, 'RELEASED');
+  assert.equal(result.outcome, 'VALIDATED');
   assert.equal(result.valid, true);
   assert.equal(result.failedCount, 0);
-  assert.equal(result.plan.outcome, 'RELEASED');
-  assert.equal(result.fixture.outcome, 'RELEASED');
+  assert.equal(result.plan.outcome, 'VALIDATED');
+  assert.equal(result.fixture.outcome, 'VALIDATED');
 });
 
 test('plan contract includes explicit start, stop, rollback, fixture, isolation, and bounded sections', () => {
   const result = validatePlanText(planText);
-  assert.equal(result.outcome, 'RELEASED');
+  assert.equal(result.outcome, 'VALIDATED');
   assert.deepEqual(failingIds(result), []);
   for (const id of ['PLAN-START', 'PLAN-STOP', 'PLAN-ROLLBACK', 'PLAN-FIXTURE', 'PLAN-ISOLATION', 'PLAN-BOUNDS']) {
     assert.equal(result.findings.find((finding) => finding.id === id)?.status, 'PASS');
@@ -45,7 +45,7 @@ test('plan contract includes explicit start, stop, rollback, fixture, isolation,
 
 test('fixture contract validates provenance, isolation, read-only actions, bounds, and manifest', () => {
   const result = validateFixtureContract(fixture);
-  assert.equal(result.outcome, 'RELEASED');
+  assert.equal(result.outcome, 'VALIDATED');
   assert.equal(result.failedCount, 0);
   assert.ok(result.checkCount > 0);
 });

@@ -72,7 +72,7 @@ function report(findings, details = {}) {
   const failed = findings.filter(({ status }) => status === 'FAIL');
   return {
     ...details,
-    outcome: failed.length === 0 ? 'RELEASED' : 'REJECTED_WITH_EVIDENCE',
+    outcome: failed.length === 0 ? 'VALIDATED' : 'REJECTED_WITH_EVIDENCE',
     valid: failed.length === 0,
     checkCount: findings.length,
     failedCount: failed.length,

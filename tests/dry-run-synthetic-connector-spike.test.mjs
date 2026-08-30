@@ -56,7 +56,7 @@ test('finite simulated sequence produces local read-only receipt with cleanup an
   assert.deepEqual(result.preflight.gates.map(({ status }) => status), Array(6).fill('NOT_GRANTED'));
   assert.equal(result.preflight.callerAuthoredAuthorityAccepted, false);
   assert.deepEqual(result.preflight.internalValidation, {
-    plan: 'RELEASED', fixture: 'RELEASED', authorizesSpike: false,
+    plan: 'VALIDATED', fixture: 'VALIDATED', authorizesSpike: false,
   });
   assert.equal(result.boundedReadOnly.requestBudget.used, 3);
   assert.equal(result.boundedReadOnly.retryBudget.used, 0);

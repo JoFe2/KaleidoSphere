@@ -17,8 +17,8 @@ const PLAN_PATH = new URL('../../../../docs/future/remote-connector/SYNTHETIC_SP
 const SCHEMA_VERSION = 'kaleidosphere/synthetic-spike-plan-evidence/v1';
 const ARTIFACT_PATH = 'docs/future/remote-connector/SYNTHETIC_SPIKE_PLAN.md';
 // Pinned digest of the positive report for the committed plan (set from a
-// first deterministic run; see the RELEASED test below).
-const COMMITTED_PLAN_DIGEST = 'sha256:eca02f84b310e43cb8970a7529861560df86ed16df8cec6e7c8859b73052cae5';
+// first deterministic run; see the VALIDATED test below).
+const COMMITTED_PLAN_DIGEST = 'sha256:ebcbb708f9528001eee797b4dfaab5d37b30e101ae74d06f03241bc7d7cce7f8';
 
 const SECTION_TITLES = [
   ['SEC-01', 'Purpose and scope'],
@@ -121,7 +121,7 @@ function buildPlanEvidenceReport(planText) {
   const report = {
     schemaVersion: SCHEMA_VERSION,
     artifact: ARTIFACT_PATH,
-    outcome: failedCount === 0 ? 'RELEASED' : 'REJECTED_WITH_EVIDENCE',
+    outcome: failedCount === 0 ? 'VALIDATED' : 'REJECTED_WITH_EVIDENCE',
     checkCount: findings.length,
     failedCount,
     findings,
@@ -147,12 +147,12 @@ function replaceOnce(source, oldText, newText, label) {
 const planText = await readFile(PLAN_PATH, 'utf8');
 const EXPECTED_CHECK_COUNT = SECTION_TITLES.length + CONTENT_CHECKS.length;
 
-test('committed #92 synthetic spike plan validates RELEASED with every check passing', () => {
+test('committed #92 synthetic spike plan is internally VALIDATED with every check passing', () => {
   const report = buildPlanEvidenceReport(planText);
   assert.equal(report.schemaVersion, SCHEMA_VERSION);
   assert.equal(report.artifact, ARTIFACT_PATH);
   assert.equal(report.checkCount, EXPECTED_CHECK_COUNT);
-  assert.equal(report.outcome, 'RELEASED');
+  assert.equal(report.outcome, 'VALIDATED');
   assert.equal(report.failedCount, 0);
   assert.deepEqual(report.findings.map((finding) => finding.status), Array(EXPECTED_CHECK_COUNT).fill('PASS'));
   assert.equal(report.reportDigest, COMMITTED_PLAN_DIGEST);
