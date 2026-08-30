@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks79-parent-closure-integration/v1",
+  "issue": 79,
+  "base": "11e20bf248f8ea79d5a88e090b920c2dbbffe461",
+  "workerHead": "e1b2dc3c9db78a7671ba6e9fa068b610dc884ec8",
+  "children": [
+    89,
+    90,
+    91,
+    92,
+    93
+  ],
+  "disposition": "REJECTED_WITH_EVIDENCE",
+  "nonClaims": [
+    "NO_IMPLEMENTATION",
+    "NO_ENDPOINT",
+    "NO_CREDENTIAL_OR_CUSTOMER_DATA",
+    "NO_API_WIDENING",
+    "NO_DEPLOYMENT_OR_READINESS"
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "schemaVersion": "chimpmaera.bi/frc-parent-closure/v2",
+  "artifact": "frc-parent-terminal-closure",
+  "label": "FUTURE_BACKLOG",
+  "status": "REJECTED_WITH_EVIDENCE",
+  "epic": {
+    "issue": 79,
+    "title": "Future: Managed KaleidoSphere remote connector / MCP discovery",
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/79",
+    "publicIssueStateAtReconciliation": "open",
+    "publicIssueObservedAt": "2026-08-30",
+    "terminalDisposition": "REJECTED_WITH_EVIDENCE",
+    "executionDecision": "NO_GO",
+    "decisionOwner": "Jo",
+    "scope": "Close the FRC.0-FRC.4 discovery program without implementation, procurement, endpoint, API, credential, customer-data, deployment, activation, support, compliance-readiness, production-readiness, or runtime authority.",
+    "reasons": [
+      "All five discovery children are publicly closed and bound to serial public releases, and every child terminates REJECTED_WITH_EVIDENCE or NO_GO rather than authorizing implementation.",
+      "The released evidence leaves product, architecture, tenant-isolation, security, privacy, license, data-owner, custody, egress, legal, compliance, operations, support, cost, rollback, and final implementation approvals or proofs absent.",
+      "Local validation, focused tests, schema conformance, fixtures, commits, and PACKAGE_DONE are package evidence only and cannot substitute for public closure or implementation authority."
+    ],
+    "terminalStates": [
+      "RELEASED",
+      "REJECTED_WITH_EVIDENCE"
+    ],
+    "completionRule": "The parent discovery closes exactly REJECTED_WITH_EVIDENCE because #89-#93 are publicly CLOSED on released main commits and #93 records terminal REJECTED_WITH_EVIDENCE with execution NO_GO. Discovery completion is not implementation approval.",
+    "supersession": "Only a separately authorized immutable work item may reconsider one bounded implementation proposal after independently owned evidence closes every applicable released blocker and Jo, Product, and Security each grant explicit proposal-specific authorization. Reconsideration does not itself authorize implementation."
+  },
+  "historicalBacklog": {
+    "label": "FUTURE_BACKLOG",
+    "requirementsStatus": "PRESERVED_HISTORICAL_DOCUMENTATION",
+    "originalGate": "#73 and #78 both terminal, or explicit owner reprioritization of #79",
+    "originalObservation": "On 2026-08-27, #73 was open and #78 was closed; no explicit reprioritization was on record.",
+    "interpretation": "FUTURE_BACKLOG remains the historical requirements label. It is not a current implementation queue, an approval, or a contradiction of the terminal REJECTED_WITH_EVIDENCE parent discovery decision."
+  },
+  "children": [
+    {
+      "stageId": "FRC.0",
+      "issue": 89,
+      "issueUrl": "https://github.com/JoFe2/KaleidoSphere/issues/89",
+      "issueState": "closed",
+      "issueStateReason": "completed",
+      "closedAt": "2026-08-30T11:22:19Z",
+      "release": "2026_08_30_v1",
+      "releaseUrl": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_08_30_v1",
+      "mainSha": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
+      "artifact": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md",
+      "artifactSha256": "97ca82d288050233e50eac314e080afb43352b516bd4816e422f76eb18e604ce",
+      "receipt": "docs/evidence/conveyor/ks89-operating-contract-v2-receipt.json",
+      "disposition": "REJECTED_WITH_EVIDENCE",
+      "executionDecision": "DEFER_REJECT_NOW"
+    },
+    {
+      "stageId": "FRC.1",
+      "issue": 90,
+      "issueUrl": "https://github.com/JoFe2/KaleidoSphere/issues/90",
+      "issueState": "closed",
+      "issueStateReason": "completed",
+      "closedAt": "2026-08-30T11:57:40Z",
+      "release": "2026_08_30_v2",
+      "releaseUrl": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_08_30_v2",
+      "mainSha": "5f75e1261585bf5464ef8b3fa3d4d220c21dde9a",
+      "artifact": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md",
+      "artifactSha256": "8bcf41343763ef9c38ffbe7f51671d8e8c5ee52c415960138cde092c689fda30",
+      "receipt": "docs/evidence/conveyor/ks90-operating-contract-v21-integration.json",
+      "disposition": "REJECTED_WITH_EVIDENCE",
+      "executionDecision": "REJECT_IMPLEMENTATION_NOW"
+    },
+    {
+      "stageId": "FRC.2",
+      "issue": 91,
+      "issueUrl": "https://github.com/JoFe2/KaleidoSphere/issues/91",
+      "issueState": "closed",
+      "issueStateReason": "completed",
+      "closedAt": "2026-08-30T12:19:59Z",
+      "release": "2026_08_30_v3",
+      "releaseUrl": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_08_30_v3",
+      "mainSha": "664447988841eed2f9023f29ab7ba7025562e524",
+      "artifact": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md",
+      "artifactSha256": "fffe23a0f386601e5cc502219bef2f462b13fd487b09aa3dfe5642d7e41e6a84",
+      "receipt": "docs/evidence/conveyor/ks91-operating-contract-v21-integration.json",
+      "disposition": "REJECTED_WITH_EVIDENCE",
+      "executionDecision": "REJECT_IMPLEMENTATION_NOW"
+    },
+    {
+      "stageId": "FRC.3",
+      "issue": 92,
+      "issueUrl": "https://github.com/JoFe2/KaleidoSphere/issues/92",
+      "issueState": "closed",
+      "issueStateReason": "completed",
+      "closedAt": "2026-08-30T12:37:32Z",
+      "release": "2026_08_30_v4",
+      "releaseUrl": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_08_30_v4",
+      "mainSha": "f5a1363e3f29114def0054d4d817abb93818a2a1",
+      "artifact": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md",
+      "artifactSha256": "21d7524b7faf0fd677609d57ce69de83de92f51dc644dce920d565cdeaabb4ce",
+      "receipt": "docs/evidence/conveyor/ks92-operating-contract-v21-integration.json",
+      "disposition": "REJECTED_WITH_EVIDENCE",
+      "executionDecision": "NO_GO"
+    },
+    {
+      "stageId": "FRC.4",
+      "issue": 93,
+      "issueUrl": "https://github.com/JoFe2/KaleidoSphere/issues/93",
+      "issueState": "closed",
+      "issueStateReason": "completed",
+      "closedAt": "2026-08-30T13:28:55Z",
+      "release": "2026_08_30_v5",
+      "releaseUrl": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_08_30_v5",
+      "mainSha": "11e20bf248f8ea79d5a88e090b920c2dbbffe461",
+      "artifact": "docs/future/remote-connector/GO_NO_GO_DECISION.md",
+      "artifactSha256": "592cd5a645a46646b868be2b399cb53f7f6c40cb4e53d8cc4534e94ca3bb73ec",
+      "receipt": "docs/evidence/conveyor/ks93-operating-contract-v21-integration.json",
+      "disposition": "REJECTED_WITH_EVIDENCE",
+      "executionDecision": "NO_GO"
+    }
+  ],
+  "criteria": [
+    { "id": "FRC.0-A1", "stageId": "FRC.0", "issue": 89, "text": "Threat model and authority/data-flow diagram.", "status": "SATISFIED", "evidence": [{ "childIssue": 89, "artifact": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md" }] },
+    { "id": "FRC.0-A2", "stageId": "FRC.0", "issue": 89, "text": "Build/buy/reject decision with cost, compliance and support assumptions.", "status": "SATISFIED", "evidence": [{ "childIssue": 89, "artifact": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md" }] },
+    { "id": "FRC.0-A3", "stageId": "FRC.0", "issue": 89, "text": "Explicit implementation blockers and required approvals.", "status": "SATISFIED", "evidence": [{ "childIssue": 89, "artifact": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md" }] },
+    { "id": "FRC.1-A1", "stageId": "FRC.1", "issue": 90, "text": "Authority matrix.", "status": "SATISFIED", "evidence": [{ "childIssue": 90, "artifact": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md" }] },
+    { "id": "FRC.1-A2", "stageId": "FRC.1", "issue": 90, "text": "Revocation and replay scenarios.", "status": "SATISFIED", "evidence": [{ "childIssue": 90, "artifact": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md" }] },
+    { "id": "FRC.1-A3", "stageId": "FRC.1", "issue": 90, "text": "Receipt-signing threat model and key custody options.", "status": "SATISFIED", "evidence": [{ "childIssue": 90, "artifact": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md" }] },
+    { "id": "FRC.1-A4", "stageId": "FRC.1", "issue": 90, "text": "Explicit approval gates for any later implementation.", "status": "SATISFIED", "evidence": [{ "childIssue": 90, "artifact": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md" }] },
+    { "id": "FRC.2-A1", "stageId": "FRC.2", "issue": 91, "text": "Data classification and retention matrix.", "status": "SATISFIED", "evidence": [{ "childIssue": 91, "artifact": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md" }] },
+    { "id": "FRC.2-A2", "stageId": "FRC.2", "issue": 91, "text": "Tenant-isolation and egress threat model.", "status": "SATISFIED", "evidence": [{ "childIssue": 91, "artifact": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md" }] },
+    { "id": "FRC.2-A3", "stageId": "FRC.2", "issue": 91, "text": "Secret-custody options with explicit reject/approve gates.", "status": "SATISFIED", "evidence": [{ "childIssue": 91, "artifact": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md" }] },
+    { "id": "FRC.2-A4", "stageId": "FRC.2", "issue": 91, "text": "Compliance assumptions and unknowns.", "status": "SATISFIED", "evidence": [{ "childIssue": 91, "artifact": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md" }] },
+    { "id": "FRC.3-A1", "stageId": "FRC.3", "issue": 92, "text": "Spike plan with start/stop/rollback criteria.", "status": "SATISFIED", "evidence": [{ "childIssue": 92, "artifact": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md" }] },
+    { "id": "FRC.3-A2", "stageId": "FRC.3", "issue": 92, "text": "Synthetic fixtures and isolation plan.", "status": "SATISFIED", "evidence": [{ "childIssue": 92, "artifact": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md" }] },
+    { "id": "FRC.3-A3", "stageId": "FRC.3", "issue": 92, "text": "Go/no-go criteria for whether a spike is even worth running.", "status": "SATISFIED", "evidence": [{ "childIssue": 92, "artifact": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md" }] },
+    { "id": "FRC.4-A1", "stageId": "FRC.4", "issue": 93, "text": "Decision memo cites the discovery artifacts.", "status": "SATISFIED", "evidence": [{ "childIssue": 93, "artifact": "docs/future/remote-connector/GO_NO_GO_DECISION.md" }] },
+    { "id": "FRC.4-A2", "stageId": "FRC.4", "issue": 93, "text": "Risks, costs, compliance gaps, support burden and rollback are explicit.", "status": "SATISFIED", "evidence": [{ "childIssue": 93, "artifact": "docs/future/remote-connector/GO_NO_GO_DECISION.md" }] },
+    { "id": "FRC.4-A3", "stageId": "FRC.4", "issue": 93, "text": "Any implementation child is blocked on separate explicit authorization.", "status": "SATISFIED", "evidence": [{ "childIssue": 93, "artifact": "docs/future/remote-connector/GO_NO_GO_DECISION.md" }] },
+    { "id": "FRC.E-A1", "stageId": null, "issue": 79, "text": "Discovery artifacts are explicit, linked, and preserve their FUTURE_BACKLOG historical label.", "status": "SATISFIED", "evidence": [{ "childIssue": 79, "artifact": "docs/future-remote-connector/79/discovery-index.md" }] },
+    { "id": "FRC.E-A2", "stageId": null, "issue": 79, "text": "Threat model and authority/data-flow diagram exist before any spike decision.", "status": "SATISFIED", "evidence": [{ "childIssue": 89, "artifact": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md" }] },
+    { "id": "FRC.E-A3", "stageId": null, "issue": 79, "text": "Synthetic spike plan has success, stop and rollback criteria and was not run without explicit authorization.", "status": "SATISFIED", "evidence": [{ "childIssue": 92, "artifact": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md" }] },
+    { "id": "FRC.E-A4", "stageId": null, "issue": 79, "text": "#93 records REJECTED_WITH_EVIDENCE and NO_GO with released evidence.", "status": "SATISFIED", "evidence": [{ "childIssue": 93, "artifact": "docs/future/remote-connector/GO_NO_GO_DECISION.md" }] }
+  ],
+  "parentAcceptance": [
+    { "id": "CHILD_CLOSURE", "status": "SATISFIED", "evidence": "Issues #89-#93 are publicly CLOSED/completed and releases 2026_08_30_v1 through 2026_08_30_v5 bind their serial main SHAs." },
+    { "id": "DISCOVERY_EVIDENCE", "status": "SATISFIED", "evidence": "All 21 child and parent discovery criteria bind current-checkout artifacts and released child provenance." },
+    { "id": "TERMINAL_DECISION", "status": "SATISFIED", "evidence": "Jo's released #93 decision records REJECTED_WITH_EVIDENCE and NO_GO; this parent adopts that exact terminal disposition." },
+    { "id": "NO_IMPLEMENTATION", "status": "SATISFIED", "evidence": "The parent closes discovery only and explicitly denies implementation, procurement, endpoint, API widening, credentials/customer data, deployment, activation, compliance-readiness, and production-readiness authority." }
+  ],
+  "mandatoryNegatives": [
+    { "id": "NEG-MISSING-OR-OPEN-CHILD", "condition": "Any child #89-#93 is missing or not publicly closed with its exact release/main binding.", "outcome": "DENY_PARENT_CLOSURE" },
+    { "id": "NEG-PACKAGE-DONE", "condition": "A local PACKAGE_DONE, focused test, commit, PR, CI result, or merge is presented as public issue closure.", "outcome": "DENY_PUBLIC_CLOSURE_CLAIM" },
+    { "id": "NEG-DISCOVERY-AS-IMPLEMENTATION", "condition": "Discovery completion, planning validation, or the parent terminal decision is presented as implementation or procurement approval.", "outcome": "DENY_IMPLEMENTATION_AUTHORITY" },
+    { "id": "NEG-ENDPOINT", "condition": "An endpoint, hosted service, SaaS, remote MCP, public bind, or transport is created, selected, discovered, or claimed.", "outcome": "DENY_AND_STOP" },
+    { "id": "NEG-CREDENTIALS-CUSTOMER-DATA", "condition": "Credentials, secrets, tokens, customer data, provider payloads, raw rows, or live identity data are requested, supplied, processed, or claimed.", "outcome": "DENY_AND_STOP" },
+    { "id": "NEG-API-WIDENING", "condition": "External API v2 gains a seventh intent or any of status, discovery, analyze, plan, preview, or readback is semantically widened.", "outcome": "DENY_AND_STOP" },
+    { "id": "NEG-DEPLOYMENT-READINESS", "condition": "Deployment, activation, compliance-readiness, production-readiness, customer-readiness, service level, or operational support is inferred or claimed.", "outcome": "DENY_READINESS_CLAIM" }
+  ],
+  "nonClaims": [
+    "NO_IMPLEMENTATION_OR_PROCUREMENT_AUTHORITY",
+    "NO_CONNECTOR_SAAS_REMOTE_MCP_OR_ENDPOINT",
+    "NO_CREDENTIAL_SECRET_TOKEN_OR_CUSTOMER_DATA_HANDLING",
+    "NO_EXTERNAL_API_V2_WIDENING",
+    "NO_DEPLOYMENT_ACTIVATION_OR_RUNTIME_CHANGE",
+    "NO_COMPLIANCE_PRODUCTION_CUSTOMER_OR_SUPPORT_READINESS",
+    "NO_LOCAL_PACKAGE_DONE_AS_PUBLIC_CLOSURE",
+    "NO_DISCOVERY_AS_IMPLEMENTATION",
+    "NO_PARENT_PUBLIC_ISSUE_CLOSE_CLAIM_BEFORE_DELIVERY_READBACK"
+  ],
+  "provenance": {
+    "task": "KS79-SOL-01-PARENT-CLOSURE",
+    "baseSha": "11e20bf248f8ea79d5a88e090b920c2dbbffe461",
+    "method": "Read-only GitHub issue/release/tag readback plus current-checkout artifact validation; no .git history required by the focused test.",
+    "reconciledAt": "2026-08-30",
+    "note": "The parent issue was still publicly open at reconciliation. This artifact supplies the terminal decision for later integration/delivery; it does not claim that the parent issue, PR, release, or queue is already closed."
+  }
+}

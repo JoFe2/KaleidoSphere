@@ -1,0 +1,10 @@
+{
+  "schemaVersion":"development-conveyor/exact-head-local-gate-receipt/v1",
+  "issue":{"repository":"JoFe2/KaleidoSphere","number":79},
+  "testedProductHead":"6818c78d81361995e78c21f8b0b3a8d2069eadd6","testedProductTree":"ee5e033a4ea75f8e7e240052690058d399915f36","baseSha":"11e20bf248f8ea79d5a88e090b920c2dbbffe461",
+  "runCommits":["e1b2dc3c9db78a7671ba6e9fa068b610dc884ec8","6818c78d81361995e78c21f8b0b3a8d2069eadd6"],
+  "acceptance":{"CHILD_CLOSURE":"PASS","DISCOVERY_EVIDENCE":"PASS","TERMINAL_DECISION":"PASS","NO_IMPLEMENTATION":"PASS"},
+  "disposition":"REJECTED_WITH_EVIDENCE",
+  "checks":[{"command":"npm run test:ks79-parent","status":"PASS","tests":4},{"command":"npm test","status":"PASS","tests":881},{"command":"npm run test:security","status":"PASS","tests":7},{"command":"npm run test:source","status":"PASS","tests":1}],
+  "nonClaims":["NO_IMPLEMENTATION","NO_CONNECTOR_OR_ENDPOINT","NO_CREDENTIAL_OR_CUSTOMER_DATA","NO_API_WIDENING","NO_DEPLOYMENT_OR_READINESS"]
+}
