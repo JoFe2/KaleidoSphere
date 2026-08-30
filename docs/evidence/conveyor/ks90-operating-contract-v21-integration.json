@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks90-operating-contract-v21-integration/v1",
+  "issue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 90
+  },
+  "currentMainBase": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
+  "acceptedRunHeads": [
+    "173333384798d3a069a97b6cd489b6609238b302",
+    "7f4a74bd595cb308e6b48cf7662021c188aab9a1"
+  ],
+  "acceptance": {
+    "AUTHORITY_MATRIX": "PASS",
+    "REVOCATION_REPLAY": "PASS",
+    "SIGNING_THREAT": "PASS",
+    "APPROVAL_GATES": "PASS",
+    "NEGATIVE": "PASS"
+  },
+  "disposition": "REJECTED_WITH_EVIDENCE",
+  "canonicalRegistration": {
+    "dedicatedScript": "npm run test:ks90-identity-replay",
+    "mainSuite": "npm test",
+    "sourceMap": "SOURCE-MAP.json"
+  },
+  "evidencePolicy": {
+    "completePresentationContextRequired": true,
+    "completeAuthoritativeDigestSetRequired": true,
+    "callerAuthoredExpectedValuesAccepted": false,
+    "signatureGrantsExecutionAuthority": false
+  },
+  "nonClaims": [
+    "NO_OAUTH_INTEGRATION",
+    "NO_SIGNING_SERVICE",
+    "NO_KEYS_OR_CREDENTIALS",
+    "NO_CUSTOMER_DATA",
+    "NO_ENDPOINT_OR_DEPLOYMENT",
+    "NO_COMPLIANCE_OR_PRODUCTION_READINESS",
+    "NO_IMPLEMENTATION_AUTHORIZATION",
+    "NO_GATE_RESULT_SELF_ATTESTATION"
+  ]
+}
