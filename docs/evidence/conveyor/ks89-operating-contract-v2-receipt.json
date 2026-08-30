@@ -1,0 +1,73 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks89-operating-contract-v2-receipt/v1",
+  "issue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 89
+  },
+  "integrationRunId": "KS89-SOL-04-INTEGRATION",
+  "goal": "/goal Replay the accepted KS89 planning artifact onto current main, register deterministic source ownership and tests, run complete repository gates, and prepare the exact-head integration receipt.",
+  "currentMainBase": "c2f88a9eb64c9b2e0be12b770e9386e784dc19fd",
+  "acceptedDocumentHead": "b292dc38a53358cde7077f933dd7bbeb7ea0b628",
+  "runCommits": [
+    {
+      "runId": "KS89-SOL-01-BOUNDARY",
+      "baseSha": "c2f88a9eb64c9b2e0be12b770e9386e784dc19fd",
+      "headSha": "933230abddcc914b53b882153ec7a3469319946d",
+      "classification": "PASS",
+      "acceptanceOwned": ["BOUNDARY"]
+    },
+    {
+      "runId": "KS89-SOL-02-THREATS",
+      "baseSha": "933230abddcc914b53b882153ec7a3469319946d",
+      "headSha": "59f22a75fa788c988347c38be1ac43b6800a413b",
+      "classification": "PASS",
+      "acceptanceOwned": ["THREAT_MODEL", "NEGATIVE"]
+    },
+    {
+      "runId": "KS89-SOL-03-DECISION",
+      "baseSha": "59f22a75fa788c988347c38be1ac43b6800a413b",
+      "headSha": "b292dc38a53358cde7077f933dd7bbeb7ea0b628",
+      "classification": "PASS",
+      "acceptanceOwned": ["DECISION", "BLOCKERS"]
+    }
+  ],
+  "acceptanceOwnership": {
+    "BOUNDARY": "KS89-SOL-01-BOUNDARY",
+    "THREAT_MODEL": "KS89-SOL-02-THREATS",
+    "NEGATIVE": "KS89-SOL-02-THREATS",
+    "DECISION": "KS89-SOL-03-DECISION",
+    "BLOCKERS": "KS89-SOL-03-DECISION"
+  },
+  "changedPaths": [
+    "SOURCE-MAP.json",
+    "docs/evidence/conveyor/ks89-operating-contract-v2-receipt.json",
+    "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md",
+    "package.json",
+    "tests/frc0-product-boundary.test.mjs"
+  ],
+  "canonicalRegistration": {
+    "dedicatedScript": "npm run test:frc0-product-boundary",
+    "mainSuite": "npm test"
+  },
+  "checks": [
+    {"command": "npm run test:frc0-product-boundary", "status": "PASS"},
+    {"command": "npm test", "status": "PASS"},
+    {"command": "npm run test:security", "status": "PASS"},
+    {"command": "npm run test:source", "status": "PASS"},
+    {"command": "git diff --check", "status": "PASS"}
+  ],
+  "environmentProfile": "LOCAL_INTEGRATION_REDACTED",
+  "intendedTerminalDisposition": "REJECTED_WITH_EVIDENCE_PENDING_RELEASE",
+  "nonClaims": [
+    "NO_IMPLEMENTATION",
+    "NO_RUNTIME_OR_ENDPOINT",
+    "NO_CREDENTIAL_OR_CUSTOMER_DATA_HANDLING",
+    "NO_DEPLOYMENT",
+    "NO_PRODUCTION_OR_COMPLIANCE_READINESS",
+    "NO_IMPLEMENTATION_AUTHORIZATION",
+    "NO_PUSH_OR_PULL_REQUEST",
+    "NO_MERGE_OR_RELEASE",
+    "NO_ISSUE_CLOSE",
+    "NO_QUEUE_MUTATION"
+  ]
+}

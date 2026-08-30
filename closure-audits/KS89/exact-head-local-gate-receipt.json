@@ -1,0 +1,25 @@
+{
+  "schemaVersion":"development-conveyor/exact-head-local-gate-receipt/v1",
+  "issue":{"repository":"JoFe2/KaleidoSphere","number":89},
+  "operatingContract":"development-conveyor/issue-execution-plan/v2",
+  "testedProductHead":"243a15c5202dc0c9abd207a9f17b4a69de8000f3",
+  "testedProductTree":"4721ebbd4e336aa885e447559e5bb5660b4e29fb",
+  "baseSha":"c2f88a9eb64c9b2e0be12b770e9386e784dc19fd",
+  "runCommits":[
+    "933230abddcc914b53b882153ec7a3469319946d",
+    "59f22a75fa788c988347c38be1ac43b6800a413b",
+    "b292dc38a53358cde7077f933dd7bbeb7ea0b628",
+    "243a15c5202dc0c9abd207a9f17b4a69de8000f3"
+  ],
+  "acceptance":{"BOUNDARY":"PASS","THREAT_MODEL":"PASS","NEGATIVE":"PASS","DECISION":"PASS","BLOCKERS":"PASS"},
+  "disposition":"REJECTED_WITH_EVIDENCE_PENDING_RELEASE",
+  "checks":[
+    {"command":"npm run test:frc0-product-boundary","status":"PASS","tests":4},
+    {"command":"npm test","status":"PASS","tests":765},
+    {"command":"npm run test:security","status":"PASS","tests":7},
+    {"command":"npm run test:source","status":"PASS","tests":1},
+    {"command":"git diff --check","status":"PASS"}
+  ],
+  "nonClaims":["NO_IMPLEMENTATION","NO_RUNTIME_OR_ENDPOINT","NO_CREDENTIAL_OR_CUSTOMER_DATA_HANDLING","NO_DEPLOYMENT","NO_PRODUCTION_OR_COMPLIANCE_READINESS","NO_IMPLEMENTATION_AUTHORIZATION"],
+  "delivery":{"readyForPr":true,"prHeadCiRequired":true,"shaBoundMergeRequired":true,"mainHeadCiRequired":true,"dailyReleaseRequired":true,"anonymousReadbackRequired":true,"issueCloseRequired":true}
+}
