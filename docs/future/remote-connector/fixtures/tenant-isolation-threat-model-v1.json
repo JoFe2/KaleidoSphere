@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "kaleidosphere.remote-connector/tenant-isolation-threat-model/v1",
+  "threatModelId": "KS91-TENANT-ISOLATION-THREAT-MODEL-01",
+  "status": "FROZEN_FUTURE_SURFACE",
+  "evidenceClass": "synthetic-fixture-only",
+  "policy": {
+    "default": "DENY",
+    "syntheticOnly": true,
+    "sharedTenantIdentifierAllowed": false,
+    "crossTenantReadAllowed": false,
+    "crossTenantWriteAllowed": false,
+    "crossTenantExportAllowed": false,
+    "ambiguousBoundaryAllowed": false,
+    "bypassAllowed": false,
+    "externalDestinationDataFlowAllowed": false
+  },
+  "boundaries": [
+    {
+      "id": "tenant",
+      "label": "Synthetic tenant boundary",
+      "role": "owns one isolated namespace",
+      "requiredInputs": ["tenantId", "tenantScope"],
+      "isolationKey": "tenantScope"
+    },
+    {
+      "id": "control-plane",
+      "label": "Synthetic control plane boundary",
+      "role": "validates scope and routes bounded requests",
+      "requiredInputs": ["tenantId", "tenantScope", "flowId"],
+      "isolationKey": "tenantScope"
+    },
+    {
+      "id": "data-plane",
+      "label": "Synthetic data plane boundary",
+      "role": "stores and returns tenant-partitioned synthetic evidence",
+      "requiredInputs": ["tenantScope"],
+      "isolationKey": "tenantScope"
+    },
+    {
+      "id": "operator",
+      "label": "Synthetic operator boundary",
+      "role": "receives scoped status and review evidence",
+      "requiredInputs": ["tenantScope"],
+      "isolationKey": "tenantScope"
+    },
+    {
+      "id": "external-destination",
+      "label": "Synthetic external destination boundary",
+      "role": "outside the product isolation boundary",
+      "requiredInputs": [],
+      "isolationKey": "none"
+    }
+  ],
+  "diagram": {
+    "format": "mermaid",
+    "direction": "LR",
+    "nodes": ["tenant", "control-plane", "data-plane", "operator", "external-destination"],
+    "edges": [
+      {
+        "id": "edge-tenant-control",
+        "from": "tenant",
+        "to": "control-plane",
+        "scope": "tenant-scoped",
+        "decision": "ALLOW"
+      },
+      {
+        "id": "edge-control-data",
+        "from": "control-plane",
+        "to": "data-plane",
+        "scope": "tenant-scoped",
+        "decision": "ALLOW"
+      },
+      {
+        "id": "edge-data-control",
+        "from": "data-plane",
+        "to": "control-plane",
+        "scope": "tenant-scoped",
+        "decision": "ALLOW"
+      },
+      {
+        "id": "edge-control-operator",
+        "from": "control-plane",
+        "to": "operator",
+        "scope": "tenant-scoped",
+        "decision": "ALLOW"
+      },
+      {
+        "id": "edge-control-external",
+        "from": "control-plane",
+        "to": "external-destination",
+        "scope": "explicitly-rejected",
+        "decision": "REJECT",
+        "rejectCode": "KS91_EXTERNAL_DESTINATION_DENIED"
+      },
+      {
+        "id": "edge-operator-data-bypass",
+        "from": "operator",
+        "to": "data-plane",
+        "scope": "explicitly-rejected",
+        "decision": "REJECT",
+        "rejectCode": "KS91_BYPASS_ALLOWED_DENIED"
+      }
+    ]
+  },
+  "flows": [
+    {
+      "id": "flow-tenant-control",
+      "from": "tenant",
+      "to": "control-plane",
+      "dataClass": "synthetic-scoped-request",
+      "scope": "tenant-scoped",
+      "decision": "ALLOW",
+      "tenantBinding": "same-tenant"
+    },
+    {
+      "id": "flow-control-data",
+      "from": "control-plane",
+      "to": "data-plane",
+      "dataClass": "synthetic-tenant-partitioned-evidence",
+      "scope": "tenant-scoped",
+      "decision": "ALLOW",
+      "tenantBinding": "same-tenant"
+    },
+    {
+      "id": "flow-data-control",
+      "from": "data-plane",
+      "to": "control-plane",
+      "dataClass": "synthetic-scoped-result",
+      "scope": "tenant-scoped",
+      "decision": "ALLOW",
+      "tenantBinding": "same-tenant"
+    },
+    {
+      "id": "flow-control-operator",
+      "from": "control-plane",
+      "to": "operator",
+      "dataClass": "synthetic-scoped-review-status",
+      "scope": "tenant-scoped",
+      "decision": "ALLOW",
+      "tenantBinding": "same-tenant"
+    },
+    {
+      "id": "flow-control-external-rejected",
+      "from": "control-plane",
+      "to": "external-destination",
+      "dataClass": "none",
+      "scope": "explicitly-rejected",
+      "decision": "REJECT",
+      "tenantBinding": "none",
+      "rejectCode": "KS91_EXTERNAL_DESTINATION_DENIED"
+    },
+    {
+      "id": "flow-operator-data-bypass-rejected",
+      "from": "operator",
+      "to": "data-plane",
+      "dataClass": "none",
+      "scope": "explicitly-rejected",
+      "decision": "REJECT",
+      "tenantBinding": "none",
+      "rejectCode": "KS91_BYPASS_ALLOWED_DENIED"
+    }
+  ],
+  "hardRejectConditions": [
+    {
+      "id": "shared-tenant-identifier",
+      "condition": "one effective tenant identifier is shared by distinct tenant namespaces",
+      "code": "KS91_SHARED_TENANT_IDENTIFIER_DENIED"
+    },
+    {
+      "id": "cross-tenant-read",
+      "condition": "a read target tenant differs from the request tenant",
+      "code": "KS91_CROSS_TENANT_READ_DENIED"
+    },
+    {
+      "id": "cross-tenant-write",
+      "condition": "a write target tenant differs from the request tenant",
+      "code": "KS91_CROSS_TENANT_WRITE_DENIED"
+    },
+    {
+      "id": "cross-tenant-export",
+      "condition": "an export target tenant differs from the request tenant",
+      "code": "KS91_CROSS_TENANT_EXPORT_DENIED"
+    },
+    {
+      "id": "ambiguous-boundary",
+      "condition": "tenant, control plane, data plane, operator, or external destination ownership is ambiguous",
+      "code": "KS91_AMBIGUOUS_BOUNDARY_DENIED"
+    },
+    {
+      "id": "allowed-bypass",
+      "condition": "a path bypasses tenant-scope validation or is marked as an allowed bypass",
+      "code": "KS91_BYPASS_ALLOWED_DENIED"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "reject-shared-tenant-identifier",
+      "expectedCode": "KS91_SHARED_TENANT_IDENTIFIER_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "tenantId": "synthetic-tenant-alpha-isolated",
+        "tenantScope": "synthetic-tenant-alpha-isolated",
+        "flowId": "flow-control-data",
+        "sharedTenantIdentifier": true
+      }
+    },
+    {
+      "id": "reject-cross-tenant-read",
+      "expectedCode": "KS91_CROSS_TENANT_READ_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "tenantId": "synthetic-tenant-alpha-isolated",
+        "tenantScope": "synthetic-tenant-alpha-isolated",
+        "flowId": "flow-control-data",
+        "operation": "read",
+        "targetTenantId": "synthetic-tenant-beta-isolated"
+      }
+    },
+    {
+      "id": "reject-cross-tenant-write",
+      "expectedCode": "KS91_CROSS_TENANT_WRITE_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "tenantId": "synthetic-tenant-alpha-isolated",
+        "tenantScope": "synthetic-tenant-alpha-isolated",
+        "flowId": "flow-control-data",
+        "operation": "write",
+        "targetTenantId": "synthetic-tenant-beta-isolated"
+      }
+    },
+    {
+      "id": "reject-cross-tenant-export",
+      "expectedCode": "KS91_CROSS_TENANT_EXPORT_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "tenantId": "synthetic-tenant-alpha-isolated",
+        "tenantScope": "synthetic-tenant-alpha-isolated",
+        "flowId": "flow-control-operator",
+        "operation": "export",
+        "targetTenantId": "synthetic-tenant-beta-isolated"
+      }
+    },
+    {
+      "id": "reject-ambiguous-boundary",
+      "expectedCode": "KS91_AMBIGUOUS_BOUNDARY_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "tenantId": "synthetic-tenant-alpha-isolated",
+        "tenantScope": "synthetic-tenant-alpha-isolated",
+        "flowId": "flow-control-data",
+        "boundaryAmbiguous": true
+      }
+    },
+    {
+      "id": "reject-allowed-bypass",
+      "expectedCode": "KS91_BYPASS_ALLOWED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "tenantId": "synthetic-tenant-alpha-isolated",
+        "tenantScope": "synthetic-tenant-alpha-isolated",
+        "flowId": "flow-operator-data-bypass-rejected",
+        "bypassAllowed": true
+      }
+    }
+  ]
+}

@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "kaleidosphere.remote-connector/egress-threat-allowlist/v1",
+  "allowlistId": "KS91-EGRESS-ALLOWLIST-01",
+  "status": "FROZEN_FUTURE_SURFACE",
+  "evidenceClass": "synthetic-fixture-only",
+  "scope": "planning-candidate-only",
+  "policy": {
+    "default": "DENY",
+    "syntheticOnly": true,
+    "tenantIsolationRequired": true,
+    "liveDataAllowed": false,
+    "configuredNetworkControl": false,
+    "realNetworkRequestsAllowed": false,
+    "wildcardDestinationAllowed": false,
+    "unboundedDestinationAllowed": false,
+    "unapprovedDestinationAllowed": false,
+    "secretEgressWithoutGateAllowed": false,
+    "regulatedDataEgressWithoutGateAllowed": false
+  },
+  "destinationNamespace": "synthetic-local-logical-destination",
+  "candidates": [
+    {
+      "id": "candidate-tenant-aggregate-evidence",
+      "destination": "local-tenant-evidence-ledger",
+      "destinationKind": "local-logical-destination",
+      "purpose": "retain bounded aggregate evidence for review within the requesting tenant namespace",
+      "tenantScope": "request-tenant-only",
+      "dataClass": "synthetic-aggregate",
+      "approval": "REQUIRED_BEFORE_USE",
+      "approvalGate": "tenant-scope-validation",
+      "decision": "ALLOW_CANDIDATE_ONLY",
+      "denyDefault": "DENY"
+    },
+    {
+      "id": "candidate-tenant-coverage-status",
+      "destination": "local-tenant-coverage-ledger",
+      "destinationKind": "local-logical-destination",
+      "purpose": "record typed coverage states and evidence digests for the requesting tenant",
+      "tenantScope": "request-tenant-only",
+      "dataClass": "synthetic-coverage-state",
+      "approval": "REQUIRED_BEFORE_USE",
+      "approvalGate": "tenant-scope-validation",
+      "decision": "ALLOW_CANDIDATE_ONLY",
+      "denyDefault": "DENY"
+    },
+    {
+      "id": "candidate-tenant-review-status",
+      "destination": "local-tenant-review-status",
+      "destinationKind": "local-logical-destination",
+      "purpose": "present scoped review status to the operator without crossing the tenant boundary",
+      "tenantScope": "request-tenant-only",
+      "dataClass": "synthetic-scoped-review-status",
+      "approval": "REQUIRED_BEFORE_USE",
+      "approvalGate": "tenant-scope-validation-and-operator-review",
+      "decision": "ALLOW_CANDIDATE_ONLY",
+      "denyDefault": "DENY"
+    },
+    {
+      "id": "candidate-tenant-sensitive-metric",
+      "destination": "local-tenant-decision-record",
+      "destinationKind": "local-logical-destination",
+      "purpose": "retain a bounded sensitive metric for a tenant-scoped decision record",
+      "tenantScope": "request-tenant-only",
+      "dataClass": "synthetic-sensitive-metric",
+      "approval": "REQUIRED_BEFORE_USE",
+      "approvalGate": "tenant-scope-validation-and-data-governance-review",
+      "decision": "ALLOW_CANDIDATE_ONLY",
+      "denyDefault": "DENY"
+    }
+  ],
+  "hardRejectConditions": [
+    {
+      "id": "wildcard-destination",
+      "condition": "destination is a wildcard or wildcard pattern",
+      "code": "KS91_EGRESS_WILDCARD_DESTINATION_DENIED"
+    },
+    {
+      "id": "unbounded-destination",
+      "condition": "destination scope is unbounded or names a destination set instead of one exact logical destination",
+      "code": "KS91_EGRESS_UNBOUNDED_DESTINATION_DENIED"
+    },
+    {
+      "id": "unapproved-destination",
+      "condition": "the candidate has no completed approval gate before use",
+      "code": "KS91_EGRESS_APPROVAL_REQUIRED_DENIED"
+    },
+    {
+      "id": "secret-without-gate",
+      "condition": "secret or credential material is proposed without an explicit reviewed gate",
+      "code": "KS91_SECRET_EGRESS_GATE_REQUIRED_DENIED"
+    },
+    {
+      "id": "regulated-data-without-gate",
+      "condition": "regulated data is proposed without an explicit reviewed gate",
+      "code": "KS91_REGULATED_EGRESS_GATE_REQUIRED_DENIED"
+    },
+    {
+      "id": "uncontrolled-egress",
+      "condition": "egress is not bound to one candidate destination and its tenant scope",
+      "code": "KS91_UNCONTROLLED_EGRESS_DENIED"
+    },
+    {
+      "id": "real-network-request",
+      "condition": "a real network request, route, endpoint, host, port, or URL is requested",
+      "code": "KS91_REAL_NETWORK_REQUEST_DENIED"
+    },
+    {
+      "id": "cross-tenant-destination",
+      "condition": "destination scope is shared, cross-tenant, or different from the requesting tenant",
+      "code": "KS91_CROSS_TENANT_DESTINATION_DENIED"
+    },
+    {
+      "id": "destination-not-allowlisted",
+      "condition": "destination is not an exact entry in this candidate matrix",
+      "code": "KS91_DESTINATION_NOT_ALLOWLISTED_DENIED"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "reject-wildcard-destination",
+      "expectedCode": "KS91_EGRESS_WILDCARD_DESTINATION_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "*",
+        "destinationPattern": "*",
+        "tenantScope": "request-tenant-only",
+        "dataClass": "synthetic-aggregate",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "tenant-scope-validation"
+      }
+    },
+    {
+      "id": "reject-unbounded-destination",
+      "expectedCode": "KS91_EGRESS_UNBOUNDED_DESTINATION_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "tenant-destination-set",
+        "destinationPattern": "tenant-*",
+        "unbounded": true,
+        "tenantScope": "request-tenant-only",
+        "dataClass": "synthetic-aggregate",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "tenant-scope-validation"
+      }
+    },
+    {
+      "id": "reject-unapproved-destination",
+      "expectedCode": "KS91_EGRESS_APPROVAL_REQUIRED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "local-tenant-evidence-ledger",
+        "tenantScope": "request-tenant-only",
+        "dataClass": "synthetic-aggregate",
+        "approval": "NOT_APPROVED",
+        "approvalGate": "none"
+      }
+    },
+    {
+      "id": "reject-secret-without-gate",
+      "expectedCode": "KS91_SECRET_EGRESS_GATE_REQUIRED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "local-tenant-evidence-ledger",
+        "tenantScope": "request-tenant-only",
+        "dataClass": "secret-material",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "none"
+      }
+    },
+    {
+      "id": "reject-regulated-data-without-gate",
+      "expectedCode": "KS91_REGULATED_EGRESS_GATE_REQUIRED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "local-tenant-evidence-ledger",
+        "tenantScope": "request-tenant-only",
+        "dataClass": "regulated-data",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "none"
+      }
+    },
+    {
+      "id": "reject-uncontrolled-egress",
+      "expectedCode": "KS91_UNCONTROLLED_EGRESS_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "uncontrolled-egress",
+        "uncontrolledEgress": true,
+        "tenantScope": "request-tenant-only",
+        "dataClass": "synthetic-aggregate",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "tenant-scope-validation"
+      }
+    },
+    {
+      "id": "reject-real-network-request",
+      "expectedCode": "KS91_REAL_NETWORK_REQUEST_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "remote-network-destination",
+        "networkRequest": true,
+        "tenantScope": "request-tenant-only",
+        "dataClass": "synthetic-aggregate",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "tenant-scope-validation"
+      }
+    },
+    {
+      "id": "reject-cross-tenant-destination",
+      "expectedCode": "KS91_CROSS_TENANT_DESTINATION_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "local-tenant-evidence-ledger",
+        "tenantScope": "all-tenants",
+        "dataClass": "synthetic-aggregate",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "tenant-scope-validation"
+      }
+    },
+    {
+      "id": "reject-destination-not-allowlisted",
+      "expectedCode": "KS91_DESTINATION_NOT_ALLOWLISTED_DENIED",
+      "candidate": {
+        "dataOrigin": "synthetic",
+        "destination": "local-unlisted-destination",
+        "tenantScope": "request-tenant-only",
+        "dataClass": "synthetic-aggregate",
+        "approval": "REQUIRED_BEFORE_USE",
+        "approvalGate": "tenant-scope-validation"
+      }
+    }
+  ]
+}

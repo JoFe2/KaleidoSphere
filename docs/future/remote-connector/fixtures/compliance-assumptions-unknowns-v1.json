@@ -1,0 +1,404 @@
+{
+  "schemaVersion": "kaleidosphere.remote-connector/compliance-assumptions-unknowns/v1",
+  "registerId": "KS91-COMPLIANCE-ASSUMPTIONS-UNKNOWNS-01",
+  "status": "FROZEN_FUTURE_SURFACE",
+  "evidenceClass": "synthetic-fixture-only",
+  "scope": "planning-candidate-only",
+  "policy": {
+    "default": "DENY",
+    "syntheticOnly": true,
+    "liveCustomerDataAllowed": false,
+    "complianceGuaranteeClaimsAllowed": false,
+    "legalConclusionsAllowed": false,
+    "externalWaitsAllowed": false,
+    "unboundedUnknownsAllowed": false,
+    "missingDecisionAuthorityAllowed": false,
+    "residencyMismatchWithoutExceptionGateAllowed": false,
+    "unknownWithoutDecisionInputAllowed": false,
+    "productionApprovalGranted": false
+  },
+  "decisionAuthorities": [
+    "synthetic-data-governance",
+    "synthetic-security-and-data-governance",
+    "synthetic-operations-and-data-governance",
+    "synthetic-security-and-operations",
+    "synthetic-legal-review"
+  ],
+  "approvalGates": [
+    {
+      "id": "gate-residency-selection",
+      "domain": "residency",
+      "decisionAuthority": "synthetic-data-governance",
+      "requiredDecisionInputs": ["tenant-residency-choice", "permitted-tenant-boundary", "residency-evidence"],
+      "approvalOutcome": "APPROVE_CANDIDATE_ONLY",
+      "rejectGate": "reject-residency-selection",
+      "missingEvidenceCode": "KS91_RESIDENCY_APPROVAL_REQUIRED_DENIED",
+      "mismatchCode": "KS91_RESIDENCY_MISMATCH_DENIED"
+    },
+    {
+      "id": "gate-residency-exception-review",
+      "domain": "residency-exception",
+      "decisionAuthority": "synthetic-data-governance",
+      "requiredDecisionInputs": ["mismatch-record", "exception-rationale", "explicit-residency-approval"],
+      "approvalOutcome": "NOT_AUTHORIZED_IN_V1",
+      "rejectGate": "reject-residency-exception",
+      "missingEvidenceCode": "KS91_RESIDENCY_EXCEPTION_GATE_REQUIRED_DENIED",
+      "mismatchCode": "KS91_RESIDENCY_MISMATCH_DENIED"
+    },
+    {
+      "id": "gate-retention-deletion",
+      "domain": "retention",
+      "decisionAuthority": "synthetic-data-governance",
+      "requiredDecisionInputs": ["data-category", "finite-retention-duration", "deletion-trigger", "deletion-verification"],
+      "approvalOutcome": "APPROVE_CANDIDATE_ONLY",
+      "rejectGate": "reject-retention-deletion",
+      "missingEvidenceCode": "KS91_RETENTION_APPROVAL_REQUIRED_DENIED",
+      "mismatchCode": "KS91_RETENTION_POLICY_MISMATCH_DENIED"
+    },
+    {
+      "id": "gate-tenant-isolation",
+      "domain": "isolation",
+      "decisionAuthority": "synthetic-security-and-data-governance",
+      "requiredDecisionInputs": ["tenant-id", "tenant-scope", "same-tenant-binding", "cross-tenant-negative-evidence"],
+      "approvalOutcome": "APPROVE_CANDIDATE_ONLY",
+      "rejectGate": "reject-tenant-isolation",
+      "missingEvidenceCode": "KS91_ISOLATION_APPROVAL_REQUIRED_DENIED",
+      "mismatchCode": "KS91_TENANT_SCOPE_MISMATCH_DENIED"
+    },
+    {
+      "id": "gate-secret-custody",
+      "domain": "custody",
+      "decisionAuthority": "synthetic-security-and-operations",
+      "requiredDecisionInputs": ["non-secret-reference", "bounded-access", "rotation-evidence", "revocation-evidence", "log-artifact-exclusion"],
+      "approvalOutcome": "APPROVE_CANDIDATE_ONLY",
+      "rejectGate": "reject-secret-custody",
+      "missingEvidenceCode": "KS91_CUSTODY_APPROVAL_REQUIRED_DENIED",
+      "mismatchCode": "KS91_PLAINTEXT_CUSTODY_DENIED"
+    },
+    {
+      "id": "gate-egress-allowlist",
+      "domain": "egress",
+      "decisionAuthority": "synthetic-security-and-data-governance",
+      "requiredDecisionInputs": ["exact-logical-destination", "request-tenant-scope", "data-class", "approval-record", "no-network-operation"],
+      "approvalOutcome": "APPROVE_CANDIDATE_ONLY",
+      "rejectGate": "reject-egress-allowlist",
+      "missingEvidenceCode": "KS91_EGRESS_APPROVAL_REQUIRED_DENIED",
+      "mismatchCode": "KS91_DESTINATION_NOT_ALLOWLISTED_DENIED"
+    },
+    {
+      "id": "gate-legal-review",
+      "domain": "legal-review",
+      "decisionAuthority": "synthetic-legal-review",
+      "requiredDecisionInputs": ["jurisdiction-specific-review-record", "source-and-date-of-review", "non-claim-wording"],
+      "approvalOutcome": "NO_LEGAL_CONCLUSION_IN_V1",
+      "rejectGate": "reject-legal-conclusion-claim",
+      "missingEvidenceCode": "KS91_LEGAL_REVIEW_REQUIRED_DENIED",
+      "mismatchCode": "KS91_LEGAL_CONCLUSION_CLAIM_DENIED"
+    }
+  ],
+  "residencyChoices": [
+    {
+      "id": "synthetic-eu-1",
+      "residencyLabel": "synthetic-eu",
+      "permittedTenantBoundaries": ["synthetic-tenant-alpha-isolated", "synthetic-tenant-gamma-isolated"],
+      "approvalGate": "gate-residency-selection",
+      "decision": "APPROVE_CANDIDATE_ONLY"
+    },
+    {
+      "id": "synthetic-us-1",
+      "residencyLabel": "synthetic-us",
+      "permittedTenantBoundaries": ["synthetic-tenant-beta-isolated"],
+      "approvalGate": "gate-residency-selection",
+      "decision": "APPROVE_CANDIDATE_ONLY"
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "assumption-residency-choice-is-explicit",
+      "domain": "residency",
+      "statement": "A future candidate will select one named residency choice before handling and bind it to an allowed tenant boundary.",
+      "scope": ["tenant boundary", "data handling", "future candidate review"],
+      "evidenceNeeded": ["synthetic residency choice", "synthetic tenant-boundary mapping", "residency review record"],
+      "decisionAuthority": "synthetic-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-data-governance",
+        "reviewTrigger": "before any future contract version or jurisdiction change",
+        "expiryCondition": "residency evidence or tenant mapping is stale",
+        "expiryOutcome": "REJECT_AND_REVIEW"
+      },
+      "impact": "Without this assumption being evidenced, the candidate cannot be admitted or remapped to another region.",
+      "gate": "gate-residency-selection",
+      "status": "UNVERIFIED_PLANNING_ASSUMPTION"
+    },
+    {
+      "id": "assumption-retention-is-finite-and-verifiable",
+      "domain": "retention",
+      "statement": "A future candidate will use a finite, triggered retention period and verify deletion rather than rely on indefinite storage.",
+      "scope": ["synthetic data categories", "retention policy", "deletion evidence"],
+      "evidenceNeeded": ["data classification", "finite duration and trigger", "deletion manifest and digest verification"],
+      "decisionAuthority": "synthetic-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-data-governance",
+        "reviewTrigger": "at each retention-policy revision and before expiry",
+        "expiryCondition": "duration, trigger, owner, or deletion verification is missing",
+        "expiryOutcome": "REJECT_AND_DELETE"
+      },
+      "impact": "Missing or unbounded retention prevents approval and requires deletion or rejection evidence.",
+      "gate": "gate-retention-deletion",
+      "status": "UNVERIFIED_PLANNING_ASSUMPTION"
+    },
+    {
+      "id": "assumption-isolation-is-same-tenant",
+      "domain": "isolation",
+      "statement": "A future candidate will require matching tenant identity and tenant scope for every permitted flow, with no cross-tenant read, write, export, or bypass.",
+      "scope": ["tenant boundary", "control plane", "data plane", "operator review"],
+      "evidenceNeeded": ["tenant-scope binding", "flow inventory", "cross-tenant negative cases", "bypass negative case"],
+      "decisionAuthority": "synthetic-security-and-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-security-and-data-governance",
+        "reviewTrigger": "before any boundary, flow, or authorization change",
+        "expiryCondition": "a flow or isolation key is added without review evidence",
+        "expiryOutcome": "REJECT_AND_REVIEW"
+      },
+      "impact": "An ambiguous or shared tenant boundary blocks approval and produces a stable isolation denial.",
+      "gate": "gate-tenant-isolation",
+      "status": "UNVERIFIED_PLANNING_ASSUMPTION"
+    },
+    {
+      "id": "assumption-custody-is-reference-only",
+      "domain": "custody",
+      "statement": "A future candidate may compare only bounded, non-secret references; plaintext, customer credential capture, and secret exposure remain prohibited.",
+      "scope": ["secret custody", "hypothetical access", "logs and artifacts"],
+      "evidenceNeeded": ["custody boundary", "one-tenant one-operation scope", "rotation and revocation evidence", "log/artifact exclusion evidence"],
+      "decisionAuthority": "synthetic-security-and-operations",
+      "expiryReview": {
+        "reviewOwner": "synthetic-security-and-operations",
+        "reviewTrigger": "before any custody option, access scope, or reference lifetime change",
+        "expiryCondition": "rotation, revocation, scope, or exclusion evidence is absent or ambiguous",
+        "expiryOutcome": "REJECT_AND_REAUTHORIZE"
+      },
+      "impact": "The candidate cannot proceed when custody evidence is incomplete; no secret value may enter the fixture, logs, or review record.",
+      "gate": "gate-secret-custody",
+      "status": "UNVERIFIED_PLANNING_ASSUMPTION"
+    },
+    {
+      "id": "assumption-egress-is-exact-and-deny-default",
+      "domain": "egress",
+      "statement": "A future candidate will be limited to an exact tenant-scoped logical destination and will not create a real network operation; the default remains deny.",
+      "scope": ["egress destination", "tenant scope", "data class", "network boundary"],
+      "evidenceNeeded": ["exact candidate entry", "completed approval record", "tenant-scope binding", "no-network-operation evidence"],
+      "decisionAuthority": "synthetic-security-and-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-security-and-data-governance",
+        "reviewTrigger": "before any destination, data class, or network-boundary change",
+        "expiryCondition": "destination, scope, approval, or network posture is not exact and current",
+        "expiryOutcome": "REJECT_AND_REVIEW"
+      },
+      "impact": "Uncontrolled, wildcard, cross-tenant, secret, regulated, or real-network egress is denied without retry or remapping.",
+      "gate": "gate-egress-allowlist",
+      "status": "UNVERIFIED_PLANNING_ASSUMPTION"
+    }
+  ],
+  "unknowns": [
+    {
+      "id": "unknown-jurisdiction-residency-obligation",
+      "domain": "residency",
+      "statement": "The jurisdiction-specific residency obligation for a future tenant is unknown in this planning slice.",
+      "scope": ["future tenant", "residency choice", "legal review"],
+      "evidenceNeeded": ["jurisdiction-specific review record", "tenant residency requirement", "approved exception record if applicable"],
+      "decisionAuthority": "synthetic-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-data-governance",
+        "reviewTrigger": "before tenant admission or residency change",
+        "expiryCondition": "the residency obligation remains unresolved",
+        "expiryOutcome": "REJECT_WITH_EVIDENCE"
+      },
+      "impact": "No residency choice may be accepted while the applicable obligation is unknown.",
+      "failClosedGate": {
+        "gateId": "gate-residency-selection",
+        "rejectGate": "reject-residency-selection",
+        "missingEvidenceCode": "KS91_RESIDENCY_APPROVAL_REQUIRED_DENIED",
+        "decision": "REJECT"
+      },
+      "decisionInputLinks": [
+        {"type": "data", "gateId": "gate-residency-selection", "input": "tenant-residency-choice"}
+      ],
+      "bounded": true,
+      "status": "OPEN_REJECT_UNTIL_DECIDED"
+    },
+    {
+      "id": "unknown-retention-obligation",
+      "domain": "retention",
+      "statement": "The final category-specific retention and deletion obligation is unknown until data governance reviews the synthetic classification inputs.",
+      "scope": ["data category", "retention duration", "deletion verification"],
+      "evidenceNeeded": ["classification decision", "finite retention policy", "deletion verification evidence"],
+      "decisionAuthority": "synthetic-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-data-governance",
+        "reviewTrigger": "before any data handling or policy expiry",
+        "expiryCondition": "retention trigger, duration, or deletion verification remains undecided",
+        "expiryOutcome": "REJECT_AND_DELETE"
+      },
+      "impact": "Unknown retention cannot become unbounded storage or a claim of compliant deletion.",
+      "failClosedGate": {
+        "gateId": "gate-retention-deletion",
+        "rejectGate": "reject-retention-deletion",
+        "missingEvidenceCode": "KS91_RETENTION_APPROVAL_REQUIRED_DENIED",
+        "decision": "REJECT"
+      },
+      "decisionInputLinks": [
+        {"type": "data", "gateId": "gate-retention-deletion", "input": "finite-retention-duration"}
+      ],
+      "bounded": true,
+      "status": "OPEN_REJECT_UNTIL_DECIDED"
+    },
+    {
+      "id": "unknown-isolation-proof",
+      "domain": "isolation",
+      "statement": "The implementation proof for future tenant isolation is unknown because this artifact authorizes no connector or data path.",
+      "scope": ["control plane", "data plane", "operator boundary", "tenant flows"],
+      "evidenceNeeded": ["same-tenant flow evidence", "cross-tenant rejection evidence", "bypass rejection evidence"],
+      "decisionAuthority": "synthetic-security-and-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-security-and-data-governance",
+        "reviewTrigger": "before any implementation or flow admission",
+        "expiryCondition": "isolation proof is absent, stale, or ambiguous",
+        "expiryOutcome": "REJECT_WITH_EVIDENCE"
+      },
+      "impact": "No tenant-scoped flow is admitted on an unproven isolation boundary.",
+      "failClosedGate": {
+        "gateId": "gate-tenant-isolation",
+        "rejectGate": "reject-tenant-isolation",
+        "missingEvidenceCode": "KS91_ISOLATION_APPROVAL_REQUIRED_DENIED",
+        "decision": "REJECT"
+      },
+      "decisionInputLinks": [
+        {"type": "data", "gateId": "gate-tenant-isolation", "input": "same-tenant-binding"}
+      ],
+      "bounded": true,
+      "status": "OPEN_REJECT_UNTIL_DECIDED"
+    },
+    {
+      "id": "unknown-secret-custody-control",
+      "domain": "custody",
+      "statement": "The future custody control, rotation, and revocation mechanism is unknown; this register compares requirements without selecting or configuring a store.",
+      "scope": ["secret reference", "rotation", "revocation", "logs and artifacts"],
+      "evidenceNeeded": ["non-secret reference design", "bounded access evidence", "rotation/revocation evidence", "exclusion verification"],
+      "decisionAuthority": "synthetic-security-and-operations",
+      "expiryReview": {
+        "reviewOwner": "synthetic-security-and-operations",
+        "reviewTrigger": "before any secret operation or custody option approval",
+        "expiryCondition": "custody, rotation, revocation, or exclusion remains unresolved",
+        "expiryOutcome": "REJECT_AND_REAUTHORIZE"
+      },
+      "impact": "No custody option is usable while the control is unknown; secret material remains denied.",
+      "failClosedGate": {
+        "gateId": "gate-secret-custody",
+        "rejectGate": "reject-secret-custody",
+        "missingEvidenceCode": "KS91_CUSTODY_APPROVAL_REQUIRED_DENIED",
+        "decision": "REJECT"
+      },
+      "decisionInputLinks": [
+        {"type": "secret", "gateId": "gate-secret-custody", "input": "rotation-evidence"}
+      ],
+      "bounded": true,
+      "status": "OPEN_REJECT_UNTIL_DECIDED"
+    },
+    {
+      "id": "unknown-egress-control",
+      "domain": "egress",
+      "statement": "The future independently enforced egress control is unknown; no endpoint, route, URL, provider, or network permission is implied by this register.",
+      "scope": ["logical destination", "tenant scope", "network boundary", "data class"],
+      "evidenceNeeded": ["exact destination entry", "tenant-scoped approval", "data-class gate", "evidence of no real network operation"],
+      "decisionAuthority": "synthetic-security-and-data-governance",
+      "expiryReview": {
+        "reviewOwner": "synthetic-security-and-data-governance",
+        "reviewTrigger": "before any egress configuration or destination admission",
+        "expiryCondition": "the egress control is absent, broad, or not independently verified",
+        "expiryOutcome": "REJECT_WITH_EVIDENCE"
+      },
+      "impact": "Unknown egress control blocks approval and prevents any destination from inheriting permission.",
+      "failClosedGate": {
+        "gateId": "gate-egress-allowlist",
+        "rejectGate": "reject-egress-allowlist",
+        "missingEvidenceCode": "KS91_EGRESS_APPROVAL_REQUIRED_DENIED",
+        "decision": "REJECT"
+      },
+      "decisionInputLinks": [
+        {"type": "egress", "gateId": "gate-egress-allowlist", "input": "exact-logical-destination"}
+      ],
+      "bounded": true,
+      "status": "OPEN_REJECT_UNTIL_DECIDED"
+    }
+  ],
+  "hardRejectConditions": [
+    {
+      "id": "compliance-guarantee-claim",
+      "condition": "the candidate presents this planning register or synthetic evidence as a compliance guarantee or certification",
+      "code": "KS91_COMPLIANCE_GUARANTEE_CLAIM_DENIED",
+      "gate": "reject-legal-conclusion-claim"
+    },
+    {
+      "id": "missing-decision-authority",
+      "condition": "an assumption or unknown has no named decision authority present in the register",
+      "code": "KS91_DECISION_AUTHORITY_MISSING_DENIED",
+      "gate": "reject-missing-decision-authority"
+    },
+    {
+      "id": "unbounded-unknown",
+      "condition": "an unknown has no bounded scope, evidence needed, expiry/review, impact, and fail-closed outcome",
+      "code": "KS91_UNKNOWN_UNBOUNDED_DENIED",
+      "gate": "reject-unbounded-unknown"
+    },
+    {
+      "id": "residency-mismatch-without-exception-gate",
+      "condition": "a residency mismatch is accepted without a completed explicit exception gate; v1 does not authorize an exception",
+      "code": "KS91_RESIDENCY_EXCEPTION_GATE_REQUIRED_DENIED",
+      "gate": "gate-residency-exception-review"
+    },
+    {
+      "id": "legal-conclusion-presented-as-fact",
+      "condition": "a legal or regulatory conclusion is stated as fact rather than a bounded unknown requiring named review",
+      "code": "KS91_LEGAL_CONCLUSION_CLAIM_DENIED",
+      "gate": "reject-legal-conclusion-claim"
+    },
+    {
+      "id": "missing-decision-input-link",
+      "condition": "an unknown is not linked to a data, egress, or secret decision input",
+      "code": "KS91_UNKNOWN_DECISION_INPUT_MISSING_DENIED",
+      "gate": "reject-unbounded-unknown"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "reject-compliance-guarantee-claim",
+      "expectedCode": "KS91_COMPLIANCE_GUARANTEE_CLAIM_DENIED",
+      "candidate": {"dataOrigin": "synthetic", "claimType": "compliance-guarantee", "claim": "synthetic-compliance-guaranteed"}
+    },
+    {
+      "id": "reject-missing-authority",
+      "expectedCode": "KS91_DECISION_AUTHORITY_MISSING_DENIED",
+      "candidate": {"dataOrigin": "synthetic", "assumptionId": "assumption-residency-choice-is-explicit", "decisionAuthority": null}
+    },
+    {
+      "id": "reject-unbounded-unknown",
+      "expectedCode": "KS91_UNKNOWN_UNBOUNDED_DENIED",
+      "candidate": {"dataOrigin": "synthetic", "unknownId": "unknown-egress-control", "bounded": false, "failClosedGate": null}
+    },
+    {
+      "id": "reject-residency-mismatch-without-exception-gate",
+      "expectedCode": "KS91_RESIDENCY_EXCEPTION_GATE_REQUIRED_DENIED",
+      "candidate": {"dataOrigin": "synthetic", "residencyChoice": "synthetic-us-1", "tenantBoundary": "synthetic-tenant-alpha-isolated", "exceptionGate": null}
+    },
+    {
+      "id": "reject-legal-conclusion-as-fact",
+      "expectedCode": "KS91_LEGAL_CONCLUSION_CLAIM_DENIED",
+      "candidate": {"dataOrigin": "synthetic", "claimType": "legal-conclusion", "claimPresentation": "fact"}
+    },
+    {
+      "id": "reject-unknown-without-decision-input",
+      "expectedCode": "KS91_UNKNOWN_DECISION_INPUT_MISSING_DENIED",
+      "candidate": {"dataOrigin": "synthetic", "unknownId": "unknown-egress-control", "bounded": true, "decisionInputLinks": []}
+    }
+  ]
+}
