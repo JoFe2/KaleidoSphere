@@ -67,6 +67,12 @@ function resolveBoundary(value) {
   return resolved;
 }
 
+function resolveAuthFile(value) {
+  const resolved = path.resolve(value);
+  if (path.basename(resolved) !== 'auth.json') throw new Error('auth file denied: basename must be auth.json');
+  return resolved;
+}
+
 function parseArgs(argv) {
   const args = {
     fixture: defaultFixture,
@@ -74,22 +80,25 @@ function parseArgs(argv) {
     cleanBoundary: false,
     boundary: null,
     codex: 'codex',
+    authFile: null,
     dryRun: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
     if (arg === '--clean-boundary') args.cleanBoundary = true;
     else if (arg === '--dry-run') args.dryRun = true;
-    else if (['--fixture', '--receipt', '--boundary', '--codex'].includes(arg)) {
+    else if (['--fixture', '--receipt', '--boundary', '--codex', '--auth-file'].includes(arg)) {
       const value = argv[index += 1];
       if (value === undefined || value.startsWith('-')) throw new Error(`missing value for ${arg}`);
       if (arg === '--fixture') args.fixture = resolveFixture(value);
       else if (arg === '--receipt') args.receipt = resolveReceipt(value);
       else if (arg === '--boundary') args.boundary = resolveBoundary(value);
+      else if (arg === '--auth-file') args.authFile = resolveAuthFile(value);
       else args.codex = value;
     } else throw new Error(`unknown argument: ${arg}`);
   }
   if (args.cleanBoundary && args.dryRun) throw new Error('--dry-run is only valid with --fixture');
+  if (args.authFile !== null && !args.cleanBoundary) throw new Error('auth file denied: clean boundary required');
   return args;
 }
 
@@ -326,6 +335,7 @@ async function runClean(fixture, args) {
   const context = await prepareBoundary(args.boundary);
   const { boundary, roots, owned } = context;
   const env = baseEnvironment(roots);
+  const authTarget = path.join(roots.codexHome, 'auth.json');
   const ordered = [];
   let order = 0;
   const record = (id, phase, command, expected, result, assertion) => {
@@ -337,6 +347,15 @@ async function runClean(fixture, args) {
   let finalProof;
   let failed;
   try {
+    if (args.authFile !== null) {
+      let authStat;
+      try { authStat = await lstat(args.authFile); } catch { throw new Error('auth file denied: source unavailable'); }
+      if (!authStat.isFile() || authStat.size < 2 || authStat.size > 1024 * 1024) throw new Error('auth file denied: source must be a bounded regular file');
+      let authDocument;
+      try { authDocument = JSON.parse(await readFile(args.authFile, 'utf8')); } catch { throw new Error('auth file denied: invalid JSON'); }
+      if (authDocument === null || typeof authDocument !== 'object' || Array.isArray(authDocument)) throw new Error('auth file denied: invalid document');
+      await writeFile(authTarget, `${JSON.stringify(authDocument)}\n`, { mode: 0o600 });
+    }
     const generated = execute(process.execPath, [generator, '--out', roots.packageRoot], env);
     record('generate-package', 'preflight', generated.command, 'passed', generated.result, 'package digest is bound to the generated receipt');
     if (generated.raw.status !== 0) throw new Error(`package generation denied: ${generated.raw.signal || generated.raw.status}`);
@@ -390,6 +409,7 @@ async function runClean(fixture, args) {
     if (removeMarketplace.raw.status !== 0) throw new Error(`marketplace removal denied: exit ${removeMarketplace.raw.status}`);
 
     await rm(roots.marketplaceRoot, { recursive: true, force: true });
+    await rm(authTarget, { force: true });
     finalProof = await readBoundaryProof(boundary, roots);
     const readback = { command: ['read-boundary', roots.codexHome], result: { exitCode: finalProof.emptyAfterCleanup ? 0 : 1, signal: null, stdout: finalProof.emptyAfterCleanup ? 'empty\n' : `${finalProof.residuePaths.join('\n')}\n`, stderr: '', errorCode: null } };
     record('zero-residue-readback', 'readback', readback.command, 'passed', readback.result, 'profile, cache and config roots are empty');
