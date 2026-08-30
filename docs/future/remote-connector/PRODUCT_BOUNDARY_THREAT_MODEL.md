@@ -1,0 +1,250 @@
+# Remote Connector Product Boundary and Threat Model
+
+> **Status: FUTURE_BACKLOG — discovery-only planning artifact.**
+>
+> This document defines a candidate product boundary for issue #89. It does not
+> authorize implementation, runtime activation, customer onboarding, network
+> egress, deployment, or processing of live customer data.
+
+## 1. Purpose and decision status
+
+This artifact freezes the vocabulary and boundary inputs needed for later threat
+model and build/buy/reject work. It describes a hypothetical remote connector
+between a PanSphaira interaction surface and KaleidoSphere's existing closed,
+authority-free contract. It is not a design approval or evidence that such a
+connector exists.
+
+The only in-bound KaleidoSphere intents remain exactly `status`, `discovery`,
+`analyze`, `plan`, `preview`, and `readback`. Discovery must not widen that set.
+All persistent effects remain outside this connector boundary.
+
+## 2. Actors and users
+
+| Actor | Legitimate need | Authority held | Authority not held |
+| --- | --- | --- | --- |
+| Requesting user (for example, analyst) | Ask a bounded BI question and inspect evidence | Author a request within policy granted by the tenant | Select another tenant, bypass policy, supply free-form execution instructions, or approve persistent change |
+| Tenant data owner | Define permissible data purpose, scope, classification, and retention | Approve the tenant's business use and data-governance policy | Change KaleidoSphere contracts or operate product infrastructure |
+| Tenant administrator | Bind tenant identity, roles, approved resources, and support contacts under an approved future service design | Administer only the represented tenant | Read another tenant, weaken mandatory product guards, or grant KaleidoSphere new intent authority |
+| Trusted approver | Review an exact preview/diff in a trusted visual UI | Approve or deny the exact represented change under a separate BI-Control workflow | Grant standing, voice-only, connector-level, or cross-tenant mutation authority |
+| Support operator | Diagnose availability and contract failures from minimized telemetry | Perform documented operational support within assigned tenant and environment scope | Inspect business content by default, impersonate a user, change tenant policy, or treat a failed request as approved |
+| Product/security owner | Own product contract, risk acceptance, release gates, and incident policy | Approve future product changes through separate governance | Act as tenant data owner or silently expand customer-data use |
+| External BI/source system owner | Operate the authoritative data system and its access policy | Decide source-system access and remain authoritative for source data | Delegate source truth, identity decisions, or write authority merely by returning data |
+| Untrusted party or content | None; modelled to make abuse explicit | No legitimate authority | Inject instructions, replay evidence, cross tenant boundaries, discover configuration, or cause execution |
+
+A person may occupy multiple roles, but each action must be evaluated under one
+explicit role and tenant binding. Role coincidence does not collapse separation
+of duties.
+
+## 3. Tenant model
+
+A **tenant** is the smallest independently governed customer or organizational
+security domain. Each future request, policy decision, resource reference,
+evidence object, telemetry record, support action, and approval would need one
+unambiguous tenant binding. An opaque principal identifier may identify a user
+inside that tenant; human-readable personal data is not required for routing.
+
+The boundary assumes deny-by-default isolation:
+
+- no implicit, caller-selected, or fallback tenant;
+- no cross-tenant query, cache reuse, evidence reuse, logs, support access, or
+  approval;
+- no inference that two matching resource names refer to the same resource;
+- no global administrator access implied by product support;
+- no tenant may weaken mandatory contract or integrity checks;
+- ambiguous, missing, stale, or conflicting tenant context fails closed.
+
+Whether a future offering is single-tenant, dedicated per tenant, or shared with
+strong logical isolation remains an unresolved architecture decision. This
+artifact defines required semantics but claims no implemented tenant isolation.
+
+## 4. Authority ownership
+
+### 4.1 PanSphaira
+
+PanSphaira owns the user interaction: capturing the user's selected tenant and
+closed intent, presenting limitations and results, preserving explicit user
+choices, and routing an already valid request through a separately trusted
+transport. It may offer non-binding visual guidance.
+
+PanSphaira does **not** become authoritative for identity, tenant membership,
+source facts, BI truth, KaleidoSphere contract validity, evidence integrity,
+approval, persistent mutation, or implementation decisions. User-entered text,
+voice, UI state, and visual appearance are untrusted claims until independently
+validated by the authority that owns each decision.
+
+### 4.2 KaleidoSphere
+
+KaleidoSphere owns validation of its closed six-intent contract, capability and
+request/result binding, evidence classification, integrity/freshness checks,
+and separation of observed facts, computed facts, inferred candidates, and
+human decisions. It must fail closed when those facts cannot be established.
+
+KaleidoSphere does **not** own tenant identity proof, source-system access
+policy, source truth, user approval, or persistent write authority. A validated
+request is a proposal to use an already configured trusted transport; it neither
+discovers a transport nor grants access.
+
+### 4.3 Independent authorities
+
+- The identity and tenant-policy authority establishes principal, membership,
+  role, and allowed resources.
+- The external source/BI system remains authoritative for access enforcement and
+  returned source state.
+- A trusted visual UI and BI-Control remain the only candidate path for a future
+  persistent change: exact preview/diff, scoped approval, apply, independent
+  readback, and rollback. That path is outside discovery and is not authorized
+  here.
+- Human data owners own purpose and risk decisions; product components must not
+  infer consent or approval from successful transport, analysis, or presentation.
+
+## 5. Minimized data classes
+
+| Data class | Minimum candidate content | Handling boundary |
+| --- | --- | --- |
+| Request control data | Contract version, one closed intent, bounded arguments, correlation identifier | No arbitrary instructions, free SQL, provider payload, or access material |
+| Tenant and principal claims | Opaque tenant and principal identifiers, role/policy references, decision time | Must be independently verified; minimize personal attributes |
+| Resource references | Opaque allowlisted resource identifiers and requested scope | Names are not authority; bind to tenant and policy decision |
+| Capability/contract evidence | Product identity, contract version, capability digest, request/action binding | Reject missing, malformed, stale, replayed, or mismatched evidence |
+| BI evidence | Necessary metadata, aggregates, classifications, provenance, and limitations | Prefer metadata and aggregates; no raw source rows during discovery |
+| Proposal/preview data | Non-applying plan, exact diff reference, preconditions, expiry | Never evidence of approval or execution |
+| Result/readback evidence | Outcome, integrity/freshness facts, provenance, limitations, uncertainty | Redact and tenant-bind before presentation or retention |
+| Operational telemetry | Timestamp class, correlation identifier, component state, bounded error code | No business payload by default; tenant-scoped access and retention |
+| Human decision record | Exact decision, actor role, tenant, scope, time, expiry | Separate from system inference; no reusable standing approval |
+
+Live customer records and access material are prohibited inputs to this discovery
+work. Synthetic examples, if later needed, must be non-customer, non-secret, and
+clearly labelled.
+
+## 6. Directional data-flow inventory
+
+This is a logical inventory, not a network design. Every arrow is conditional on
+future approval and an already configured trusted transport.
+
+| Flow | Direction | Minimum payload | Receiver responsibility | Prohibited payload/effect |
+| --- | --- | --- | --- | --- |
+| F1 | Requesting user → PanSphaira | Selected tenant, one closed intent, bounded input | Preserve user choice; label unverified claims | Access material, raw rows, arbitrary execution, implied approval |
+| F2 | Identity/tenant authority → policy enforcement point | Verified tenant/principal/role claims and allow/deny scope | Bind decision to request, resource, time, and tenant | Caller-authored identity or fallback tenant |
+| F3 | PanSphaira → KaleidoSphere boundary | Validated closed request, tenant/policy binding, correlation identifier | Revalidate closed schema and capability binding | Unknown fields, new intents, transport discovery, write command |
+| F4 | KaleidoSphere → configured trusted transport/source boundary | Least-privilege, tenant-bound read/proposal request | Enforce source access independently | Direct access discovery, free SQL, raw provider payload, mutation |
+| F5 | Source/BI authority → KaleidoSphere | Minimized metadata/aggregate evidence plus provenance and outcome | Verify integrity, freshness, request binding, and classification | Unbound, cross-tenant, stale, or raw-row discovery response |
+| F6 | KaleidoSphere → PanSphaira | Tenant-bound redacted result, evidence status, limitations, nonclaims | Preserve evidence classes and uncertainty | Claim of truth, approval, compliance, or execution not in evidence |
+| F7 | PanSphaira → requesting user | Human-readable result and explicit limitations | Keep proposals distinct from observed/read-back state | Visual appearance as correctness or authority |
+| F8 | Components → tenant-scoped support telemetry | Bounded state/error code and correlation identifier | Apply least privilege, retention, and audit | Business content, access material, cross-tenant aggregation by default |
+| F9 | Trusted approver → trusted UI/BI-Control | Exact scoped decision over an exact preview/diff | Enforce expiry, apply separately, read back, support rollback | Discovery-side apply, voice-only approval, standing approval |
+
+F9 documents an external authority dependency only. It is not part of the
+proposed discovery connector and grants no implementation or runtime authority.
+
+## 7. Trust boundaries
+
+| Boundary | Untrusted side | Required decision at crossing | Fail-closed condition |
+| --- | --- | --- | --- |
+| TB1 User/PanSphaira | User input, voice transcription, client state, rendered UI | Closed input shape and explicit tenant selection | Ambiguous intent/tenant, hidden field, or unsupported action |
+| TB2 PanSphaira/KaleidoSphere | Client request and client-authored summaries | Contract, capability, tenant/policy, and request binding | Unknown field/intent, stale contract, absent trusted transport |
+| TB3 Tenant policy/product processing | Principal and resource claims | Independently verified tenant role and least-privilege scope | Missing, conflicting, expired, or cross-tenant binding |
+| TB4 KaleidoSphere/external source | Remote response and source-originated content | Source authorization, provenance, integrity, freshness, classification | Untrusted origin, raw-row discovery, replay, mismatch, uncertain outcome |
+| TB5 Product/support plane | Telemetry and support request | Tenant-scoped support authorization and data minimization | Business payload exposure, impersonation, or cross-tenant access |
+| TB6 Proposal/persistent change | Analysis, plan, preview, or conversational assent | Exact trusted-UI approval followed by separate BI-Control controls | Any attempt to treat discovery, plan, preview, or voice as apply authority |
+
+A later threat-model slice must enumerate threats and mitigations against every
+boundary above. This slice freezes the boundaries; it does not claim the threat
+analysis is complete.
+
+## 8. Failure modes and ownership
+
+| Failure mode | Required behavior | Primary owner | Support handoff |
+| --- | --- | --- | --- |
+| Missing trusted transport | Stop after local validation; report the missing dependency | Product owner | Product support, without soliciting access material |
+| Unknown or widened intent/field | Reject without dispatch | KaleidoSphere contract owner | Product/security for repeated probes |
+| Missing or ambiguous tenant/principal | Deny; do not guess or use a default | Identity/tenant-policy owner | Tenant administrator |
+| Cross-tenant reference, cache, evidence, or telemetry | Deny, contain, preserve minimized audit facts, initiate incident process | Security owner | Affected tenant data owner and product support |
+| Source authorization denied | Preserve denial; do not retry as a broader role | External source owner | Tenant administrator/source support |
+| Integrity, capability, request-binding, freshness, or replay check fails | Accept no evidence and fail closed | KaleidoSphere contract/security owner | Product support with correlation metadata only |
+| Raw row, access material, or other prohibited class appears | Stop processing, avoid propagation/retention, invoke incident policy | Security/privacy owner | Tenant data owner under approved incident procedure |
+| Timeout or transport uncertainty | Report unknown/failed outcome; no blind retry or success claim | Transport operator | Product support and source operator |
+| Partial, malformed, or conflicting result | Reject as evidence; show no inferred success | KaleidoSphere contract owner | Product support |
+| Stale policy or approval | Deny and require a fresh scoped decision | Tenant-policy or trusted-approval owner | Tenant administrator/approver |
+| Presentation differs from evidence | Preserve authoritative evidence, flag discrepancy, do not infer correctness from UI | PanSphaira owner | Product support |
+| Support cannot resolve ownership | Escalate to product/security owner; no broadened access | Product owner | Tenant contact receives status without sensitive detail |
+
+Failures never transfer authority. Availability pressure, support access, retries,
+or a plausible UI result must not turn a deny/unknown outcome into success.
+
+## 9. Support ownership model
+
+- **PanSphaira owner:** interaction defects, explicit tenant/intent capture,
+  presentation fidelity, accessibility of limitations, and client-side redaction.
+- **KaleidoSphere owner:** closed-contract validation, evidence class separation,
+  attestation checks, deterministic denial, and result nonclaims.
+- **Identity/tenant-policy owner:** principal lifecycle, tenant membership, roles,
+  resource policy, and access-decision audit.
+- **Transport operator:** availability and bounded delivery of an already
+  configured trusted transport, without changing semantic authority.
+- **External source/BI owner:** source access enforcement, source-state accuracy,
+  and source-side incident response.
+- **Tenant data owner:** business purpose, classification, retention, permitted
+  use, and tenant incident decisions.
+- **Product security/privacy owner:** threat acceptance, cross-tenant or prohibited
+  data incidents, security disclosure, and approval gates for any future build.
+
+No 24/7, response-time, residency, retention, disaster-recovery, or customer
+support commitment is selected. A later decision must assign these obligations
+before any implementation authorization.
+
+## 10. Explicit non-goals
+
+This discovery artifact does not:
+
+1. build, host, configure, activate, test, deploy, or operate a connector or MCP
+   service;
+2. define or expose a public endpoint, transport address, discovery mechanism, or
+   deployment procedure;
+3. collect, validate, store, rotate, broker, or request access material;
+4. process live customer records or authorize customer onboarding;
+5. add an intent or alter the semantics of the six External API v2 intents;
+6. accept free SQL, raw source rows, arbitrary URLs, provider payloads, unknown
+   fields, direct DOM/JavaScript control, or arbitrary actions;
+7. grant PanSphaira, KaleidoSphere, support staff, or an AI system source truth,
+   tenant administration, approval, apply, write, delete, or deployment authority;
+8. treat `discovery`, `analyze`, `plan`, `preview`, transport success, or visual
+   presentation as delivery, approval, execution, or readback;
+9. choose hosted, MCP, hybrid, buy, build, or reject; that evidence-bound decision
+   belongs to a later issue #89 slice;
+10. complete the later per-boundary threat analysis, implementation blockers,
+    approval register, architecture, or service design.
+
+## 11. Nonclaims and assumptions
+
+### Nonclaims
+
+No connector, MCP service, public endpoint, tenant isolation control, remote
+transport, production posture, compliance readiness, privacy certification,
+customer-data fitness, support model, service level, marketplace presence,
+operational cost, deployment readiness, or persistent-change workflow is claimed
+to exist or be approved.
+
+This document is not proof of security, threat-model completion, legal review,
+regulatory compliance, source correctness, identity assurance, production
+readiness, or issue completion. `FUTURE_BACKLOG` remains in force.
+
+### Assumptions requiring later validation
+
+- The current closed six-intent contract is the immutable semantic ceiling for
+  this discovery; any proposed widening is rejected rather than assessed here.
+- A future design can receive independently verified tenant and principal claims
+  without making PanSphaira or KaleidoSphere the identity authority.
+- External sources can enforce tenant-scoped least privilege and return minimized,
+  provenance-bearing evidence rather than raw rows.
+- A trusted transport, if ever approved, can be configured out of band without
+  user-supplied transport discovery or access material entering requests.
+- Any persistent action remains separable from discovery and can require exact
+  trusted-UI approval, BI-Control apply, independent readback, and rollback.
+- Data retention, residency, cost, compliance, service level, tenancy architecture,
+  and support staffing are unresolved and must not be inferred from this boundary.
+
+## 12. Change control
+
+This file may be archived or superseded without runtime rollback because it
+creates no runtime behavior. Any implementation proposal requires a separate,
+explicitly approved work item after dependency, threat, privacy, compliance,
+support, and architecture gates. Discovery evidence alone is never that approval.
