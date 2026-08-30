@@ -3,20 +3,22 @@
   "issue":{"repository":"JoFe2/KaleidoSphere","number":90},
   "operatingContract":"development-conveyor/issue-execution-plan/v2.1",
   "attemptReconciliation":"development-conveyor/attempt-reconciliation/v1",
-  "testedProductHead":"9594dad1535d292ed83636a56a33fce59da37df4",
-  "testedProductTree":"65394fe57b7a0a0f3196687a31813b14b18094a0",
+  "testedProductHead":"4fab8f5aea97f7d6c42f3488ad5e8818dc87924f",
+  "testedProductTree":"9ed04fb85264c9f0dec1a58ee99e169c7e4c1933",
   "baseSha":"eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
-  "runCommits":["173333384798d3a069a97b6cd489b6609238b302","7f4a74bd595cb308e6b48cf7662021c188aab9a1","9594dad1535d292ed83636a56a33fce59da37df4"],
+  "runCommits":["173333384798d3a069a97b6cd489b6609238b302","7f4a74bd595cb308e6b48cf7662021c188aab9a1","9594dad1535d292ed83636a56a33fce59da37df4","4fab8f5aea97f7d6c42f3488ad5e8818dc87924f"],
   "acceptance":{"AUTHORITY_MATRIX":"PASS","REVOCATION_REPLAY":"PASS","SIGNING_THREAT":"PASS","APPROVAL_GATES":"PASS","NEGATIVE":"PASS"},
   "disposition":"REJECTED_WITH_EVIDENCE",
   "checks":[
     {"command":"npm run test:ks90-identity-replay","status":"PASS","tests":11},
+    {"command":"no-git focused portability test","status":"PASS","tests":11},
     {"command":"npm test","status":"PASS","tests":776},
     {"command":"npm run test:security","status":"PASS","tests":7},
     {"command":"npm run test:source","status":"PASS","tests":1},
     {"command":"git diff --check","status":"PASS"}
   ],
-  "reuse":{"historicalCommitsInventoried":11,"newImplementationRuns":0,"reuseAuditRuns":1,"correctionRuns":1,"fullGateRuns":1},
+  "ciCorrection":{"failedHead":"53b9a013ad63a53ebe84d1573de70348688066f5","cause":"test required intermediate commit history unavailable in shallow/squash CI","fix":"verify checkout bytes against pinned digests and preserve per-entry provenance SHA without resolving historical refs"},
+  "reuse":{"historicalCommitsInventoried":11,"newImplementationRuns":0,"reuseAuditRuns":1,"correctionRuns":1,"fullGateRunsAfterEvidenceChanges":2},
   "nonClaims":["NO_OAUTH_INTEGRATION","NO_SIGNING_SERVICE","NO_KEYS_OR_CREDENTIALS","NO_CUSTOMER_DATA","NO_ENDPOINT_OR_DEPLOYMENT","NO_COMPLIANCE_OR_PRODUCTION_READINESS","NO_IMPLEMENTATION_AUTHORIZATION"],
   "delivery":{"readyForPr":true,"prHeadCiRequired":true,"shaBoundMergeRequired":true,"mainHeadCiRequired":true,"dailyReleaseRequired":true,"anonymousReadbackRequired":true,"issueCloseRequired":true}
 }
