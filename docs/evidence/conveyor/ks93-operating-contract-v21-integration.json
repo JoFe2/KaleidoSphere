@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "kaleidosphere/evidence/ks93-operating-contract-v21-integration/v1",
+  "issue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 93
+  },
+  "currentMainBase": "f5a1363e3f29114def0054d4d817abb93818a2a1",
+  "acceptedRunHead": "3b0c0da57cf94b053176f34d0e1153d0d8771567",
+  "acceptance": {
+    "DISCOVERY_CITATION": "PASS",
+    "DECISION": "PASS",
+    "RISKS_COSTS": "PASS",
+    "DELIVERY_FIREWALL": "PASS",
+    "NEGATIVE": "PASS"
+  },
+  "disposition": "REJECTED_WITH_EVIDENCE",
+  "executionDecision": "NO_GO",
+  "canonicalRegistration": {
+    "dedicatedScript": "npm run test:ks93-decision",
+    "mainSuite": "npm test",
+    "sourceMap": "SOURCE-MAP.json"
+  },
+  "nonClaims": [
+    "NO_MANAGED_CONNECTOR",
+    "NO_SAAS_OR_REMOTE_MCP",
+    "NO_ENDPOINT",
+    "NO_CREDENTIAL_OR_CUSTOMER_DATA",
+    "NO_API_WIDENING",
+    "NO_DEPLOYMENT",
+    "NO_COMPLIANCE_OR_PRODUCTION_READINESS",
+    "NO_IMPLEMENTATION_AUTHORIZATION",
+    "NO_GATE_RESULT_SELF_ATTESTATION"
+  ]
+}
