@@ -1339,6 +1339,26 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/frc-parent-closure/v2",
+      "path": "docs/future-remote-connector/79/criterion-traceability.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/frc-parent-closure/v2",
+      "path": "docs/future-remote-connector/79/discovery-index.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/frc-parent-closure/v2",
+      "path": "tests/future-remote-connector/79/discovery-index.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/frc-parent-closure/v2",
+      "path": "tests/future-remote-connector/79/discovery-index.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/local-technical-catalog/v1",
       "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
     },
