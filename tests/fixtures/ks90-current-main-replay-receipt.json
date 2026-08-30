@@ -1,0 +1,33 @@
+{
+  "authority": {
+    "evidence_only": true,
+    "execution_permission_granted": false,
+    "receipt_is_command_or_permission": false,
+    "signature_is_execution_authority": false
+  },
+  "nonclaims": [
+    "no implementation, integration, execution, release, or closure permission",
+    "no claim of a later integration or closure commit",
+    "no OAuth application, credential, signing key, endpoint, service, customer data, or runtime capability"
+  ],
+  "packet": [
+    {
+      "path": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md",
+      "role": "released issue-89 DEFER/REJECT-NOW decision evidence referenced by the issue-90 disposition",
+      "sha256": "97ca82d288050233e50eac314e080afb43352b516bd4816e422f76eb18e604ce"
+    },
+    {
+      "path": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md",
+      "role": "accepted issue-90 requirements and REJECTED_WITH_EVIDENCE disposition document",
+      "sha256": "8bcf41343763ef9c38ffbe7f51671d8e8c5ee52c415960138cde092c689fda30"
+    }
+  ],
+  "presentation": {
+    "accepted_document_head_sha": "173333384798d3a069a97b6cd489b6609238b302",
+    "disposition": "REJECTED_WITH_EVIDENCE",
+    "exact_base_sha": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
+    "issue": "JoFe2/KaleidoSphere#90"
+  },
+  "receipt_version": "ks90.current-head-presentation.v2",
+  "status": "REJECTED_WITH_EVIDENCE"
+}
