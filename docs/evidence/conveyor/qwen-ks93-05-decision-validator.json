@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "kaleidosphere.evidence/ks93-reuse-audit/v1",
+  "runId": "KS93-SOL-01-REUSE-AUDIT",
+  "baseSha": "f5a1363e3f29114def0054d4d817abb93818a2a1",
+  "historicalFamilyHead": "cef25e492f75442d81615835d32f9c1481c55982",
+  "decision": {
+    "packageDisposition": "REJECTED_WITH_EVIDENCE",
+    "executionDecision": "NO_GO",
+    "machineVerdict": "REJECT",
+    "requirementsStatus": "FUTURE_BACKLOG",
+    "decisionOwner": "Jo as final issue #93 product decision owner"
+  },
+  "releasedEvidence": [
+    {"issue": 89, "release": "2026_08_30_v1", "mainSha": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e", "path": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md", "sha256": "97ca82d288050233e50eac314e080afb43352b516bd4816e422f76eb18e604ce"},
+    {"issue": 90, "release": "2026_08_30_v2", "mainSha": "5f75e1261585bf5464ef8b3fa3d4d220c21dde9a", "path": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md", "sha256": "8bcf41343763ef9c38ffbe7f51671d8e8c5ee52c415960138cde092c689fda30"},
+    {"issue": 91, "release": "2026_08_30_v3", "mainSha": "664447988841eed2f9023f29ab7ba7025562e524", "path": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md", "sha256": "fffe23a0f386601e5cc502219bef2f462b13fd487b09aa3dfe5642d7e41e6a84"},
+    {"issue": 92, "release": "2026_08_30_v4", "mainSha": "f5a1363e3f29114def0054d4d817abb93818a2a1", "path": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md", "sha256": "21d7524b7faf0fd677609d57ce69de83de92f51dc644dce920d565cdeaabb4ce"}
+  ],
+  "validation": {
+    "internalStatus": "VALIDATED",
+    "terminalStatus": "REJECTED_WITH_EVIDENCE",
+    "usesProcessExecPath": true,
+    "currentCheckoutByteBinding": true,
+    "requiresIntermediateHistory": false,
+    "noGitPortability": "PASS",
+    "focusedTests": "PASS"
+  },
+  "firewall": {
+    "everyImplementationChildBlocked": true,
+    "separateAuthoritiesRequired": ["Jo", "Product", "Security"],
+    "callerAuthoredAuthorityAccepted": false
+  },
+  "nonclaims": [
+    "No connector or endpoint exists or is authorized.",
+    "No External API v2 widening is authorized.",
+    "No credential or customer-data access occurred or is authorized.",
+    "No deployment, compliance-readiness, production-readiness, PR, release, or issue-closure claim is made.",
+    "Internal validation is not called RELEASED."
+  ]
+}
