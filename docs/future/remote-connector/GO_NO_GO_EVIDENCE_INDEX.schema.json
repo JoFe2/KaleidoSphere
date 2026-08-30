@@ -1,0 +1,1488 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/docs/future/remote-connector/GO_NO_GO_EVIDENCE_INDEX.schema.json",
+  "title": "KaleidoSphere future remote connector GO/NO-GO evidence index v1",
+  "description": "Closed, local-only evidence index for a future remote connector decision memo. It grants no implementation or delivery authority.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractId",
+    "governanceBaseline",
+    "reviewScope",
+    "citations",
+    "assessments",
+    "scopeEvaluation",
+    "decision",
+    "authorizationFirewall",
+    "reviewReceipt"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "kaleidosphere.future.remote-connector/go-no-go-evidence-index/v1"
+    },
+    "contractId": {
+      "const": "PLAN-KS93-DECISION-CONTRACT-01"
+    },
+    "governanceBaseline": {
+      "type": "array",
+      "minItems": 8,
+      "maxItems": 8,
+      "prefixItems": [
+        { "const": "Operating Model v1.1" },
+        { "const": "D-001" },
+        { "const": "D-002" },
+        { "const": "D-003" },
+        { "const": "D-004" },
+        { "const": "D-005" },
+        { "const": "D-006" },
+        { "const": "D-007" }
+      ],
+      "items": false
+    },
+    "reviewScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repository",
+        "mode",
+        "discoveryOnly",
+        "implementationPermitted",
+        "networkPermitted",
+        "liveServicePermitted",
+        "hostedEndpointCreationPermitted",
+        "externalApiV2ChangePermitted",
+        "credentialsOrCustomerDataPermitted"
+      ],
+      "properties": {
+        "repository": { "const": "JoFe2/KaleidoSphere" },
+        "mode": { "const": "LOCAL_ONLY" },
+        "discoveryOnly": { "const": true },
+        "implementationPermitted": { "const": false },
+        "networkPermitted": { "const": false },
+        "liveServicePermitted": { "const": false },
+        "hostedEndpointCreationPermitted": { "const": false },
+        "externalApiV2ChangePermitted": { "const": false },
+        "credentialsOrCustomerDataPermitted": { "const": false }
+      }
+    },
+    "citations": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/CitationSlot" },
+            { "properties": { "artifactId": { "const": "FRC.0" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/CitationSlot" },
+            { "properties": { "artifactId": { "const": "FRC.1" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/CitationSlot" },
+            { "properties": { "artifactId": { "const": "FRC.2" } } }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/CitationSlot" },
+            { "properties": { "artifactId": { "const": "FRC.3" } } }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "assessments": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "feasibility",
+        "risks",
+        "costs",
+        "complianceGaps",
+        "supportBurden",
+        "rollback"
+      ],
+      "properties": {
+        "feasibility": { "$ref": "#/$defs/FeasibilityAssessment" },
+        "risks": { "$ref": "#/$defs/RiskAssessment" },
+        "costs": { "$ref": "#/$defs/CostAssessment" },
+        "complianceGaps": { "$ref": "#/$defs/ComplianceAssessment" },
+        "supportBurden": { "$ref": "#/$defs/SupportAssessment" },
+        "rollback": { "$ref": "#/$defs/RollbackAssessment" }
+      }
+    },
+    "scopeEvaluation": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "prefixItems": [
+        {
+          "allOf": [
+            { "$ref": "#/$defs/ScopeRule" },
+            {
+              "properties": {
+                "ruleId": { "const": "discovery-as-implementation-approval" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/ScopeRule" },
+            {
+              "properties": {
+                "ruleId": { "const": "hosted-endpoint-creation" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/ScopeRule" },
+            {
+              "properties": {
+                "ruleId": { "const": "external-api-v2-widening" }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            { "$ref": "#/$defs/ScopeRule" },
+            {
+              "properties": {
+                "ruleId": { "const": "credentials-or-customer-data-evidence" }
+              }
+            }
+          ]
+        }
+      ],
+      "items": false
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "verdict",
+        "decisionRule",
+        "rationale",
+        "evidenceRefs",
+        "goEvidenceSatisfied",
+        "implementationSuccessClaimed"
+      ],
+      "properties": {
+        "verdict": { "enum": ["GO", "NO-GO", "REJECT"] },
+        "decisionRule": {
+          "enum": [
+            "ALL_REQUIRED_LOCAL_EVIDENCE_PASSES",
+            "REQUIRED_LOCAL_EVIDENCE_INCOMPLETE_OR_INCONCLUSIVE",
+            "DECISIVE_EVIDENCE_FAILURE_OR_FORBIDDEN_SCOPE"
+          ]
+        },
+        "rationale": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" },
+        "goEvidenceSatisfied": { "type": "boolean" },
+        "implementationSuccessClaimed": { "const": false }
+      }
+    },
+    "authorizationFirewall": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "decisionAuthority",
+        "implementationChildStatus",
+        "separateDeliveryAuthorizationRequired",
+        "embeddedAuthorizationAccepted",
+        "implementationAuthorized",
+        "runtimeDispatchAuthorized",
+        "hostedEndpointCreationAuthorized",
+        "externalApiV2WideningAuthorized",
+        "credentialsOrCustomerDataAuthorized",
+        "deliveryScopeInheritance"
+      ],
+      "properties": {
+        "decisionAuthority": { "const": "DISCOVERY_DECISION_ONLY" },
+        "implementationChildStatus": {
+          "const": "BLOCKED_NO_SEPARATE_DELIVERY_AUTHORIZATION"
+        },
+        "separateDeliveryAuthorizationRequired": { "const": true },
+        "embeddedAuthorizationAccepted": { "const": false },
+        "implementationAuthorized": { "const": false },
+        "runtimeDispatchAuthorized": { "const": false },
+        "hostedEndpointCreationAuthorized": { "const": false },
+        "externalApiV2WideningAuthorized": { "const": false },
+        "credentialsOrCustomerDataAuthorized": { "const": false },
+        "deliveryScopeInheritance": { "const": "NONE" }
+      }
+    },
+    "reviewReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "procedureVersion",
+        "stepsCompleted",
+        "localFilesOnly",
+        "networkAccessed",
+        "liveRuntimeAccessed",
+        "credentialsOrCustomerDataAccessed",
+        "placeholdersPresent",
+        "schemaValidation",
+        "citationVerification",
+        "referenceResolution",
+        "assessmentEvaluation",
+        "rejectRuleEvaluation",
+        "verdictRuleApplied",
+        "procedureComplete"
+      ],
+      "properties": {
+        "procedureVersion": {
+          "const": "kaleidosphere.future.remote-connector/local-review/v1"
+        },
+        "stepsCompleted": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "prefixItems": [
+            { "const": "validate-schema" },
+            { "const": "verify-local-citations" },
+            { "const": "resolve-claim-references" },
+            { "const": "classify-evidence" },
+            { "const": "evaluate-required-fields" },
+            { "const": "evaluate-reject-rules" },
+            { "const": "apply-verdict-precedence" },
+            { "const": "verify-authorization-firewall" }
+          ],
+          "items": false
+        },
+        "localFilesOnly": { "const": true },
+        "networkAccessed": { "const": false },
+        "liveRuntimeAccessed": { "const": false },
+        "credentialsOrCustomerDataAccessed": { "const": false },
+        "placeholdersPresent": { "const": false },
+        "schemaValidation": { "const": "PASS" },
+        "citationVerification": { "enum": ["PASS", "FAIL"] },
+        "referenceResolution": { "enum": ["PASS", "FAIL"] },
+        "assessmentEvaluation": {
+          "enum": ["PASS", "FAIL", "INCONCLUSIVE"]
+        },
+        "rejectRuleEvaluation": {
+          "enum": ["CLEAR", "VIOLATION", "INCONCLUSIVE"]
+        },
+        "verdictRuleApplied": { "const": true },
+        "procedureComplete": { "const": true }
+      }
+    }
+  },
+  "$defs": {
+    "ConcreteText": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 1200,
+      "not": {
+        "anyOf": [
+          {
+            "pattern": "^\\s*[Tt][Bb][Dd]\\s*[.!]?\\s*$"
+          },
+          {
+            "pattern": "^\\s*[Tt][Oo][Dd][Oo]\\s*[.!]?\\s*$"
+          },
+          {
+            "pattern": "^\\s*[Nn]\\s*[/\\-]?\\s*[Aa]\\s*[.!]?\\s*$"
+          },
+          {
+            "pattern": "^\\s*[Uu][Nn][Kk][Nn][Oo][Ww][Nn]\\s*[.!]?\\s*$"
+          },
+          {
+            "pattern": "^\\s*[Pp][Ee][Nn][Dd][Ii][Nn][Gg]\\s*[.!]?\\s*$"
+          },
+          {
+            "pattern": "^\\s*[Pp][Ll][Aa][Cc][Ee][Hh][Oo][Ll][Dd][Ee][Rr]\\s*[.!]?\\s*$"
+          },
+          {
+            "pattern": "^\\s*<[^>]+>\\s*$"
+          }
+        ]
+      }
+    },
+    "LocalPath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 300,
+      "pattern": "^(?!/)(?!.*\\.\\.)(?!.*://)[A-Za-z0-9._/-]+$"
+    },
+    "Sha256Digest": {
+      "type": "string",
+      "pattern": "^sha256:[a-f0-9]{64}$"
+    },
+    "GitCommit": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "EvidenceRef": {
+      "type": "string",
+      "pattern": "^FRC\\.[0-3]#[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$"
+    },
+    "EvidenceRefs": {
+      "type": "array",
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/EvidenceRef" }
+    },
+    "NonEmptyEvidenceRefs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/EvidenceRef" }
+    },
+    "Claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "claimId",
+        "locator",
+        "statement",
+        "claimClass",
+        "dimension",
+        "localVerification",
+        "decisionEffect"
+      ],
+      "properties": {
+        "claimId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$"
+        },
+        "locator": { "$ref": "#/$defs/ConcreteText" },
+        "statement": { "$ref": "#/$defs/ConcreteText" },
+        "claimClass": {
+          "enum": [
+            "observed-fact",
+            "computed-fact",
+            "inferred-candidate",
+            "non-claim"
+          ]
+        },
+        "dimension": {
+          "enum": [
+            "feasibility",
+            "risk",
+            "cost",
+            "compliance",
+            "support",
+            "rollback",
+            "scope-boundary"
+          ]
+        },
+        "localVerification": { "enum": ["PASS", "FAIL", "INCONCLUSIVE"] },
+        "decisionEffect": {
+          "enum": [
+            "SUPPORTS_GO",
+            "SUPPORTS_REJECT",
+            "INCONCLUSIVE",
+            "BOUNDARY_ONLY"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "claimClass": { "const": "inferred-candidate" }
+            },
+            "required": ["claimClass"]
+          },
+          "then": {
+            "properties": {
+              "decisionEffect": { "const": "INCONCLUSIVE" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "claimClass": { "const": "non-claim" }
+            },
+            "required": ["claimClass"]
+          },
+          "then": {
+            "properties": {
+              "decisionEffect": { "const": "BOUNDARY_ONLY" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "localVerification": { "enum": ["FAIL", "INCONCLUSIVE"] }
+            },
+            "required": ["localVerification"]
+          },
+          "then": {
+            "properties": {
+              "decisionEffect": {
+                "enum": ["INCONCLUSIVE", "BOUNDARY_ONLY"]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ArtifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "revision", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/LocalPath" },
+        "revision": { "$ref": "#/$defs/GitCommit" },
+        "sha256": { "$ref": "#/$defs/Sha256Digest" }
+      }
+    },
+    "LocalCitationAnchor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "locator"],
+      "properties": {
+        "path": { "$ref": "#/$defs/LocalPath" },
+        "locator": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 300,
+          "pattern": "^(?!.*://)(?!.*\\.\\.).+$"
+        }
+      }
+    },
+    "EvidenceSummary": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 1200,
+      "pattern": "^(?!.*(?:[Pp]assword|[Ss]ecret|[Bb]earer\\s+|[Cc]ustomer[ -]data|[Rr]aw\\s+[Ss]ource\\s+[Rr]ows|https?://)).+$"
+    },
+    "ForbiddenDataAttestation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "credentialsIncluded",
+        "customerDataIncluded",
+        "secretsIncluded",
+        "rawSourceRowsIncluded",
+        "liveEvidenceUsed"
+      ],
+      "properties": {
+        "credentialsIncluded": { "const": false },
+        "customerDataIncluded": { "const": false },
+        "secretsIncluded": { "const": false },
+        "rawSourceRowsIncluded": { "const": false },
+        "liveEvidenceUsed": { "const": false }
+      }
+    },
+    "CitationSlot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "artifactId",
+        "status",
+        "terminalDisposition",
+        "evidenceSummary",
+        "forbiddenDataAttestation",
+        "contradictionStatus"
+      ],
+      "properties": {
+        "artifactId": { "enum": ["FRC.0", "FRC.1", "FRC.2", "FRC.3"] },
+        "status": { "enum": ["VERIFIED_LOCAL", "MISSING", "INVALID"] },
+        "terminalDisposition": {
+          "enum": ["VERIFIED_LOCAL", "MISSING", "INVALID"]
+        },
+        "artifactReference": { "$ref": "#/$defs/ArtifactReference" },
+        "revision": { "$ref": "#/$defs/GitCommit" },
+        "citationAnchor": { "$ref": "#/$defs/LocalCitationAnchor" },
+        "evidenceSummary": { "$ref": "#/$defs/EvidenceSummary" },
+        "forbiddenDataAttestation": {
+          "$ref": "#/$defs/ForbiddenDataAttestation"
+        },
+        "contradictionStatus": {
+          "enum": ["RESOLVED", "UNRESOLVED", "NOT_ASSESSED"]
+        },
+        "artifactTitle": { "$ref": "#/$defs/ConcreteText" },
+        "artifactPath": { "$ref": "#/$defs/LocalPath" },
+        "sourceCommit": { "$ref": "#/$defs/GitCommit" },
+        "artifactSha256": { "$ref": "#/$defs/Sha256Digest" },
+        "citedSections": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/ConcreteText" }
+        },
+        "claims": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/Claim" }
+        },
+        "unavailableReason": { "$ref": "#/$defs/ConcreteText" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": { "const": "VERIFIED_LOCAL" }
+          },
+          "required": [
+            "terminalDisposition",
+            "artifactReference",
+            "revision",
+            "citationAnchor",
+            "evidenceSummary",
+            "forbiddenDataAttestation",
+            "contradictionStatus",
+            "artifactTitle",
+            "artifactPath",
+            "sourceCommit",
+            "artifactSha256",
+            "citedSections",
+            "claims"
+          ],
+          "not": { "required": ["unavailableReason"] },
+          "properties": {
+            "status": { "const": "VERIFIED_LOCAL" },
+            "terminalDisposition": { "const": "VERIFIED_LOCAL" },
+            "contradictionStatus": { "const": "RESOLVED" }
+          }
+        },
+        {
+          "properties": {
+            "status": { "const": "MISSING" },
+            "terminalDisposition": { "const": "MISSING" },
+            "contradictionStatus": { "const": "NOT_ASSESSED" }
+          },
+          "required": ["unavailableReason"],
+          "not": {
+            "anyOf": [
+              { "required": ["artifactReference"] },
+              { "required": ["revision"] },
+              { "required": ["citationAnchor"] },
+              { "required": ["artifactTitle"] },
+              { "required": ["artifactPath"] },
+              { "required": ["sourceCommit"] },
+              { "required": ["artifactSha256"] },
+              { "required": ["citedSections"] },
+              { "required": ["claims"] }
+            ]
+          }
+        },
+        {
+          "properties": {
+            "status": { "const": "INVALID" },
+            "terminalDisposition": { "const": "INVALID" },
+            "contradictionStatus": { "const": "NOT_ASSESSED" }
+          },
+          "required": ["unavailableReason"],
+          "not": {
+            "anyOf": [
+              { "required": ["artifactReference"] },
+              { "required": ["revision"] },
+              { "required": ["citationAnchor"] },
+              { "required": ["artifactTitle"] },
+              { "required": ["artifactPath"] },
+              { "required": ["sourceCommit"] },
+              { "required": ["artifactSha256"] },
+              { "required": ["citedSections"] },
+              { "required": ["claims"] }
+            ]
+          }
+        }
+      ]
+    },
+    "AssessmentStatus": {
+      "enum": ["PASS", "FAIL", "INCONCLUSIVE"]
+    },
+    "FeasibilityAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "finding",
+        "integrationSurface",
+        "constraints",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/AssessmentStatus" },
+        "finding": { "$ref": "#/$defs/ConcreteText" },
+        "integrationSurface": { "$ref": "#/$defs/ConcreteText" },
+        "constraints": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/ConcreteText" }
+        },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["PASS", "FAIL"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "RiskItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "riskId",
+        "statement",
+        "likelihood",
+        "impact",
+        "mitigation",
+        "residualDisposition",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "riskId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$"
+        },
+        "statement": { "$ref": "#/$defs/ConcreteText" },
+        "likelihood": { "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "impact": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "mitigation": { "$ref": "#/$defs/ConcreteText" },
+        "residualDisposition": {
+          "enum": ["ACCEPTABLE", "UNACCEPTABLE", "UNRESOLVED"]
+        },
+        "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+      }
+    },
+    "RiskAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "items",
+        "residualRisk",
+        "acceptanceBasis",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/AssessmentStatus" },
+        "items": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/RiskItem" }
+        },
+        "residualRisk": { "$ref": "#/$defs/ConcreteText" },
+        "acceptanceBasis": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["PASS", "FAIL"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "CostAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "delivery",
+        "recurringOperations",
+        "compliance",
+        "support",
+        "rollback",
+        "estimationBasis",
+        "confidence",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/AssessmentStatus" },
+        "delivery": { "$ref": "#/$defs/ConcreteText" },
+        "recurringOperations": { "$ref": "#/$defs/ConcreteText" },
+        "compliance": { "$ref": "#/$defs/ConcreteText" },
+        "support": { "$ref": "#/$defs/ConcreteText" },
+        "rollback": { "$ref": "#/$defs/ConcreteText" },
+        "estimationBasis": { "$ref": "#/$defs/ConcreteText" },
+        "confidence": { "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["PASS", "FAIL"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "ComplianceGap": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gapId",
+        "requirement",
+        "gap",
+        "severity",
+        "disposition",
+        "remediation",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "gapId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,95}$"
+        },
+        "requirement": { "$ref": "#/$defs/ConcreteText" },
+        "gap": { "$ref": "#/$defs/ConcreteText" },
+        "severity": { "enum": ["LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+        "disposition": { "enum": ["CLOSED", "ACCEPTED", "OPEN", "BLOCKING"] },
+        "remediation": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+      }
+    },
+    "ComplianceAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "applicableBaseline",
+        "gaps",
+        "gapSummary",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/AssessmentStatus" },
+        "applicableBaseline": { "$ref": "#/$defs/ConcreteText" },
+        "gaps": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/ComplianceGap" }
+        },
+        "gapSummary": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["PASS", "FAIL"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "SupportAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "burden",
+        "recurringTasks",
+        "incidentResponse",
+        "maintenance",
+        "decommissioning",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/AssessmentStatus" },
+        "burden": { "$ref": "#/$defs/ConcreteText" },
+        "recurringTasks": {
+          "type": "array",
+          "maxItems": 64,
+          "items": { "$ref": "#/$defs/ConcreteText" }
+        },
+        "incidentResponse": { "$ref": "#/$defs/ConcreteText" },
+        "maintenance": { "$ref": "#/$defs/ConcreteText" },
+        "decommissioning": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["PASS", "FAIL"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "RollbackAssessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "trigger",
+        "steps",
+        "verification",
+        "recoveryEstimate",
+        "dataAndStateEffects",
+        "irreversibleEffects",
+        "evidenceRefs"
+      ],
+      "properties": {
+        "status": { "$ref": "#/$defs/AssessmentStatus" },
+        "trigger": { "$ref": "#/$defs/ConcreteText" },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/ConcreteText" }
+        },
+        "verification": { "$ref": "#/$defs/ConcreteText" },
+        "recoveryEstimate": { "$ref": "#/$defs/ConcreteText" },
+        "dataAndStateEffects": { "$ref": "#/$defs/ConcreteText" },
+        "irreversibleEffects": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["PASS", "FAIL"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "ScopeRule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ruleId", "policy", "status", "rationale", "evidenceRefs"],
+      "properties": {
+        "ruleId": {
+          "enum": [
+            "discovery-as-implementation-approval",
+            "hosted-endpoint-creation",
+            "external-api-v2-widening",
+            "credentials-or-customer-data-evidence"
+          ]
+        },
+        "policy": { "const": "REJECT" },
+        "status": { "enum": ["CLEAR", "VIOLATION", "INCONCLUSIVE"] },
+        "rationale": { "$ref": "#/$defs/ConcreteText" },
+        "evidenceRefs": { "$ref": "#/$defs/EvidenceRefs" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "status": { "enum": ["CLEAR", "VIOLATION"] } },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          }
+        }
+      ]
+    },
+    "GoClaimBase": {
+      "type": "object",
+      "properties": {
+        "claimClass": {
+          "enum": ["observed-fact", "computed-fact"]
+        },
+        "localVerification": { "const": "PASS" },
+        "decisionEffect": { "const": "SUPPORTS_GO" }
+      },
+      "required": ["claimClass", "localVerification", "decisionEffect"]
+    },
+    "GoFeasibilityEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "feasibility" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    },
+    "GoRiskEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "risk" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    },
+    "GoCostEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "cost" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    },
+    "GoComplianceEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "compliance" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    },
+    "GoSupportEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "support" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    },
+    "GoRollbackEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "rollback" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    },
+    "GoScopeBoundaryEvidence": {
+      "type": "object",
+      "properties": {
+        "citations": {
+          "contains": {
+            "properties": {
+              "claims": {
+                "contains": {
+                  "allOf": [
+                    { "$ref": "#/$defs/GoClaimBase" },
+                    {
+                      "properties": {
+                        "dimension": { "const": "scope-boundary" }
+                      },
+                      "required": ["dimension"]
+                    }
+                  ]
+                },
+                "minContains": 1
+              }
+            },
+            "required": ["claims"]
+          },
+          "minContains": 1
+        }
+      },
+      "required": ["citations"]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "verdict": { "const": "GO" } },
+            "required": ["verdict"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "citations": {
+            "prefixItems": [
+              {
+                "properties": {
+                  "status": { "const": "VERIFIED_LOCAL" },
+                  "terminalDisposition": { "const": "VERIFIED_LOCAL" },
+                  "contradictionStatus": { "const": "RESOLVED" }
+                }
+              },
+              {
+                "properties": {
+                  "status": { "const": "VERIFIED_LOCAL" },
+                  "terminalDisposition": { "const": "VERIFIED_LOCAL" },
+                  "contradictionStatus": { "const": "RESOLVED" }
+                }
+              },
+              {
+                "properties": {
+                  "status": { "const": "VERIFIED_LOCAL" },
+                  "terminalDisposition": { "const": "VERIFIED_LOCAL" },
+                  "contradictionStatus": { "const": "RESOLVED" }
+                }
+              },
+              {
+                "properties": {
+                  "status": { "const": "VERIFIED_LOCAL" },
+                  "terminalDisposition": { "const": "VERIFIED_LOCAL" },
+                  "contradictionStatus": { "const": "RESOLVED" }
+                }
+              }
+            ]
+          },
+          "assessments": {
+            "properties": {
+              "feasibility": { "properties": { "status": { "const": "PASS" } } },
+              "risks": { "properties": { "status": { "const": "PASS" } } },
+              "costs": { "properties": { "status": { "const": "PASS" } } },
+              "complianceGaps": { "properties": { "status": { "const": "PASS" } } },
+              "supportBurden": { "properties": { "status": { "const": "PASS" } } },
+              "rollback": { "properties": { "status": { "const": "PASS" } } }
+            }
+          },
+          "scopeEvaluation": {
+            "prefixItems": [
+              { "properties": { "status": { "const": "CLEAR" } } },
+              { "properties": { "status": { "const": "CLEAR" } } },
+              { "properties": { "status": { "const": "CLEAR" } } },
+              { "properties": { "status": { "const": "CLEAR" } } }
+            ]
+          },
+          "decision": {
+            "properties": {
+              "decisionRule": {
+                "const": "ALL_REQUIRED_LOCAL_EVIDENCE_PASSES"
+              },
+              "goEvidenceSatisfied": { "const": true },
+              "evidenceRefs": {
+                "allOf": [
+                  { "contains": { "pattern": "^FRC\\.0#" }, "minContains": 1 },
+                  { "contains": { "pattern": "^FRC\\.1#" }, "minContains": 1 },
+                  { "contains": { "pattern": "^FRC\\.2#" }, "minContains": 1 },
+                  { "contains": { "pattern": "^FRC\\.3#" }, "minContains": 1 }
+                ]
+              }
+            }
+          },
+          "reviewReceipt": {
+            "properties": {
+              "citationVerification": { "const": "PASS" },
+              "referenceResolution": { "const": "PASS" },
+              "assessmentEvaluation": { "const": "PASS" },
+              "rejectRuleEvaluation": { "const": "CLEAR" }
+            }
+          }
+        },
+        "allOf": [
+          { "$ref": "#/$defs/GoFeasibilityEvidence" },
+          { "$ref": "#/$defs/GoRiskEvidence" },
+          { "$ref": "#/$defs/GoCostEvidence" },
+          { "$ref": "#/$defs/GoComplianceEvidence" },
+          { "$ref": "#/$defs/GoSupportEvidence" },
+          { "$ref": "#/$defs/GoRollbackEvidence" },
+          { "$ref": "#/$defs/GoScopeBoundaryEvidence" }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "verdict": { "const": "NO-GO" } },
+            "required": ["verdict"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "assessments": {
+            "properties": {
+              "feasibility": { "properties": { "status": { "enum": ["PASS", "INCONCLUSIVE"] } } },
+              "risks": { "properties": { "status": { "enum": ["PASS", "INCONCLUSIVE"] } } },
+              "costs": { "properties": { "status": { "enum": ["PASS", "INCONCLUSIVE"] } } },
+              "complianceGaps": { "properties": { "status": { "enum": ["PASS", "INCONCLUSIVE"] } } },
+              "supportBurden": { "properties": { "status": { "enum": ["PASS", "INCONCLUSIVE"] } } },
+              "rollback": { "properties": { "status": { "enum": ["PASS", "INCONCLUSIVE"] } } }
+            }
+          },
+          "scopeEvaluation": {
+            "items": {
+              "properties": {
+                "status": { "enum": ["CLEAR", "INCONCLUSIVE"] }
+              }
+            }
+          },
+          "decision": {
+            "properties": {
+              "decisionRule": {
+                "const": "REQUIRED_LOCAL_EVIDENCE_INCOMPLETE_OR_INCONCLUSIVE"
+              },
+              "goEvidenceSatisfied": { "const": false }
+            }
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "citations": {
+                "contains": {
+                  "properties": {
+                    "status": { "enum": ["MISSING", "INVALID"] }
+                  },
+                  "required": ["status"]
+                },
+                "minContains": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "feasibility": {
+                    "properties": { "status": { "const": "INCONCLUSIVE" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "risks": {
+                    "properties": { "status": { "const": "INCONCLUSIVE" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "costs": {
+                    "properties": { "status": { "const": "INCONCLUSIVE" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "complianceGaps": {
+                    "properties": { "status": { "const": "INCONCLUSIVE" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "supportBurden": {
+                    "properties": { "status": { "const": "INCONCLUSIVE" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "rollback": {
+                    "properties": { "status": { "const": "INCONCLUSIVE" } }
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "scopeEvaluation": {
+                "contains": {
+                  "properties": { "status": { "const": "INCONCLUSIVE" } },
+                  "required": ["status"]
+                },
+                "minContains": 1
+              }
+            }
+          },
+          {
+            "properties": {
+              "reviewReceipt": {
+                "properties": {
+                  "citationVerification": { "const": "FAIL" }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "reviewReceipt": {
+                "properties": {
+                  "referenceResolution": { "const": "FAIL" }
+                }
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "decision": {
+            "properties": { "verdict": { "const": "REJECT" } },
+            "required": ["verdict"]
+          }
+        },
+        "required": ["decision"]
+      },
+      "then": {
+        "properties": {
+          "decision": {
+            "properties": {
+              "decisionRule": {
+                "const": "DECISIVE_EVIDENCE_FAILURE_OR_FORBIDDEN_SCOPE"
+              },
+              "goEvidenceSatisfied": { "const": false },
+              "evidenceRefs": { "$ref": "#/$defs/NonEmptyEvidenceRefs" }
+            }
+          },
+          "citations": {
+            "contains": {
+              "properties": {
+                "claims": {
+                  "contains": {
+                    "properties": {
+                      "claimClass": {
+                        "enum": ["observed-fact", "computed-fact"]
+                      },
+                      "localVerification": { "const": "PASS" },
+                      "decisionEffect": { "const": "SUPPORTS_REJECT" }
+                    },
+                    "required": [
+                      "claimClass",
+                      "localVerification",
+                      "decisionEffect"
+                    ]
+                  },
+                  "minContains": 1
+                }
+              },
+              "required": ["claims"]
+            },
+            "minContains": 1
+          }
+        },
+        "anyOf": [
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "feasibility": { "properties": { "status": { "const": "FAIL" } } }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "risks": { "properties": { "status": { "const": "FAIL" } } }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "costs": { "properties": { "status": { "const": "FAIL" } } }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "complianceGaps": { "properties": { "status": { "const": "FAIL" } } }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "supportBurden": { "properties": { "status": { "const": "FAIL" } } }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "assessments": {
+                "properties": {
+                  "rollback": { "properties": { "status": { "const": "FAIL" } } }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "scopeEvaluation": {
+                "contains": {
+                  "properties": { "status": { "const": "VIOLATION" } },
+                  "required": ["status"]
+                },
+                "minContains": 1
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

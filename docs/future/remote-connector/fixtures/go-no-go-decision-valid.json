@@ -1,0 +1,410 @@
+{
+  "schemaVersion": "kaleidosphere.future.remote-connector/go-no-go-evidence-index/v1",
+  "contractId": "PLAN-KS93-DECISION-CONTRACT-01",
+  "governanceBaseline": [
+    "Operating Model v1.1",
+    "D-001",
+    "D-002",
+    "D-003",
+    "D-004",
+    "D-005",
+    "D-006",
+    "D-007"
+  ],
+  "reviewScope": {
+    "repository": "JoFe2/KaleidoSphere",
+    "mode": "LOCAL_ONLY",
+    "discoveryOnly": true,
+    "implementationPermitted": false,
+    "networkPermitted": false,
+    "liveServicePermitted": false,
+    "hostedEndpointCreationPermitted": false,
+    "externalApiV2ChangePermitted": false,
+    "credentialsOrCustomerDataPermitted": false
+  },
+  "citations": [
+    {
+      "artifactId": "FRC.0",
+      "status": "VERIFIED_LOCAL",
+      "terminalDisposition": "VERIFIED_LOCAL",
+      "artifactReference": {
+        "path": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md",
+        "revision": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
+        "sha256": "sha256:97ca82d288050233e50eac314e080afb43352b516bd4816e422f76eb18e604ce"
+      },
+      "revision": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
+      "citationAnchor": {
+        "path": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md",
+        "locator": "### 12.1 Terminal recommendation for this discovery artifact"
+      },
+      "evidenceSummary": "Released #89 product-boundary decision is bound to released current-checkout bytes.",
+      "forbiddenDataAttestation": {
+        "credentialsIncluded": false,
+        "customerDataIncluded": false,
+        "secretsIncluded": false,
+        "rawSourceRowsIncluded": false,
+        "liveEvidenceUsed": false
+      },
+      "contradictionStatus": "RESOLVED",
+      "artifactTitle": "Released #89 product-boundary decision",
+      "artifactPath": "docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md",
+      "sourceCommit": "eb200aa4c3bb206c4bec70a6b92b73a89453d55e",
+      "artifactSha256": "sha256:97ca82d288050233e50eac314e080afb43352b516bd4816e422f76eb18e604ce",
+      "citedSections": [
+        "### 12.1 Terminal recommendation for this discovery artifact"
+      ],
+      "claims": [
+        {
+          "claimId": "supports-feasibility",
+          "locator": "### 12.1 Terminal recommendation for this discovery artifact",
+          "statement": "The released FRC.0 decision supplies evidence to reject present remote-connector implementation for the feasibility dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "feasibility",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        },
+        {
+          "claimId": "supports-risk",
+          "locator": "### 12.1 Terminal recommendation for this discovery artifact",
+          "statement": "The released FRC.0 decision supplies evidence to reject present remote-connector implementation for the risk dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "risk",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        }
+      ]
+    },
+    {
+      "artifactId": "FRC.1",
+      "status": "VERIFIED_LOCAL",
+      "terminalDisposition": "VERIFIED_LOCAL",
+      "artifactReference": {
+        "path": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md",
+        "revision": "5f75e1261585bf5464ef8b3fa3d4d220c21dde9a",
+        "sha256": "sha256:8bcf41343763ef9c38ffbe7f51671d8e8c5ee52c415960138cde092c689fda30"
+      },
+      "revision": "5f75e1261585bf5464ef8b3fa3d4d220c21dde9a",
+      "citationAnchor": {
+        "path": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md",
+        "locator": "### Issue #90 discovery disposition"
+      },
+      "evidenceSummary": "Released #90 identity-authority decision is bound to released current-checkout bytes.",
+      "forbiddenDataAttestation": {
+        "credentialsIncluded": false,
+        "customerDataIncluded": false,
+        "secretsIncluded": false,
+        "rawSourceRowsIncluded": false,
+        "liveEvidenceUsed": false
+      },
+      "contradictionStatus": "RESOLVED",
+      "artifactTitle": "Released #90 identity-authority decision",
+      "artifactPath": "docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md",
+      "sourceCommit": "5f75e1261585bf5464ef8b3fa3d4d220c21dde9a",
+      "artifactSha256": "sha256:8bcf41343763ef9c38ffbe7f51671d8e8c5ee52c415960138cde092c689fda30",
+      "citedSections": [
+        "### Issue #90 discovery disposition"
+      ],
+      "claims": [
+        {
+          "claimId": "supports-cost",
+          "locator": "### Issue #90 discovery disposition",
+          "statement": "The released FRC.1 decision supplies evidence to reject present remote-connector implementation for the cost dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "cost",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        }
+      ]
+    },
+    {
+      "artifactId": "FRC.2",
+      "status": "VERIFIED_LOCAL",
+      "terminalDisposition": "VERIFIED_LOCAL",
+      "artifactReference": {
+        "path": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md",
+        "revision": "664447988841eed2f9023f29ab7ba7025562e524",
+        "sha256": "sha256:fffe23a0f386601e5cc502219bef2f462b13fd487b09aa3dfe5642d7e41e6a84"
+      },
+      "revision": "664447988841eed2f9023f29ab7ba7025562e524",
+      "citationAnchor": {
+        "path": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md",
+        "locator": "### Issue #91 implementation disposition"
+      },
+      "evidenceSummary": "Released #91 tenant and egress decision is bound to released current-checkout bytes.",
+      "forbiddenDataAttestation": {
+        "credentialsIncluded": false,
+        "customerDataIncluded": false,
+        "secretsIncluded": false,
+        "rawSourceRowsIncluded": false,
+        "liveEvidenceUsed": false
+      },
+      "contradictionStatus": "RESOLVED",
+      "artifactTitle": "Released #91 tenant and egress decision",
+      "artifactPath": "docs/future/remote-connector/TENANT_DATA_SECRET_EGRESS.md",
+      "sourceCommit": "664447988841eed2f9023f29ab7ba7025562e524",
+      "artifactSha256": "sha256:fffe23a0f386601e5cc502219bef2f462b13fd487b09aa3dfe5642d7e41e6a84",
+      "citedSections": [
+        "### Issue #91 implementation disposition"
+      ],
+      "claims": [
+        {
+          "claimId": "supports-compliance",
+          "locator": "### Issue #91 implementation disposition",
+          "statement": "The released FRC.2 decision supplies evidence to reject present remote-connector implementation for the compliance dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "compliance",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        },
+        {
+          "claimId": "supports-support",
+          "locator": "### Issue #91 implementation disposition",
+          "statement": "The released FRC.2 decision supplies evidence to reject present remote-connector implementation for the support dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "support",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        }
+      ]
+    },
+    {
+      "artifactId": "FRC.3",
+      "status": "VERIFIED_LOCAL",
+      "terminalDisposition": "VERIFIED_LOCAL",
+      "artifactReference": {
+        "path": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md",
+        "revision": "f5a1363e3f29114def0054d4d817abb93818a2a1",
+        "sha256": "sha256:21d7524b7faf0fd677609d57ce69de83de92f51dc644dce920d565cdeaabb4ce"
+      },
+      "revision": "f5a1363e3f29114def0054d4d817abb93818a2a1",
+      "citationAnchor": {
+        "path": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md",
+        "locator": "## Current prerequisite decision"
+      },
+      "evidenceSummary": "Released #92 spike authorization decision is bound to released current-checkout bytes.",
+      "forbiddenDataAttestation": {
+        "credentialsIncluded": false,
+        "customerDataIncluded": false,
+        "secretsIncluded": false,
+        "rawSourceRowsIncluded": false,
+        "liveEvidenceUsed": false
+      },
+      "contradictionStatus": "RESOLVED",
+      "artifactTitle": "Released #92 spike authorization decision",
+      "artifactPath": "docs/future/remote-connector/SYNTHETIC_SPIKE_AUTHORIZATION_PACKET.md",
+      "sourceCommit": "f5a1363e3f29114def0054d4d817abb93818a2a1",
+      "artifactSha256": "sha256:21d7524b7faf0fd677609d57ce69de83de92f51dc644dce920d565cdeaabb4ce",
+      "citedSections": [
+        "## Current prerequisite decision"
+      ],
+      "claims": [
+        {
+          "claimId": "supports-rollback",
+          "locator": "## Current prerequisite decision",
+          "statement": "The released FRC.3 decision supplies evidence to reject present remote-connector implementation for the rollback dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "rollback",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        },
+        {
+          "claimId": "supports-scope-boundary",
+          "locator": "## Current prerequisite decision",
+          "statement": "The released FRC.3 decision supplies evidence to reject present remote-connector implementation for the scope-boundary dimension.",
+          "claimClass": "observed-fact",
+          "dimension": "scope-boundary",
+          "localVerification": "PASS",
+          "decisionEffect": "SUPPORTS_REJECT"
+        }
+      ]
+    }
+  ],
+  "assessments": {
+    "feasibility": {
+      "status": "FAIL",
+      "finding": "Released #89 rejects implementation now because required architecture, authority, tenancy, transport, and readiness evidence is absent.",
+      "integrationSurface": "No connector, endpoint, transport, or widened intent is authorized.",
+      "constraints": [
+        "FUTURE_BACKLOG documentation remains valid; implementation remains rejected."
+      ],
+      "evidenceRefs": [
+        "FRC.0#supports-feasibility"
+      ]
+    },
+    "risks": {
+      "status": "FAIL",
+      "items": [
+        {
+          "riskId": "R-01",
+          "likelihood": "HIGH",
+          "impact": "HIGH",
+          "mitigation": "Keep implementation blocked until independently authorized evidence closes every released blocker.",
+          "residualDisposition": "UNACCEPTABLE",
+          "evidenceRefs": [
+            "FRC.0#supports-risk"
+          ],
+          "statement": "Implementation would substitute assumptions for tenant isolation, authority, custody, and operational evidence."
+        }
+      ],
+      "residualRisk": "Security, privacy, authority, tenancy, and operational risks remain unaccepted.",
+      "acceptanceBasis": "No risk acceptance exists.",
+      "evidenceRefs": [
+        "FRC.0#supports-risk"
+      ]
+    },
+    "costs": {
+      "status": "FAIL",
+      "delivery": "Unapproved and unestimated implementation and integration cost.",
+      "recurringOperations": "Unapproved hosting, on-call, maintenance, and incident-response cost.",
+      "compliance": "Unapproved privacy, legal, residency, retention, and assurance cost.",
+      "support": "No funded or staffed support model.",
+      "rollback": "No funded or tested runtime exit, deletion, revocation, or readback path.",
+      "estimationBasis": "Released #89-#90 evidence records no approved demand, budget, quote, custody, or operating model.",
+      "confidence": "HIGH",
+      "evidenceRefs": [
+        "FRC.1#supports-cost"
+      ]
+    },
+    "complianceGaps": {
+      "status": "FAIL",
+      "applicableBaseline": "Operating Model v1.1, D-001 through D-007, and the released #89-#91 boundaries.",
+      "gaps": [
+        {
+          "gapId": "C-01",
+          "requirement": "Approved tenant, data, privacy, legal, retention, residency, custody, and egress posture.",
+          "remediation": "Obtain independently owned approvals and evidence for one immutable proposal before reconsideration.",
+          "evidenceRefs": [
+            "FRC.2#supports-compliance"
+          ],
+          "gap": "Required approvals and implementation evidence are absent.",
+          "severity": "CRITICAL",
+          "disposition": "OPEN"
+        }
+      ],
+      "gapSummary": "No compliance or deployment readiness is established.",
+      "evidenceRefs": [
+        "FRC.2#supports-compliance"
+      ]
+    },
+    "supportBurden": {
+      "status": "FAIL",
+      "burden": "No accountable hosted operations or support burden has been accepted.",
+      "recurringTasks": [
+        "Future operation would require maintenance, incident response, tenant support, continuity, and decommissioning ownership."
+      ],
+      "incidentResponse": "No approved incident posture or owner is available.",
+      "maintenance": "No staffing, service level, or vulnerability-response commitment exists.",
+      "decommissioning": "No tested revocation, deletion, exit, or independent readback exists.",
+      "evidenceRefs": [
+        "FRC.2#supports-support"
+      ]
+    },
+    "rollback": {
+      "status": "FAIL",
+      "trigger": "Implementation is not authorized, so the only current action is not to start.",
+      "steps": [
+        "Keep every implementation child blocked.",
+        "Preserve requirements as FUTURE_BACKLOG documentation.",
+        "Require a separately authorized immutable proposal to supersede this decision."
+      ],
+      "verification": "Current checkout bytes bind the released #89-#92 rejection chain; no runtime rollback is claimed.",
+      "recoveryEstimate": "No runtime exists; repository-document supersession is the only current correction boundary.",
+      "dataAndStateEffects": "None; this decision performs no network, endpoint, credential, data, deployment, or runtime action.",
+      "irreversibleEffects": "None created by this decision artifact.",
+      "evidenceRefs": [
+        "FRC.3#supports-rollback"
+      ]
+    }
+  },
+  "scopeEvaluation": [
+    {
+      "ruleId": "discovery-as-implementation-approval",
+      "policy": "REJECT",
+      "status": "VIOLATION",
+      "rationale": "The released evidence makes this requested implementation surface a fail-closed rejection condition; documentation is not approval.",
+      "evidenceRefs": [
+        "FRC.0#supports-feasibility"
+      ]
+    },
+    {
+      "ruleId": "hosted-endpoint-creation",
+      "policy": "REJECT",
+      "status": "VIOLATION",
+      "rationale": "The released evidence makes this requested implementation surface a fail-closed rejection condition; documentation is not approval.",
+      "evidenceRefs": [
+        "FRC.1#supports-cost"
+      ]
+    },
+    {
+      "ruleId": "external-api-v2-widening",
+      "policy": "REJECT",
+      "status": "VIOLATION",
+      "rationale": "The released evidence makes this requested implementation surface a fail-closed rejection condition; documentation is not approval.",
+      "evidenceRefs": [
+        "FRC.2#supports-compliance"
+      ]
+    },
+    {
+      "ruleId": "credentials-or-customer-data-evidence",
+      "policy": "REJECT",
+      "status": "VIOLATION",
+      "rationale": "The released evidence makes this requested implementation surface a fail-closed rejection condition; documentation is not approval.",
+      "evidenceRefs": [
+        "FRC.3#supports-scope-boundary"
+      ]
+    }
+  ],
+  "decision": {
+    "verdict": "REJECT",
+    "decisionRule": "DECISIVE_EVIDENCE_FAILURE_OR_FORBIDDEN_SCOPE",
+    "rationale": "REJECT implementation now: released #89-#92 evidence consistently preserves requirements as FUTURE_BACKLOG while denying implementation, activation, deployment, and operations.",
+    "evidenceRefs": [
+      "FRC.0#supports-feasibility",
+      "FRC.0#supports-risk",
+      "FRC.1#supports-cost",
+      "FRC.2#supports-compliance",
+      "FRC.2#supports-support",
+      "FRC.3#supports-rollback",
+      "FRC.3#supports-scope-boundary"
+    ],
+    "goEvidenceSatisfied": false,
+    "implementationSuccessClaimed": false
+  },
+  "authorizationFirewall": {
+    "decisionAuthority": "DISCOVERY_DECISION_ONLY",
+    "implementationChildStatus": "BLOCKED_NO_SEPARATE_DELIVERY_AUTHORIZATION",
+    "separateDeliveryAuthorizationRequired": true,
+    "embeddedAuthorizationAccepted": false,
+    "implementationAuthorized": false,
+    "runtimeDispatchAuthorized": false,
+    "hostedEndpointCreationAuthorized": false,
+    "externalApiV2WideningAuthorized": false,
+    "credentialsOrCustomerDataAuthorized": false,
+    "deliveryScopeInheritance": "NONE"
+  },
+  "reviewReceipt": {
+    "procedureVersion": "kaleidosphere.future.remote-connector/local-review/v1",
+    "stepsCompleted": [
+      "validate-schema",
+      "verify-local-citations",
+      "resolve-claim-references",
+      "classify-evidence",
+      "evaluate-required-fields",
+      "evaluate-reject-rules",
+      "apply-verdict-precedence",
+      "verify-authorization-firewall"
+    ],
+    "localFilesOnly": true,
+    "networkAccessed": false,
+    "liveRuntimeAccessed": false,
+    "credentialsOrCustomerDataAccessed": false,
+    "placeholdersPresent": false,
+    "schemaValidation": "PASS",
+    "citationVerification": "PASS",
+    "referenceResolution": "PASS",
+    "assessmentEvaluation": "PASS",
+    "rejectRuleEvaluation": "VIOLATION",
+    "verdictRuleApplied": true,
+    "procedureComplete": true
+  }
+}
