@@ -478,7 +478,7 @@
     "tests/fixtures/release/k4c-reviewer-test-cases-invalid-v1.json": "5bc3c58cab4b80ed663233d65ba0eede87ba272bf8ef32d922d3e853a545eae6",
     "tests/fixtures/release/k4c-reviewer-test-cases-v1.json": "704ac8b69bbc7dd8316b5ce6919823a215e595819563a48deca4a915dce68da5",
     "tests/frc0-product-boundary.test.mjs": "5ee7455e3ea2ea124c348727cd8dafbb8ac87e891758e992fe6f42de9ced5b84",
-    "tests/future/ks90-current-main-replay.test.mjs": "d7fb2cb25149cf06a53fcdf4f6a21627ae6f976f4902e88c554a9d9d7c3c129f",
+    "tests/future/ks90-current-main-replay.test.mjs": "86db699e551e7b614f53665c6badb434db98e959b31e760c2831f5887e2be75b",
     "tests/graph-adaptive-v1.test.mjs": "0efd892a4787527e22013cb2656ddc0fa282b4ac0b0c188e5e1d868f14c42084",
     "tests/graph-pilot.test.mjs": "eb7df08096271b2ee2c3b0933155e23725a5b682243902e551e26d99f54da80d",
     "tests/graph-schema-safeint.test.mjs": "460fe1da28b9210013fba9154089979d47fbadf18d4a4c2d7119136d76757933",

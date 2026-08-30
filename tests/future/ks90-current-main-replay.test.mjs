@@ -60,7 +60,7 @@ test('packet is complete and binds current checkout bytes to their provenance he
 
 test('fixture is canonical and builder reproduces it at the accepted document head', () => {
   assert.equal(lib.canonicalSerialize(receipt), raw);
-  const run = spawnSync('/usr/bin/node', [
+  const run = spawnSync(process.execPath, [
     'scripts/future/build-ks90-replay-receipt.mjs',
     '--base', lib.EXACT_BASE_SHA,
     '--document-head', lib.ACCEPTED_DOCUMENT_HEAD_SHA,
