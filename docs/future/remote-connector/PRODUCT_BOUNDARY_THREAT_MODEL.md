@@ -8,9 +8,10 @@
 
 ## 1. Purpose and decision status
 
-This artifact freezes the vocabulary and boundary inputs needed for later threat
-model and build/buy/reject work. It describes a hypothetical remote connector
-between a PanSphaira interaction surface and KaleidoSphere's existing closed,
+This artifact freezes the vocabulary and boundary inputs used by this discovery
+threat model and needed for later build/buy/reject work. It describes a
+hypothetical remote connector between a PanSphaira interaction surface and
+KaleidoSphere's existing closed,
 authority-free contract. It is not a design approval or evidence that such a
 connector exists.
 
@@ -146,9 +147,118 @@ proposed discovery connector and grants no implementation or runtime authority.
 | TB5 Product/support plane | Telemetry and support request | Tenant-scoped support authorization and data minimization | Business payload exposure, impersonation, or cross-tenant access |
 | TB6 Proposal/persistent change | Analysis, plan, preview, or conversational assent | Exact trusted-UI approval followed by separate BI-Control controls | Any attempt to treat discovery, plan, preview, or voice as apply authority |
 
-A later threat-model slice must enumerate threats and mitigations against every
-boundary above. This slice freezes the boundaries; it does not claim the threat
-analysis is complete.
+The threat-model slice below enumerates discovery-level threats and mitigations
+against every boundary above. The frozen boundaries do not claim implementation
+or completeness beyond this bounded discovery analysis.
+
+### 7A. Authority and data-flow diagram
+
+The following discovery-level diagram supplies that later per-boundary analysis.
+It is a rendering of F1–F9 and TB1–TB6 above, not a network topology. An arrow is
+present only when the directional inventory declares it; subgraph placement
+shows an authority/trust boundary and does not create an additional flow. In
+particular, no arrow leaves the trusted UI/BI-Control plane toward an apply,
+write, or deployment target.
+
+```mermaid
+flowchart LR
+  subgraph TB1["TB1 — User / PanSphaira"]
+    U["Requesting user"]
+    P["PanSphaira interaction surface"]
+    U -->|"F1: selected tenant + one closed intent"| P
+    P -->|"F7: result + explicit limitations"| U
+  end
+
+  subgraph TB3["TB3 — Tenant policy / product processing"]
+    I["Identity and tenant-policy authority"]
+    E["Policy enforcement point"]
+    I -->|"F2: verified claims + allow/deny scope"| E
+  end
+
+  subgraph TB2["TB2 — PanSphaira / KaleidoSphere"]
+    K["KaleidoSphere closed-contract boundary"]
+  end
+
+  P -->|"F3: closed request + trusted policy binding"| K
+  K -->|"F6: redacted result + evidence status"| P
+
+  subgraph TB4["TB4 — KaleidoSphere / external source"]
+    S["Configured trusted transport / source boundary"]
+    B["External source / BI authority"]
+    K -->|"F4: least-privilege read or proposal"| S
+    B -->|"F5: minimized evidence + provenance"| K
+  end
+
+  subgraph TB5["TB5 — Product / support plane"]
+    C["Components — logical aggregate only"]
+    T["Tenant-scoped support telemetry"]
+    C -->|"F8: bounded state or error + correlation ID"| T
+  end
+
+  subgraph TB6["TB6 — Proposal / persistent change"]
+    A["Trusted approver"]
+    V["Trusted visual UI / BI-Control"]
+    A -->|"F9: exact scoped decision over exact preview/diff"| V
+  end
+```
+
+Boundary coverage is exact: TB1 is crossed by F1/F7, TB2 by F3/F6, TB3 by F2,
+TB4 by F4/F5, TB5 by F8, and TB6 by F9. The policy enforcement point and the
+configured transport are logical receivers already named by F2 and F4; their
+placement claims neither a component implementation nor a new edge. F9 remains
+an external authority dependency, not a discovery-connector capability.
+
+### 7B. STRIDE-style threat register
+
+This register is a discovery threat model, not proof that a control is
+implemented. **Impact class** uses `C` (confidentiality), `I` (integrity), `A`
+(availability), and `AUTH` (authority/tenant separation). “Detection evidence”
+is the minimum evidence a separately authorized future implementation would
+have to produce; no such runtime evidence is claimed here. Every mitigation
+must deny or stop on missing, ambiguous, conflicting, stale, or unverifiable
+inputs rather than downgrade the check.
+
+| Threat ID / STRIDE | Boundary / asset | Scenario | Precondition | Impact class | Fail-closed mitigation | Detection evidence | Owner | Residual risk | Explicit nonclaim |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| TM-TB1-01 / Spoofing | TB1; tenant and principal selection | Caller-authored identity or tenant text is treated as verified context. | A request can carry an unverified or fallback identity/tenant claim. | AUTH, C, I | Ignore caller authority claims; require an independently verified, request-bound tenant/policy decision; deny missing, ambiguous, or conflicting context. | Future denial receipt naming the failed trusted-binding check, with minimized correlation facts and no caller claim echoed as truth. | Identity/tenant-policy owner; PanSphaira owner for capture fidelity | A compromised identity authority remains outside product verification and requires separate governance. | No identity proof, tenant resolver, or implemented denial control is claimed. |
+| TM-TB1-02 / Tampering, Elevation of privilege | TB1; closed External API v2 intent contract | Prompt, voice text, hidden field, or UI state introduces a seventh intent or semantically widens one of the six intents. | Untrusted content reaches request shaping. | I, AUTH | Parse against the exact six-intent allowlist and bounded schema; reject unknown fields, aliases that widen semantics, arbitrary instructions, and unsupported actions before dispatch. | Future negative contract result recording intent/schema mismatch and zero dispatch. | PanSphaira owner; KaleidoSphere contract owner | Natural-language ambiguity can persist; ambiguity must remain a denial, not inferred intent. | No new intent, semantic widening, parser, or dispatch path is authorized or claimed. |
+| TM-TB2-01 / Tampering | TB2; contract, capability, and request/result binding | Client-authored summary, stale capability statement, or altered correlation data substitutes for authoritative raw evidence. | The crossing accepts client summaries or unbound metadata. | I, AUTH | Revalidate closed schema and trusted capability/contract evidence; require exact request/result/tenant binding and freshness; reject summaries as authority. | Future validation receipt identifying contract version, binding outcome, and freshness class without sensitive payload. | KaleidoSphere contract/security owner | An authoritative issuer compromise is not solved by binding checks alone. | No capability issuer, trusted transport, attestation implementation, or evidence validity is claimed. |
+| TM-TB2-02 / Denial of service | TB2; bounded request handling | Repeated malformed, oversized, unknown-intent, or absent-transport requests consume processing or trigger unsafe retries. | Untrusted requests can repeatedly cross TB2. | A, AUTH | Bound shape and work before dispatch; deterministically reject; perform no blind retry, role broadening, or fallback transport selection. | Future bounded rejection counters and correlation metadata, tenant-scoped and free of business content. | KaleidoSphere owner; transport operator for separately authorized transport availability | Volumetric abuse may still require controls outside this artifact. | No rate limit, capacity, service level, transport, or availability posture is claimed. |
+| TM-TB3-01 / Spoofing, Elevation of privilege | TB3; tenant role and resource scope | A principal, resource name, cached policy, or support role is used for another tenant or broader role. | Tenant/resource binding is absent, stale, conflicting, or inferred from a name. | AUTH, C, I | Require independently verified tenant, principal, role, resource, request, and decision-time binding; deny cross-tenant, expired, missing, or conflicting scope; never retry under a broader role. | Future policy-decision identifier and allow/deny reason bound to tenant, resource, request, and time. | Identity/tenant-policy owner | Policy-authority misconfiguration remains possible and needs independent audit. | No tenant isolation, policy engine, role mapping, or cross-tenant safety is claimed implemented. |
+| TM-TB3-02 / Repudiation | TB3; policy and human decision records | A user, administrator, or approver disputes a decision because actor role, tenant, exact scope, or expiry was not bound. | Decisions are summarized, mutable, or reusable as standing authority. | I, AUTH | Accept only an exact, scoped, expiring decision from its owning authority; deny absent or mismatched decision facts and preserve minimized immutable audit facts. | Future decision record containing exact decision, authority, role, tenant, scope, time, expiry, and request binding. | Identity/tenant-policy owner; trusted-approval owner for approvals | Authorized-account misuse can still produce a formally valid decision. | No non-repudiation guarantee, legal validity, audit store, or approval workflow is claimed. |
+| TM-TB4-01 / Information disclosure | TB4; access material and customer/source data | Credentials, access material, live customer data, or raw source rows are solicited, accepted, propagated, or retained during discovery. | Discovery input or a remote response contains a prohibited class. | C, AUTH | Prohibit solicitation and processing; stop on detection, avoid propagation/retention, accept no evidence from the response, and invoke separately approved incident handling. | Discovery content scan plus, only in a future authorized system, minimized prohibited-class denial/incident evidence with no secret or business payload. | Product security/privacy owner; tenant data owner for incident decisions | Detection may miss transformed sensitive content; that uncertainty cannot authorize processing. | No credential handling, customer-data fitness, incident procedure, source access, or privacy compliance is claimed. |
+| TM-TB4-02 / Tampering, Spoofing | TB4; source provenance and result evidence | Stale, replayed, cross-tenant, wrong-request, or source-spoofed evidence is presented as current source state. | Provenance, tenant, request, capability, integrity, or freshness binding is absent or accepted from the payload itself. | I, AUTH, C | Require independently verifiable provenance plus exact tenant/request/capability binding and freshness; reject replay, mismatch, uncertainty, and all cross-tenant evidence without partial use. | Future verification receipt showing each binding/freshness decision and a denial reason; raw evidence is not logged by default. | KaleidoSphere contract/security owner; external source/BI owner for source state | A compromised authoritative source may return internally consistent false data. | No source correctness, provenance mechanism, freshness window, integrity control, or evidence acceptance is claimed. |
+| TM-TB4-03 / Elevation of privilege | TB4; source-originated content | Source metadata or returned text injects instructions, a transport target, a broader query, or an apply action. | Remote content is interpreted as control data rather than classified evidence. | I, AUTH | Treat all source-originated content as untrusted data; enforce the original closed request and allowlisted resource scope; reject control-like content and perform no derived action. | Future classification/contract denial bound to the original request, with zero secondary dispatch or action. | KaleidoSphere contract/security owner | Novel encodings may evade classifiers; uncertain classification must fail closed. | No content classifier, provider adapter, source query, secondary dispatch, or execution facility is claimed. |
+| TM-TB5-01 / Information disclosure | TB5; telemetry and support plane | Business payload, access material, personal data, or cross-tenant facts enter logs or support views. | Components emit verbose errors or support access is broad/global. | C, AUTH | Emit bounded codes and correlation facts only; tenant-bind retention and access; deny support access on absent scope; stop and contain prohibited payload exposure. | Future schema validation/redaction result and tenant-scoped support-access audit, neither containing business content. | Product security/privacy owner; product support owner | Correlation and timing metadata may still be sensitive and require later retention decisions. | No telemetry system, retention period, residency, support tooling, or support commitment is claimed. |
+| TM-TB5-02 / Repudiation, Elevation of privilege | TB5; operator actions | A support operator impersonates a user, changes policy, or performs an untraceable cross-tenant action to resolve an incident. | Support and product authority are conflated or operator actions lack tenant scope. | AUTH, C, I | Separate support from user/policy authority; require explicit tenant/environment assignment and auditable bounded actions; deny impersonation, policy mutation, and unresolved ownership. | Future operator-action audit with assigned tenant/environment, bounded action class, outcome, and escalation. | Product support owner; product/security owner for escalation | Privileged-operator compromise remains a governance risk. | No operator console, privileged-access model, staffing level, response time, or audit implementation is claimed. |
+| TM-TB6-01 / Elevation of privilege | TB6; proposal versus persistent-change authority | `discovery`, `analyze`/analysis, `plan`, or `preview` output—or conversational/voice assent—is treated as delivery, approval, apply, execution, or readback. | Proposal and persistent-change states are conflated. | AUTH, I | Keep discovery non-applying; accept no approval at the connector; require a separate exact trusted-UI decision and separate BI-Control apply/readback controls; deny absent, stale, generalized, or mismatched approval. | Future state-transition evidence proving preview, decision, apply outcome, and independent readback are distinct and exactly bound. | Trusted-approval owner; BI-Control owner | Trusted UI or approver compromise remains possible and needs separate threat analysis before authorization. | No approval, apply, write, rollback, readback, delivery, or persistent-change workflow is built or authorized. |
+| TM-TB6-02 / Tampering, Repudiation | TB6; exact preview/diff and human decision | The represented preview changes after review, or a prior/standing approval is replayed for a different scope, tenant, or action. | Approval is not bound to immutable content, tenant, actor role, preconditions, and expiry. | I, AUTH | Deny unless the exact decision binds the exact preview/diff, tenant, actor role, scope, preconditions, and expiry; require separate independent readback and preserve unknown outcome on mismatch. | Future exact-content binding result, expiring decision record, apply outcome, and separately sourced readback evidence. | Trusted-approval owner; BI-Control owner | Human misunderstanding of an exact preview is not eliminated by technical binding. | No preview digest scheme, trusted UI, approval validity, apply mechanism, or readback implementation is claimed. |
+| TM-ALL-01 / Tampering | TB1–TB6; declared flow inventory | A discovery document, model, or later design invents an undeclared data-flow edge and uses the diagram as authority for transport, data access, support access, or mutation. | A new arrow or changed direction lacks an approved inventory entry and authority owner. | AUTH, C, I | Treat F1–F9 as a closed discovery inventory; reject any unmatched edge, direction change, or side effect and require separate governance rather than normalizing it into this model. | Deterministic diagram-to-inventory coverage check and review evidence mapping every arrow to exactly one declared flow and boundary. | Product/security owner | Textual diagrams cannot prove runtime topology; later architecture must be independently verified. | The diagram is not implementation authorization, network evidence, an endpoint inventory, or proof that any edge exists. |
+
+The register covers every declared trust boundary and all six STRIDE categories.
+It does not accept risk, select architecture, or authorize a control. Residual risks
+remain inputs to later governance, not implied approval.
+
+### 7C. Mandatory negative discovery cases
+
+These cases are normative discovery gates. “Reject” means stop the affected
+analysis path, do not dispatch, apply, retain, broaden, infer success, or convert
+the input into implementation guidance. A prose warning without the specified
+negative outcome is not a pass.
+
+| Negative case | Prohibited discovery input or claim | Mandatory fail-closed outcome | Required discovery evidence | Nonclaim |
+| --- | --- | --- | --- | --- |
+| NEG-01 Credentials or live customer data | Any credential/access material, live customer record, raw source row, or request to obtain, validate, store, rotate, broker, or use it during discovery. | Reject and stop; do not echo, propagate, retain, test, or substitute a “temporary” value; escalate only under separately approved incident policy. | Content check confirms the artifact contains no value or record and states the prohibition and denial behavior. | No credential handling, source access, customer-data processing, or incident execution is authorized. |
+| NEG-02 Seventh or semantically widened intent | Any seventh External API v2 intent, alias, unknown field, free-form action, or reinterpretation that widens `status`, `discovery`, `analyze`, `plan`, `preview`, or `readback`. | Reject before dispatch; do not map it to a nearby intent, split it into hidden actions, or change one of the six semantics. | Exact six-intent allowlist appears in the artifact; negative text denies both a seventh intent and semantic widening. | No contract change or new capability is approved. |
+| NEG-03 Discovery as delivery or authority | Any claim that discovery, analysis/`analyze`, plan, or preview is delivery, approval, apply, execution, or readback; any claim that transport or presentation success proves one of those states. | Reject the state transition; preserve proposal/non-applying status and unknown/denied outcome; require distinct future authority evidence outside this connector. | Negative text names every prohibited source state and target claim; diagram contains no apply/write edge. | No delivery, approval, apply, execution, persistent effect, or readback is claimed. |
+| NEG-04 Caller-authored identity or tenant | Identity, membership, role, resource authority, or tenant supplied by caller text, voice, client state, UI appearance, fallback, or matching resource name. | Ignore as authority and deny unless independently verified and exactly bound to tenant, request, resource, role, and time; never choose a default tenant. | Threat/register entry and boundary rule require independent verification and denial for missing, ambiguous, conflicting, or cross-tenant context. | No identity or tenant assertion is verified by this artifact. |
+| NEG-05 Invented data-flow edge | Any arrow, reverse flow, side channel, retry path, discovery mechanism, support path, or persistent-effect edge not declared as F1–F9. | Reject the model/design delta; do not infer authorization from convenience or diagram placement; require a separately governed boundary change. | Diagram arrows map only to F1–F9, with TB1–TB6 coverage stated and no outgoing apply/write/deploy edge. | The declared arrows are logical discovery inventory, not proof of runtime existence. |
+| NEG-06 Stale, replayed, or cross-tenant evidence | Evidence with expired/unknown freshness, prior-request reuse, tenant mismatch, ambiguous provenance, wrong capability/contract, or self-asserted binding. | Reject the entire evidence object; do not partially use it, refresh by broadening authority, merge tenants, retry as another role, or report success/readback. | Threat/register entry requires provenance, integrity, freshness, tenant, request, and capability checks with explicit denial evidence. | No evidence object is accepted as fresh, authentic, tenant-safe, or correct here. |
+
+Passing these documentation cases establishes only that this artifact states the
+required negative contract. It does not test a runtime, approve implementation,
+or satisfy later architecture, privacy, legal, compliance, support, or release
+gates.
 
 ## 8. Failure modes and ownership
 
@@ -210,8 +320,8 @@ This discovery artifact does not:
    presentation as delivery, approval, execution, or readback;
 9. choose hosted, MCP, hybrid, buy, build, or reject; that evidence-bound decision
    belongs to a later issue #89 slice;
-10. complete the later per-boundary threat analysis, implementation blockers,
-    approval register, architecture, or service design.
+10. complete the later implementation blockers, approval register, architecture,
+    or service design.
 
 ## 11. Nonclaims and assumptions
 
@@ -223,8 +333,8 @@ customer-data fitness, support model, service level, marketplace presence,
 operational cost, deployment readiness, or persistent-change workflow is claimed
 to exist or be approved.
 
-This document is not proof of security, threat-model completion, legal review,
-regulatory compliance, source correctness, identity assurance, production
+This document is not proof of security, implemented threat mitigations, legal
+review, regulatory compliance, source correctness, identity assurance, production
 readiness, or issue completion. `FUTURE_BACKLOG` remains in force.
 
 ### Assumptions requiring later validation
