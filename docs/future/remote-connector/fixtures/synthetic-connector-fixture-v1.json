@@ -1,0 +1,198 @@
+{
+  "schemaVersion": "kaleidosphere/remote-connector-synthetic-fixture/v1",
+  "fixtureId": "synthetic-connector-fixture-v1",
+  "classification": "future-spike-only; synthetic development fixture; not production evidence",
+  "contract": {
+    "purpose": "Bounded read-only connector contract over deterministic local records",
+    "transport": "file-only",
+    "network": "disabled",
+    "publicEndpointRequired": false,
+    "hostedEndpointRequired": false,
+    "externalNetworkRequired": false,
+    "customerDataRequired": false,
+    "credentialsRequired": false,
+    "actions": [
+      {
+        "name": "enumerate_collections",
+        "mutates": false,
+        "input": {},
+        "output": "collection summaries"
+      },
+      {
+        "name": "read_record",
+        "mutates": false,
+        "input": {
+          "collectionId": "known collection id",
+          "recordId": "known synthetic record id"
+        },
+        "output": "one declared synthetic record"
+      },
+      {
+        "name": "count_records",
+        "mutates": false,
+        "input": {
+          "collectionId": "known collection id"
+        },
+        "output": "bounded record count"
+      }
+    ],
+    "prohibitedActions": [
+      "create",
+      "update",
+      "delete",
+      "grant",
+      "deploy",
+      "publish",
+      "send"
+    ],
+    "limits": {
+      "maxCollections": 10,
+      "maxRecordsPerCollection": 50,
+      "maxRecordsTotal": 500,
+      "maxFieldsPerRecord": 10,
+      "maxFieldBytes": 256
+    }
+  },
+  "fixture": {
+    "collections": [
+      {
+        "id": "catalog",
+        "label": "Atlas",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "label",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "category",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "rank",
+            "type": "integer",
+            "required": true
+          },
+          {
+            "name": "active",
+            "type": "boolean",
+            "required": true
+          }
+        ],
+        "records": [
+          {
+            "id": "SYN-catalog-001",
+            "label": "Atlas",
+            "category": "amber",
+            "rank": 1,
+            "active": true
+          },
+          {
+            "id": "SYN-catalog-002",
+            "label": "Beacon",
+            "category": "blue",
+            "rank": 2,
+            "active": true
+          },
+          {
+            "id": "SYN-catalog-003",
+            "label": "Cinder",
+            "category": "green",
+            "rank": 3,
+            "active": false
+          }
+        ]
+      },
+      {
+        "id": "telemetry",
+        "label": "Delta",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "label",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "status",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "count",
+            "type": "integer",
+            "required": true
+          },
+          {
+            "name": "active",
+            "type": "boolean",
+            "required": true
+          }
+        ],
+        "records": [
+          {
+            "id": "SYN-telemetry-001",
+            "label": "Delta",
+            "status": "ready",
+            "count": 2,
+            "active": true
+          },
+          {
+            "id": "SYN-telemetry-002",
+            "label": "Echo",
+            "status": "review",
+            "count": 1,
+            "active": true
+          },
+          {
+            "id": "SYN-telemetry-003",
+            "label": "Fable",
+            "status": "paused",
+            "count": 0,
+            "active": false
+          }
+        ]
+      }
+    ]
+  },
+  "provenance": {
+    "sourceType": "HAND_AUTHORED_SYNTHETIC",
+    "authoringBasis": "FRC.3 synthetic-only spike plan",
+    "sourceInputs": [],
+    "generatedFromCustomerData": false,
+    "copiedFromProviderPayload": false,
+    "environmentDerived": false,
+    "externalCallsDuringAuthoring": false,
+    "determinism": "fixed content; repeated reads of this file are byte-identical",
+    "closedLabelSet": [
+      "Atlas",
+      "Beacon",
+      "Cinder",
+      "Delta",
+      "Echo",
+      "Fable",
+      "amber",
+      "blue",
+      "green",
+      "ready",
+      "review",
+      "paused"
+    ]
+  },
+  "manifest": {
+    "algorithm": "sha256",
+    "scope": "fixture.collections",
+    "canonicalization": "UTF-8 JSON with sorted object keys and no insignificant whitespace",
+    "sha256": "sha256:933b2e96d606d2037d1e27ce8a05d42683b7dc0d0acdcb05ddeece46653bb67f"
+  }
+}

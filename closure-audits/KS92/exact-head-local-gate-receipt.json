@@ -1,0 +1,14 @@
+{
+  "schemaVersion":"development-conveyor/exact-head-local-gate-receipt/v1",
+  "issue":{"repository":"JoFe2/KaleidoSphere","number":92},
+  "operatingContract":"development-conveyor/issue-execution-plan/v2.1",
+  "attemptReconciliation":"development-conveyor/attempt-reconciliation/v1",
+  "testedProductHead":"66dbf20aa30d01fda06c381a297ffee6cfc6e67f","testedProductTree":"961c8989c82e8cb3cb7b656904a5b7e2d69082c4","baseSha":"664447988841eed2f9023f29ab7ba7025562e524",
+  "runCommits":["5406665d5a5bbf285a548007faa8488a0ab4f5fc","b9999c66cbe73fdf84fce9610f95cf7daa63cff9","66dbf20aa30d01fda06c381a297ffee6cfc6e67f"],
+  "acceptance":{"SPIKE_PLAN":"PASS","SYNTHETIC_ISOLATION":"PASS","GO_NO_GO":"PASS","NEGATIVE":"PASS","ROLLBACK_CLEANUP":"PASS"},
+  "disposition":"REJECTED_WITH_EVIDENCE","executionDecision":"NO_GO",
+  "checks":[{"command":"npm run test:ks92-spike-plan","status":"PASS","tests":41},{"command":"npm test","status":"PASS","tests":863},{"command":"npm run test:security","status":"PASS","tests":7},{"command":"npm run test:source","status":"PASS","tests":1},{"command":"no-.git package readback","status":"PASS"},{"command":"git diff --check","status":"PASS"}],
+  "reuse":{"reusedPaths":14,"reviewFindingsCorrected":5,"newSpikeRuns":0,"fullGateRuns":1},
+  "nonClaims":["NO_CONNECTOR_OR_MCP_EXECUTION","NO_PUBLIC_ENDPOINT","NO_CREDENTIALS","NO_CUSTOMER_OR_PROVIDER_DATA","NO_MUTATION","NO_NETWORK_OR_DEPLOYMENT","NO_COMPLIANCE_OR_PRODUCTION_READINESS","NO_IMPLEMENTATION_AUTHORIZATION"],
+  "delivery":{"readyForPr":true,"prHeadCiRequired":true,"shaBoundMergeRequired":true,"mainHeadCiRequired":true,"dailyReleaseRequired":true,"anonymousReadbackRequired":true,"issueCloseRequired":true}
+}
