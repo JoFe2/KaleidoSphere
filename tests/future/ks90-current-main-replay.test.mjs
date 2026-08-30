@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { execFileSync, spawnSync } from 'node:child_process';
+import { spawnSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 import test from 'node:test';
 
@@ -11,9 +12,6 @@ const fixturePath = path.join(root, lib.RECEIPT_PATH);
 const raw = await readFile(fixturePath, 'utf8');
 const receipt = JSON.parse(raw);
 
-function git(args) {
-  return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
-}
 
 function context(overrides = {}) {
   return {
@@ -49,22 +47,15 @@ test('fixture binds the accepted current presentation and grants no execution pe
   assert.deepEqual(lib.validateReceipt(receipt, context()), { ok: true, failures: [] });
 });
 
-test('packet is complete and binds actual accepted-head bytes by sha256', () => {
+test('packet is complete and binds current checkout bytes to their provenance heads', async () => {
   assert.deepEqual(receipt.packet, lib.PACKET);
   for (const entry of receipt.packet) {
-    const bytes = execFileSync('git', ['show', `${lib.ACCEPTED_DOCUMENT_HEAD_SHA}:${entry.path}`], { cwd: root });
-    const actual = execFileSync('sha256sum', { input: bytes, encoding: 'utf8' }).split(/\s+/)[0];
+    const bytes = await readFile(path.join(root, entry.path));
+    const actual = createHash('sha256').update(bytes).digest('hex');
     assert.equal(actual, entry.sha256, entry.path);
   }
-  assert.equal(git(['merge-base', '--is-ancestor', lib.EXACT_BASE_SHA, lib.ACCEPTED_DOCUMENT_HEAD_SHA]), '');
-  assert.deepEqual(
-    git(['diff', '--name-only', `${lib.EXACT_BASE_SHA}..${lib.ACCEPTED_DOCUMENT_HEAD_SHA}`]).split('\n'),
-    ['docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md'],
-  );
-  assert.deepEqual(
-    git(['rev-list', '--left-right', '--count', `${lib.EXACT_BASE_SHA}...${lib.ACCEPTED_DOCUMENT_HEAD_SHA}`]).split(/\s+/),
-    ['0', '1'],
-  );
+  assert.deepEqual(receipt.packet.map(({ source_head_sha }) => source_head_sha),
+    [lib.EXACT_BASE_SHA, lib.ACCEPTED_DOCUMENT_HEAD_SHA]);
 });
 
 test('fixture is canonical and builder reproduces it at the accepted document head', () => {

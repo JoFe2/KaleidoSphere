@@ -10,11 +10,13 @@ export const DISPOSITION = 'REJECTED_WITH_EVIDENCE';
 export const PACKET = Object.freeze([
   Object.freeze({
     path: 'docs/future/remote-connector/PRODUCT_BOUNDARY_THREAT_MODEL.md',
+    source_head_sha: EXACT_BASE_SHA,
     role: 'released issue-89 DEFER/REJECT-NOW decision evidence referenced by the issue-90 disposition',
     sha256: '97ca82d288050233e50eac314e080afb43352b516bd4816e422f76eb18e604ce',
   }),
   Object.freeze({
     path: 'docs/future/remote-connector/IDENTITY_AUTHORITY_RECEIPTS.md',
+    source_head_sha: ACCEPTED_DOCUMENT_HEAD_SHA,
     role: 'accepted issue-90 requirements and REJECTED_WITH_EVIDENCE disposition document',
     sha256: '8bcf41343763ef9c38ffbe7f51671d8e8c5ee52c415960138cde092c689fda30',
   }),
@@ -99,8 +101,9 @@ export function validateReceipt(receipt, ctx) {
     for (let i = 0; i < PACKET.length; i += 1) {
       const actual = receipt.packet[i];
       const expected = PACKET[i];
-      if (!sameKeys(actual, ['path', 'role', 'sha256']) ||
-          actual.path !== expected.path || actual.role !== expected.role || actual.sha256 !== expected.sha256) {
+      if (!sameKeys(actual, ['path', 'source_head_sha', 'role', 'sha256']) ||
+          actual.path !== expected.path || actual.source_head_sha !== expected.source_head_sha ||
+          actual.role !== expected.role || actual.sha256 !== expected.sha256) {
         fail(REASONS.packet_binding_mismatch);
       }
     }
