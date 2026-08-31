@@ -1,0 +1,60 @@
+{
+  "schemaVersion": "kaleidosphere.foundation/exact-head-local-gate-receipt/v1",
+  "issue": {
+    "id": "FND-KS-01",
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 140,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/140"
+  },
+  "recordedAt": "2026-08-31T17:41:13Z",
+  "baseCommit": "724197edfc30a2468be1823164605e32a4e45196",
+  "productHead": "4103698459cb7c3ee2f6581d27c90014fe5c4301",
+  "productTree": "3753bf4f64cd69c6d0aa75ff1b05bcaa0da3bc3e",
+  "commits": [
+    "1c533d81732616facc1931cab3688d9120418a0d",
+    "4103698459cb7c3ee2f6581d27c90014fe5c4301"
+  ],
+  "changedPathDigests": {
+    "SOURCE-MAP.json": "537bda15c73c66bde7719224d6eafd682a1a5dea5aaf69dae426a4b88e9402a3",
+    "services/bi-control/src/bi-specialist/model-synthesis-verifier.mjs": "589d227ce5f8af9a26853cf763197c3f6f23d2340d17af753764c8c5ceb99c78",
+    "services/bi-control/src/bi-specialist/specialist-agent.mjs": "af6e902236883f8e7fe046e65236eb76ed2a7476cbee6ba1dc11b329c71bdeef",
+    "tests/bi-specialist.test.mjs": "10c8c8f342e7e83c9bd080cf12b10e108df1b757c4bdecb78c084db0566430b1"
+  },
+  "acceptance": {
+    "FND-KS-01-AC01": "PASS",
+    "FND-KS-01-AC02": "PASS",
+    "FND-KS-01-AC03": "PASS",
+    "FND-KS-01-AC04": "PASS",
+    "FND-KS-01-AC05": "PENDING_PUBLIC_DELIVERY"
+  },
+  "reviewFindings": {
+    "FND-KS-01-RVW-001": "CLOSED",
+    "FND-KS-01-RVW-002": "CLOSED",
+    "newCriticalHighMedium": 0
+  },
+  "evidence": {
+    "unsupportedSemanticClasses": "6/6 unbounded and non-promoting",
+    "mutationAttempts": "10/10 rejected",
+    "biSpecialist": "21/21 PASS",
+    "sourceMap": "1/1 PASS",
+    "security": "7/7 PASS",
+    "fullSuite": "889/889 PASS",
+    "worktree": "clean"
+  },
+  "nonclaims": [
+    "No semantic truth or general model-quality proof.",
+    "No live model execution or production/customer-data validation.",
+    "Free model prose remains explicitly unbounded.",
+    "No FND-KS-02 compatibility-attestation authority."
+  ],
+  "requiredPublicGates": [
+    "PR exact-head readback",
+    "PR-head CI PASS",
+    "SHA-bound merge",
+    "Main-head CI PASS",
+    "serial release or evidence-bound no-release decision",
+    "anonymous readback",
+    "issue CLOSED/completed",
+    "queue reconciliation"
+  ]
+}
