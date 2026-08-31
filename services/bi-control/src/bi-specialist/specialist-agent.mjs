@@ -1,4 +1,5 @@
 import { discoverDatabase } from './progressive-discovery.mjs';
+import { verifyModelSynthesis } from './model-synthesis-verifier.mjs';
 import { selectPlanningPolicy } from './planning-policy.mjs';
 
 export const SPECIALIST_AGENT_VERSION = 'chimpmaera.bi/real-bi-specialist/v1';
@@ -35,7 +36,17 @@ export class RealBiSpecialist {
       });
       let parsed;
       try { parsed = JSON.parse(response.content); } catch { throw Object.assign(new Error('MODEL_SYNTHESIS_JSON_INVALID'), { code: 'MODEL_SYNTHESIS_JSON_INVALID' }); }
-      synthesis = { source: 'local-model', observable: parsed, receipt: response.receipt, claimsBounded: true };
+      const boundaryVerification = verifyModelSynthesis(parsed, {
+        evidenceTables: compact.entities.map((entity) => entity.name),
+        blindSpots: compact.blindSpots,
+      });
+      synthesis = {
+        source: 'local-model',
+        observable: parsed,
+        receipt: response.receipt,
+        boundaryVerification,
+        claimsBounded: boundaryVerification.status === 'bounded',
+      };
     }
     return {
       schemaVersion: SPECIALIST_AGENT_VERSION,
