@@ -188,8 +188,10 @@ const boundedModelObservable = Object.freeze({
 async function synthesizeModelObservable(observable) {
   const adapter = {
     calls: 0,
-    async complete() {
+    request: null,
+    async complete(request) {
       this.calls += 1;
+      this.request = request;
       return { content: JSON.stringify(observable), receipt: { provider: 'test' } };
     },
   };
@@ -202,10 +204,73 @@ async function synthesizeModelObservable(observable) {
   return { result, adapter };
 }
 
-test('model synthesis claimsBounded is verifier-derived rather than granted by JSON parsing', async () => {
+test('model synthesis free text remains verifier-unbounded despite valid structural fields', async () => {
   const { result } = await synthesizeModelObservable(boundedModelObservable);
-  assert.equal(result.synthesis.claimsBounded, true);
-  assert.deepEqual(result.synthesis.boundaryVerification, { status: 'bounded', reasonCodes: [] });
+  assert.equal(result.synthesis.claimsBounded, false);
+  assert.deepEqual(result.synthesis.boundaryVerification, {
+    status: 'unbounded',
+    reasonCodes: ['SUMMARY_SEMANTICS_UNVERIFIED'],
+  });
+});
+
+test('unsupported free-text semantic claims cannot be verifier-bounded', async () => {
+  const unsupportedClaims = {
+    ...boundedModelObservable,
+    summary: 'The database proves Acme doubled global revenue, has zero fraud, and the CEO approved immediate production deletion.',
+  };
+  const { result } = await synthesizeModelObservable(unsupportedClaims);
+  assert.equal(result.synthesis.claimsBounded, false);
+  assert.equal(result.synthesis.boundaryVerification.status, 'unbounded');
+  assert(result.synthesis.boundaryVerification.reasonCodes.includes('SUMMARY_SEMANTICS_UNVERIFIED'));
+});
+
+test('model synthesis prompt declares the free-text summary unbounded contract', async () => {
+  const { adapter } = await synthesizeModelObservable(boundedModelObservable);
+  const systemPrompt = adapter.request.messages.find(({ role }) => role === 'system').content;
+  assert.match(systemPrompt, /summary \(non-empty free-text string\)/);
+  assert.match(systemPrompt, /complete input blindSpots array/);
+  assert.match(systemPrompt, /summary semantics are not verifier-bounded/);
+  assert.match(systemPrompt, /remains explicitly unbounded\/unknown/);
+});
+
+test('verified model observable is clone-isolated and recursively immutable', async () => {
+  const source = {
+    ...boundedModelObservable,
+    evidence_tables: [...boundedModelObservable.evidence_tables],
+    blind_spots: [...boundedModelObservable.blind_spots],
+  };
+  const { result } = await synthesizeModelObservable(source);
+  const { observable, boundaryVerification, claimsBounded } = result.synthesis;
+  const verifiedSnapshot = JSON.stringify(observable);
+  const boundarySnapshot = JSON.stringify(boundaryVerification);
+
+  assert.notEqual(observable, source);
+  assert.notEqual(observable.evidence_tables, source.evidence_tables);
+  assert.notEqual(observable.blind_spots, source.blind_spots);
+  source.summary = 'mutated source claim';
+  source.evidence_tables[0] = 'mutated_source_table';
+  source.blind_spots[0] = 'mutated-source-blind-spot';
+  source.confidence = 1;
+  source.persistence_proposed = true;
+  assert.equal(JSON.stringify(observable), verifiedSnapshot);
+
+  assert.equal(Object.isFrozen(observable), true);
+  assert.equal(Object.isFrozen(observable.evidence_tables), true);
+  assert.equal(Object.isFrozen(observable.blind_spots), true);
+  for (const mutate of [
+    () => { observable.summary = 'mutated returned claim'; },
+    () => { observable.evidence_tables = []; },
+    () => { observable.evidence_tables[0] = 'mutated_returned_table'; },
+    () => observable.evidence_tables.push('mutated_returned_table'),
+    () => { observable.confidence = 1; },
+    () => { observable.blind_spots = []; },
+    () => { observable.blind_spots[0] = 'mutated-returned-blind-spot'; },
+    () => observable.blind_spots.push('mutated-returned-blind-spot'),
+    () => { observable.persistence_proposed = true; },
+  ]) assert.throws(mutate, TypeError);
+  assert.equal(JSON.stringify(observable), verifiedSnapshot);
+  assert.equal(JSON.stringify(result.synthesis.boundaryVerification), boundarySnapshot);
+  assert.equal(result.synthesis.claimsBounded, claimsBounded);
 });
 
 test('model synthesis malformed schema, unknown fields, and missing or invalid confidence remain unbounded', async () => {

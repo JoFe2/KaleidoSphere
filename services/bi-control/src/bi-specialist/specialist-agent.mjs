@@ -28,7 +28,7 @@ export class RealBiSpecialist {
       const response = await this.adapter.complete({
         idempotencyKey: `${runId}:synthesis`,
         messages: [
-          { role: 'system', content: 'Return one JSON object only with exactly these fields: summary (string), evidence_tables (array of table names from the input), confidence (number 0..1), blind_spots (array of strings), persistence_proposed (false). Never invent values, causal claims, table names, or persistence. Do not expose reasoning.' },
+          { role: 'system', content: 'Return one JSON object only with exactly these fields: summary (non-empty free-text string), evidence_tables (array of table names from the input), confidence (number 0..1), blind_spots (the complete input blindSpots array), persistence_proposed (false). Free-text summary semantics are not verifier-bounded and the response remains explicitly unbounded/unknown. Never invent values, causal claims, table names, blind spots, or persistence. Do not expose reasoning.' },
           { role: 'user', content: JSON.stringify(compact) },
         ],
         ...policy.samplingProfile,

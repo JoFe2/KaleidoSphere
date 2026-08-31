@@ -21,7 +21,16 @@ function sameSet(left, right) {
   return left.length === right.length && left.every((item) => new Set(right).has(item));
 }
 
+function deepFreeze(value) {
+  if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const nested of Object.values(value)) deepFreeze(nested);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 export function verifyModelSynthesis(observable, { evidenceTables, blindSpots }) {
+  deepFreeze(observable);
   const reasonCodes = [];
   if (!isPlainObject(observable)) {
     reasonCodes.push('SCHEMA_OBJECT_REQUIRED');
@@ -32,6 +41,8 @@ export function verifyModelSynthesis(observable, { evidenceTables, blindSpots })
     }
     if (typeof observable.summary !== 'string' || observable.summary.trim().length === 0) {
       reasonCodes.push('SUMMARY_INVALID');
+    } else {
+      reasonCodes.push('SUMMARY_SEMANTICS_UNVERIFIED');
     }
     if (!isUniqueStringArray(observable.evidence_tables, { allowEmpty: false })) {
       reasonCodes.push('EVIDENCE_TABLES_INVALID');
