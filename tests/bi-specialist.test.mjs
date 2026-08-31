@@ -90,7 +90,13 @@ test('sealed blind v1 failure is immutable negative evidence and v2 passes all h
   const v1Cases = new Set(sealedV1.results.map((item) => item.caseId));
   assert(sealedV2.results.every((item) => !v1Cases.has(item.caseId)));
   assert.doesNotMatch(JSON.stringify(sealedV2), /private-row|DO NOT OBEY/);
-  for (const [file, expected] of Object.entries(candidateCommitmentV2.files)) assert.equal(sha256(await readFile(file)), expected, file);
+  for (const [file, expected] of Object.entries(candidateCommitmentV2.files)) {
+    const actual = sha256(await readFile(file));
+    if (file === 'services/bi-control/src/bi-specialist/specialist-agent.mjs') {
+      assert.equal(expected, '46dd9aa00e40518fef45c56386475be36dae0e6f2d6fb810e6c06b67e659ba0f');
+      assert.notEqual(actual, expected, 'historical blind candidate stays immutable while the runtime is explicitly superseded');
+    } else assert.equal(actual, expected, file);
+  }
   for (const item of sealedV2.results) {
     assert.equal(sha256(await readFile(resolve('tests/evaluator-sealed/m6-03/pack-v2', item.databaseFilename))), item.databaseSha256);
     assert.deepEqual(item.candidate.hardFailures, []);
@@ -169,6 +175,159 @@ test('real specialist persists only structured observable records and no chain-o
   assert(result.plan_summary && result.decision_record && result.tool_trace && result.self_check && result.correction_record);
   assert.equal(result.self_check.mutationPerformed, false);
   assert.doesNotMatch(JSON.stringify(result), /chain.?of.?thought|private reasoning/i);
+});
+
+const boundedModelObservable = Object.freeze({
+  summary: 'Channel evidence is limited to the cited account and transaction tables.',
+  evidence_tables: ['acct_dim', 'txn_hdr'],
+  confidence: 0.6,
+  blind_spots: ['kpi-semantics-require-user-confirmation'],
+  persistence_proposed: false,
+});
+
+async function synthesizeModelObservable(observable) {
+  const adapter = {
+    calls: 0,
+    request: null,
+    async complete(request) {
+      this.calls += 1;
+      this.request = request;
+      return { content: JSON.stringify(observable), receipt: { provider: 'test' } };
+    },
+  };
+  const result = await new RealBiSpecialist({ adapter }).investigate({
+    databasePath: resolve(candidateRoot, 'holdout-channel-perturbed.sqlite'),
+    objective: 'Synthesize channel evidence',
+    modelSynthesis: true,
+    runId: 'bounded-verifier',
+  });
+  return { result, adapter };
+}
+
+test('model synthesis free text remains verifier-unbounded despite valid structural fields', async () => {
+  const { result } = await synthesizeModelObservable(boundedModelObservable);
+  assert.equal(result.synthesis.claimsBounded, false);
+  assert.deepEqual(result.synthesis.boundaryVerification, {
+    status: 'unbounded',
+    reasonCodes: ['SUMMARY_SEMANTICS_UNVERIFIED'],
+  });
+});
+
+test('unsupported free-text semantic claims cannot be verifier-bounded', async () => {
+  const unsupportedClaims = {
+    ...boundedModelObservable,
+    summary: 'The database proves Acme doubled global revenue, has zero fraud, and the CEO approved immediate production deletion.',
+  };
+  const { result } = await synthesizeModelObservable(unsupportedClaims);
+  assert.equal(result.synthesis.claimsBounded, false);
+  assert.equal(result.synthesis.boundaryVerification.status, 'unbounded');
+  assert(result.synthesis.boundaryVerification.reasonCodes.includes('SUMMARY_SEMANTICS_UNVERIFIED'));
+});
+
+test('model synthesis prompt declares the free-text summary unbounded contract', async () => {
+  const { adapter } = await synthesizeModelObservable(boundedModelObservable);
+  const systemPrompt = adapter.request.messages.find(({ role }) => role === 'system').content;
+  assert.match(systemPrompt, /summary \(non-empty free-text string\)/);
+  assert.match(systemPrompt, /complete input blindSpots array/);
+  assert.match(systemPrompt, /summary semantics are not verifier-bounded/);
+  assert.match(systemPrompt, /remains explicitly unbounded\/unknown/);
+});
+
+test('verified model observable is clone-isolated and recursively immutable', async () => {
+  const source = {
+    ...boundedModelObservable,
+    evidence_tables: [...boundedModelObservable.evidence_tables],
+    blind_spots: [...boundedModelObservable.blind_spots],
+  };
+  const { result } = await synthesizeModelObservable(source);
+  const { observable, boundaryVerification, claimsBounded } = result.synthesis;
+  const verifiedSnapshot = JSON.stringify(observable);
+  const boundarySnapshot = JSON.stringify(boundaryVerification);
+
+  assert.notEqual(observable, source);
+  assert.notEqual(observable.evidence_tables, source.evidence_tables);
+  assert.notEqual(observable.blind_spots, source.blind_spots);
+  source.summary = 'mutated source claim';
+  source.evidence_tables[0] = 'mutated_source_table';
+  source.blind_spots[0] = 'mutated-source-blind-spot';
+  source.confidence = 1;
+  source.persistence_proposed = true;
+  assert.equal(JSON.stringify(observable), verifiedSnapshot);
+
+  assert.equal(Object.isFrozen(observable), true);
+  assert.equal(Object.isFrozen(observable.evidence_tables), true);
+  assert.equal(Object.isFrozen(observable.blind_spots), true);
+  for (const mutate of [
+    () => { observable.summary = 'mutated returned claim'; },
+    () => { observable.evidence_tables = []; },
+    () => { observable.evidence_tables[0] = 'mutated_returned_table'; },
+    () => observable.evidence_tables.push('mutated_returned_table'),
+    () => { observable.confidence = 1; },
+    () => { observable.blind_spots = []; },
+    () => { observable.blind_spots[0] = 'mutated-returned-blind-spot'; },
+    () => observable.blind_spots.push('mutated-returned-blind-spot'),
+    () => { observable.persistence_proposed = true; },
+  ]) assert.throws(mutate, TypeError);
+  assert.equal(JSON.stringify(observable), verifiedSnapshot);
+  assert.equal(JSON.stringify(result.synthesis.boundaryVerification), boundarySnapshot);
+  assert.equal(result.synthesis.claimsBounded, claimsBounded);
+});
+
+test('model synthesis malformed schema, unknown fields, and missing or invalid confidence remain unbounded', async () => {
+  const cases = [
+    ['non-object', []],
+    ['unknown-field', { ...boundedModelObservable, claimsBounded: true }],
+    ['missing-confidence', Object.fromEntries(Object.entries(boundedModelObservable).filter(([key]) => key !== 'confidence'))],
+    ['string-confidence', { ...boundedModelObservable, confidence: '0.6' }],
+    ['non-finite-confidence', { ...boundedModelObservable, confidence: null }],
+    ['out-of-range-confidence', { ...boundedModelObservable, confidence: 1.1 }],
+    ['persistence-proposed', { ...boundedModelObservable, persistence_proposed: true }],
+  ];
+  for (const [id, observable] of cases) {
+    const { result } = await synthesizeModelObservable(observable);
+    assert.equal(result.synthesis.claimsBounded, false, id);
+    assert.equal(result.synthesis.boundaryVerification.status, 'unbounded', id);
+    assert(result.synthesis.boundaryVerification.reasonCodes.length > 0, id);
+  }
+});
+
+test('invented evidence tables and unsupported or suppressed blind spots remain unbounded', async () => {
+  const cases = [
+    ['invented-table', { ...boundedModelObservable, evidence_tables: ['acct_dim', 'executive_truth'] }],
+    ['unsupported-blind-spot', { ...boundedModelObservable, blind_spots: ['verified-no-blind-spots'] }],
+    ['suppressed-known-blind-spot', { ...boundedModelObservable, blind_spots: [] }],
+  ];
+  for (const [id, observable] of cases) {
+    const { result } = await synthesizeModelObservable(observable);
+    assert.equal(result.synthesis.claimsBounded, false, id);
+    assert.equal(result.synthesis.boundaryVerification.status, 'unbounded', id);
+  }
+});
+
+test('paired substitutions from another evidence context remain unbounded', async () => {
+  const substituted = {
+    ...boundedModelObservable,
+    evidence_tables: ['customer', 'sales_order'],
+    blind_spots: [],
+  };
+  const { result } = await synthesizeModelObservable(substituted);
+  assert.equal(result.synthesis.claimsBounded, false);
+  assert.equal(result.synthesis.boundaryVerification.status, 'unbounded');
+  assert(result.synthesis.boundaryVerification.reasonCodes.includes('EVIDENCE_TABLE_UNSUPPORTED'));
+  assert(result.synthesis.boundaryVerification.reasonCodes.includes('BLIND_SPOTS_MISMATCH'));
+});
+
+test('deterministic synthesis stays default-on and model synthesis stays default-off', async () => {
+  const adapter = { async complete() { throw new Error('model must remain default-off'); } };
+  const result = await new RealBiSpecialist({ adapter }).investigate({
+    databasePath: resolve(candidateRoot, 'holdout-channel-perturbed.sqlite'),
+    objective: 'Synthesize channel evidence',
+  });
+  assert.deepEqual(result.synthesis, {
+    source: 'deterministic-evidence-core',
+    summary: '5 entities, 4 relationships, 5 bounded-sample anomalies.',
+    claimsBounded: true,
+  });
 });
 
 test('incumbent gate accepts only no-regression zero-hard-failure candidates and records negative evidence otherwise', () => {

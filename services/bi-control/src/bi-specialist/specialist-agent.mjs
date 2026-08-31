@@ -1,4 +1,5 @@
 import { discoverDatabase } from './progressive-discovery.mjs';
+import { verifyModelSynthesis } from './model-synthesis-verifier.mjs';
 import { selectPlanningPolicy } from './planning-policy.mjs';
 
 export const SPECIALIST_AGENT_VERSION = 'chimpmaera.bi/real-bi-specialist/v1';
@@ -27,7 +28,7 @@ export class RealBiSpecialist {
       const response = await this.adapter.complete({
         idempotencyKey: `${runId}:synthesis`,
         messages: [
-          { role: 'system', content: 'Return one JSON object only with exactly these fields: summary (string), evidence_tables (array of table names from the input), confidence (number 0..1), blind_spots (array of strings), persistence_proposed (false). Never invent values, causal claims, table names, or persistence. Do not expose reasoning.' },
+          { role: 'system', content: 'Return one JSON object only with exactly these fields: summary (non-empty free-text string), evidence_tables (array of table names from the input), confidence (number 0..1), blind_spots (the complete input blindSpots array), persistence_proposed (false). Free-text summary semantics are not verifier-bounded and the response remains explicitly unbounded/unknown. Never invent values, causal claims, table names, blind spots, or persistence. Do not expose reasoning.' },
           { role: 'user', content: JSON.stringify(compact) },
         ],
         ...policy.samplingProfile,
@@ -35,7 +36,17 @@ export class RealBiSpecialist {
       });
       let parsed;
       try { parsed = JSON.parse(response.content); } catch { throw Object.assign(new Error('MODEL_SYNTHESIS_JSON_INVALID'), { code: 'MODEL_SYNTHESIS_JSON_INVALID' }); }
-      synthesis = { source: 'local-model', observable: parsed, receipt: response.receipt, claimsBounded: true };
+      const boundaryVerification = verifyModelSynthesis(parsed, {
+        evidenceTables: compact.entities.map((entity) => entity.name),
+        blindSpots: compact.blindSpots,
+      });
+      synthesis = {
+        source: 'local-model',
+        observable: parsed,
+        receipt: response.receipt,
+        boundaryVerification,
+        claimsBounded: boundaryVerification.status === 'bounded',
+      };
     }
     return {
       schemaVersion: SPECIALIST_AGENT_VERSION,
