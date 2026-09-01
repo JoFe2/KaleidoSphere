@@ -22,6 +22,11 @@ export const SBA_EXTERNAL_CAPABILITIES = Object.freeze([
   Object.freeze({ id: 'superset.trusted-rollback', action: 'trusted-rollback', authority: 'trusted-approval-only', externalIntent: false }),
 ]);
 
+// FND-KS-02: the in-process dispatch surface and the consumer-profile schema are
+// runtime-owned constants; no caller-authored expected value may substitute for them.
+export const SBA_CONSUMER_PROFILE_SCHEMA = 'superset-bi-agent.external/consumer-profile/v1';
+export const SBA_RUNTIME_DISPATCH_ACTIONS = Object.freeze(['status', 'discovery', 'analyze', 'plan', 'preview', 'readback']);
+
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const SAFE_TEXT = /^[^\u0000-\u001f\u007f]{3,500}$/;
 const UNSAFE_TEXT = /(?:\b(?:select|insert|update|delete|merge|drop|alter|create|truncate|grant|revoke|exec(?:ute)?|dbcc|backup|restore)\b|\braw\s+sql\b|\bsql\s*lab\b|password|credential|secret|api[_ -]?key|bearer|token|cookie|all\s+raw\s+rows?|ignore\s+(?:all\s+)?previous|system\s+prompt)/i;
@@ -93,12 +98,133 @@ export function capabilityAttestationV2() {
   return Object.freeze({ ...body, attestation: { algorithm: 'sha256-canonical-json', digest: sha256Digest(body) } });
 }
 
+const CONSUMER_BOUNDARY_SURFACES = [
+  { surface: 'sourceDatabaseCredentials', flag: 'sourceDatabaseCredentialsAccepted' },
+  { surface: 'freeSql', flag: 'freeSqlAccepted' },
+  { surface: 'rawSourceRows', flag: 'rawSourceRowsReturned' },
+  { surface: 'modelMutation', flag: 'modelMutationAuthority' },
+  { surface: 'directSupersetMutationIntent', flag: 'directSupersetMutationIntentAccepted' },
+];
+
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const item of Object.values(value)) deepFreeze(item);
+  }
+  return value;
+}
+
+function consumerProfileBody() {
+  const attestation = capabilityAttestationV2();
+  const supported = SBA_EXTERNAL_CAPABILITIES
+    .filter((item) => item.externalIntent !== false)
+    .map((item) => ({ id: item.id, action: item.action, authority: item.authority }));
+  const registryActions = supported.map((item) => item.action);
+  if (registryActions.length !== SBA_RUNTIME_DISPATCH_ACTIONS.length
+    || SBA_RUNTIME_DISPATCH_ACTIONS.some((action) => !registryActions.includes(action))
+    || registryActions.some((action) => !SBA_RUNTIME_DISPATCH_ACTIONS.includes(action))) {
+    fail('EXTERNAL_BI_CONSUMER_PROFILE_RUNTIME_INCONSISTENT');
+  }
+  const partial = SBA_EXTERNAL_CAPABILITIES
+    .filter((item) => item.externalIntent === false)
+    .map((item) => ({ id: item.id, action: item.action, authority: item.authority, externalIntent: false }));
+  const unsupported = CONSUMER_BOUNDARY_SURFACES.map(({ surface, flag }) => {
+    if (attestation.boundaries[flag] === true) fail('EXTERNAL_BI_CONSUMER_PROFILE_BOUNDARY_WIDENED');
+    return { surface, accepted: false };
+  });
+  return {
+    schemaVersion: SBA_CONSUMER_PROFILE_SCHEMA,
+    product: { id: attestation.product.id, version: attestation.product.version },
+    contract: { id: attestation.contract.id, version: attestation.contract.version },
+    supported,
+    partial,
+    unsupported,
+    nonclaims: [
+      { id: 'graph-candidate-promotion', status: attestation.graph.candidatePromotion },
+      { id: 'persistent-superset-workflow', status: attestation.boundaries.persistentSupersetWorkflow },
+      { id: 'external-mutation-intent', status: 'none' },
+    ],
+    boundaries: { ...attestation.boundaries },
+  };
+}
+
+export function externalBiConsumerProfileV1() {
+  const body = consumerProfileBody();
+  return deepFreeze({
+    ...body,
+    attestation: { algorithm: 'sha256-canonical-json', digest: sha256Digest(body) },
+  });
+}
+
+function profilePlainData(value) {
+  if (value === null || typeof value === 'boolean' || typeof value === 'string') return;
+  if (typeof value === 'number') {
+    if (!Number.isFinite(value)) fail('EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED');
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) profilePlainData(item);
+    return;
+  }
+  if (typeof value !== 'object' || Object.getPrototypeOf(value) !== Object.prototype) {
+    fail('EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED');
+  }
+  for (const name of Reflect.ownKeys(value)) {
+    if (typeof name === 'symbol') fail('EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED');
+    const descriptor = Object.getOwnPropertyDescriptor(value, name);
+    if (!descriptor.enumerable || descriptor.get || descriptor.set) fail('EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED');
+    profilePlainData(value[name]);
+  }
+}
+
+function profileExact(value, allowed, required = allowed) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) {
+    fail('EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED');
+  }
+  const keys = Object.keys(value);
+  if (keys.some((key) => !allowed.includes(key)) || required.some((key) => !keys.includes(key))) {
+    fail('EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED');
+  }
+}
+
+const CONSUMER_PROFILE_SURFACE = ['schemaVersion', 'product', 'contract', 'supported', 'partial', 'unsupported', 'nonclaims', 'boundaries', 'attestation'];
+
+export function validateConsumerProfileV1(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) fail('EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED');
+  profilePlainData(value);
+  profileExact(value, CONSUMER_PROFILE_SURFACE);
+  profileExact(value.product, ['id', 'version']);
+  profileExact(value.contract, ['id', 'version']);
+  for (const key of ['supported', 'partial', 'unsupported', 'nonclaims']) {
+    if (!Array.isArray(value[key])) fail('EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED');
+  }
+  for (const item of value.supported) profileExact(item, ['id', 'action', 'authority']);
+  for (const item of value.partial) profileExact(item, ['id', 'action', 'authority', 'externalIntent']);
+  for (const item of value.unsupported) profileExact(item, ['surface', 'accepted']);
+  for (const item of value.nonclaims) profileExact(item, ['id', 'status']);
+  profileExact(value.boundaries, [
+    'sourceDatabaseCredentialsAccepted',
+    'freeSqlAccepted',
+    'rawSourceRowsReturned',
+    'modelMutationAuthority',
+    'directSupersetMutationIntentAccepted',
+    'persistentSupersetWorkflow',
+  ]);
+  profileExact(value.attestation, ['algorithm', 'digest']);
+  if (value.schemaVersion !== SBA_CONSUMER_PROFILE_SCHEMA) fail('EXTERNAL_BI_CONSUMER_PROFILE_VERSION_DENIED');
+  const body = Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'attestation'));
+  if (value.attestation.algorithm !== 'sha256-canonical-json'
+    || value.attestation.digest !== sha256Digest(body)) fail('EXTERNAL_BI_CONSUMER_PROFILE_INTEGRITY_DENIED');
+  if (canonicalJson(body) !== canonicalJson(consumerProfileBody())) fail('EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED');
+  return deepFreeze(structuredClone(value));
+}
+
 export function validateExternalIntentV2(value) {
   exact(value, ['schemaVersion', 'requestId', 'action', 'input'], ['schemaVersion', 'requestId', 'action']);
   if (value.schemaVersion !== SBA_INTENT_REQUEST_SCHEMA || !ID.test(value.requestId ?? '')) fail('EXTERNAL_BI_REQUEST_IDENTITY_DENIED');
   const input = value.input ?? {};
   const action = value.action;
-  if (!['status', 'discovery', 'analyze', 'plan', 'preview', 'readback'].includes(action)) fail('EXTERNAL_BI_ACTION_DENIED');
+  if (!SBA_RUNTIME_DISPATCH_ACTIONS.includes(action)) fail('EXTERNAL_BI_ACTION_DENIED');
   if (['status', 'analyze', 'readback'].includes(action)) exact(input, [], []);
   if (action === 'discovery') {
     exact(input, ['command', 'sessionId', 'field', 'value'], ['command', 'sessionId']);

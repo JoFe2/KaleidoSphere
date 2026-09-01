@@ -27,15 +27,13 @@
           "version": "v0.18.8",
           "supported": true
         },
-        "runtime": { "state": "missing" },
-        "transport": { "state": "missing" },
-        "capabilityManifest": { "state": "missing", "observedDigest": null },
-        "configuration": { "state": "complete", "missing": [] }
+        "runtime": {"state": "missing"},
+        "transport": {"state": "missing"},
+        "capabilityManifest": {"state": "missing", "observedDigest": null},
+        "configuration": {"state": "complete", "missing": []}
       }
     },
-    "guidance": {
-      "capabilityKey": "bi.preview.create"
-    },
+    "guidance": {"capabilityKey": "bi.preview.create"},
     "template": {
       "profile": {
         "schemaVersion": "kaleidosphere.portable-companion/profile-template/v1",
@@ -49,9 +47,7 @@
           "objectiveRef": "${KS_SYNTHETIC_OBJECTIVE_REF}",
           "evidenceRef": "${KS_SYNTHETIC_EVIDENCE_REF}"
         },
-        "secretReferences": [
-          { "id": "synthetic-access", "ref": "${KS_SYNTHETIC_ACCESS_REF}" }
-        ],
+        "secretReferences": [{"id": "synthetic-access", "ref": "${KS_SYNTHETIC_ACCESS_REF}"}],
         "constraints": {
           "dispatch": false,
           "allowRuntimeDispatch": false,
@@ -75,20 +71,14 @@
           "liveObservationClaim": false,
           "mutable": false,
           "claims": {
-            "observedFacts": [
-              { "id": "synthetic-fixture-loaded", "claimClass": "observed-fact", "statement": "A deterministic synthetic demo fixture was supplied to the local utility." }
-            ],
-            "computedFacts": [
-              { "id": "synthetic-flow-bound", "claimClass": "computed-fact", "statement": "The envelope binds the canonical digest of this synthetic receipt payload." }
-            ],
-            "inferredCandidates": [
-              { "id": "separate-runtime-required", "claimClass": "inferred-candidate", "statement": "Any later runtime result would require separate trusted execution and verification." }
-            ],
+            "observedFacts": [{"id": "synthetic-fixture-loaded", "claimClass": "observed-fact", "statement": "A deterministic synthetic demo fixture was supplied to the local utility."}],
+            "computedFacts": [{"id": "synthetic-flow-bound", "claimClass": "computed-fact", "statement": "The envelope binds the canonical digest of this synthetic receipt payload."}],
+            "inferredCandidates": [{"id": "separate-runtime-required", "claimClass": "inferred-candidate", "statement": "Any later runtime result would require separate trusted execution and verification."}],
             "nonClaims": [
-              { "id": "not-live-evidence", "claimClass": "non-claim", "statement": "This synthetic demo is not live runtime evidence." },
-              { "id": "not-bi-truth", "claimClass": "non-claim", "statement": "Local integrity does not establish BI correctness or factual truth." },
-              { "id": "not-signing-authority", "claimClass": "non-claim", "statement": "The fixture grants no signing or evidence authority." },
-              { "id": "not-production-trust", "claimClass": "non-claim", "statement": "The fixture public key is not a production trust anchor." }
+              {"id": "not-live-evidence", "claimClass": "non-claim", "statement": "This synthetic demo is not live runtime evidence."},
+              {"id": "not-bi-truth", "claimClass": "non-claim", "statement": "Local integrity does not establish BI correctness or factual truth."},
+              {"id": "not-signing-authority", "claimClass": "non-claim", "statement": "The fixture grants no signing or evidence authority."},
+              {"id": "not-production-trust", "claimClass": "non-claim", "statement": "The fixture public key is not a production trust anchor."}
             ]
           }
         },
@@ -104,7 +94,7 @@
             "contractVersion": "2.0.0",
             "capabilityId": "bi.readback.read",
             "runtimeIntent": "readback",
-            "manifestDigest": "sha256:2273bd6d26dd0e5ac4878c474b19499920ef2d6257d0cec6a6bfad044de0974e"
+            "manifestDigest": "sha256:f1fa1c26536db17fd4c2a4bc248ff94638460bc8bad214fd03519aa259b2b18d"
           },
           "source": {
             "repository": "JoFe2/KaleidoSphere",
@@ -117,18 +107,18 @@
         "signature": {
           "algorithm": "Ed25519",
           "encoding": "base64url",
-          "keyId": "ks-synthetic-demo-fixture-v1",
-          "value": "4egKrVO6NmEpvVDsP_T9ytBVv6kfMm0EK4ZX8q2vXmF7Xt4ztA1bKZarCyJfIZoQvVuUL1wEHnmVM9jj3tYoDg"
+          "keyId": "ks-synthetic-demo-fixture-v2",
+          "value": "_BrK9Yi5aqibyprO41EOxqd0A0w4tK4NdbQIYdyb5CrRV1IYfVHpZi3iaL1i6yPW_0vfPa4yGI3frDt_3TvhAQ"
         }
       },
       "context": {
         "schemaVersion": "kaleidosphere.portable-companion/receipt-verification-context/v1",
         "trustClass": "synthetic-fixture-only",
-        "keyId": "ks-synthetic-demo-fixture-v1",
+        "keyId": "ks-synthetic-demo-fixture-v2",
         "publicKey": {
           "format": "spki-der",
           "encoding": "base64",
-          "value": "MCowBQYDK2VwAyEADhXRqqSQtxpWLIehwWpbJ6/hRtlq1ZYBqao7kHhmsFY="
+          "value": "MCowBQYDK2VwAyEAgRx/l2Oi/pe37hiuAxg0kG92Na/YHj2XHMY9D7sBJ4k="
         }
       }
     }

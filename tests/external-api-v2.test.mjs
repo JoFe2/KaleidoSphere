@@ -13,6 +13,7 @@ import {
   capabilityAttestationV2,
   executeExternalIntentV2,
   SBA_ATTESTATION_SCHEMA,
+  SBA_CONSUMER_PROFILE_SCHEMA,
   SBA_EXTERNAL_CAPABILITIES,
   SBA_EXTERNAL_CONTRACT_VERSION,
   SBA_INTENT_REQUEST_SCHEMA,
@@ -21,6 +22,12 @@ import {
   sha256Digest,
   validateExternalIntentV2,
 } from '../services/bi-agent/src/external-api-v2.mjs';
+
+function assertDeepFrozen(value) {
+  if (!value || typeof value !== 'object') return;
+  assert.equal(Object.isFrozen(value), true);
+  Object.values(value).forEach(assertDeepFrozen);
+}
 
 const request = (action, input = undefined) => ({
   schemaVersion: SBA_INTENT_REQUEST_SCHEMA,
@@ -91,7 +98,10 @@ test('M1a manifest deterministically projects only the six external capabilities
   assert.equal(first.boundaries.modelMutationAuthority, false);
   const body = Object.fromEntries(Object.entries(first).filter(([key]) => key !== 'integrity'));
   assert.equal(first.integrity.digest, sha256Digest(body));
-  assert.equal(validateCapabilityManifestV1(first), first);
+  const validated = validateCapabilityManifestV1(first);
+  assert.deepEqual(validated, first);
+  assert.notEqual(validated, first);
+  assertDeepFrozen(validated);
   assert.equal(requireExternalCapabilityV1(first, 'bi.analysis.run', 'analyze').authority, 'source-read-only');
 });
 
@@ -104,6 +114,14 @@ test('M1a manifest JSON Schema is closed, fixed-version and authority/evidence a
   assert.equal(schema.properties.capabilities.maxItems, 6);
   assert.equal(schema.properties.capabilities.items.properties.evidence.additionalProperties, false);
   assert.equal(schema.properties.boundaries.properties.modelMutationAuthority.const, false);
+  assert.ok(schema.required.includes('consumerProfile'));
+  assert.equal(schema.properties.consumerProfile.additionalProperties, false);
+  assert.equal(schema.properties.consumerProfile.properties.schemaVersion.const, SBA_CONSUMER_PROFILE_SCHEMA);
+  assert.equal(schema.properties.consumerProfile.properties.supported.const.length, 6);
+  assert.equal(schema.properties.consumerProfile.properties.partial.const.length, 3);
+  assert.equal(schema.properties.consumerProfile.properties.unsupported.const.length, 5);
+  assert.equal(schema.properties.consumerProfile.properties.boundaries.properties.modelMutationAuthority.const, false);
+  assert.equal(schema.properties.consumerProfile.properties.attestation.properties.algorithm.const, 'sha256-canonical-json');
 });
 
 function withRecomputedIntegrity(value) {
@@ -234,4 +252,253 @@ test('G3 tampering any result byte invalidates the canonical response digest', a
   tampered.result.catalogReady = false;
   const body = Object.fromEntries(Object.entries(tampered).filter(([key]) => key !== 'integrity'));
   assert.notEqual(tampered.integrity.digest, sha256Digest(body));
+});
+
+// S2 FND-KS-02: runtime-derived external BI consumer profile — every surface derived from
+// runtime-owned immutable inputs, digest-bound, fail-closed against caller-authored values.
+
+test('S2 consumer profile derives every attested surface from the runtime and binds a canonical digest', async () => {
+  const mod = await import('../services/bi-agent/src/external-api-v2.mjs');
+  const profile = mod.externalBiConsumerProfileV1();
+  assert.equal(profile.schemaVersion, 'superset-bi-agent.external/consumer-profile/v1');
+  assert.deepEqual(profile.product, { id: 'superset-bi-agent', version: SBA_PRODUCT_VERSION });
+  assert.deepEqual(profile.contract, { id: 'superset-bi-agent.external', version: SBA_EXTERNAL_CONTRACT_VERSION });
+  assert.deepEqual(profile.supported, SBA_EXTERNAL_CAPABILITIES.filter((item) => item.externalIntent !== false)
+    .map((item) => ({ id: item.id, action: item.action, authority: item.authority })));
+  assert.deepEqual(profile.supported.map((item) => item.action), ['status', 'discovery', 'analyze', 'plan', 'preview', 'readback']);
+  assert.deepEqual(profile.partial.map((item) => item.id), ['superset.trusted-apply', 'superset.trusted-readback', 'superset.trusted-rollback']);
+  assert(profile.partial.every((item) => item.authority === 'trusted-approval-only' && item.externalIntent === false));
+  assert.deepEqual(profile.unsupported.map((item) => item.surface), ['sourceDatabaseCredentials', 'freeSql', 'rawSourceRows', 'modelMutation', 'directSupersetMutationIntent']);
+  assert(profile.unsupported.every((item) => item.accepted === false));
+  assert.deepEqual(profile.nonclaims, [
+    { id: 'graph-candidate-promotion', status: 'none' },
+    { id: 'persistent-superset-workflow', status: 'trusted-preview-approval-apply-readback-rollback-only' },
+    { id: 'external-mutation-intent', status: 'none' },
+  ]);
+  assert.deepEqual(profile.boundaries, {
+    sourceDatabaseCredentialsAccepted: false,
+    freeSqlAccepted: false,
+    rawSourceRowsReturned: false,
+    modelMutationAuthority: false,
+    directSupersetMutationIntentAccepted: false,
+    persistentSupersetWorkflow: 'trusted-preview-approval-apply-readback-rollback-only',
+  });
+  const body = Object.fromEntries(Object.entries(profile).filter(([key]) => key !== 'attestation'));
+  assert.equal(profile.attestation.algorithm, 'sha256-canonical-json');
+  assert.equal(profile.attestation.digest, sha256Digest(body));
+  assert.deepEqual(mod.externalBiConsumerProfileV1(), profile);
+});
+
+test('S2 consumer profile supported surface matches the in-process dispatch surface and partial is not externally dispatchable', async () => {
+  const mod = await import('../services/bi-agent/src/external-api-v2.mjs');
+  const profile = mod.externalBiConsumerProfileV1();
+  for (const item of profile.supported) {
+    const input = item.action === 'discovery' ? { command: 'start', sessionId: 's2-session' }
+      : item.action === 'plan' || item.action === 'preview' ? { objective: 'Review weekly order value' }
+        : undefined;
+    const result = await executeExternalIntentV2(request(item.action, input), handlers());
+    assert.equal(result.capabilityAttestationDigest, capabilityAttestationV2().attestation.digest);
+  }
+  for (const item of profile.partial) {
+    assert.throws(() => validateExternalIntentV2(request(item.action)), /EXTERNAL_BI_ACTION_DENIED/);
+  }
+  for (const item of profile.unsupported) assert.equal(item.accepted, false);
+});
+
+test('S2 manifest embeds the runtime-derived consumer profile under its own integrity digest', async () => {
+  const mod = await import('../services/bi-agent/src/external-api-v2.mjs');
+  const manifest = capabilityManifestV1();
+  assert.deepEqual(manifest.consumerProfile, mod.externalBiConsumerProfileV1());
+  const body = Object.fromEntries(Object.entries(manifest).filter(([key]) => key !== 'integrity'));
+  assert.equal(manifest.integrity.digest, sha256Digest(body));
+  const validated = validateCapabilityManifestV1(manifest);
+  assert.deepEqual(validated, manifest);
+  assert.notEqual(validated, manifest);
+  assert.notEqual(validated.consumerProfile, manifest.consumerProfile);
+  assertDeepFrozen(validated);
+});
+
+test('S2 manifest validation no longer accepts a caller-overridden expected attestation for stale data', () => {
+  const stale = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  stale.product.version = 'v0.17.0';
+  withRecomputedIntegrity(stale);
+  const forged = structuredClone(capabilityAttestationV2());
+  forged.product.version = 'v0.17.0';
+  assert.throws(() => validateCapabilityManifestV1(stale, forged), /CAPABILITY_MANIFEST_STALE_DENIED/);
+});
+
+test('S2 consumer profile validator fails closed for stale, substituted, paired, re-digested and non-owned forgeries', async () => {
+  const mod = await import('../services/bi-agent/src/external-api-v2.mjs');
+  const validate = mod.validateConsumerProfileV1;
+  const source = mod.externalBiConsumerProfileV1();
+  const clone = (value) => JSON.parse(JSON.stringify(value));
+  const recompute = (value) => {
+    const body = Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'attestation'));
+    value.attestation = { algorithm: 'sha256-canonical-json', digest: sha256Digest(body) };
+    return value;
+  };
+  const forged = (mutate) => {
+    const value = clone(source);
+    mutate(value);
+    return recompute(value);
+  };
+
+  assert.throws(() => validate(forged((value) => { value.product.version = 'v0.17.0'; })), /EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED/);
+  assert.throws(() => validate(forged((value) => { value.contract.version = '3.0.0'; })), /EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED/);
+
+  const paired = forged((value) => {
+    const swapped = value.supported[0].authority;
+    value.supported[0].authority = value.supported[3].authority;
+    value.supported[3].authority = swapped;
+  });
+  assert.throws(() => validate(paired), /EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED/);
+
+  const crossSurface = forged((value) => {
+    value.supported.push(value.partial[0]);
+    value.partial.shift();
+  });
+  assert.throws(() => validate(crossSurface), /EXTERNAL_BI_CONSUMER_PROFILE_(?:DRIFT|SURFACE)_DENIED/);
+
+  assert.throws(() => validate(forged((value) => {
+    value.supported.push({ id: 'bi.sql.execute', action: 'sql', authority: 'source-read-only' });
+  })), /EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED/);
+  assert.throws(() => validate(forged((value) => {
+    value.supported.push({ id: 'superset.trusted-apply', action: 'trusted-apply', authority: 'trusted-approval-only' });
+  })), /EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED/);
+  assert.throws(() => validate(forged((value) => {
+    value.boundaries.freeSqlAccepted = true;
+  })), /EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED/);
+
+  assert.throws(() => validate(forged((value) => {
+    value.schemaVersion = 'superset-bi-agent.external/consumer-profile/v0';
+  })), /EXTERNAL_BI_CONSUMER_PROFILE_VERSION_DENIED/);
+
+  const badDigest = clone(source);
+  badDigest.attestation.digest = `sha256:${'0'.repeat(64)}`;
+  assert.throws(() => validate(badDigest), /EXTERNAL_BI_CONSUMER_PROFILE_INTEGRITY_DENIED/);
+
+  const extraKey = clone(source);
+  extraKey.backdoor = true;
+  assert.throws(() => validate(extraKey), /EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  const missingKey = clone(source);
+  delete missingKey.nonclaims;
+  assert.throws(() => validate(missingKey), /EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED/);
+});
+
+test('S2 consumer profile validator rejects Proxy, accessor, symbol and prototype-hidden inputs', async () => {
+  const mod = await import('../services/bi-agent/src/external-api-v2.mjs');
+  const validate = mod.validateConsumerProfileV1;
+  const source = mod.externalBiConsumerProfileV1();
+
+  const fabricated = new Proxy(JSON.parse(JSON.stringify(source)), {
+    ownKeys(target) { return [...Reflect.ownKeys(target), 'backdoor']; },
+    getOwnPropertyDescriptor(target, key) {
+      return key === 'backdoor' ? { value: true, enumerable: true, configurable: true } : Reflect.getOwnPropertyDescriptor(target, key);
+    },
+    get(target, key) { return key === 'backdoor' ? true : target[key]; },
+  });
+  assert.throws(() => validate(fabricated), /EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  const accessor = JSON.parse(JSON.stringify(source));
+  const supported = accessor.supported;
+  Object.defineProperty(accessor, 'supported', { get: () => supported, configurable: true });
+  assert.throws(() => validate(accessor), /EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED/);
+
+  const symbolic = JSON.parse(JSON.stringify(source));
+  symbolic[Symbol('hidden')] = true;
+  assert.throws(() => validate(symbolic), /EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED/);
+
+  class ProfileCarrier {}
+  const hidden = Object.assign(Object.create(ProfileCarrier.prototype), JSON.parse(JSON.stringify(source)));
+  assert.throws(() => validate(hidden), /EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED/);
+
+  const arrayProxy = new Proxy([source], {});
+  assert.throws(() => validate(arrayProxy), /EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED/);
+});
+
+test('S2 consumer profile result is deeply immutable and never aliases inputs or runtime state', async () => {
+  const mod = await import('../services/bi-agent/src/external-api-v2.mjs');
+  const profile = mod.externalBiConsumerProfileV1();
+  assert.throws(() => { profile.supported[0].authority = 'x'; }, TypeError);
+  assert.throws(() => { profile.product.version = 'v9.9.9'; }, TypeError);
+  assert.throws(() => { profile.boundaries.freeSqlAccepted = true; }, TypeError);
+
+  const input = JSON.parse(JSON.stringify(profile));
+  const validated = mod.validateConsumerProfileV1(input);
+  assert.notEqual(validated, input);
+  assert.notEqual(validated.supported, input.supported);
+  assert.notEqual(validated.supported, profile.supported);
+  assert.deepEqual(validated, profile);
+  assert.throws(() => { validated.supported.pop(); }, TypeError);
+
+  input.product.version = 'v0.0.1';
+  input.attestation.digest = `sha256:${'0'.repeat(64)}`;
+  assert.deepEqual(validated, mod.externalBiConsumerProfileV1());
+
+  assert.notEqual(profile.supported, SBA_EXTERNAL_CAPABILITIES);
+});
+
+test('S2 manifest consumer profile forgeries fail closed', () => {
+  const drifted = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  drifted.consumerProfile.product.version = 'v0.17.0';
+  withRecomputedIntegrity(drifted);
+  assert.throws(() => validateCapabilityManifestV1(drifted), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_DRIFT_DENIED/);
+
+  const tampered = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  tampered.consumerProfile.boundaries.freeSqlAccepted = true;
+  assert.throws(() => validateCapabilityManifestV1(tampered), /CAPABILITY_MANIFEST_INTEGRITY_DENIED/);
+
+  const backdoor = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  backdoor.consumerProfile.backdoor = true;
+  withRecomputedIntegrity(backdoor);
+  assert.throws(() => validateCapabilityManifestV1(backdoor), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  const missingProfile = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  delete missingProfile.consumerProfile;
+  withRecomputedIntegrity(missingProfile);
+  assert.throws(() => validateCapabilityManifestV1(missingProfile), /CAPABILITY_MANIFEST_SURFACE_DENIED/);
+
+  const hidden = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  Object.defineProperty(hidden.consumerProfile, 'forged', {value: true, enumerable: false});
+  assert.throws(() => validateCapabilityManifestV1(hidden), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+  assert.equal(hidden.consumerProfile.forged, true);
+
+  const symbolic = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  symbolic.consumerProfile[Symbol('forged')] = true;
+  assert.throws(() => validateCapabilityManifestV1(symbolic), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  let getterCalls = 0;
+  const accessor = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  Object.defineProperty(accessor.consumerProfile, 'forged', {
+    get() { getterCalls += 1; return true; },
+    enumerable: false,
+  });
+  assert.throws(() => validateCapabilityManifestV1(accessor), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+  assert.equal(getterCalls, 0);
+
+  const proxied = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  proxied.consumerProfile = new Proxy(proxied.consumerProfile, {});
+  assert.throws(() => validateCapabilityManifestV1(proxied), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  const carried = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  carried.consumerProfile = Object.assign(Object.create({forged: true}), carried.consumerProfile);
+  assert.throws(() => validateCapabilityManifestV1(carried), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+});
+
+test('S2 manifest validation returns a detached deeply immutable value', () => {
+  const input = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  const validated = validateCapabilityManifestV1(input);
+
+  assert.deepEqual(validated, input);
+  assert.notEqual(validated, input);
+  assert.notEqual(validated.capabilities, input.capabilities);
+  assert.notEqual(validated.consumerProfile, input.consumerProfile);
+  assertDeepFrozen(validated);
+
+  input.capabilities[0].authority = 'forged';
+  input.consumerProfile.product.version = 'v0.0.0';
+  assert.notEqual(validated.capabilities[0].authority, input.capabilities[0].authority);
+  assert.notEqual(validated.consumerProfile.product.version, input.consumerProfile.product.version);
+  assert.throws(() => { validated.consumerProfile.product.version = 'v0.0.0'; }, TypeError);
 });

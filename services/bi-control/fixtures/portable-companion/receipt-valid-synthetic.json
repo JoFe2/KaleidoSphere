@@ -67,7 +67,7 @@
       "contractVersion": "2.0.0",
       "capabilityId": "bi.readback.read",
       "runtimeIntent": "readback",
-      "manifestDigest": "sha256:2273bd6d26dd0e5ac4878c474b19499920ef2d6257d0cec6a6bfad044de0974e"
+      "manifestDigest": "sha256:f1fa1c26536db17fd4c2a4bc248ff94638460bc8bad214fd03519aa259b2b18d"
     },
     "source": {
       "repository": "JoFe2/KaleidoSphere",
@@ -80,7 +80,7 @@
   "signature": {
     "algorithm": "Ed25519",
     "encoding": "base64url",
-    "keyId": "ks-synthetic-receipt-fixture-v1",
-    "value": "gWEilkE5Wl75mw8uLExyZu0uyoRKfYC2qqcQc2BYo5QP_m3ZQAX1oQR1QSf7fO0toI8qJy5vxgX5iyXibcC3CA"
+    "keyId": "ks-synthetic-receipt-fixture-v2",
+    "value": "VJvY1-59Kh30rZgv_vuJnWNWnkwX2vbg1dnIVw6RuiN9Gzz4NKG92-aY4K5mGm4JXpJ6UjJlnDry-BtCN7BXCw"
   }
 }

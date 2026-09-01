@@ -1,8 +1,10 @@
 import {
   canonicalJson,
   capabilityAttestationV2,
+  externalBiConsumerProfileV1,
   SBA_EXTERNAL_CAPABILITIES,
   sha256Digest,
+  validateConsumerProfileV1,
 } from './external-api-v2.mjs';
 
 export const KS_CAPABILITY_MANIFEST_SCHEMA = 'kaleidosphere.external/capability-manifest/v1';
@@ -16,6 +18,34 @@ const fail = (code) => {
   error.code = code;
   throw error;
 };
+
+function deepFreeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const item of Object.values(value)) deepFreeze(item);
+  }
+  return value;
+}
+
+function inspectEmbeddedConsumerProfile(value) {
+  try {
+    return {value: validateConsumerProfileV1(value), errorCode: null};
+  } catch (error) {
+    if (error?.code === 'EXTERNAL_BI_CONSUMER_PROFILE_ALIEN_INPUT_DENIED'
+      || error?.name === 'DataCloneError') {
+      fail('CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED');
+    }
+    if (error?.code === 'EXTERNAL_BI_CONSUMER_PROFILE_SURFACE_DENIED') {
+      return {value: null, errorCode: 'CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED'};
+    }
+    if (error?.code === 'EXTERNAL_BI_CONSUMER_PROFILE_VERSION_DENIED'
+      || error?.code === 'EXTERNAL_BI_CONSUMER_PROFILE_INTEGRITY_DENIED'
+      || error?.code === 'EXTERNAL_BI_CONSUMER_PROFILE_DRIFT_DENIED') {
+      return {value: null, errorCode: 'CAPABILITY_MANIFEST_CONSUMER_PROFILE_DRIFT_DENIED'};
+    }
+    throw error;
+  }
+}
 
 function exact(value, allowed, required = allowed) {
   if (!value || typeof value !== 'object' || Array.isArray(value)
@@ -52,6 +82,7 @@ function manifestBody(attestation) {
       digest: attestation.attestation.digest,
     },
     capabilities: externalCapabilities.map(projectedCapability),
+    consumerProfile: externalBiConsumerProfileV1(),
     boundaries: {
       externalIntentOnly: true,
       sourceDatabaseCredentialsAccepted: false,
@@ -66,14 +97,17 @@ function manifestBody(attestation) {
 
 export function capabilityManifestV1() {
   const body = manifestBody(capabilityAttestationV2());
-  return Object.freeze({
+  return deepFreeze({
     ...body,
-    integrity: Object.freeze({algorithm: 'sha256-canonical-json', digest: sha256Digest(body)}),
+    integrity: {algorithm: 'sha256-canonical-json', digest: sha256Digest(body)},
   });
 }
 
-export function validateCapabilityManifestV1(value, expectedAttestation = capabilityAttestationV2()) {
-  exact(value, ['schemaVersion', 'manifestVersion', 'product', 'contract', 'attestation', 'capabilities', 'boundaries', 'integrity']);
+export function validateCapabilityManifestV1(value) {
+  // FND-KS-02: the expected attestation is runtime-derived, never caller-authored;
+  // a caller-supplied substitution can no longer stand in for the live runtime.
+  const expectedAttestation = capabilityAttestationV2();
+  exact(value, ['schemaVersion', 'manifestVersion', 'product', 'contract', 'attestation', 'capabilities', 'consumerProfile', 'boundaries', 'integrity']);
   exact(value.product, ['id', 'version', 'component']);
   exact(value.contract, ['id', 'version']);
   exact(value.attestation, ['schemaVersion', 'digest']);
@@ -89,6 +123,11 @@ export function validateCapabilityManifestV1(value, expectedAttestation = capabi
   exact(value.integrity, ['algorithm', 'digest']);
   if (!Array.isArray(value.capabilities)) fail('CAPABILITY_MANIFEST_INVALID');
 
+  // Run the profile's hardened plain-data checks before canonical hashing can
+  // project away a hidden or symbolic forgery. Semantic failures remain
+  // deferred so a changed manifest byte still reports the outer digest error.
+  const profileValidation = inspectEmbeddedConsumerProfile(value.consumerProfile);
+
   const body = Object.fromEntries(Object.entries(value).filter(([key]) => key !== 'integrity'));
   if (value.integrity.algorithm !== 'sha256-canonical-json'
     || value.integrity.digest !== sha256Digest(body)) fail('CAPABILITY_MANIFEST_INTEGRITY_DENIED');
@@ -101,6 +140,9 @@ export function validateCapabilityManifestV1(value, expectedAttestation = capabi
     || canonicalJson(value.attestation) !== canonicalJson(expectedBody.attestation)) {
     fail('CAPABILITY_MANIFEST_STALE_DENIED');
   }
+
+  if (profileValidation.errorCode !== null) fail(profileValidation.errorCode);
+  const consumerProfile = profileValidation.value;
 
   const seen = new Set();
   for (const item of value.capabilities) {
@@ -122,7 +164,14 @@ export function validateCapabilityManifestV1(value, expectedAttestation = capabi
   if (canonicalJson(value.boundaries) !== canonicalJson(expectedBody.boundaries)) {
     fail('CAPABILITY_MANIFEST_BOUNDARY_DRIFT_DENIED');
   }
-  return value;
+  let detached;
+  try {
+    detached = structuredClone(value);
+  } catch {
+    fail('CAPABILITY_MANIFEST_INVALID');
+  }
+  detached.consumerProfile = consumerProfile;
+  return deepFreeze(detached);
 }
 
 export function requireExternalCapabilityV1(value, capabilityId, action) {
