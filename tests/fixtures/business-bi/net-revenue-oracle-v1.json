@@ -36,14 +36,23 @@
       }
     },
     "deltaMinorUnits": 70059,
-    "unassignedUnknownCount": 1,
+    "unknown": {
+      "count": 4,
+      "quantifiedAmountMinorUnits": 1977,
+      "unquantifiedCount": 2,
+      "unassigned": {
+        "count": 1,
+        "quantifiedAmountMinorUnits": 1200,
+        "unquantifiedCount": 0
+      }
+    },
     "excludedOutOfScopeCount": 3
   },
   "receipt": {
     "binding": "sha256-of-exact-file-bytes",
     "contract": {
       "path": "contracts/business-bi/v1/net-revenue.metric.json",
-      "sha256": "77ff8b89dcecc9d6bb23efff21d9e4ba4a1c1f11ef97616a923a46d4eee14a48"
+      "sha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
     },
     "holdout": {
       "path": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",

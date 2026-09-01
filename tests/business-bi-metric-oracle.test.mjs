@@ -45,6 +45,26 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const SYNTHETIC_ID = /^s-\d{3,}$/;
 const PERIOD_NAMES = Object.freeze(['current', 'comparison']);
 const REQUIRED_NONCLAIM_MARKERS = ['production', 'customer', 'general bi', 'dashboard', 'release or publish'];
+const ADMITTED_MINOR_UNITS_PER_MAJOR_UNIT = 100;
+const ADMITTED_RECORD_RULES = Object.freeze({
+  sale: Object.freeze({
+    contribution: 'amount_minor_units added to the period net total',
+    amountConstraint: 'integer >= 0; a null amount routes the row to the UNKNOWN channel',
+  }),
+  credit: Object.freeze({
+    contribution: 'amount_minor_units subtracted from the period net total',
+    amountConstraint:
+      'integer > 0; a null amount routes the row to the UNKNOWN channel; a zero or negative credit amount is a rule violation',
+  }),
+  cancel: Object.freeze({
+    contribution: '0; the row is validated and counted as a cancellation and never added to the net total',
+    amountConstraint: 'must be exactly 0; null or any other value is a rule violation',
+  }),
+  unknown: Object.freeze({
+    contribution: '0 to the net total; the row is routed to the UNKNOWN channel',
+    amountConstraint: 'integer >= 0 or null; a negative amount is a rule violation',
+  }),
+});
 
 function isExactCent(value) {
   return typeof value === 'number' && Number.isInteger(value);
@@ -144,8 +164,10 @@ function contractValidationErrors(candidate) {
   ) {
     errors.push('currency: exactly one ISO-4217 currency code is required');
   }
-  if (candidate.currency?.minorUnitsPerMajorUnit !== 2) {
-    errors.push('currency: minorUnitsPerMajorUnit must be 2 for exact-cent integer arithmetic');
+  if (candidate.currency?.minorUnitsPerMajorUnit !== ADMITTED_MINOR_UNITS_PER_MAJOR_UNIT) {
+    errors.push(
+      `currency: EUR minorUnitsPerMajorUnit must be ${ADMITTED_MINOR_UNITS_PER_MAJOR_UNIT} for exact-cent integer arithmetic`,
+    );
   }
   // Exactly two periods, named current and comparison, non-overlapping.
   const periods =
@@ -172,20 +194,26 @@ function contractValidationErrors(candidate) {
       errors.push('periods: the two periods must not overlap');
     }
   }
-  // Explicit credit/cancel/UNKNOWN (and sale) rules, no extra kinds.
-  if (
-    candidate.recordRules &&
-    typeof candidate.recordRules === 'object' &&
-    Object.keys(candidate.recordRules).length !== RECORD_KINDS.length
-  ) {
+  // Explicit, semantically frozen credit/cancel/UNKNOWN (and sale) rules, with
+  // no extra kinds. Non-empty contradictory prose is a contract mutation, not
+  // an alternate valid implementation of the admitted metric.
+  const ruleKinds =
+    candidate.recordRules && typeof candidate.recordRules === 'object' && !Array.isArray(candidate.recordRules)
+      ? Object.keys(candidate.recordRules).sort()
+      : [];
+  if (JSON.stringify(ruleKinds) !== JSON.stringify([...RECORD_KINDS].sort())) {
     errors.push(`recordRules: exactly the ${RECORD_KINDS.length} record kinds are admitted`);
   }
   for (const kind of RECORD_KINDS) {
-    if (
-      typeof candidate.recordRules?.[kind]?.contribution !== 'string' ||
-      typeof candidate.recordRules?.[kind]?.amountConstraint !== 'string'
-    ) {
-      errors.push(`recordRules.${kind}: an explicit contribution and amountConstraint are required`);
+    const rule = candidate.recordRules?.[kind];
+    const fields = rule && typeof rule === 'object' && !Array.isArray(rule) ? Object.keys(rule).sort() : [];
+    if (JSON.stringify(fields) !== JSON.stringify(['amountConstraint', 'contribution'])) {
+      errors.push(`recordRules.${kind}: exactly contribution and amountConstraint are required`);
+    }
+    for (const field of ['contribution', 'amountConstraint']) {
+      if (rule?.[field] !== ADMITTED_RECORD_RULES[kind][field]) {
+        errors.push(`recordRules.${kind}.${field}: admitted rule semantics must remain unchanged`);
+      }
     }
   }
   // Explicit null policy: null is routed to UNKNOWN, never treated as zero.
@@ -223,7 +251,25 @@ function contractValidationErrors(candidate) {
 // number. All arithmetic is on integer minor units.
 // ---------------------------------------------------------------------------
 
+function emptyUnknownChannel() {
+  return { count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0 };
+}
+
+function recordUnknown(channel, amount) {
+  channel.count += 1;
+  if (isExactCent(amount)) {
+    channel.quantifiedAmountMinorUnits += amount;
+  } else {
+    channel.unquantifiedCount += 1;
+  }
+}
+
 function computeNetRevenue(candidateContract, candidateHoldout) {
+  const contractErrors = contractValidationErrors(candidateContract);
+  if (contractErrors.length > 0) {
+    throw new Error(`contract validation failed: ${contractErrors.join('; ')}`);
+  }
+
   const periods = {};
   for (const name of PERIOD_NAMES) {
     periods[name] = {
@@ -231,13 +277,16 @@ function computeNetRevenue(candidateContract, candidateHoldout) {
       saleMinorUnits: 0,
       creditMinorUnits: 0,
       cancelCount: 0,
-      unknown: { count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0 },
+      unknown: emptyUnknownChannel(),
       rowCount: 0,
     };
   }
+  const unknown = {
+    ...emptyUnknownChannel(),
+    unassigned: emptyUnknownChannel(),
+  };
   const current = candidateContract.periods.current;
   const comparison = candidateContract.periods.comparison;
-  let unassignedUnknownCount = 0;
   let excludedOutOfScopeCount = 0;
 
   if (!candidateHoldout || !Array.isArray(candidateHoldout.rows)) {
@@ -274,7 +323,7 @@ function computeNetRevenue(candidateContract, candidateHoldout) {
     }
 
     // Explicit record-rule violations fail closed before any aggregation.
-    if (kind === 'cancel' && hasAmount && amount !== 0) {
+    if (kind === 'cancel' && amount !== 0) {
       throw new Error(`holdout row ${label}: cancel rule violation (a cancellation amount must be exactly 0)`);
     }
     if (kind === 'credit' && hasAmount && amount <= 0) {
@@ -284,10 +333,19 @@ function computeNetRevenue(candidateContract, candidateHoldout) {
       throw new Error(`holdout row ${label}: ${kind} rule violation (amount must be a non-negative integer)`);
     }
 
+    // Every UNKNOWN row is represented in the aggregate channel before period
+    // assignment. This guarantees that integer-valued UNKNOWN rows are always
+    // quantified, including null-date and out-of-scope rows.
+    const routesToUnknown = date === null || kind === 'unknown' || amount === null;
+    if (routesToUnknown) {
+      recordUnknown(unknown, amount);
+    }
+
     // A null order date is PERIOD_UNASSIGNABLE: routed to the UNKNOWN channel
-    // as unassigned. Never zero, never dropped without a count.
+    // as unassigned, with its integer amount quantified. Never zero, never
+    // dropped with only a count.
     if (date === null) {
-      unassignedUnknownCount += 1;
+      recordUnknown(unknown.unassigned, amount);
       continue;
     }
 
@@ -296,16 +354,11 @@ function computeNetRevenue(candidateContract, candidateHoldout) {
 
     // UNKNOWN routing: kind-unknown or null-amount rows never touch the net
     // total; they are counted (and quantified when an integer amount exists).
-    if (kind === 'unknown' || amount === null) {
+    if (routesToUnknown) {
       if (inCurrent || inComparison) {
         const bucket = periods[inCurrent ? 'current' : 'comparison'];
         bucket.rowCount += 1;
-        bucket.unknown.count += 1;
-        if (hasAmount) {
-          bucket.unknown.quantifiedAmountMinorUnits += amount;
-        } else {
-          bucket.unknown.unquantifiedCount += 1;
-        }
+        recordUnknown(bucket.unknown, amount);
       } else {
         excludedOutOfScopeCount += 1;
       }
@@ -335,7 +388,7 @@ function computeNetRevenue(candidateContract, candidateHoldout) {
       comparison: periods.comparison,
     },
     deltaMinorUnits: periods.current.netMinorUnits - periods.comparison.netMinorUnits,
-    unassignedUnknownCount,
+    unknown,
     excludedOutOfScopeCount,
   };
 }
@@ -401,23 +454,14 @@ test('contract fixes exactly one relation, one ORDER_DATE role, one currency, an
   assert.equal(contract.orderDateRole.column, 'order_date');
   assert.equal(contract.orderDateRole.role, 'ORDER_DATE');
   assert.equal(contract.currency.code, 'EUR');
-  assert.equal(contract.currency.minorUnitsPerMajorUnit, 2);
+  assert.equal(contract.currency.minorUnitsPerMajorUnit, ADMITTED_MINOR_UNITS_PER_MAJOR_UNIT);
   assert.deepEqual(Object.keys(contract.periods).sort(), ['comparison', 'current']);
   assert.equal(contract.periods.comparison.start, '2026-06-01');
   assert.equal(contract.periods.comparison.end, '2026-06-30');
   assert.equal(contract.periods.current.start, '2026-07-01');
   assert.equal(contract.periods.current.end, '2026-07-31');
   for (const kind of RECORD_KINDS) {
-    assert.ok(
-      typeof contract.recordRules[kind].contribution === 'string' &&
-        contract.recordRules[kind].contribution.length > 0,
-      `recordRules.${kind} must carry an explicit contribution`,
-    );
-    assert.ok(
-      typeof contract.recordRules[kind].amountConstraint === 'string' &&
-        contract.recordRules[kind].amountConstraint.length > 0,
-      `recordRules.${kind} must carry an explicit amountConstraint`,
-    );
+    assert.deepEqual(contract.recordRules[kind], ADMITTED_RECORD_RULES[kind]);
   }
 });
 
@@ -457,6 +501,16 @@ test('independent exact-cent oracle: computed period totals and delta equal the 
   assert.equal(computed.periods.comparison.netMinorUnits, 30000);
   assert.equal(computed.periods.current.netMinorUnits, 100059);
   assert.equal(computed.deltaMinorUnits, 70059);
+  assert.deepEqual(computed.unknown, {
+    count: 4,
+    quantifiedAmountMinorUnits: 1977,
+    unquantifiedCount: 2,
+    unassigned: {
+      count: 1,
+      quantifiedAmountMinorUnits: 1200,
+      unquantifiedCount: 0,
+    },
+  });
   assert.deepStrictEqual(computed, expected);
 });
 
@@ -544,6 +598,14 @@ test('cancel rule mutation fails closed: a cancellation with a nonzero amount is
   const mutated = structuredClone(holdout);
   mutated.rows.find((r) => r.order_id === 's-004').amount_minor_units = 500;
   assert.throws(() => computeNetRevenue(contract, mutated), /cancel rule violation/);
+
+  const nullAmount = structuredClone(holdout);
+  nullAmount.rows.find((r) => r.order_id === 's-004').amount_minor_units = null;
+  assert.throws(
+    () => computeNetRevenue(contract, nullAmount),
+    /cancel rule violation/,
+    'a null cancellation amount must fail the exactly-zero rule before UNKNOWN routing',
+  );
 });
 
 test('credit rule mutation fails closed: a double-negative credit is rejected', () => {
@@ -561,10 +623,52 @@ test('UNKNOWN rule mutation fails closed: unknown amounts never enter net and a 
   assert.ok(!String(comparison.netMinorUnits).includes('777') || comparison.netMinorUnits !== 777, 'unknown amounts must not be added to net');
   // A null amount routes to the unknown channel (unquantified), never to zero.
   assert.equal(comparison.unknown.unquantifiedCount, 1);
+  // The integer-valued null-date credit s-007 is UNKNOWN because it cannot be
+  // assigned to a period. Its 1200 minor units remain quantified globally and
+  // in the unassigned UNKNOWN subchannel.
+  assert.equal(computed.unknown.quantifiedAmountMinorUnits, 1977);
+  assert.deepEqual(computed.unknown.unassigned, {
+    count: 1,
+    quantifiedAmountMinorUnits: 1200,
+    unquantifiedCount: 0,
+  });
   // A negative unknown amount is a rule violation and fails closed.
   const mutated = structuredClone(holdout);
   mutated.rows.find((r) => r.order_id === 's-005').amount_minor_units = -777;
   assert.throws(() => computeNetRevenue(contract, mutated), /unknown rule violation/);
+});
+
+test('cancel/credit/UNKNOWN contract rule mutations fail closed even when contradictory text is non-empty', () => {
+  const contradictions = {
+    cancel: {
+      contribution: 'amount_minor_units added to the period net total',
+      amountConstraint: 'null or any integer is accepted',
+    },
+    credit: {
+      contribution: 'amount_minor_units added to the period net total',
+      amountConstraint: 'integer <= 0',
+    },
+    unknown: {
+      contribution: 'amount_minor_units added to the period net total',
+      amountConstraint: 'any numeric value is accepted',
+    },
+  };
+
+  for (const [kind, fields] of Object.entries(contradictions)) {
+    for (const [field, contradictoryText] of Object.entries(fields)) {
+      const mutated = structuredClone(contract);
+      mutated.recordRules[kind][field] = contradictoryText;
+      assert.ok(
+        contractValidationErrors(mutated).some((error) => error.includes(`recordRules.${kind}.${field}`)),
+        `${kind}.${field} contradictory text must be rejected by contract validation`,
+      );
+      assert.throws(
+        () => computeNetRevenue(mutated, holdout),
+        /contract validation failed/,
+        `${kind}.${field} contradictory text must not be ignored by the calculator`,
+      );
+    }
+  }
 });
 
 test('widening to a second relation or a third period fails closed', () => {

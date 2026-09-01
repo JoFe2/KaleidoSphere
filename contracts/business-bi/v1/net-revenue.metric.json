@@ -31,7 +31,7 @@
   },
   "currency": {
     "code": "EUR",
-    "minorUnitsPerMajorUnit": 2,
+    "minorUnitsPerMajorUnit": 100,
     "amountColumn": "amount_minor_units",
     "rule": "Exactly one currency is declared; all amounts are integer minor units of that currency. A second currency is a contract violation."
   },
@@ -60,7 +60,7 @@
     },
     "cancel": {
       "contribution": "0; the row is validated and counted as a cancellation and never added to the net total",
-      "amountConstraint": "must be exactly 0; any other value is a rule violation"
+      "amountConstraint": "must be exactly 0; null or any other value is a rule violation"
     },
     "unknown": {
       "contribution": "0 to the net total; the row is routed to the UNKNOWN channel",
@@ -68,12 +68,12 @@
     }
   },
   "nullPolicy": {
-    "amount_minor_units_null": "The row is UNCLASSIFIABLE and is routed to the UNKNOWN channel. It is never treated as zero and never dropped without a count.",
-    "order_date_null": "The row is PERIOD_UNASSIGNABLE and is routed to the UNKNOWN channel as unassigned. It is never treated as zero and never dropped without a count."
+    "amount_minor_units_null": "Except for cancel rows, whose exactly-zero constraint is validated first and therefore rejects null, the row is UNCLASSIFIABLE and is routed to the UNKNOWN channel. It is never treated as zero and never dropped without a count.",
+    "order_date_null": "The row is PERIOD_UNASSIGNABLE and is routed to the UNKNOWN channel as unassigned. It is counted and its amount is quantified when an integer amount exists; it is never treated as zero or silently dropped."
   },
   "unknownPolicy": {
     "distinctFrom": ["zero", "absence"],
-    "statement": "UNKNOWN is a first-class channel: unknown rows are counted, quantified where an integer amount exists, and reported separately from period net totals. Unknown rows never contribute to net, are never collapsed to zero, and are never omitted without a count."
+    "statement": "UNKNOWN is a first-class channel: every unknown row is counted in the aggregate channel, every integer amount is quantified there, and assigned rows are also reported in their period channel while null-date rows are reported as unassigned. Unknown rows never contribute to net, are never collapsed to zero, and are never omitted without a count."
   },
   "arithmetic": {
     "unit": "integer minor units (cents)",
@@ -97,7 +97,7 @@
         "id": "CANON-2",
         "statement": "Exact-cent integer arithmetic: all amounts, totals, and the delta are integer minor units; floating point is forbidden.",
         "applicability": "APPLICABLE",
-        "admissionBasis": "The contract fixes one currency with two minor units per major unit; the oracle reports integer cent totals only.",
+        "admissionBasis": "The contract fixes EUR at 100 minor units per major unit; the oracle reports integer cent totals only.",
         "recordedAt": "2026-09-01"
       },
       {
