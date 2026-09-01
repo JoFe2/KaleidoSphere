@@ -23,6 +23,12 @@ import {
   validateExternalIntentV2,
 } from '../services/bi-agent/src/external-api-v2.mjs';
 
+function assertDeepFrozen(value) {
+  if (!value || typeof value !== 'object') return;
+  assert.equal(Object.isFrozen(value), true);
+  Object.values(value).forEach(assertDeepFrozen);
+}
+
 const request = (action, input = undefined) => ({
   schemaVersion: SBA_INTENT_REQUEST_SCHEMA,
   requestId: `req-${action}`,
@@ -92,7 +98,10 @@ test('M1a manifest deterministically projects only the six external capabilities
   assert.equal(first.boundaries.modelMutationAuthority, false);
   const body = Object.fromEntries(Object.entries(first).filter(([key]) => key !== 'integrity'));
   assert.equal(first.integrity.digest, sha256Digest(body));
-  assert.equal(validateCapabilityManifestV1(first), first);
+  const validated = validateCapabilityManifestV1(first);
+  assert.deepEqual(validated, first);
+  assert.notEqual(validated, first);
+  assertDeepFrozen(validated);
   assert.equal(requireExternalCapabilityV1(first, 'bi.analysis.run', 'analyze').authority, 'source-read-only');
 });
 
@@ -302,7 +311,11 @@ test('S2 manifest embeds the runtime-derived consumer profile under its own inte
   assert.deepEqual(manifest.consumerProfile, mod.externalBiConsumerProfileV1());
   const body = Object.fromEntries(Object.entries(manifest).filter(([key]) => key !== 'integrity'));
   assert.equal(manifest.integrity.digest, sha256Digest(body));
-  assert.equal(validateCapabilityManifestV1(manifest), manifest);
+  const validated = validateCapabilityManifestV1(manifest);
+  assert.deepEqual(validated, manifest);
+  assert.notEqual(validated, manifest);
+  assert.notEqual(validated.consumerProfile, manifest.consumerProfile);
+  assertDeepFrozen(validated);
 });
 
 test('S2 manifest validation no longer accepts a caller-overridden expected attestation for stale data', () => {
@@ -445,4 +458,47 @@ test('S2 manifest consumer profile forgeries fail closed', () => {
   delete missingProfile.consumerProfile;
   withRecomputedIntegrity(missingProfile);
   assert.throws(() => validateCapabilityManifestV1(missingProfile), /CAPABILITY_MANIFEST_SURFACE_DENIED/);
+
+  const hidden = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  Object.defineProperty(hidden.consumerProfile, 'forged', {value: true, enumerable: false});
+  assert.throws(() => validateCapabilityManifestV1(hidden), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+  assert.equal(hidden.consumerProfile.forged, true);
+
+  const symbolic = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  symbolic.consumerProfile[Symbol('forged')] = true;
+  assert.throws(() => validateCapabilityManifestV1(symbolic), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  let getterCalls = 0;
+  const accessor = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  Object.defineProperty(accessor.consumerProfile, 'forged', {
+    get() { getterCalls += 1; return true; },
+    enumerable: false,
+  });
+  assert.throws(() => validateCapabilityManifestV1(accessor), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+  assert.equal(getterCalls, 0);
+
+  const proxied = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  proxied.consumerProfile = new Proxy(proxied.consumerProfile, {});
+  assert.throws(() => validateCapabilityManifestV1(proxied), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+
+  const carried = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  carried.consumerProfile = Object.assign(Object.create({forged: true}), carried.consumerProfile);
+  assert.throws(() => validateCapabilityManifestV1(carried), /CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED/);
+});
+
+test('S2 manifest validation returns a detached deeply immutable value', () => {
+  const input = JSON.parse(JSON.stringify(capabilityManifestV1()));
+  const validated = validateCapabilityManifestV1(input);
+
+  assert.deepEqual(validated, input);
+  assert.notEqual(validated, input);
+  assert.notEqual(validated.capabilities, input.capabilities);
+  assert.notEqual(validated.consumerProfile, input.consumerProfile);
+  assertDeepFrozen(validated);
+
+  input.capabilities[0].authority = 'forged';
+  input.consumerProfile.product.version = 'v0.0.0';
+  assert.notEqual(validated.capabilities[0].authority, input.capabilities[0].authority);
+  assert.notEqual(validated.consumerProfile.product.version, input.consumerProfile.product.version);
+  assert.throws(() => { validated.consumerProfile.product.version = 'v0.0.0'; }, TypeError);
 });
