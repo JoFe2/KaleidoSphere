@@ -1,0 +1,159 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-metric/v1",
+  "metric": {
+    "id": "bi-ks-01-net-revenue",
+    "name": "Synthetic Net Revenue",
+    "description": "Single synthetic net-revenue metric over two fixed calendar periods, computed in integer minor units (cents) from one declared synthetic relation. No production, customer, or general BI/dashboard claim.",
+    "classification": "SYNTHETIC_HOLDOUT_METRIC",
+    "admission": {
+      "issue": "BI-KS-01",
+      "task": "PORTFOLIO-KS145-IMPLEMENT",
+      "process": "operating-model/v1.1",
+      "admittedAt": "2026-09-01",
+      "baseCommit": "90c574e9a06cb752be06270395d44a31eabc44ae"
+    }
+  },
+  "relation": {
+    "name": "synthetic_bi.orders",
+    "kind": "SYNTHETIC_TABLE",
+    "fields": {
+      "order_id": "synthetic row identifier in the s-NNN namespace; never a real customer or production identifier",
+      "order_date": "ISO calendar date (YYYY-MM-DD) or null; holds the single ORDER_DATE role",
+      "record_kind": "sale | credit | cancel | unknown",
+      "amount_minor_units": "integer amount in currency minor units, or null"
+    }
+  },
+  "orderDateRole": {
+    "column": "order_date",
+    "role": "ORDER_DATE",
+    "format": "YYYY-MM-DD",
+    "rule": "Exactly one column may hold the ORDER_DATE role; a second date role is a contract violation."
+  },
+  "currency": {
+    "code": "EUR",
+    "minorUnitsPerMajorUnit": 2,
+    "amountColumn": "amount_minor_units",
+    "rule": "Exactly one currency is declared; all amounts are integer minor units of that currency. A second currency is a contract violation."
+  },
+  "periods": {
+    "current": {
+      "label": "2026-07",
+      "start": "2026-07-01",
+      "end": "2026-07-31",
+      "boundary": "inclusive-both-ends"
+    },
+    "comparison": {
+      "label": "2026-06",
+      "start": "2026-06-01",
+      "end": "2026-06-30",
+      "boundary": "inclusive-both-ends"
+    }
+  },
+  "recordRules": {
+    "sale": {
+      "contribution": "amount_minor_units added to the period net total",
+      "amountConstraint": "integer >= 0; a null amount routes the row to the UNKNOWN channel"
+    },
+    "credit": {
+      "contribution": "amount_minor_units subtracted from the period net total",
+      "amountConstraint": "integer > 0; a null amount routes the row to the UNKNOWN channel; a zero or negative credit amount is a rule violation"
+    },
+    "cancel": {
+      "contribution": "0; the row is validated and counted as a cancellation and never added to the net total",
+      "amountConstraint": "must be exactly 0; any other value is a rule violation"
+    },
+    "unknown": {
+      "contribution": "0 to the net total; the row is routed to the UNKNOWN channel",
+      "amountConstraint": "integer >= 0 or null; a negative amount is a rule violation"
+    }
+  },
+  "nullPolicy": {
+    "amount_minor_units_null": "The row is UNCLASSIFIABLE and is routed to the UNKNOWN channel. It is never treated as zero and never dropped without a count.",
+    "order_date_null": "The row is PERIOD_UNASSIGNABLE and is routed to the UNKNOWN channel as unassigned. It is never treated as zero and never dropped without a count."
+  },
+  "unknownPolicy": {
+    "distinctFrom": ["zero", "absence"],
+    "statement": "UNKNOWN is a first-class channel: unknown rows are counted, quantified where an integer amount exists, and reported separately from period net totals. Unknown rows never contribute to net, are never collapsed to zero, and are never omitted without a count."
+  },
+  "arithmetic": {
+    "unit": "integer minor units (cents)",
+    "floatingPoint": "forbidden",
+    "periodNet": "sum of sale contributions minus sum of credit contributions within the period (cancels contribute 0)",
+    "delta": "current.net - comparison.net",
+    "orderIndependence": "results must be identical under any row ordering"
+  },
+  "canonApplicability": {
+    "source": "PSai Canon, Operating Model v1.1, recorded at issue admission",
+    "recordedAt": "2026-09-01",
+    "laws": [
+      {
+        "id": "CANON-1",
+        "statement": "Synthetic bytes only: metric inputs and outputs contain no production or customer data.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "BI-KS-01 is admitted on synthetic non-customer bytes; the holdout and oracle fixtures use only the s-NNN synthetic identifier namespace.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-2",
+        "statement": "Exact-cent integer arithmetic: all amounts, totals, and the delta are integer minor units; floating point is forbidden.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "The contract fixes one currency with two minor units per major unit; the oracle reports integer cent totals only.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-3",
+        "statement": "UNKNOWN is distinct from zero and from absence: unknown rows are counted, quantified where possible, and reported in a separate channel.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "The contract carries explicit nullPolicy and unknownPolicy; the holdout contains null-amount, null-date, and zero-amount cases as distinct classes.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-4",
+        "statement": "Single-metric scope: exactly one relation, one ORDER_DATE role, one currency, and exactly two periods; any widening is a contract violation.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "The contract fixes one relation (synthetic_bi.orders), one ORDER_DATE role (order_date), one currency (EUR), and exactly two named periods.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-5",
+        "statement": "Independent oracle: expected values are produced by a calculator that imports no production analysis code.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "The oracle is verified by tests/business-bi-metric-oracle.test.mjs, which implements the calculator inline and asserts via self-scan that no production import specifier appears.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-6",
+        "statement": "Fail-closed mutation sensitivity: one-cent mutations, rule mutations, scope widening, and byte-bound receipt violations must be detected.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "The focused test owns one-cent, cancel/credit/UNKNOWN rule, widening, shared-import, and unsupported Canon NOT_APPLICABLE mutation cases, all fail-closed.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-7",
+        "statement": "No external claim surface: no production, customer, general BI, or dashboard claim; no push, publish, release, or Queue/GitHub mutation from this slice.",
+        "applicability": "APPLICABLE",
+        "admissionBasis": "The contract carries explicit nonclaims; the worker slice writes only the four allowlisted paths and commits locally.",
+        "recordedAt": "2026-09-01"
+      },
+      {
+        "id": "CANON-8",
+        "statement": "Live-data parity: metric totals must agree with live production system outputs.",
+        "applicability": "NOT_APPLICABLE",
+        "admissionBasis": "BI-KS-01 admission is synthetic-only per CANON-1; no production system is in scope for this issue, so live-data parity is neither asserted nor required.",
+        "recordedAt": "2026-09-01"
+      }
+    ]
+  },
+  "nonclaims": [
+    "No production-data claim: this metric is computed from synthetic bytes only.",
+    "No customer-data claim: no fixture row contains customer or production records.",
+    "No general BI claim: this contract defines exactly one synthetic metric and no broader BI capability.",
+    "No dashboard claim: nothing in this contract renders, serves, or schedules a dashboard.",
+    "No release or publish claim: this slice commits locally only and does not push, publish, or release."
+  ],
+  "holdout": {
+    "path": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+    "oraclePath": "tests/fixtures/business-bi/net-revenue-oracle-v1.json",
+    "byteBound": true
+  }
+}
