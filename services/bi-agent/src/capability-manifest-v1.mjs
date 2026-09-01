@@ -1,6 +1,7 @@
 import {
   canonicalJson,
   capabilityAttestationV2,
+  externalBiConsumerProfileV1,
   SBA_EXTERNAL_CAPABILITIES,
   sha256Digest,
 } from './external-api-v2.mjs';
@@ -52,6 +53,7 @@ function manifestBody(attestation) {
       digest: attestation.attestation.digest,
     },
     capabilities: externalCapabilities.map(projectedCapability),
+    consumerProfile: externalBiConsumerProfileV1(),
     boundaries: {
       externalIntentOnly: true,
       sourceDatabaseCredentialsAccepted: false,
@@ -72,8 +74,11 @@ export function capabilityManifestV1() {
   });
 }
 
-export function validateCapabilityManifestV1(value, expectedAttestation = capabilityAttestationV2()) {
-  exact(value, ['schemaVersion', 'manifestVersion', 'product', 'contract', 'attestation', 'capabilities', 'boundaries', 'integrity']);
+export function validateCapabilityManifestV1(value) {
+  // FND-KS-02: the expected attestation is runtime-derived, never caller-authored;
+  // a caller-supplied substitution can no longer stand in for the live runtime.
+  const expectedAttestation = capabilityAttestationV2();
+  exact(value, ['schemaVersion', 'manifestVersion', 'product', 'contract', 'attestation', 'capabilities', 'consumerProfile', 'boundaries', 'integrity']);
   exact(value.product, ['id', 'version', 'component']);
   exact(value.contract, ['id', 'version']);
   exact(value.attestation, ['schemaVersion', 'digest']);
@@ -100,6 +105,16 @@ export function validateCapabilityManifestV1(value, expectedAttestation = capabi
     || canonicalJson(value.contract) !== canonicalJson(expectedBody.contract)
     || canonicalJson(value.attestation) !== canonicalJson(expectedBody.attestation)) {
     fail('CAPABILITY_MANIFEST_STALE_DENIED');
+  }
+
+  const expectedProfile = externalBiConsumerProfileV1();
+  if (!value.consumerProfile || typeof value.consumerProfile !== 'object' || Array.isArray(value.consumerProfile)
+    || Object.getPrototypeOf(value.consumerProfile) !== Object.prototype
+    || Object.keys(value.consumerProfile).sort().join('\u0000') !== Object.keys(expectedProfile).sort().join('\u0000')) {
+    fail('CAPABILITY_MANIFEST_CONSUMER_PROFILE_SURFACE_DENIED');
+  }
+  if (canonicalJson(value.consumerProfile) !== canonicalJson(expectedProfile)) {
+    fail('CAPABILITY_MANIFEST_CONSUMER_PROFILE_DRIFT_DENIED');
   }
 
   const seen = new Set();

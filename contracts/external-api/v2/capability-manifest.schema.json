@@ -4,7 +4,7 @@
   "title": "KaleidoSphere external capability manifest v1",
   "type": "object",
   "additionalProperties": false,
-  "required": ["schemaVersion", "manifestVersion", "product", "contract", "attestation", "capabilities", "boundaries", "integrity"],
+  "required": ["schemaVersion", "manifestVersion", "product", "contract", "attestation", "capabilities", "consumerProfile", "boundaries", "integrity"],
   "properties": {
     "schemaVersion": {"const": "kaleidosphere.external/capability-manifest/v1"},
     "manifestVersion": {"const": "1.0.0"},
@@ -60,6 +60,91 @@
               "resultIntegrityDigestRequired": {"const": true},
               "executionReceiptRequired": {"const": true}
             }
+          }
+        }
+      }
+    },
+    "consumerProfile": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "product", "contract", "supported", "partial", "unsupported", "nonclaims", "boundaries", "attestation"],
+      "properties": {
+        "schemaVersion": {"const": "superset-bi-agent.external/consumer-profile/v1"},
+        "product": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version"],
+          "properties": {
+            "id": {"const": "superset-bi-agent"},
+            "version": {"type": "string", "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+(?:-[A-Za-z0-9.-]+)?$"}
+          }
+        },
+        "contract": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "version"],
+          "properties": {
+            "id": {"const": "superset-bi-agent.external"},
+            "version": {"const": "2.0.0"}
+          }
+        },
+        "supported": {
+          "type": "array",
+          "const": [
+            {"id": "bi.status.read", "action": "status", "authority": "read-only"},
+            {"id": "bi.discovery.run", "action": "discovery", "authority": "local-evidence-write"},
+            {"id": "bi.analysis.run", "action": "analyze", "authority": "source-read-only"},
+            {"id": "bi.graph.adaptive-v1.plan", "action": "plan", "authority": "proposal-only"},
+            {"id": "bi.preview.create", "action": "preview", "authority": "proposal-only"},
+            {"id": "bi.readback.read", "action": "readback", "authority": "read-only"}
+          ]
+        },
+        "partial": {
+          "type": "array",
+          "const": [
+            {"id": "superset.trusted-apply", "action": "trusted-apply", "authority": "trusted-approval-only", "externalIntent": false},
+            {"id": "superset.trusted-readback", "action": "trusted-readback", "authority": "trusted-approval-only", "externalIntent": false},
+            {"id": "superset.trusted-rollback", "action": "trusted-rollback", "authority": "trusted-approval-only", "externalIntent": false}
+          ]
+        },
+        "unsupported": {
+          "type": "array",
+          "const": [
+            {"surface": "sourceDatabaseCredentials", "accepted": false},
+            {"surface": "freeSql", "accepted": false},
+            {"surface": "rawSourceRows", "accepted": false},
+            {"surface": "modelMutation", "accepted": false},
+            {"surface": "directSupersetMutationIntent", "accepted": false}
+          ]
+        },
+        "nonclaims": {
+          "type": "array",
+          "const": [
+            {"id": "graph-candidate-promotion", "status": "none"},
+            {"id": "persistent-superset-workflow", "status": "trusted-preview-approval-apply-readback-rollback-only"},
+            {"id": "external-mutation-intent", "status": "none"}
+          ]
+        },
+        "boundaries": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["sourceDatabaseCredentialsAccepted", "freeSqlAccepted", "rawSourceRowsReturned", "modelMutationAuthority", "directSupersetMutationIntentAccepted", "persistentSupersetWorkflow"],
+          "properties": {
+            "sourceDatabaseCredentialsAccepted": {"const": false},
+            "freeSqlAccepted": {"const": false},
+            "rawSourceRowsReturned": {"const": false},
+            "modelMutationAuthority": {"const": false},
+            "directSupersetMutationIntentAccepted": {"const": false},
+            "persistentSupersetWorkflow": {"const": "trusted-preview-approval-apply-readback-rollback-only"}
+          }
+        },
+        "attestation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["algorithm", "digest"],
+          "properties": {
+            "algorithm": {"const": "sha256-canonical-json"},
+            "digest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"}
           }
         }
       }
