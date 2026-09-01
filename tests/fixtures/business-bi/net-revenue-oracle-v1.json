@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-oracle/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "BI-KS-01",
+  "metricContractPath": "contracts/business-bi/v1/net-revenue.metric.json",
+  "holdoutPath": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+  "independence": {
+    "productionAnalysisImports": 0,
+    "statement": "Expected values are hand-derived in integer minor units and verified by the independent inline calculator in tests/business-bi-metric-oracle.test.mjs, which imports no production analysis code."
+  },
+  "expected": {
+    "periods": {
+      "current": {
+        "netMinorUnits": 100059,
+        "saleMinorUnits": 141293,
+        "creditMinorUnits": 41234,
+        "cancelCount": 1,
+        "unknown": {
+          "count": 1,
+          "quantifiedAmountMinorUnits": 0,
+          "unquantifiedCount": 1
+        },
+        "rowCount": 6
+      },
+      "comparison": {
+        "netMinorUnits": 30000,
+        "saleMinorUnits": 35500,
+        "creditMinorUnits": 5500,
+        "cancelCount": 1,
+        "unknown": {
+          "count": 2,
+          "quantifiedAmountMinorUnits": 777,
+          "unquantifiedCount": 1
+        },
+        "rowCount": 7
+      }
+    },
+    "deltaMinorUnits": 70059,
+    "unknown": {
+      "count": 4,
+      "quantifiedAmountMinorUnits": 1977,
+      "unquantifiedCount": 2,
+      "unassigned": {
+        "count": 1,
+        "quantifiedAmountMinorUnits": 1200,
+        "unquantifiedCount": 0
+      }
+    },
+    "excludedOutOfScopeCount": 3
+  },
+  "receipt": {
+    "binding": "sha256-of-exact-file-bytes",
+    "contract": {
+      "path": "contracts/business-bi/v1/net-revenue.metric.json",
+      "sha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
+    },
+    "holdout": {
+      "path": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+      "sha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d"
+    }
+  }
+}

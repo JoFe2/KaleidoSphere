@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-holdout/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "BI-KS-01",
+  "contractPath": "contracts/business-bi/v1/net-revenue.metric.json",
+  "relation": "synthetic_bi.orders",
+  "currencyCode": "EUR",
+  "rowOrder": "frozen; the independent calculator must produce identical results under any row ordering",
+  "rows": [
+    { "order_id": "s-001", "order_date": "2026-06-01", "record_kind": "sale", "amount_minor_units": 10000 },
+    { "order_id": "s-002", "order_date": "2026-06-15", "record_kind": "sale", "amount_minor_units": 25500 },
+    { "order_id": "s-003", "order_date": "2026-06-30", "record_kind": "credit", "amount_minor_units": 5500 },
+    { "order_id": "s-004", "order_date": "2026-06-10", "record_kind": "cancel", "amount_minor_units": 0 },
+    { "order_id": "s-005", "order_date": "2026-06-20", "record_kind": "unknown", "amount_minor_units": 777 },
+    { "order_id": "s-006", "order_date": "2026-06-12", "record_kind": "sale", "amount_minor_units": null },
+    { "order_id": "s-007", "order_date": null, "record_kind": "credit", "amount_minor_units": 1200 },
+    { "order_id": "s-008", "order_date": "2026-06-18", "record_kind": "sale", "amount_minor_units": 0 },
+    { "order_id": "s-009", "order_date": "2026-07-01", "record_kind": "sale", "amount_minor_units": 41234 },
+    { "order_id": "s-010", "order_date": "2026-07-31", "record_kind": "credit", "amount_minor_units": 41234 },
+    { "order_id": "s-011", "order_date": "2026-07-15", "record_kind": "sale", "amount_minor_units": 99999 },
+    { "order_id": "s-012", "order_date": "2026-07-22", "record_kind": "cancel", "amount_minor_units": 0 },
+    { "order_id": "s-013", "order_date": "2026-07-25", "record_kind": "unknown", "amount_minor_units": null },
+    { "order_id": "s-014", "order_date": "2026-07-28", "record_kind": "sale", "amount_minor_units": 60 },
+    { "order_id": "s-015", "order_date": "2026-05-31", "record_kind": "sale", "amount_minor_units": 500000 },
+    { "order_id": "s-016", "order_date": "2026-08-01", "record_kind": "sale", "amount_minor_units": 500000 },
+    { "order_id": "s-017", "order_date": "2026-08-02", "record_kind": "credit", "amount_minor_units": 1 }
+  ]
+}
