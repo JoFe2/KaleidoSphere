@@ -1,0 +1,266 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v1",
+  "taskId": "PORTFOLIO-KS145-DELIVERY",
+  "issue": {
+    "id": "BI-KS-01",
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 145,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/145"
+  },
+  "recordedAt": "2026-09-01T13:53:36Z",
+  "processContext": {
+    "operatingModel": "Operating Model v1.1",
+    "decisionsPreserved": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "processVariant": "NONE"
+  },
+  "currentMainIntegration": {
+    "observedRef": "origin/main",
+    "baseCommit": "90c574e9a06cb752be06270395d44a31eabc44ae",
+    "baseTree": "e1e332f218d2af348cf18ff25614bec746268105",
+    "candidateParent": "90c574e9a06cb752be06270395d44a31eabc44ae",
+    "relationship": "EXACT_PARENT",
+    "originMainIsAncestor": true,
+    "candidateAheadByCommits": 1,
+    "candidateBehindByCommits": 0,
+    "remoteFetchPerformed": false
+  },
+  "testedProductHead": "ea548f4095baff5e0b1f1856f659b3728c6d2bf8",
+  "testedProductTree": "725feb1a3fec56e7d077526ef68237e9717f0e55",
+  "baseSha": "90c574e9a06cb752be06270395d44a31eabc44ae",
+  "runCommits": [
+    "ea548f4095baff5e0b1f1856f659b3728c6d2bf8"
+  ],
+  "oneReviewInputs": {
+    "reviewRange": "90c574e9a06cb752be06270395d44a31eabc44ae...ea548f4095baff5e0b1f1856f659b3728c6d2bf8",
+    "commitCount": 1,
+    "commits": [
+      {
+        "commit": "ea548f4095baff5e0b1f1856f659b3728c6d2bf8",
+        "tree": "725feb1a3fec56e7d077526ef68237e9717f0e55",
+        "parent": "90c574e9a06cb752be06270395d44a31eabc44ae",
+        "subject": "Implement BI-KS-01 synthetic net revenue oracle"
+      }
+    ],
+    "changedPaths": [
+      "contracts/business-bi/v1/net-revenue.metric.json",
+      "tests/business-bi-metric-oracle.test.mjs",
+      "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+      "tests/fixtures/business-bi/net-revenue-oracle-v1.json"
+    ],
+    "changedPathSha256": {
+      "contracts/business-bi/v1/net-revenue.metric.json": "77ff8b89dcecc9d6bb23efff21d9e4ba4a1c1f11ef97616a923a46d4eee14a48",
+      "tests/business-bi-metric-oracle.test.mjs": "0cb0c360d1519dd6404a38f61df1cf6b8f4c266d790a594c33e7e307c6d4b339",
+      "tests/fixtures/business-bi/net-revenue-holdout-v1.json": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+      "tests/fixtures/business-bi/net-revenue-oracle-v1.json": "c61b2592c309dc932dfe244f500fedd96498ed32fd3aba9eb64209fd73022069"
+    },
+    "diffSummary": {
+      "filesChanged": 4,
+      "insertions": 889,
+      "deletions": 0
+    },
+    "reviewStatus": "PENDING_ROOT_QS"
+  },
+  "acceptance": [
+    {
+      "criterion": "Contract fixes one relation, one order-date role, one currency, two periods, and explicit credit/cancel/UNKNOWN rules.",
+      "status": "PASS",
+      "evidence": [
+        "contracts/business-bi/v1/net-revenue.metric.json",
+        "tests/business-bi-metric-oracle.test.mjs"
+      ]
+    },
+    {
+      "criterion": "Frozen holdout contains positive, credit, cancelled, boundary-date, null, and UNKNOWN cases without production/customer data.",
+      "status": "PASS",
+      "evidence": [
+        "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+        "tests/business-bi-metric-oracle.test.mjs"
+      ]
+    },
+    {
+      "criterion": "An independent calculator emits exact period totals and delta without importing production analysis code.",
+      "status": "PASS",
+      "evidence": [
+        "tests/business-bi-metric-oracle.test.mjs",
+        "tests/fixtures/business-bi/net-revenue-oracle-v1.json"
+      ],
+      "exactMinorUnitResults": {
+        "comparisonNet": 30000,
+        "currentNet": 100059,
+        "delta": 70059
+      }
+    },
+    {
+      "criterion": "Applicability and non-applicability of PSai Canon laws are recorded at issue admission.",
+      "status": "PASS",
+      "evidence": [
+        "contracts/business-bi/v1/net-revenue.metric.json",
+        "tests/business-bi-metric-oracle.test.mjs"
+      ]
+    }
+  ],
+  "ownedPositiveCases": [
+    {
+      "case": "schema-valid admitted metric",
+      "status": "PASS"
+    },
+    {
+      "case": "synthetic holdout coverage matrix",
+      "status": "PASS"
+    },
+    {
+      "case": "independent exact-cent oracle",
+      "status": "PASS"
+    },
+    {
+      "case": "byte-bound receipt",
+      "status": "PASS"
+    }
+  ],
+  "ownedFailClosedCases": [
+    {
+      "case": "one-cent mutation",
+      "status": "PASS"
+    },
+    {
+      "case": "cancel rule mutation",
+      "status": "PASS"
+    },
+    {
+      "case": "credit rule mutation",
+      "status": "PASS"
+    },
+    {
+      "case": "UNKNOWN rule mutation",
+      "status": "PASS"
+    },
+    {
+      "case": "second relation/currency/date-role widening",
+      "status": "PASS"
+    },
+    {
+      "case": "shared production implementation import",
+      "status": "PASS"
+    },
+    {
+      "case": "unsupported Canon NOT_APPLICABLE claim",
+      "status": "PASS"
+    }
+  ],
+  "checks": [
+    {
+      "gate": "focused-exact-command",
+      "command": "node --test tests/business-bi-metric-oracle.test.mjs",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "focused-local-no-jit-retry",
+      "command": "node --jitless --test tests/business-bi-metric-oracle.test.mjs",
+      "status": "PASS",
+      "tests": 16,
+      "pass": 16,
+      "fail": 0
+    },
+    {
+      "gate": "canonical-exact-command",
+      "command": "npm test",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "canonical-local-no-jit-retry",
+      "command": "NODE_OPTIONS=--jitless npm test",
+      "status": "NO_VERDICT_TERMINATED",
+      "observedRunningAtSeconds": 741,
+      "lastObservedChild": "tests/superset-fingerprint.test.mjs",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "cumulative-diff-check",
+      "command": "git diff --check origin/main...HEAD",
+      "status": "PASS"
+    }
+  ],
+  "localInfrastructureEvidence": {
+    "nodeVersion": "v24.19.0",
+    "failureSignature": "V8_Fatal: Check failed: 12 == errno in v8::base::OS::SetPermissions",
+    "classification": "LOCAL_INFRASTRUCTURE_ONLY_NOT_A_PRODUCT_VERDICT",
+    "authoritativePinnedNodeOrHostDockerGate": "PENDING_CONTROLLER"
+  },
+  "releaseDisposition": {
+    "workerDisposition": "NO_RELEASE_PERFORMED",
+    "candidateStatus": "LOCAL_TECHNICALLY_COMPLETE_PENDING_AUTHORITATIVE_GATES_AND_ROOT_QS",
+    "externalEffectsPerformed": false,
+    "finalOwner": "Root-QS",
+    "ownershipScope": "PR through Queue DONE"
+  },
+  "nonclaims": [
+    "No production-data claim: the admitted metric and evidence use synthetic bytes only.",
+    "No customer-data claim: no fixture row contains customer or production records.",
+    "No general BI claim: this evidence covers exactly one synthetic net-revenue metric.",
+    "No dashboard claim: no dashboard is rendered, served, scheduled, or validated.",
+    "No production-readiness or compliance claim.",
+    "No release or publish claim: no push, merge, publish, deploy, tag, or release was performed.",
+    "No PR, protected-branch, provider, service, CI-authority, issue-state, or Queue mutation was performed.",
+    "No PR-head CI, SHA-bound merge, Main-head CI, public readback, issue closure, or Queue DONE claim.",
+    "No claim that either exact mandatory Node command passed locally; both exited 133/SIGTRAP before test execution, while the focused --jitless retry passed 16/16.",
+    "No transfer of final ownership from Root-QS."
+  ],
+  "requiredRootQsGates": [
+    {
+      "gate": "one review of the cumulative head-bound inputs",
+      "status": "PENDING_ROOT_QS"
+    },
+    {
+      "gate": "PR exact-head readback",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "PR-head CI PASS",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "SHA-bound merge",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "Main-head CI PASS",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "explicit release or evidence-bound no-release decision",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "anonymous/public readback when applicable",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "issue closure/completion",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    },
+    {
+      "gate": "Queue DONE reconciliation",
+      "status": "NOT_PERFORMED_BY_WORKER"
+    }
+  ],
+  "ownership": {
+    "finalOwner": "Root-QS",
+    "scope": "PR through Queue DONE",
+    "transferred": false,
+    "workerBoundary": "LOCAL_HEAD_BOUND_CLOSURE_AUDIT_AND_LOCAL_COMMIT_ONLY"
+  }
+}
