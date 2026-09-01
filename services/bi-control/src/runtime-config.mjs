@@ -101,3 +101,74 @@ export function buildLiveProfile(env = process.env, passwordEnv) {
     adapter: {kind: engine, host, port, user, passwordEnv, protocol, serviceName, serverDn, connectTimeoutMs},
   };
 }
+
+// Versioned, additive product descriptor.
+//
+// Pure selection table: each engine maps to the EXISTING transport, metadata/dialect,
+// executor, capability and evidence components it uses — referenced by stable
+// identifier, the route being bound to an implementation by the consuming module —
+// plus the engine-specific file-derived secret route. No component is rewritten here
+// and no runtime module is imported, so workflow and server can consult it without an
+// import cycle. The table is frozen and versioned; selecting with a stale version, or
+// for a missing/unknown engine, fails closed rather than defaulting to another engine.
+export const PRODUCT_DESCRIPTOR_VERSION = 'v1';
+
+export const PRODUCT_DESCRIPTOR = Object.freeze({
+  schemaVersion: 'chimpmaera.db/product-descriptor/v1',
+  version: PRODUCT_DESCRIPTOR_VERSION,
+  engines: Object.freeze({
+    mssql: Object.freeze({
+      engine: 'mssql',
+      components: Object.freeze({
+        transport: 'mssql.pool-connect',
+        metadata: 'mssql.runtime-scope-normalize',
+        executor: 'mssql.run-queries',
+        capability: 'mssql.read-only-principal',
+        evidence: 'preflight.coverage-ledger',
+      }),
+      secret: Object.freeze({fileVariable: 'MSSQL_PASSWORD_FILE', env: 'CM_MSSQL_PASSWORD'}),
+    }),
+    oracle: Object.freeze({
+      engine: 'oracle',
+      components: Object.freeze({
+        transport: 'oracle.connect-string',
+        metadata: 'oracle.scoped-query',
+        executor: 'oracle.run-queries',
+        capability: 'oracle.read-only-capabilities',
+        evidence: 'preflight.coverage-ledger',
+      }),
+      secret: Object.freeze({fileVariable: 'ORACLE_PASSWORD_FILE', env: 'CM_ORACLE_PASSWORD'}),
+    }),
+    postgresql: Object.freeze({
+      engine: 'postgresql',
+      components: Object.freeze({
+        transport: 'postgresql.connection-options',
+        metadata: 'postgresql.scoped-query',
+        executor: 'postgresql.run-queries',
+        capability: 'postgresql.read-only-session',
+        evidence: 'preflight.coverage-ledger',
+      }),
+      secret: Object.freeze({fileVariable: 'POSTGRESQL_PASSWORD_FILE', env: 'CM_POSTGRESQL_PASSWORD'}),
+    }),
+  }),
+});
+
+// Fail-closed selector: a missing/unknown engine or a stale descriptor version throws
+// instead of defaulting to another engine's components.
+export function selectProductDescriptor(engine, {version = PRODUCT_DESCRIPTOR_VERSION} = {}) {
+  if (version !== PRODUCT_DESCRIPTOR_VERSION) throw coded('DB_ANALYZE_DESCRIPTOR_STALE');
+  const descriptor = typeof engine === 'string' ? PRODUCT_DESCRIPTOR.engines[engine] : undefined;
+  if (!descriptor || descriptor.engine !== engine) throw coded('DB_ANALYZE_DESCRIPTOR_ENGINE_UNKNOWN');
+  return descriptor;
+}
+
+// Presence-based cross-engine credential guard: when a profile carries a credential
+// reference it must equal this engine's own secret route — a reference bound to another
+// engine (substitution) fails closed. Profiles without a reference (e.g. SYNTHETIC
+// fixtures) have nothing to bind and are left untouched.
+export function assertProductSecretBinding(descriptor, passwordEnv) {
+  if (passwordEnv === undefined || passwordEnv === null) return;
+  if (typeof passwordEnv !== 'string' || passwordEnv !== descriptor.secret.env) {
+    throw coded('DB_ANALYZE_SECRET_BINDING_MISMATCH');
+  }
+}

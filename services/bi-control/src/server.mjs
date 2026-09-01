@@ -9,9 +9,10 @@ import { answerCatalogQuestion, ingestCatalogReceipt, searchCatalog } from './ca
 import { handleDiscovery } from './discovery.mjs';
 import { RealBiSpecialist } from './bi-specialist/specialist-agent.mjs';
 import { selectPlanningPolicy } from './bi-specialist/planning-policy.mjs';
+import { readPostgresqlSessionProof } from './db-analyzer/postgresql-runtime.mjs';
 import { runAnalyzeProfile } from './db-analyzer/workflow.mjs';
 import { coded, exactObject, validateActionRequest, validateAgentText } from './policy.mjs';
-import { buildLiveProfile, selectedEngine } from './runtime-config.mjs';
+import { assertProductSecretBinding, buildLiveProfile, selectProductDescriptor, selectedEngine } from './runtime-config.mjs';
 import { collectSupersetFingerprint, evaluateSupersetPlanningGate } from './superset-fingerprint.mjs';
 
 const port = Number(process.env.PORT ?? 18089);
@@ -124,24 +125,22 @@ async function analyze() {
   const sourceMode = process.env.BI_SOURCE_MODE ?? 'fixture';
   let profileFile;
   let readOnlyEvidence;
-  if (sourceMode === 'fixture') {
-    if (engine !== 'mssql') throw coded('DB_ANALYZE_SOURCE_MODE_DENIED');
-    profileFile = '/app/fixtures/mssql-profile-v1.json';
-    readOnlyEvidence = {database: 'CM_BI_FIXTURE', databaseUpdateability: 'FIXTURE', principalDmlDdlPermissions: false, readOnlyIntent: true};
-  } else if (sourceMode === 'live') {
-    const passwordVariable = engine === 'mssql' ? 'MSSQL_PASSWORD_FILE' : 'ORACLE_PASSWORD_FILE';
-    const passwordEnv = engine === 'mssql' ? 'CM_MSSQL_PASSWORD' : 'CM_ORACLE_PASSWORD';
-    const password = await secret(passwordVariable, 'DB_ANALYZE_CREDENTIAL_MISSING');
-    process.env[passwordEnv] = password;
-    const profile = buildLiveProfile(process.env, passwordEnv);
-    readOnlyEvidence = engine === 'mssql'
-      ? await assertLivePrincipalReadOnly(profile, password)
-      : {database: profile.scope.database, serviceName: profile.scope.container, principalDmlDdlPermissions: false, oracleThinMode: true, sourceScopeBound: true};
-    profileFile = path.join(receiptDir, 'live-profile.json');
-    await writeFile(profileFile, `${JSON.stringify(profile, null, 2)}\n`, {mode: 0o600});
-  } else throw coded('DB_ANALYZE_SOURCE_MODE_DENIED');
-
   try {
+    if (sourceMode === 'fixture') {
+      if (engine !== 'mssql') throw coded('DB_ANALYZE_SOURCE_MODE_DENIED');
+      profileFile = '/app/fixtures/mssql-profile-v1.json';
+      readOnlyEvidence = {database: 'CM_BI_FIXTURE', databaseUpdateability: 'FIXTURE', principalDmlDdlPermissions: false, readOnlyIntent: true};
+    } else if (sourceMode === 'live') {
+      const descriptor = selectProductDescriptor(engine);
+      const password = await secret(descriptor.secret.fileVariable, 'DB_ANALYZE_CREDENTIAL_MISSING');
+      process.env[descriptor.secret.env] = password;
+      const profile = buildLiveProfile(process.env, descriptor.secret.env);
+      assertProductSecretBinding(descriptor, profile.adapter.passwordEnv);
+      readOnlyEvidence = await liveReadOnlyEvidence(descriptor, profile, password);
+      profileFile = path.join(receiptDir, 'live-profile.json');
+      await writeFile(profileFile, `${JSON.stringify(profile, null, 2)}\n`, {mode: 0o600});
+    } else throw coded('DB_ANALYZE_SOURCE_MODE_DENIED');
+
     const analysis = await runAnalyzeProfile(profileFile, {repositoryRoot});
     const analyzedAt = new Date().toISOString();
     const receiptId = `${engine}-${sha256(`${analysis.snapshotSha256}:${sourceMode}:${analysis.profile.scope.database}`).slice(0, 24)}`;
@@ -159,6 +158,23 @@ async function analyze() {
   } finally {
     delete process.env.CM_MSSQL_PASSWORD;
     delete process.env.CM_ORACLE_PASSWORD;
+    delete process.env.CM_POSTGRESQL_PASSWORD;
+  }
+}
+
+// Explicit, fail-closed live dispatch by the product descriptor's capability route.
+// Every engine's read-only evidence is named here; an unrecognized route fails closed
+// rather than falling through to another engine's evidence.
+async function liveReadOnlyEvidence(descriptor, profile, password) {
+  switch (descriptor.components.capability) {
+    case 'mssql.read-only-principal':
+      return assertLivePrincipalReadOnly(profile, password);
+    case 'oracle.read-only-capabilities':
+      return {database: profile.scope.database, serviceName: profile.scope.container, principalDmlDdlPermissions: false, oracleThinMode: true, sourceScopeBound: true};
+    case 'postgresql.read-only-session':
+      return readPostgresqlSessionProof({profile, password});
+    default:
+      throw coded('DB_ANALYZE_DESCRIPTOR_CAPABILITY_MISMATCH');
   }
 }
 

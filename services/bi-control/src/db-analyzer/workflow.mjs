@@ -15,7 +15,7 @@ import {
 import { buildOptionalParserEnrichment } from './parser-enrichment.mjs';
 import { auditQueryPackSafety } from './query-safety.mjs';
 import { runPostgresqlQueries } from './postgresql-runtime.mjs';
-import { buildOracleConnectString } from '../runtime-config.mjs';
+import { buildOracleConnectString, selectProductDescriptor, assertProductSecretBinding } from '../runtime-config.mjs';
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
 
@@ -210,6 +210,16 @@ function assertScope(profile, evidence) {
   }
 }
 
+// Bind the versioned product descriptor's executor route to the existing,
+// engine-specific executor. The descriptor names the route; this module owns the
+// route -> implementation binding. An engine whose executor is not bound here fails
+// closed instead of silently defaulting to another engine's executor.
+const EXECUTOR_BINDINGS = Object.freeze({
+  'mssql.run-queries': ({ profile, manifest, entries }) => runMssqlQueries({ profile, manifest, entries }),
+  'oracle.run-queries': ({ profile, manifest, entries, oracleDriver }) => runOracleQueries({ profile, manifest, entries, driver: oracleDriver }),
+  'postgresql.run-queries': ({ profile, manifest, entries, signal, postgresqlDriver }) => runPostgresqlQueries({ profile, manifest, entries, signal, driver: postgresqlDriver }),
+});
+
 export async function runAnalyzeProfile(profileFile, options = {}) {
   if (options.signal !== undefined && typeof options.signal?.aborted !== 'boolean') fail('DB_ANALYZE_CANCELLATION_INVALID');
   const assertActive = () => {
@@ -228,13 +238,15 @@ export async function runAnalyzeProfile(profileFile, options = {}) {
 
   const entries = await Promise.all(manifest.queries.map(async (query) => [query.id, await readFile(path.join(packDirectory, query.file), 'utf8')]));
   auditQueryPackSafety({ manifest, sqlByQueryId: Object.fromEntries(entries) });
+  const descriptor = selectProductDescriptor(profile.engine);
+  assertProductSecretBinding(descriptor, profile.adapter.passwordEnv);
+  const executor = profile.mode === 'SYNTHETIC'
+    ? null
+    : EXECUTOR_BINDINGS[descriptor.components.executor];
+  if (profile.mode !== 'SYNTHETIC' && typeof executor !== 'function') fail('DB_ANALYZE_DESCRIPTOR_EXECUTOR_MISMATCH');
   const resultSets = profile.mode === 'SYNTHETIC'
     ? await readJson(path.join(path.dirname(resolvedProfile), profile.adapter.fixture))
-    : profile.engine === 'mssql'
-      ? await runMssqlQueries({ profile, manifest, entries })
-      : profile.engine === 'postgresql'
-        ? await runPostgresqlQueries({ profile, manifest, entries, signal: options.signal, driver: options.postgresqlDriver })
-        : await runOracleQueries({ profile, manifest, entries, driver: options.oracleDriver });
+    : await executor({ profile, manifest, entries, signal: options.signal, postgresqlDriver: options.postgresqlDriver, oracleDriver: options.oracleDriver });
   assertActive();
   let profilingEvidence;
   if (profile.policy.profiling !== undefined) {
