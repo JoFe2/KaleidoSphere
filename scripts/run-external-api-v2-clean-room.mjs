@@ -1,7 +1,10 @@
 #!/usr/bin/env node
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 
 const baseUrl = process.argv[2] ?? 'http://127.0.0.1:18790';
+const runId = randomUUID();
+const requestId = (name) => `${name}-${runId}`;
+const discoverySessionId = `cleanroom-${runId}`;
 const REQUEST_SCHEMA = 'superset-bi-agent.external/intent-request/v2';
 const canonical = (value) => {
   if (value === null || typeof value === 'boolean' || typeof value === 'number' || typeof value === 'string') return JSON.stringify(value);
@@ -73,24 +76,24 @@ if (profile.boundaries?.sourceDatabaseCredentialsAccepted !== false || profile.b
 if (profile.boundaries?.persistentSupersetWorkflow !== 'trusted-preview-approval-apply-readback-rollback-only') fail('consumer profile workflow mismatch');
 if (profile.nonclaims.length !== 3) fail('consumer profile nonclaims mismatch');
 
-const status = await post(request('clean-status', 'status')); verifyEnvelope(status, 'status');
-const analysis = await post(request('clean-analyze', 'analyze')); verifyEnvelope(analysis, 'analyze');
+const status = await post(request(requestId('clean-status'), 'status')); verifyEnvelope(status, 'status');
+const analysis = await post(request(requestId('clean-analyze'), 'analyze')); verifyEnvelope(analysis, 'analyze');
 if (analysis.result.safety.rawSourceRowsReturned !== false || analysis.result.safety.credentialsReturned !== false) fail('analysis disclosure mismatch');
-const discovery = await post(request('clean-discovery', 'discovery', {command: 'start', sessionId: 'cleanroom-v2'})); verifyEnvelope(discovery, 'discovery');
-const plan = await post(request('clean-plan', 'plan', {objective: 'Review weekly order value and coverage', receiptId: analysis.result.receiptId})); verifyEnvelope(plan, 'plan');
+const discovery = await post(request(requestId('clean-discovery'), 'discovery', {command: 'start', sessionId: discoverySessionId})); verifyEnvelope(discovery, 'discovery');
+const plan = await post(request(requestId('clean-plan'), 'plan', {objective: 'Review weekly order value and coverage', receiptId: analysis.result.receiptId})); verifyEnvelope(plan, 'plan');
 if (plan.result.graph.acceptedIncumbent !== 'adaptive-v1' || plan.result.authority.persistentActionAllowed !== false) fail('plan authority mismatch');
-const preview = await post(request('clean-preview', 'preview', {objective: 'Preview weekly order value and coverage', receiptId: analysis.result.receiptId})); verifyEnvelope(preview, 'preview');
+const preview = await post(request(requestId('clean-preview'), 'preview', {objective: 'Preview weekly order value and coverage', receiptId: analysis.result.receiptId})); verifyEnvelope(preview, 'preview');
 if (preview.result.authority.proposalOnly !== true || preview.result.authority.applyPerformed !== false || preview.result.authority.approvalRequiredBeforePersistence !== true) fail('preview boundary mismatch');
-const readback = await post(request('clean-readback', 'readback')); verifyEnvelope(readback, 'readback');
+const readback = await post(request(requestId('clean-readback'), 'readback')); verifyEnvelope(readback, 'readback');
 if (readback.result.disclosure.rawSourceRowsReturned !== false || readback.result.disclosure.credentialsReturned !== false || readback.result.disclosure.freeSqlReturned !== false) fail('readback disclosure mismatch');
 
 const denials = [
-  request('deny-sql', 'plan', {objective: 'SELECT all orders'}),
-  request('deny-apply', 'trusted-apply'),
-  request('deny-publish', 'publish'),
-  {...request('deny-url', 'plan', {objective: 'Review orders'}), input: {objective: 'Review orders', url: 'http://evil.test'}},
-  {...request('deny-rows', 'discovery', {command: 'start', sessionId: 'cleanroom-v2'}), input: {command: 'start', sessionId: 'cleanroom-v2', rawRows: []}},
-  {...request('deny-schema', 'status'), schemaVersion: 'superset-bi-agent.external/intent-request/v1'},
+  request(requestId('deny-sql'), 'plan', {objective: 'SELECT all orders'}),
+  request(requestId('deny-apply'), 'trusted-apply'),
+  request(requestId('deny-publish'), 'publish'),
+  {...request(requestId('deny-url'), 'plan', {objective: 'Review orders'}), input: {objective: 'Review orders', url: 'http://evil.test'}},
+  {...request(requestId('deny-rows'), 'discovery', {command: 'start', sessionId: discoverySessionId}), input: {command: 'start', sessionId: discoverySessionId, rawRows: []}},
+  {...request(requestId('deny-schema'), 'status'), schemaVersion: 'superset-bi-agent.external/intent-request/v1'},
 ];
 for (const denial of denials) {
   const result = await post(denial, 400);
