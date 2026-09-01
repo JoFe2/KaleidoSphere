@@ -1,0 +1,110 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v1",
+  "taskId": "PORTFOLIO-KS148-DELIVERY",
+  "issue": {
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 148,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/148"
+  },
+  "recordedAt": "2026-09-01T17:12:45Z",
+  "currentMainIntegration": {
+    "baseCommit": "22b3d38b33a96165be11b98c347c371f31c95d12",
+    "baseBranch": "main",
+    "originMainIsAncestor": true,
+    "replayDisposition": "PRODUCT_AND_MECHANICAL_INTEGRITY_COMMITS_REPLAYED_ON_CURRENT_PUBLIC_MAIN"
+  },
+  "testedProductHead": "d7a3a279db2fcc519b0027b3aec6a9b05278545f",
+  "testedProductTree": "dc176bcd8b9b805afb7de1f299c825c0fe7faf9c",
+  "runCommits": [
+    "84adefed3b210d58d5fb31ffb83eb314822fd1a7",
+    "d7a3a279db2fcc519b0027b3aec6a9b05278545f"
+  ],
+  "changedPaths": [
+    "SOURCE-MAP.json",
+    "docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json",
+    "services/bi-control/src/db-analyzer/workflow.mjs",
+    "services/bi-control/src/runtime-config.mjs",
+    "services/bi-control/src/server.mjs",
+    "tests/postgresql-product-dispatch.test.mjs"
+  ],
+  "changedPathSha256": {
+    "SOURCE-MAP.json": "2c98c31a5aec38202a85dd7c34043d3b9075068a897eb7f9e06c6386a180d11d",
+    "docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json": "5809195f0bc6114415b7589094f7b31f5c78c3793631b6e068ce13c914577b76",
+    "services/bi-control/src/db-analyzer/workflow.mjs": "b69fadf9202dacaeec41847a5b8753bb8d96e7645d35b19a6772c2c4650a3197",
+    "services/bi-control/src/runtime-config.mjs": "d92c13818d80c9df5c3fdc5d428cf4847bb8471f53d41367b274e9ccb1da15c5",
+    "services/bi-control/src/server.mjs": "dfd112b10eed7419858d0d215b9efdc0a1168856f4cf3b90cd2ed9edb59e3a2d",
+    "tests/postgresql-product-dispatch.test.mjs": "757ea70f13db969f16f137b6c1b2ac0e7febb4f5e52d059f030673139c6e8341"
+  },
+  "acceptance": {
+    "PG-KS-01-AC01": "PASS",
+    "PG-KS-01-AC02": "PASS",
+    "PG-KS-01-AC03": "PASS",
+    "PG-KS-01-AC04": "PASS"
+  },
+  "checks": [
+    {
+      "command": "node --test tests/postgresql-product-dispatch.test.mjs",
+      "status": "PASS",
+      "tests": 6
+    },
+    {
+      "command": "npm run test:source",
+      "status": "PASS",
+      "tests": 1
+    },
+    {
+      "command": "npm run test:security",
+      "status": "PASS",
+      "tests": 7
+    },
+    {
+      "command": "node --test tests/release.test.mjs",
+      "status": "PASS",
+      "tests": 1
+    },
+    {
+      "command": "docker compose --env-file .env.example --file compose.yaml config --quiet",
+      "status": "PASS"
+    },
+    {
+      "command": "node --test tests/legacy-technical-identity-plan.test.mjs",
+      "status": "PASS",
+      "tests": 4
+    },
+    {
+      "command": "npm test",
+      "status": "PASS",
+      "tests": 898,
+      "pass": 898,
+      "fail": 0
+    },
+    {
+      "command": "git diff --check origin/main...HEAD",
+      "status": "PASS"
+    }
+  ],
+  "review": {
+    "independentReviewCount": 1,
+    "priorReviewedHead": "d4697a4978c5b6c4065b461272380c5df1700e1b",
+    "classification": "PASS",
+    "finalOwner": "sol",
+    "replayAdjudication": "NO_SECOND_REVIEW; FINAL_OWNER_REPLAYED_THE_ACCEPTED_PRODUCT_BYTES_AND_FIXED_ONLY_CANONICAL_IDENTITY_INVENTORY_DRIFT"
+  },
+  "productAuditSeparation": {
+    "productBytesHead": "d7a3a279db2fcc519b0027b3aec6a9b05278545f",
+    "productBytesTree": "dc176bcd8b9b805afb7de1f299c825c0fe7faf9c",
+    "auditPath": "closure-audits/PORTFOLIO-KS148-ROOT-QS/exact-head-local-gate-receipt.json",
+    "auditExcludedFromTestedProductTree": true
+  },
+  "nonclaims": [
+    "Synthetic non-customer bytes only; no live database, customer data, production credential, C1 or C2 claim.",
+    "No connector-framework, production-readiness, deployment or external-effect claim.",
+    "This local receipt is not PR CI, Main CI, release, public readback, issue closure or Queue DONE evidence."
+  ],
+  "requiredDownstreamGates": [
+    "exact PR-head readback and CI PASS",
+    "SHA-bound merge and exact Main-head CI PASS",
+    "serial daily release and anonymous tag-to-merge readback",
+    "public issue CLOSED and Queue DONE reconciliation"
+  ]
+}

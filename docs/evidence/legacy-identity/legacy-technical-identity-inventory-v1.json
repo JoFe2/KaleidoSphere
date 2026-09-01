@@ -90,12 +90,22 @@
     {
       "identityClass": "environment",
       "value": "CM_MSSQL_PASSWORD",
-      "path": "services/bi-control/src/server.mjs"
+      "path": "services/bi-control/src/runtime-config.mjs"
     },
     {
       "identityClass": "environment",
       "value": "CM_MSSQL_PASSWORD",
       "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MSSQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MSSQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
     },
     {
       "identityClass": "environment",
@@ -105,7 +115,7 @@
     {
       "identityClass": "environment",
       "value": "CM_ORACLE_PASSWORD",
-      "path": "services/bi-control/src/server.mjs"
+      "path": "services/bi-control/src/runtime-config.mjs"
     },
     {
       "identityClass": "environment",
@@ -190,12 +200,27 @@
     {
       "identityClass": "environment",
       "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_ORACLE_PASSWORD",
       "path": "tests/progressive-controller.test.mjs"
     },
     {
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
-      "path": "tests/postgresql-adapter.test.mjs"
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "services/bi-control/src/server.mjs"
     },
     {
       "identityClass": "environment",
@@ -216,6 +241,46 @@
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
       "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-adapter.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
     },
     {
       "identityClass": "environment",
@@ -4811,6 +4876,16 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/preflight-evidence/v1",
       "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/product-descriptor/v1",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/product-descriptor/v1",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",
