@@ -9,6 +9,8 @@ import test from 'node:test';
 
 import { canonicalJson } from '../services/bi-control/src/canonical-json.js';
 import {
+  ACCEPTED_CANDIDATE_COMMIT_OID,
+  ACCEPTED_CANDIDATE_TREE_OID,
   ADDITIONAL_FAIL_CLOSED_CASE_IDS,
   ALLOWLISTED_CANDIDATE_PATHS,
   CANONICAL_JSON_SHA256,
@@ -19,6 +21,8 @@ import {
   FROZEN_REPOSITORY_IDENTITY,
   FROZEN_RESULT_SHA256,
   INDEPENDENT_ORACLE_CALCULATOR_SHA256,
+  INTEGRATION_AUDIT_PATH,
+  INTEGRATION_PRODUCT_PATHS,
   ISSUE_ID,
   NAMED_SABOTAGE_CASE_IDS,
   PACKAGE_JSON_SHA256,
@@ -123,6 +127,48 @@ test('input, metric, plan, oracle, result, coverage, environment, commit, and tr
   assert.equal(process.versions.modules, FROZEN_ENVIRONMENT.nodeModulesAbi);
   assert.equal(process.platform, FROZEN_ENVIRONMENT.platform);
   assert.equal(process.arch, FROZEN_ENVIRONMENT.architecture);
+});
+
+test('accepted candidate replay and mechanical integration paths are exact and non-self-referential', async () => {
+  assert.equal(
+    ACCEPTED_CANDIDATE_COMMIT_OID,
+    '2d99fff473c60d9c271aa2dad85329a9cc6d40ca',
+  );
+  assert.equal(
+    ACCEPTED_CANDIDATE_TREE_OID,
+    '4fbea5e80e57493c0c14f552b30682324f10fcff',
+  );
+  assert.deepStrictEqual(INTEGRATION_PRODUCT_PATHS, [
+    'README.md',
+    'SOURCE-MAP.json',
+    'docs/evidence/business-bi-net-revenue-v1.md',
+    'package.json',
+    'scripts/build-release.mjs',
+    'scripts/run-business-bi-falsification-clean-room.mjs',
+    'tests/business-bi-clean-room.test.mjs',
+    'tests/readme-release-surface.test.mjs',
+    'tests/release.test.mjs',
+    'tests/source-map.test.mjs',
+    'verification/business-bi-net-revenue-falsification-v1.json',
+  ]);
+  assert.equal(
+    INTEGRATION_AUDIT_PATH,
+    'closure-audits/PORTFOLIO-KS147-ROOT-QS/exact-head-local-gate-receipt.json',
+  );
+  assert.equal(INTEGRATION_PRODUCT_PATHS.includes(INTEGRATION_AUDIT_PATH), false);
+  assert.equal(INTEGRATION_PRODUCT_PATHS.includes('SOURCE-MAP.json'), true);
+  assert.equal(sha256(inputs.packageBytes), PACKAGE_JSON_SHA256);
+
+  const currentPackageBytes = await readFile(path.join(ROOT, 'package.json'));
+  const currentPackage = JSON.parse(currentPackageBytes.toString('utf8'));
+  assert.notEqual(sha256(currentPackageBytes), PACKAGE_JSON_SHA256);
+  for (const focusedTest of [
+    'tests/business-bi-metric-oracle.test.mjs',
+    'tests/business-bi-net-revenue-plan.test.mjs',
+    'tests/business-bi-clean-room.test.mjs',
+  ]) {
+    assert.equal(currentPackage.scripts.test.split(/\s+/).includes(focusedTest), true);
+  }
 });
 
 test('two isolated frozen-byte runs are byte-identical and equal the independently bound oracle', async () => {

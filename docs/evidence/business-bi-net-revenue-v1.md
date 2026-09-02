@@ -21,9 +21,12 @@ Counts are intentionally reported in separate namespaces:
 The product under test is exact KaleidoSphere Main/release commit
 `764d0f7a1bad9e8e407b96e1b2340baa1e001af6`, tree
 `e5c6b82aba35a0f760a497c78cf4826dfbb3d104`. Local `main` and `origin/main`
-must remain at that commit. The candidate must be exactly one child commit with
-only the four paths listed below; a dirty index/worktree, another parent, a
-moved Main ref, a second commit, a deletion, or another changed path is denied.
+must remain at that commit. The accepted falsification candidate is exact commit
+`2d99fff473c60d9c271aa2dad85329a9cc6d40ca`, tree
+`4fbea5e80e57493c0c14f552b30682324f10fcff`: exactly one child commit with only
+the four evidence paths listed below. The integration head is exactly one
+mechanical child of that accepted candidate. A dirty index/worktree, another
+parent, moved Main ref, extra commit, deletion, or unclassified path is denied.
 
 | Identity | Frozen value |
 | --- | --- |
@@ -42,7 +45,10 @@ The environment identity fixes Node `v24.19.0`, modules ABI `137`, Linux x64,
 little-endian byte order, the package bytes, and the canonical-JSON
 implementation bytes. The oracle calculator identity binds the inline
 calculator in `tests/business-bi-metric-oracle.test.mjs`; its oracle metadata
-records zero production-analysis imports.
+records zero production-analysis imports. The exact release package bytes are
+reconstructed only by removing the one canonical clean-room test registration
+from the integrated package and must equal the frozen Main digest. This keeps
+source-archive verification independent of local Git object availability.
 
 ## Falsification sequence
 
@@ -89,6 +95,16 @@ Exactly one independent integrated review slot is recorded as
 anonymous readback, issue CLOSED, and Queue DONE. The local GREEN does not claim
 that any of those public-closure stages occurred.
 
+The public claim is confined to `README.md`. The four paths below are classified
+as evidence in `SOURCE-MAP.json` and are required in the source release archive;
+the classes are disjoint and cannot include `SOURCE-MAP.json` or a closure-audit
+receipt, preventing a cyclic self-hash. The accepted #146 verification and local
+gate receipt remain byte-exact at
+`sha256:9a962e48ea2d4252d208a03900a92bb4e0d337b9ae30fc2819b7dcce4ba445e7`
+and
+`sha256:314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918`,
+respectively.
+
 The candidate write allowlist is exactly:
 
 - `tests/business-bi-clean-room.test.mjs`
@@ -98,7 +114,7 @@ The candidate write allowlist is exactly:
 
 ## Reproduction
 
-From the repository root, on the exact one-commit allowlisted candidate:
+From the repository root, on the exact two-commit allowlisted integration head:
 
 ```text
 node --test tests/business-bi-metric-oracle.test.mjs tests/business-bi-net-revenue-plan.test.mjs tests/business-bi-clean-room.test.mjs

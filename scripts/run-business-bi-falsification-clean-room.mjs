@@ -34,6 +34,10 @@ export const RELEASE_COMMIT_OID =
   '764d0f7a1bad9e8e407b96e1b2340baa1e001af6';
 export const RELEASE_TREE_OID =
   'e5c6b82aba35a0f760a497c78cf4826dfbb3d104';
+export const ACCEPTED_CANDIDATE_COMMIT_OID =
+  '2d99fff473c60d9c271aa2dad85329a9cc6d40ca';
+export const ACCEPTED_CANDIDATE_TREE_OID =
+  '4fbea5e80e57493c0c14f552b30682324f10fcff';
 export const FROZEN_PLAN_SHA256 =
   '90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8';
 export const FROZEN_RESULT_SHA256 =
@@ -55,6 +59,20 @@ export const ALLOWLISTED_CANDIDATE_PATHS = Object.freeze([
   'tests/business-bi-clean-room.test.mjs',
   'verification/business-bi-net-revenue-falsification-v1.json',
 ]);
+
+export const INTEGRATION_PRODUCT_PATHS = Object.freeze([
+  'README.md',
+  'SOURCE-MAP.json',
+  ...ALLOWLISTED_CANDIDATE_PATHS,
+  'package.json',
+  'scripts/build-release.mjs',
+  'tests/readme-release-surface.test.mjs',
+  'tests/release.test.mjs',
+  'tests/source-map.test.mjs',
+].sort());
+
+export const INTEGRATION_AUDIT_PATH =
+  'closure-audits/PORTFOLIO-KS147-ROOT-QS/exact-head-local-gate-receipt.json';
 
 export const NAMED_SABOTAGE_CASE_IDS = Object.freeze([
   'WRONG_ORACLE',
@@ -84,6 +102,8 @@ const PATHS = Object.freeze({
   package: 'package.json',
   verification: 'verification/business-bi-net-revenue-falsification-v1.json',
 });
+const CANONICAL_TEST_REGISTRATION =
+  ' tests/business-bi-clean-room.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -288,16 +308,38 @@ export function inspectLiveRepository() {
 
   const head = runGit(['rev-parse', 'HEAD']);
   const headTree = runGit(['rev-parse', 'HEAD^{tree}']);
-  const parentLine = runGit(['rev-list', '--parents', '-n', '1', 'HEAD']);
+  const headParentLine = runGit(['rev-list', '--parents', '-n', '1', 'HEAD']);
+  const acceptedTree = runGit([
+    'rev-parse',
+    `${ACCEPTED_CANDIDATE_COMMIT_OID}^{tree}`,
+  ]);
+  const acceptedParentLine = runGit([
+    'rev-list',
+    '--parents',
+    '-n',
+    '1',
+    ACCEPTED_CANDIDATE_COMMIT_OID,
+  ]);
   const main = runGit(['rev-parse', 'main^{commit}']);
   const originMain = runGit(['rev-parse', 'origin/main^{commit}']);
   const releaseTree = runGit(['rev-parse', `${RELEASE_COMMIT_OID}^{tree}`]);
-  const candidateCount = runGit([
+  const acceptedCandidateCount = runGit([
+    'rev-list',
+    '--count',
+    `${RELEASE_COMMIT_OID}..${ACCEPTED_CANDIDATE_COMMIT_OID}`,
+  ]);
+  const acceptedChangedStatus = runGit([
+    'diff',
+    '--name-status',
+    '--no-renames',
+    `${RELEASE_COMMIT_OID}...${ACCEPTED_CANDIDATE_COMMIT_OID}`,
+  ]);
+  const integrationCommitCount = runGit([
     'rev-list',
     '--count',
     `${RELEASE_COMMIT_OID}..HEAD`,
   ]);
-  const changedStatus = runGit([
+  const integrationChangedStatus = runGit([
     'diff',
     '--name-status',
     '--no-renames',
@@ -315,21 +357,34 @@ export function inspectLiveRepository() {
   if ([
     head,
     headTree,
-    parentLine,
+    headParentLine,
+    acceptedTree,
+    acceptedParentLine,
     main,
     originMain,
     releaseTree,
-    candidateCount,
-    changedStatus,
+    acceptedCandidateCount,
+    acceptedChangedStatus,
+    integrationCommitCount,
+    integrationChangedStatus,
   ].some((value) => value === null) || diffCheck.status !== 0) {
     return repositoryCommandDenied();
   }
 
-  const parents = parentLine.split(' ').slice(1);
-  const changedEntries = changedStatus === ''
+  const headParents = headParentLine.split(' ').slice(1);
+  const acceptedParents = acceptedParentLine.split(' ').slice(1);
+  const acceptedChangedEntries = acceptedChangedStatus === ''
     ? []
-    : changedStatus.split('\n').map((line) => line.split('\t'));
-  const changedPaths = changedEntries.map(([, changedPath]) => changedPath).sort();
+    : acceptedChangedStatus.split('\n').map((line) => line.split('\t'));
+  const acceptedChangedPaths = acceptedChangedEntries
+    .map(([, changedPath]) => changedPath)
+    .sort();
+  const integrationChangedEntries = integrationChangedStatus === ''
+    ? []
+    : integrationChangedStatus.split('\n').map((line) => line.split('\t'));
+  const integrationChangedPaths = integrationChangedEntries
+    .map(([, changedPath]) => changedPath)
+    .sort();
   const repository = {
     schemaVersion: FROZEN_REPOSITORY_IDENTITY.schemaVersion,
     gitObjectFormat: 'sha1',
@@ -337,18 +392,37 @@ export function inspectLiveRepository() {
     originMainCommitOid: originMain,
     releaseCommitOid: RELEASE_COMMIT_OID,
     releaseTreeOid: releaseTree,
-    candidateParentOid: parents[0] ?? null,
-    candidateCommitCount: Number(candidateCount),
-    candidateChangedPaths: changedPaths,
+    candidateParentOid: acceptedParents[0] ?? null,
+    candidateCommitCount: Number(acceptedCandidateCount),
+    candidateChangedPaths: acceptedChangedPaths,
   };
-  const allAdded = changedEntries.every(([change]) => change === 'A');
-  const exactSingleParent = parents.length === 1
-    && parents[0] === RELEASE_COMMIT_OID;
+  const acceptedAllAdded = acceptedChangedEntries
+    .every(([change]) => change === 'A');
+  const acceptedExactSingleParent = acceptedParents.length === 1
+    && acceptedParents[0] === RELEASE_COMMIT_OID;
+  const integrationExactSingleParent = headParents.length === 1
+    && headParents[0] === ACCEPTED_CANDIDATE_COMMIT_OID;
+  const integrationChangesAllowed = integrationChangedEntries
+    .every(([change]) => change === 'A' || change === 'M');
+  const productPathsOnly = exactJson(
+    integrationChangedPaths,
+    INTEGRATION_PRODUCT_PATHS,
+  );
+  const productPathsWithSeparatedAudit = exactJson(
+    integrationChangedPaths,
+    [...INTEGRATION_PRODUCT_PATHS, INTEGRATION_AUDIT_PATH].sort(),
+  );
   if (head === RELEASE_COMMIT_OID
+    || head === ACCEPTED_CANDIDATE_COMMIT_OID
     || !/^[a-f0-9]{40}$/.test(head)
     || !/^[a-f0-9]{40}$/.test(headTree)
-    || !allAdded
-    || !exactSingleParent
+    || acceptedTree !== ACCEPTED_CANDIDATE_TREE_OID
+    || !acceptedAllAdded
+    || !acceptedExactSingleParent
+    || !integrationExactSingleParent
+    || Number(integrationCommitCount) !== 2
+    || !integrationChangesAllowed
+    || (!productPathsOnly && !productPathsWithSeparatedAudit)
     || !exactJson(repository, FROZEN_REPOSITORY_IDENTITY)) {
     return denial(
       'CLEAN_ROOM_PREFLIGHT',
@@ -370,6 +444,19 @@ export function inspectLiveRepository() {
   };
 }
 
+function reconstructFrozenReleasePackage(packageBytes) {
+  const current = packageBytes.toString('utf8');
+  const first = current.indexOf(CANONICAL_TEST_REGISTRATION);
+  invariant(first !== -1
+    && first === current.lastIndexOf(CANONICAL_TEST_REGISTRATION),
+  'BUSINESS_BI_CANONICAL_REGISTRATION_DENIED');
+  return Buffer.from(
+    current.slice(0, first)
+      + current.slice(first + CANONICAL_TEST_REGISTRATION.length),
+    'utf8',
+  );
+}
+
 export async function loadFrozenInputs() {
   const entries = await Promise.all(Object.entries({
     metricContractBytes: PATHS.metric,
@@ -377,11 +464,15 @@ export async function loadFrozenInputs() {
     oracleBytes: PATHS.oracle,
     oracleCalculatorBytes: PATHS.oracleCalculator,
     canonicalJsonBytes: PATHS.canonicalJson,
-    packageBytes: PATHS.package,
   }).map(async ([key, relativePath]) => [
     key,
     await readFile(path.join(ROOT, relativePath)),
   ]));
+  const currentPackageBytes = await readFile(path.join(ROOT, PATHS.package));
+  entries.push([
+    'packageBytes',
+    reconstructFrozenReleasePackage(currentPackageBytes),
+  ]);
   return Object.fromEntries(entries);
 }
 

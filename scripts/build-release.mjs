@@ -9,6 +9,7 @@ import { spawn, spawnSync } from 'node:child_process';
 
 const root = path.resolve(import.meta.dirname, '..');
 const pkg = JSON.parse(await readFile(path.join(root, 'package.json'), 'utf8'));
+const sourceMap = JSON.parse(await readFile(path.join(root, 'SOURCE-MAP.json'), 'utf8'));
 const version = pkg.version;
 if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('release version must be semver x.y.z');
 
@@ -17,6 +18,49 @@ const checksumName = `${archiveName}.sha256`;
 const outputDir = path.resolve(process.argv[2] ?? path.join(root, 'dist', 'release'));
 const archivePath = path.join(outputDir, archiveName);
 const checksumPath = path.join(outputDir, checksumName);
+
+function classifiedBusinessBiReleasePaths() {
+  const classes = sourceMap.releasePathClasses?.businessBiFalsification;
+  if (classes === null || typeof classes !== 'object' || Array.isArray(classes)) {
+    throw new Error('business BI release path classification is required');
+  }
+  if (JSON.stringify(Object.keys(classes).sort()) !== JSON.stringify(['evidence', 'public'])) {
+    throw new Error('business BI release path classes drifted');
+  }
+  for (const classifiedPaths of Object.values(classes)) {
+    if (!Array.isArray(classifiedPaths)) {
+      throw new Error('business BI release paths must be arrays');
+    }
+  }
+  if (classes.public.length !== 1 || classes.evidence.length !== 4) {
+    throw new Error('business BI release path class counts drifted');
+  }
+
+  const paths = [];
+  for (const [classification, classifiedPaths] of Object.entries(classes)) {
+    for (const relativePath of classifiedPaths) {
+      if (typeof relativePath !== 'string'
+        || path.isAbsolute(relativePath)
+        || relativePath.split('/').includes('..')) {
+        throw new Error('business BI release path classification is unsafe');
+      }
+      if (relativePath === 'SOURCE-MAP.json'
+        || relativePath.startsWith('closure-audits/')) {
+        throw new Error('business BI release path classification is self-referential');
+      }
+      if (!/^[a-f0-9]{64}$/.test(sourceMap.files?.[relativePath] ?? '')) {
+        throw new Error(`business BI classified path is absent from source integrity: ${relativePath}`);
+      }
+      paths.push({ classification, relativePath });
+    }
+  }
+  if (new Set(paths.map(({ relativePath }) => relativePath)).size !== paths.length) {
+    throw new Error('business BI release path classifications overlap');
+  }
+  return paths;
+}
+
+const classifiedReleasePaths = classifiedBusinessBiReleasePaths();
 
 function runGit(args, options = {}) {
   const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', ...options });
@@ -58,6 +102,20 @@ if (isGitCheckout()) {
   if (exitCode !== 0) throw new Error(`tar archive exited ${exitCode}`);
 }
 
+const archiveListing = spawnSync('tar', ['-tzf', archivePath], {
+  cwd: root,
+  encoding: 'utf8',
+});
+if (archiveListing.status !== 0) {
+  throw new Error(`release archive listing failed: ${archiveListing.stderr || archiveListing.stdout}`);
+}
+const archivedPaths = new Set(archiveListing.stdout.trim().split('\n'));
+for (const { relativePath } of classifiedReleasePaths) {
+  if (!archivedPaths.has(`KaleidoSphere-v${version}/${relativePath}`)) {
+    throw new Error(`business BI classified release path missing: ${relativePath}`);
+  }
+}
+
 const digest = createHash('sha256').update(await readFile(archivePath)).digest('hex');
 const checksumLine = `${digest}  ${archiveName}\n`;
 await writeFile(checksumPath, checksumLine, { mode: 0o644 });
@@ -74,4 +132,11 @@ if (distribution.status !== 0) {
   throw new Error(`agent skill distribution build failed: ${distribution.stderr || distribution.stdout}`);
 }
 
-process.stdout.write(`${checksumLine}${archivePath}\n${checksumPath}\n${distribution.stdout}`);
+const publicPathCount = classifiedReleasePaths
+  .filter(({ classification }) => classification === 'public').length;
+const evidencePathCount = classifiedReleasePaths
+  .filter(({ classification }) => classification === 'evidence').length;
+process.stdout.write(
+  `release-paths public=${publicPathCount} evidence=${evidencePathCount}\n`
+  + `${checksumLine}${archivePath}\n${checksumPath}\n${distribution.stdout}`,
+);

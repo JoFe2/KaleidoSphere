@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { cp, mkdtemp, readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -17,6 +18,23 @@ const businessBiReleaseFiles = Object.freeze([
   'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
   'verification/business-bi-net-revenue-holdout-v1.json',
 ]);
+const businessBiFalsificationPathClasses = Object.freeze({
+  public: Object.freeze([
+    'README.md',
+  ]),
+  evidence: Object.freeze([
+    'docs/evidence/business-bi-net-revenue-v1.md',
+    'scripts/run-business-bi-falsification-clean-room.mjs',
+    'tests/business-bi-clean-room.test.mjs',
+    'verification/business-bi-net-revenue-falsification-v1.json',
+  ]),
+});
+const predecessorEvidenceSha256 = Object.freeze({
+  'closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json':
+    '314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918',
+  'verification/business-bi-net-revenue-holdout-v1.json':
+    '9a962e48ea2d4252d208a03900a92bb4e0d337b9ae30fc2819b7dcce4ba445e7',
+});
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: 'utf8', ...options });
@@ -28,10 +46,11 @@ test('release archive checksum is portable from a clean verifier directory', asy
   const buildDir = await mkdtemp(path.join(tmpdir(), 'sba-release-build-'));
   const verifyDir = await mkdtemp(path.join(tmpdir(), 'sba-release-verify-'));
 
-  run('node', ['scripts/build-release.mjs', buildDir], {
+  const build = run('node', ['scripts/build-release.mjs', buildDir], {
     cwd: root,
     env: { ...process.env, CM_BI_RELEASE_ALLOW_DIRTY: '1' },
   });
+  assert.match(build.stdout, /^release-paths public=1 evidence=4\n/);
 
   const checksumPath = path.join(buildDir, 'KaleidoSphere-v0.26.0.tar.gz.sha256');
   const archivePath = path.join(buildDir, 'KaleidoSphere-v0.26.0.tar.gz');
@@ -47,6 +66,25 @@ test('release archive checksum is portable from a clean verifier directory', asy
   assert(listing.includes('KaleidoSphere-v0.26.0/package.json\n'));
   for (const file of businessBiReleaseFiles) {
     assert(listing.includes(`KaleidoSphere-v0.26.0/${file}\n`), file);
+  }
+  const sourceMap = JSON.parse(await readFile('SOURCE-MAP.json', 'utf8'));
+  assert.deepStrictEqual(
+    sourceMap.releasePathClasses.businessBiFalsification,
+    businessBiFalsificationPathClasses,
+  );
+  const classifiedPaths = Object.values(businessBiFalsificationPathClasses).flat();
+  assert.equal(new Set(classifiedPaths).size, classifiedPaths.length);
+  assert.equal(classifiedPaths.length, 5);
+  for (const file of classifiedPaths) {
+    assert(listing.includes(`KaleidoSphere-v0.26.0/${file}\n`), file);
+  }
+  for (const [file, expected] of Object.entries(predecessorEvidenceSha256)) {
+    const archived = run('tar', [
+      '-xOzf',
+      'KaleidoSphere-v0.26.0.tar.gz',
+      `KaleidoSphere-v0.26.0/${file}`,
+    ], { cwd: verifyDir, encoding: null }).stdout;
+    assert.equal(createHash('sha256').update(archived).digest('hex'), expected, file);
   }
   assert(!listing.includes('/.git/'));
   assert(!listing.includes('KaleidoSphere-v0.18.2/.env\n'));

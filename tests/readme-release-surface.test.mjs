@@ -24,6 +24,10 @@ function validateReadme(readme) {
     '`bi.object.details.read`',
     '`bi.database.overview.read`',
     '`bi-ks-01-net-revenue/v1`',
+    'Exactly one admitted-holdout metric',
+    '3/3 satisfied criteria',
+    '1 delivered local evidence package',
+    '0 published packages',
     'local library/contract',
     'synthetic test evidence only',
     'JoFe2/kaleidosphere-dsh-plugin',
@@ -69,6 +73,9 @@ function validateReadme(readme) {
   assert.match(localContracts, /digest-bound, read-only aggregate/i);
   assert.match(localContracts, /identity-equal JSON and TABLE readbacks/i);
   assert.match(localContracts, /no free SQL, real-source,\s+dashboard, mutation, or shipped CLI\/HTTP authority/i);
+  assert.match(localContracts, /Exactly one admitted-holdout metric, synthetic net-revenue v1, passed\s+clean-room falsification; no production or broader BI claim is made/i);
+  assert.match(localContracts, /3\/3 satisfied criteria separately from 1 delivered local\s+evidence package and 0 published packages/i);
+  assert.equal((readme.match(/Exactly one admitted-holdout metric/gi) ?? []).length, 1);
   assert.match(synthetic, /no shipped CLI or HTTP invocation path/i);
   assert.match(dsh, /not part\s+of the KaleidoSphere v0\.26\.0 release assets/i);
   assert.match(readme, /six closed External API v2 (?:actions|intents)/i);
@@ -88,6 +95,7 @@ function validateReadme(readme) {
   assert.doesNotMatch(withoutPromotionOwners, /promot(?:e|ed|es|ing|ions|ion(?!-bundle))|\/v2\/promotion|\.\/bin\/bi\s+promotion/i);
   assert.doesNotMatch(normalized, /BI_ENGINE\s*=\s*postgres|\/v2\/promotion|\.\/bin\/bi\s+promotion\s+apply|promotion(?:-bundle)?\s+(?:execute|apply)/i);
   assert.doesNotMatch(normalized, /net-revenue[^.\n]*(?:accepts free SQL|production relation|shipped public CLI|public HTTP)/i);
+  assert.doesNotMatch(normalized, /(?:two|2) admitted-holdout metrics|admitted holdout establishes general production BI capability|criteria and .*delivered packages are the same count/i);
 }
 
 test('README distinguishes the current release surfaces and optional DSH preview', async () => {
@@ -130,6 +138,9 @@ test('README release-surface gate rejects contradictory overclaims', async () =>
     'The release includes the separate DSH plugin.',
     'The net-revenue operation accepts free SQL and production relations.',
     'The bi-ks-01-net-revenue/v1 operation has a shipped public CLI.',
+    'Two admitted-holdout metrics passed clean-room falsification.',
+    'The admitted holdout establishes general production BI capability.',
+    'Three criteria and three delivered packages are the same count.',
   ]) {
     assert.throws(() => validateReadme(`${readme}\n${overclaim}\n`), undefined, overclaim);
   }

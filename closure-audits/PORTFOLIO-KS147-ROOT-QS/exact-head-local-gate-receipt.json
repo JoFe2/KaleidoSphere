@@ -1,0 +1,396 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v2",
+  "taskId": "PORTFOLIO-KS147-INTEGRATE",
+  "issue": {
+    "id": "BI-KS-03",
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 147,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/147"
+  },
+  "recordedAt": "2026-09-02T13:30:51Z",
+  "processContext": {
+    "operatingModel": "Operating Model v1.1",
+    "decisionsPreserved": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "processVariant": "NONE"
+  },
+  "currentMainIntegration": {
+    "observedRef": "origin/main",
+    "baseCommit": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+    "baseTree": "e5c6b82aba35a0f760a497c78cf4826dfbb3d104",
+    "originMainIsAncestor": true,
+    "candidateAheadByCommits": 2,
+    "candidateBehindByCommits": 0,
+    "remoteFetchAttempted": true,
+    "remoteFetchPerformed": false,
+    "remoteFetchResult": "FAILED: unable to read askpass response from /bin/false; terminal prompts disabled",
+    "replayDisposition": "ACCEPTED_CANDIDATE_REPLAYED_DIRECTLY_ON_OBSERVED_CURRENT_PUBLIC_MAIN"
+  },
+  "acceptedCandidate": {
+    "commit": "2d99fff473c60d9c271aa2dad85329a9cc6d40ca",
+    "tree": "4fbea5e80e57493c0c14f552b30682324f10fcff",
+    "parent": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+    "reviewDisposition": "ACCEPTED_BY_CONTROLLER_CONTEXT; REVIEW EXECUTION WAS NOT REPEATED OR CLAIMED BY THIS WORKER",
+    "paths": [
+      "docs/evidence/business-bi-net-revenue-v1.md",
+      "scripts/run-business-bi-falsification-clean-room.mjs",
+      "tests/business-bi-clean-room.test.mjs",
+      "verification/business-bi-net-revenue-falsification-v1.json"
+    ],
+    "pathSha256": {
+      "docs/evidence/business-bi-net-revenue-v1.md": "249dc424ce6429cd9f85d8f6f9a147baebedbcc80af50f1afdd61240271a9e59",
+      "scripts/run-business-bi-falsification-clean-room.mjs": "8bf7a66dc037ed1c8a757e291011a018b7b498a5711acbd801c708bc8d65c33c",
+      "tests/business-bi-clean-room.test.mjs": "e78692e4806ba8a2c7835db3f17a499c8ee1077f72169bd54bef976e4776f8ce",
+      "verification/business-bi-net-revenue-falsification-v1.json": "6c543bea0255b841cf46b0858b1b0aa64ea7e32ee43d1a3846b80dfc78538742"
+    }
+  },
+  "testedProductIntegration": {
+    "head": "337ce217419d542160a75234a10ba0ea8b379a26",
+    "tree": "13f86e001f75a48e2fb56a53da7b48a257eb8a9b",
+    "cumulativeReviewRange": "origin/main...337ce217419d542160a75234a10ba0ea8b379a26",
+    "changedPaths": [
+      "README.md",
+      "SOURCE-MAP.json",
+      "docs/evidence/business-bi-net-revenue-v1.md",
+      "package.json",
+      "scripts/build-release.mjs",
+      "scripts/run-business-bi-falsification-clean-room.mjs",
+      "tests/business-bi-clean-room.test.mjs",
+      "tests/readme-release-surface.test.mjs",
+      "tests/release.test.mjs",
+      "tests/source-map.test.mjs",
+      "verification/business-bi-net-revenue-falsification-v1.json"
+    ],
+    "changedPathSha256": {
+      "README.md": "314b01abc5d2c7893e12b5b7d2b9cc8b7c246fcf23b6de26c5dec32b6277f017",
+      "SOURCE-MAP.json": "d9e3dabfec5347713c5bdbfd96bd9f7e2409d41558c5c7d65079cd57e50dc0b2",
+      "docs/evidence/business-bi-net-revenue-v1.md": "6d26b38406b1e3b78013d2c8aa613dbd254e78aa088eb97b53c6acf55e3d9da7",
+      "package.json": "07bbce5c28bd29856f2c451fbec7a16d88be27b6f7f3a45eafcea6090fd91c7c",
+      "scripts/build-release.mjs": "cb7285a31c9bb3407fefed320d872d38127e1f4a4aadc65cad0b5847f65931f0",
+      "scripts/run-business-bi-falsification-clean-room.mjs": "88839f7c88082c884ce22af07884da4a8de1b99c566e32cd77f327f2b99386c7",
+      "tests/business-bi-clean-room.test.mjs": "6bb578deb3a1884fcbe5bab2a4ae7d5010b1d22ae545622a6f7318e69f3cfa57",
+      "tests/readme-release-surface.test.mjs": "b8a14a01507f01b37125eceac053fc12cb4e515412ddb4b56ddc5c176123e513",
+      "tests/release.test.mjs": "376a94b029aabece2af15bfd7473943262c42324ecf29ba3f6da5d06c5437f14",
+      "tests/source-map.test.mjs": "4e06d7c5c49e31d198790f99fa2c9c0667675bd3f61a973807a83a675430fbe8",
+      "verification/business-bi-net-revenue-falsification-v1.json": "6c543bea0255b841cf46b0858b1b0aa64ea7e32ee43d1a3846b80dfc78538742"
+    }
+  },
+  "predecessorEvidencePreservation": {
+    "status": "PASS",
+    "paths": {
+      "closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json": "314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918",
+      "verification/business-bi-net-revenue-holdout-v1.json": "9a962e48ea2d4252d208a03900a92bb4e0d337b9ae30fc2819b7dcce4ba445e7"
+    },
+    "archiveReadbackStatus": "PASS"
+  },
+  "pathClassification": {
+    "public": [
+      "README.md"
+    ],
+    "evidence": [
+      "docs/evidence/business-bi-net-revenue-v1.md",
+      "scripts/run-business-bi-falsification-clean-room.mjs",
+      "tests/business-bi-clean-room.test.mjs",
+      "verification/business-bi-net-revenue-falsification-v1.json"
+    ],
+    "integrity": [
+      "SOURCE-MAP.json",
+      "package.json",
+      "scripts/build-release.mjs",
+      "tests/readme-release-surface.test.mjs",
+      "tests/release.test.mjs",
+      "tests/source-map.test.mjs"
+    ],
+    "publicCount": 1,
+    "evidenceCount": 4,
+    "integrityCount": 6,
+    "classesDisjoint": true,
+    "allProductPathsClassified": true,
+    "auditSelfReferenceExcluded": true
+  },
+  "falsificationResult": {
+    "state": "GREEN",
+    "admittedHoldoutMetricCount": 1,
+    "productionMetricCount": 0,
+    "broaderBiCapabilityClaimed": false,
+    "satisfiedCriteria": 3,
+    "totalCriteria": 3,
+    "deliveredPackages": 1,
+    "publishedPackages": 0,
+    "negativeCases": 8,
+    "namedSabotageCases": [
+      "WRONG_ORACLE",
+      "SUBSTITUTED_METRIC",
+      "WIDENED_SCOPE",
+      "UNKNOWN_TO_ZERO",
+      "CANCELLED_ROW_INCLUSION"
+    ],
+    "oracleEquality": "EXACT",
+    "isolatedRuns": 2,
+    "byteIdentical": true,
+    "evidenceSha256": "35e5f4210a7f7bfb35e3f446a8342ebc8cf4a65f155d8d4a164e4ca3933110f4",
+    "verificationSha256": "24e753c8c4e50121f8fb561f5253c27cd8ea5f63b81783b1c7e9249b4b8ac637"
+  },
+  "currentDoDFindingResolution": [
+    {
+      "finding": "the required canonical full-suite gate had no passing product verdict",
+      "status": "FIXED",
+      "resolution": "The unflagged host retry reproduced SIGTRAP and the required NODE_OPTIONS=--jitless fallback was attempted and classified as non-verdict infrastructure evidence. The immutable read-only host-Docker gate then ran npm test on pinned Node v24.19.0 and passed all 942 tests, providing the authoritative canonical product verdict."
+    }
+  ],
+  "ownedPositiveCases": [
+    {
+      "case": "accepted falsification candidate is the exact child of observed current Main",
+      "status": "PASS"
+    },
+    {
+      "case": "one synthetic admitted-holdout metric equals the independently bound oracle in two byte-identical runs",
+      "status": "PASS"
+    },
+    {
+      "case": "canonical full suite passes on pinned Node v24.19.0 in immutable host Docker; focused, source-integrity, release-archive and README/release gates also pass",
+      "status": "PASS"
+    }
+  ],
+  "ownedFailClosedCases": [
+    {
+      "case": "stale or moved Main",
+      "status": "PASS",
+      "denial": "BUSINESS_BI_CLEAN_ROOM_MOVED_HEAD_DENIED"
+    },
+    {
+      "case": "changed #146 verification or gate-receipt bytes",
+      "status": "PASS",
+      "denial": "SOURCE_OR_RELEASE_INTEGRITY_FAILURE"
+    },
+    {
+      "case": "absent, duplicated or non-contiguous canonical focused registration",
+      "status": "PASS",
+      "denial": "SOURCE_INTEGRITY_FAILURE"
+    },
+    {
+      "case": "path count, source-map or release classification drift",
+      "status": "PASS",
+      "denial": "SOURCE_OR_RELEASE_INTEGRITY_FAILURE"
+    },
+    {
+      "case": "SOURCE-MAP or closure-audit self-reference",
+      "status": "PASS",
+      "denial": "business BI release path classification is self-referential"
+    },
+    {
+      "case": "any of eight sabotage cases returns an ordinary successful answer",
+      "status": "PASS",
+      "denial": "BUSINESS_BI_FALSIFICATION_FAILED_OPEN"
+    },
+    {
+      "case": "any failed or infrastructure-blocked hard gate authorizes public integration",
+      "status": "PASS",
+      "denial": "PUBLIC_INTEGRATION_REMAINS_PENDING_CONTROLLER"
+    }
+  ],
+  "checks": [
+    {
+      "gate": "focused-exact-command",
+      "command": "node --test tests/business-bi-metric-oracle.test.mjs tests/business-bi-net-revenue-plan.test.mjs tests/business-bi-clean-room.test.mjs",
+      "executionCount": 1,
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "clean-room-runner-exact-command",
+      "command": "node scripts/run-business-bi-falsification-clean-room.mjs",
+      "executionCount": 1,
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "source-exact-command",
+      "command": "npm run test:source",
+      "executionCount": 1,
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "canonical-exact-command",
+      "command": "npm test",
+      "executionCount": 2,
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "canonical-local-no-jit-retry",
+      "command": "NODE_OPTIONS=--jitless npm test",
+      "executionCount": 1,
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "failureCase": "tests/superset-fingerprint.test.mjs runtime collection reports unavailable endpoint and timeout without leaking headers",
+      "observedError": "SUPERSET_FINGERPRINT_ENDPOINT_UNAVAILABLE",
+      "expectedError": "SUPERSET_FINGERPRINT_TIMEOUT",
+      "termination": "TERMINATED_AFTER_NONTERMINATING_FAILED_TEST",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "authoritative-canonical-pinned-node-host-docker",
+      "command": "docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev --mount type=bind,src=\"$PWD\",dst=/workspace,readonly -w /workspace -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/workspace node:24.19.0-bookworm@sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b npm test",
+      "executionCount": 1,
+      "status": "PASS",
+      "nodeVersion": "v24.19.0",
+      "imageDigest": "sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b",
+      "repositoryMount": "READ_ONLY",
+      "networkMode": "NONE",
+      "tests": 942,
+      "pass": 942,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 4222.063561,
+      "productVerdict": "PASS"
+    },
+    {
+      "gate": "release-exact-command",
+      "command": "npm run release:archive",
+      "executionCount": 1,
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "required-cumulative-diff-check",
+      "command": "git diff --check origin/main...HEAD",
+      "executionCount": 1,
+      "status": "PASS"
+    },
+    {
+      "gate": "focused-local-no-jit-verification",
+      "command": "NODE_OPTIONS=--jitless node --test tests/business-bi-metric-oracle.test.mjs tests/business-bi-net-revenue-plan.test.mjs tests/business-bi-clean-room.test.mjs",
+      "status": "PASS",
+      "tests": 42,
+      "pass": 42,
+      "fail": 0
+    },
+    {
+      "gate": "clean-room-runner-local-no-jit-verification",
+      "command": "NODE_OPTIONS=--jitless node scripts/run-business-bi-falsification-clean-room.mjs",
+      "status": "PASS",
+      "state": "GREEN",
+      "oracleEquality": "EXACT",
+      "satisfiedCriteria": 3,
+      "totalCriteria": 3,
+      "deliveredPackages": 1,
+      "publishedPackages": 0
+    },
+    {
+      "gate": "source-local-no-jit-verification",
+      "command": "NODE_OPTIONS=--jitless npm run test:source",
+      "status": "PASS",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    },
+    {
+      "gate": "release-local-no-jit-verification",
+      "command": "NODE_OPTIONS=--jitless npm run release:archive",
+      "status": "PASS",
+      "archiveSha256": "bb0ae6b906c5949212bc8282015e897e36e4ef6a769fef5e75c612d3a2fbdf9f",
+      "publicPathCount": 1,
+      "evidencePathCount": 4,
+      "externalReleasePerformed": false
+    },
+    {
+      "gate": "release-and-public-claim-local-no-jit-verification",
+      "command": "NODE_OPTIONS=--jitless node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "status": "PASS",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0
+    }
+  ],
+  "localInfrastructureEvidence": {
+    "nodeVersion": "v24.19.0",
+    "failureSignature": "V8_Fatal: Check failed: 12 == errno in v8::base::OS::SetPermissions",
+    "classification": "LOCAL_INFRASTRUCTURE_ONLY_NOT_A_PRODUCT_VERDICT",
+    "localNoJitFallback": "INFRASTRUCTURE_BLOCKED_NO_PRODUCT_VERDICT",
+    "authoritativePinnedNodeOrHostDockerGate": "PASS_HOST_DOCKER",
+    "authoritativeImageDigest": "sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b"
+  },
+  "hardGateDisposition": {
+    "technicallyCompleteLocalArtifact": true,
+    "exactLocalNodeProductVerdict": "NONE",
+    "localNoJitProductVerdict": "NONE",
+    "publicIntegrationAuthorized": false,
+    "authoritativeCanonicalVerdict": "PASS",
+    "authoritativeCanonicalExecution": "PINNED_NODE_HOST_DOCKER",
+    "readyForPr": true
+  },
+  "reviewAndClosureGovernance": {
+    "independentIntegratedReviews": [
+      {
+        "ordinal": 1,
+        "role": "INDEPENDENT_INTEGRATED_REVIEWER",
+        "status": "PENDING_CONTROLLER",
+        "workerSelfReview": false
+      }
+    ],
+    "finalOwners": [
+      {
+        "ordinal": 1,
+        "owner": "Sol",
+        "status": "PENDING_CONTROLLER",
+        "requiredStages": [
+          "EXACT_PR_MAIN_CI",
+          "RELEASE",
+          "ANONYMOUS_READBACK",
+          "ISSUE_CLOSED",
+          "QUEUE_DONE"
+        ]
+      }
+    ],
+    "publicClosureAuthorized": false,
+    "workerAuthority": "LOCAL_CLEAN_COMMIT_ONLY"
+  },
+  "productAuditSeparation": {
+    "testedProductHead": "337ce217419d542160a75234a10ba0ea8b379a26",
+    "testedProductTree": "13f86e001f75a48e2fb56a53da7b48a257eb8a9b",
+    "auditPath": "closure-audits/PORTFOLIO-KS147-ROOT-QS/exact-head-local-gate-receipt.json",
+    "auditExcludedFromTestedProductTree": true,
+    "auditExcludedFromSourceMapAndPathClasses": true,
+    "receiptSelfBinding": "The final amended commit identity is bound by git after this receipt is written; tested product bytes are bound above without a cyclic self-hash."
+  },
+  "releaseDisposition": {
+    "workerDisposition": "NO_RELEASE_PERFORMED",
+    "candidateStatus": "LOCAL_TECHNICALLY_COMPLETE_WITH_AUTHORITATIVE_CANONICAL_PASS_PENDING_PUBLIC_CLOSURE_GATES",
+    "externalEffectsPerformed": false
+  },
+  "nonclaims": [
+    "Synthetic non-customer bytes only; no live database, customer data, production credential, C1, or C2 claim.",
+    "No free SQL, second metric, real-source, Superset, chart, dashboard, mutation, production, or broader BI authority is introduced.",
+    "The 3/3 satisfied-criteria count is separate from 1 delivered local evidence package and 0 published packages.",
+    "No push, merge, tag, publish, deploy, release, anonymous public readback, issue closure, or Queue DONE action was performed.",
+    "The unflagged host npm test exited 133/SIGTRAP and the host no-JIT fallback produced no product verdict; the authoritative read-only pinned-Node host-Docker npm test passed 942/942.",
+    "No transfer of final public-closure ownership from the single Sol owner."
+  ],
+  "requiredControllerAuthorityGates": [
+    "one independent integrated review of the cumulative exact-head inputs",
+    "exact PR-head readback and CI PASS",
+    "SHA-bound merge and exact Main-head CI PASS",
+    "release and anonymous tag-to-merge readback",
+    "public issue CLOSED and Queue DONE reconciliation"
+  ]
+}
