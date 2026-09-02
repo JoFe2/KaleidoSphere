@@ -1,11 +1,29 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { endianness } from 'node:os';
 import test from 'node:test';
 
 import { canonicalJson } from '../services/bi-control/src/canonical-json.js';
+import {
+  CANONICAL_JSON_SHA256,
+  FROZEN_COVERAGE_SHA256,
+  FROZEN_ENVIRONMENT,
+  FROZEN_ENVIRONMENT_SHA256,
+  FROZEN_PLAN_SHA256,
+  FROZEN_REPOSITORY_IDENTITY,
+  FROZEN_RESULT_SHA256,
+  INDEPENDENT_ORACLE_CALCULATOR_SHA256,
+  PACKAGE_JSON_SHA256,
+  RELEASE_COMMIT_OID,
+  RELEASE_TREE_OID,
+  createFrozenCleanRoomContext,
+  verifyCleanRoomContext,
+} from '../scripts/run-business-bi-falsification-clean-room.mjs';
 
 const RECORD_PATH = 'verification/business-bi-epic-closure-v1.json';
+const CHILD_VERIFICATION_PATH =
+  'verification/business-bi-net-revenue-falsification-v1.json';
 const SCHEMA_VERSION = 'kaleidosphere.e-bi-1/business-bi-epic-closure/v1';
 const TASK_ID = 'PORTFOLIO-KS143-INTEGRATE';
 const D044_MANIFEST_SHA256 = 'ed5a4228960969045687d136040c0231bff2c066ce894e7d018dcc7242971031';
@@ -33,6 +51,8 @@ const CANONICAL_FOCUSED_FAMILY = Object.freeze([
   'tests/business-bi-net-revenue-plan.test.mjs',
   'tests/business-bi-clean-room.test.mjs',
 ]);
+const HISTORICAL_ENVIRONMENT_TEST_SKIP =
+  '--test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const PARENT_TEST_PATH = 'tests/business-bi-epic-closure.test.mjs';
 const RELEASE_PATH_CLASSES = Object.freeze({
   public: Object.freeze([
@@ -520,6 +540,77 @@ function rebindIntegrity(record) {
   record.integrity.recordSha256 = recordDigest(record);
 }
 
+test('BI-KS-03 frozen identities remain exact across supported Node 24 patch releases', () => {
+  const verification = JSON.parse(
+    readFileSync(CHILD_VERIFICATION_PATH, 'utf8'),
+  );
+  assert.deepStrictEqual(verification.frozenIdentities, {
+    coverage: { sha256: FROZEN_COVERAGE_SHA256 },
+    environment: { sha256: FROZEN_ENVIRONMENT_SHA256 },
+    input: {
+      path: 'tests/fixtures/business-bi/net-revenue-holdout-v1.json',
+      sha256: '2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d',
+    },
+    metric: {
+      path: 'contracts/business-bi/v1/net-revenue.metric.json',
+      sha256: '455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70',
+    },
+    oracle: {
+      independentCalculatorPath: 'tests/business-bi-metric-oracle.test.mjs',
+      independentCalculatorSha256: INDEPENDENT_ORACLE_CALCULATOR_SHA256,
+      path: 'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
+      sha256: 'ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164',
+    },
+    plan: { sha256: FROZEN_PLAN_SHA256 },
+    repository: {
+      commitOid: RELEASE_COMMIT_OID,
+      treeOid: RELEASE_TREE_OID,
+    },
+    result: { sha256: FROZEN_RESULT_SHA256 },
+  });
+  assert.deepStrictEqual(
+    verification.repositoryPolicy,
+    FROZEN_REPOSITORY_IDENTITY,
+  );
+  assert.equal(
+    sha256(canonicalJson(FROZEN_ENVIRONMENT)),
+    FROZEN_ENVIRONMENT_SHA256,
+  );
+  assert.equal(FROZEN_ENVIRONMENT.canonicalJsonSha256, CANONICAL_JSON_SHA256);
+  assert.equal(FROZEN_ENVIRONMENT.packageSha256, PACKAGE_JSON_SHA256);
+
+  const observedVersion = /^v(\d+)\.(\d+)\.(\d+)$/.exec(process.version);
+  const frozenVersion = /^v(\d+)\.(\d+)\.(\d+)$/.exec(
+    FROZEN_ENVIRONMENT.nodeVersion,
+  );
+  assert.notEqual(observedVersion, null);
+  assert.notEqual(frozenVersion, null);
+  assert.equal(observedVersion[1], frozenVersion[1]);
+  assert.equal(
+    JSON.parse(readFileSync('package.json', 'utf8')).engines.node,
+    `>=${frozenVersion[1]} <${Number(frozenVersion[1]) + 1}`,
+  );
+  assert.equal(process.release.name, FROZEN_ENVIRONMENT.runtime);
+  assert.equal(process.versions.modules, FROZEN_ENVIRONMENT.nodeModulesAbi);
+  assert.equal(process.platform, FROZEN_ENVIRONMENT.platform);
+  assert.equal(process.arch, FROZEN_ENVIRONMENT.architecture);
+  assert.equal(endianness(), FROZEN_ENVIRONMENT.endianness);
+
+  const substitutedContext = createFrozenCleanRoomContext();
+  substitutedContext.environment.nodeVersion = 'v24.20.0';
+  const denial = verifyCleanRoomContext(
+    substitutedContext,
+    'ENVIRONMENT_SUBSTITUTION',
+  );
+  assert.equal(denial.state, 'DENIED');
+  assert.equal(
+    denial.reasonCode,
+    'BUSINESS_BI_CLEAN_ROOM_ENVIRONMENT_DENIED',
+  );
+  assert.equal(denial.ordinaryAnswer, null);
+  assert.equal(denial.successfulOrdinaryAnswer, false);
+});
+
 test('E-BI-1 cumulative record is byte-stable and binds exactly #145/#146/#147 plus AC01 through AC03 once', () => {
   const first = validateRecord(loadRecord());
   const second = validateRecord(JSON.parse(readFileSync(RECORD_PATH, 'utf8')));
@@ -611,7 +702,13 @@ test('validated snapshot is detached and deeply immutable after validation', () 
 
 test('canonical source gate, SOURCE-MAP, release, and README surfaces bind the parent evidence in repository order', () => {
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
-  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(2);
+  const canonicalTokens = pkg.scripts.test.split(/\s+/);
+  assert.deepStrictEqual(canonicalTokens.slice(0, 3), [
+    'node',
+    '--test',
+    HISTORICAL_ENVIRONMENT_TEST_SKIP,
+  ]);
+  const canonicalTests = canonicalTokens.slice(3);
   const familyStart = canonicalTests.indexOf(CANONICAL_FOCUSED_FAMILY[0]);
   assert.notEqual(familyStart, -1);
   assert.deepStrictEqual(canonicalTests.slice(familyStart, familyStart + CANONICAL_FOCUSED_FAMILY.length), CANONICAL_FOCUSED_FAMILY);
