@@ -1,0 +1,313 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-holdout-verification/v1",
+  "taskId": "PORTFOLIO-KS146-IMPLEMENT",
+  "issue": "BI-KS-02",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "processContext": {
+    "operatingModel": "Operating Model v1.1",
+    "decisionsPreserved": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "processVariant": "NONE"
+  },
+  "source": {
+    "metricContractPath": "contracts/business-bi/v1/net-revenue.metric.json",
+    "holdoutPath": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+    "oraclePath": "tests/fixtures/business-bi/net-revenue-oracle-v1.json",
+    "sourceConnectionUsed": false,
+    "productionDataUsed": false
+  },
+  "operation": {
+    "operationId": "bi-ks-01-net-revenue/v1",
+    "relation": "synthetic_bi.orders",
+    "dateRole": {
+      "column": "order_date",
+      "role": "ORDER_DATE"
+    },
+    "periods": [
+      {
+        "boundary": "inclusive-both-ends",
+        "end": "2026-07-31",
+        "key": "current",
+        "label": "2026-07",
+        "start": "2026-07-01"
+      },
+      {
+        "boundary": "inclusive-both-ends",
+        "end": "2026-06-30",
+        "key": "comparison",
+        "label": "2026-06",
+        "start": "2026-06-01"
+      }
+    ],
+    "currency": {
+      "amountColumn": "amount_minor_units",
+      "code": "EUR",
+      "minorUnitsPerMajorUnit": 100
+    },
+    "inputRowBudget": 17,
+    "outputRowBudget": 1,
+    "groupingColumns": [],
+    "outputColumns": [
+      "current_net_minor_units",
+      "current_sale_minor_units",
+      "current_credit_minor_units",
+      "current_cancel_count",
+      "current_unknown_count",
+      "current_unknown_quantified_amount_minor_units",
+      "current_unknown_unquantified_count",
+      "current_row_count",
+      "comparison_net_minor_units",
+      "comparison_sale_minor_units",
+      "comparison_credit_minor_units",
+      "comparison_cancel_count",
+      "comparison_unknown_count",
+      "comparison_unknown_quantified_amount_minor_units",
+      "comparison_unknown_unquantified_count",
+      "comparison_row_count",
+      "delta_minor_units",
+      "unknown_count",
+      "unknown_quantified_amount_minor_units",
+      "unknown_unquantified_count",
+      "unknown_unassigned_count",
+      "unknown_unassigned_quantified_amount_minor_units",
+      "unknown_unassigned_unquantified_count",
+      "excluded_out_of_scope_count"
+    ],
+    "accessMode": "READ_ONLY"
+  },
+  "bindings": {
+    "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
+    "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee",
+    "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+    "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+    "executionReceiptSha256": "8052a8c7b1d86fbb5fdbbea657d63e4c08cf85f02d4f955e67e4f0303fdaec1c",
+    "resultSha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc",
+    "readbackSha256": "f1683a69abcb281c9236878df68638c652f85addc807773fa7f788a501cb7b32"
+  },
+  "execution": {
+    "state": "COMPLETE",
+    "readOnlyEvidence": "VERIFIED",
+    "bounded": true,
+    "timeoutAware": true,
+    "cancelAware": true,
+    "rowsRead": 17,
+    "rowBudget": 17,
+    "outputRows": 1,
+    "nonSuccessStatesPreserved": [
+      "PARTIAL",
+      "DENIED",
+      "UNSUPPORTED",
+      "UNKNOWN"
+    ],
+    "timeoutStatePreserved": "TIMEOUT",
+    "cancellationStatePreserved": "CANCELLED"
+  },
+  "oracleEquality": {
+    "status": "EXACT",
+    "exactDeepEquality": true,
+    "comparisonNetMinorUnits": 30000,
+    "currentNetMinorUnits": 100059,
+    "deltaMinorUnits": 70059,
+    "aggregateUnknownQuantifiedMinorUnits": 1977,
+    "unassignedUnknownQuantifiedMinorUnits": 1200
+  },
+  "renderings": {
+    "formats": [
+      "JSON",
+      "TABLE"
+    ],
+    "identityEqual": true,
+    "deterministic": true,
+    "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+    "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+    "resultSha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc",
+    "readbackSha256": "f1683a69abcb281c9236878df68638c652f85addc807773fa7f788a501cb7b32",
+    "jsonSha256": "3d59c7ec6736dd10e1fb294c491c886fb38ab5c9e7383914cb1ecd13c3d5a06d",
+    "tableSha256": "2e13debf50a8e1f4583931bf779ae0111ed3fd11db85e33f5e3c96a1b3781f6e",
+    "coverageState": "COMPLETE",
+    "nonclaimsIncluded": true
+  },
+  "acceptance": [
+    {
+      "id": "BI-KS-02-AC01",
+      "status": "PASS",
+      "proof": "Exact operation compile plus closed-scope/digest negative matrix."
+    },
+    {
+      "id": "BI-KS-02-AC02",
+      "status": "PASS",
+      "proof": "Bounded read-only execution and distinct status/timeout/cancel receipts."
+    },
+    {
+      "id": "BI-KS-02-AC03",
+      "status": "PASS",
+      "proof": "Deterministic JSON/TABLE renderings share verified identities and reject disagreement."
+    },
+    {
+      "id": "BI-KS-02-AC04",
+      "status": "PASS",
+      "proof": "Computed aggregate is exactly deep-equal to the independent admitted oracle."
+    }
+  ],
+  "negativeMatrix": [
+    {
+      "id": "FREE_SQL",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "ALTERNATE_RELATION",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "ALTERNATE_COLUMN",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "UNBOUNDED_PERIOD",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "EXTRA_GROUPING",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "UNKNOWN_FIELD",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "ALTERNATE_CURRENCY",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "ROW_BUDGET_WIDENING",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "OUTPUT_ROW_WIDENING",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "OUTPUT_COLUMN_WIDENING",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "SECOND_OPERATION",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "SECOND_METRIC",
+      "status": "PASS",
+      "observed": "COMPILE_DENIED"
+    },
+    {
+      "id": "WRITE_ATTEMPT",
+      "status": "PASS",
+      "observed": "BUSINESS_BI_READ_ONLY_EVIDENCE_DENIED"
+    },
+    {
+      "id": "SUBSTITUTED_RESULT",
+      "status": "PASS",
+      "observed": "BUSINESS_BI_HOLDOUT_DIGEST_DENIED"
+    },
+    {
+      "id": "PARTIAL_PRESERVATION",
+      "status": "PASS",
+      "observed": "PARTIAL"
+    },
+    {
+      "id": "DENIED_PRESERVATION",
+      "status": "PASS",
+      "observed": "DENIED"
+    },
+    {
+      "id": "UNSUPPORTED_PRESERVATION",
+      "status": "PASS",
+      "observed": "UNSUPPORTED"
+    },
+    {
+      "id": "UNKNOWN_PRESERVATION",
+      "status": "PASS",
+      "observed": "UNKNOWN"
+    },
+    {
+      "id": "STATUS_COLLAPSE",
+      "status": "PASS",
+      "observed": "DISTINCT_NON_SUCCESS_RECEIPTS"
+    },
+    {
+      "id": "TIMEOUT_LOSS",
+      "status": "PASS",
+      "observed": "TIMEOUT"
+    },
+    {
+      "id": "CANCEL_LOSS",
+      "status": "PASS",
+      "observed": "CANCELLED"
+    },
+    {
+      "id": "RENDERING_DISAGREEMENT",
+      "status": "PASS",
+      "observed": "DISAGREEMENT_DENIED"
+    },
+    {
+      "id": "RECEIPT_SUBSTITUTION",
+      "status": "PASS",
+      "observed": "FULLY_REDIGESTED_RECEIPT_DENIED"
+    }
+  ],
+  "publicClosureGovernance": {
+    "independentReviews": [
+      {
+        "ordinal": 1,
+        "role": "INDEPENDENT_REVIEWER",
+        "status": "PENDING_CONTROLLER",
+        "workerSelfReview": false
+      }
+    ],
+    "finalOwners": [
+      {
+        "ordinal": 1,
+        "owner": "Sol",
+        "scope": "PUBLIC_ISSUE_CLOSURE",
+        "status": "PENDING_CONTROLLER"
+      }
+    ],
+    "publicClosureAuthorized": false,
+    "workerAuthority": "LOCAL_CLEAN_COMMIT_ONLY"
+  },
+  "deliveryBoundary": {
+    "externalEffectsPerformed": false,
+    "sourceDatabaseWritten": false,
+    "pushPerformed": false,
+    "mergePerformed": false,
+    "releasePerformed": false,
+    "issueClosed": false,
+    "queueDoneClaimed": false
+  },
+  "nonclaims": [
+    "No arbitrary SQL: this surface compiles one typed operation and exposes no SQL input.",
+    "No second metric: only the admitted versioned synthetic net-revenue operation is in scope.",
+    "No real-source or production claim: execution is bound to the admitted synthetic non-customer holdout bytes.",
+    "No Superset, chart, dashboard, publish, release, or mutation authority is provided."
+  ],
+  "verificationSha256": "7009c123218e3140998c9c3a32d05a88770ec7947306c0250d577b0f20452f97"
+}

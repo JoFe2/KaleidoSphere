@@ -214,6 +214,10 @@ read visibility for the declared schemas. Details are in
 
 ### Local library/contract surfaces
 
+- The closed `bi-ks-01-net-revenue/v1` local operation executes one
+  digest-bound, read-only aggregate over the admitted synthetic holdout and
+  emits identity-equal JSON and TABLE readbacks. It has no free SQL, real-source,
+  dashboard, mutation, or shipped CLI/HTTP authority.
 - The v0.25.0 authority-bound local object extension defines
   `bi.object.search.read`, `bi.object.details.read` and
   `bi.database.overview.read`, with capability-specific bindings and read-only

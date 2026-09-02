@@ -23,6 +23,7 @@ function validateReadme(readme) {
     '`bi.object.search.read`',
     '`bi.object.details.read`',
     '`bi.database.overview.read`',
+    '`bi-ks-01-net-revenue/v1`',
     'local library/contract',
     'synthetic test evidence only',
     'JoFe2/kaleidosphere-dsh-plugin',
@@ -64,6 +65,10 @@ function validateReadme(readme) {
 
   assert.match(pilots, /not a\s+third `BI_ENGINE` option in the default Compose stack/i);
   assert.match(localContracts, /do\s+not\s+extend\s+External API v2/i);
+  assert.match(localContracts, /closed `bi-ks-01-net-revenue\/v1` local operation/i);
+  assert.match(localContracts, /digest-bound, read-only aggregate/i);
+  assert.match(localContracts, /identity-equal JSON and TABLE readbacks/i);
+  assert.match(localContracts, /no free SQL, real-source,\s+dashboard, mutation, or shipped CLI\/HTTP authority/i);
   assert.match(synthetic, /no shipped CLI or HTTP invocation path/i);
   assert.match(dsh, /not part\s+of the KaleidoSphere v0\.26\.0 release assets/i);
   assert.match(readme, /six closed External API v2 (?:actions|intents)/i);
@@ -82,6 +87,7 @@ function validateReadme(readme) {
   assert.doesNotMatch(withoutDsh, /\bDSH\b|DeepSeek|kaleidosphere-dsh-plugin|native plugin/i);
   assert.doesNotMatch(withoutPromotionOwners, /promot(?:e|ed|es|ing|ions|ion(?!-bundle))|\/v2\/promotion|\.\/bin\/bi\s+promotion/i);
   assert.doesNotMatch(normalized, /BI_ENGINE\s*=\s*postgres|\/v2\/promotion|\.\/bin\/bi\s+promotion\s+apply|promotion(?:-bundle)?\s+(?:execute|apply)/i);
+  assert.doesNotMatch(normalized, /net-revenue[^.\n]*(?:accepts free SQL|production relation|shipped public CLI|public HTTP)/i);
 }
 
 test('README distinguishes the current release surfaces and optional DSH preview', async () => {
@@ -122,6 +128,8 @@ test('README release-surface gate rejects contradictory overclaims', async () =>
     'Postgres is now a supported production database engine.',
     'DeepSeek rc.8 integration ships in this release archive.',
     'The release includes the separate DSH plugin.',
+    'The net-revenue operation accepts free SQL and production relations.',
+    'The bi-ks-01-net-revenue/v1 operation has a shipped public CLI.',
   ]) {
     assert.throws(() => validateReadme(`${readme}\n${overclaim}\n`), undefined, overclaim);
   }

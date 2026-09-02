@@ -6,6 +6,17 @@ import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 
 const root = path.resolve(import.meta.dirname, '..');
+const businessBiReleaseFiles = Object.freeze([
+  'contracts/business-bi/v1/net-revenue.metric.json',
+  'scripts/run-business-bi-holdout-clean-room.mjs',
+  'services/bi-control/src/business-bi/net-revenue-plan.mjs',
+  'services/bi-control/src/business-bi/net-revenue-readback.mjs',
+  'tests/business-bi-metric-oracle.test.mjs',
+  'tests/business-bi-net-revenue-plan.test.mjs',
+  'tests/fixtures/business-bi/net-revenue-holdout-v1.json',
+  'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
+  'verification/business-bi-net-revenue-holdout-v1.json',
+]);
 
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, { encoding: 'utf8', ...options });
@@ -34,6 +45,9 @@ test('release archive checksum is portable from a clean verifier directory', asy
 
   const listing = run('tar', ['-tzf', 'KaleidoSphere-v0.26.0.tar.gz'], { cwd: verifyDir }).stdout;
   assert(listing.includes('KaleidoSphere-v0.26.0/package.json\n'));
+  for (const file of businessBiReleaseFiles) {
+    assert(listing.includes(`KaleidoSphere-v0.26.0/${file}\n`), file);
+  }
   assert(!listing.includes('/.git/'));
   assert(!listing.includes('KaleidoSphere-v0.18.2/.env\n'));
   assert(!listing.includes('/node_modules/'));
