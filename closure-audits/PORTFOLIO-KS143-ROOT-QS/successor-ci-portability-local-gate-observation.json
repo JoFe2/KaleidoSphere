@@ -87,7 +87,7 @@
       "failed": 0
     }
   ],
-  "finalFullSuiteObservation": {
+  "supersededJitlessFullSuiteObservation": {
     "command": "NODE_OPTIONS=--jitless npm test",
     "authoritative": false,
     "completed": false,
@@ -106,7 +106,94 @@
     "classification": "INCOMPATIBLE_LOCAL_JITLESS_FALLBACK_NO_PRODUCT_VERDICT",
     "authoritativeExactNode2420CiGatePending": true
   },
-  "disposition": {
+  "authoritativeControllerFullSuiteObservation": {
+    "command": "npm test",
+    "runtime": "v24.19.0",
+    "subjectHead": "434a022a7d7438437a1396d0d190b810fb81acc6",
+    "controllerBound": true,
+    "jitCompatible": true,
+    "authoritative": true,
+    "completed": true,
+    "timedOut": false,
+    "passed": 948,
+    "failed": 5,
+    "residualProcesses": 0,
+    "classification": "DETERMINISTIC_PRODUCT_TEST_FAILURE",
+    "productVerdict": "FAIL",
+    "failureReasonCode": "BUSINESS_BI_PACKAGE_DIGEST_DENIED",
+    "failedTestFile": "tests/business-bi-clean-room.test.mjs",
+    "rootCause": "The canonical test skip option remained in the reconstructed frozen package bytes, so PACKAGE_JSON_SHA256 denied the mutated package preimage."
+  },
+  "successorCorrection": {
+    "observedAt": "2026-09-02T16:39:34Z",
+    "baseReviewedHead": "434a022a7d7438437a1396d0d190b810fb81acc6",
+    "packagePreimageReconstructionCorrected": true,
+    "historicalFrozenEnvironmentChanged": false,
+    "historicalFrozenEnvironmentSha256": "ae82ec35cbb149f52da9d6a2cf281ec8f2412c0a87015c545a5393b494627575",
+    "reconstructedPackageSha256": "cb9622a5e3b7bc8508ae7d443734db4f2606d4ca1e275192d3ecf34928a78710",
+    "expectedFrozenPackageSha256": "cb9622a5e3b7bc8508ae7d443734db4f2606d4ca1e275192d3ecf34928a78710",
+    "exactProfileAttempts": [
+      {
+        "command": "node --test tests/business-bi-clean-room.test.mjs tests/business-bi-epic-closure.test.mjs",
+        "exitCode": 133,
+        "signal": "SIGTRAP",
+        "classification": "LOCAL_NODE_INFRASTRUCTURE",
+        "testsExecuted": 0
+      },
+      {
+        "command": "npm run test:source",
+        "exitCode": 133,
+        "signal": "SIGTRAP",
+        "classification": "LOCAL_NODE_INFRASTRUCTURE",
+        "testsExecuted": 0
+      },
+      {
+        "command": "node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+        "exitCode": 133,
+        "signal": "SIGTRAP",
+        "classification": "LOCAL_NODE_INFRASTRUCTURE",
+        "testsExecuted": 0
+      },
+      {
+        "command": "npm test",
+        "exitCode": 133,
+        "signal": "SIGTRAP",
+        "classification": "LOCAL_NODE_INFRASTRUCTURE",
+        "testsExecuted": 0
+      }
+    ],
+    "jitlessFallbackObservations": [
+      {
+        "command": "NODE_OPTIONS=--jitless node --test tests/business-bi-clean-room.test.mjs tests/business-bi-epic-closure.test.mjs",
+        "exitCode": 0,
+        "passed": 21,
+        "failed": 0
+      },
+      {
+        "command": "NODE_OPTIONS=--jitless npm run test:source",
+        "exitCode": 0,
+        "passed": 15,
+        "failed": 0
+      },
+      {
+        "command": "NODE_OPTIONS=--jitless node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+        "exitCode": 0,
+        "passed": 3,
+        "failed": 0
+      }
+    ]
+  },
+  "reviewedHeadDisposition": {
+    "technicalArtifactComplete": false,
+    "focusedFallbackStatus": "PASS",
+    "sourceFallbackStatus": "PASS",
+    "releaseFallbackStatus": "PASS",
+    "exactProfileStatus": "BLOCKED_LOCAL_INFRASTRUCTURE",
+    "fullSuiteStatus": "FAIL_PRODUCT",
+    "authoritativeExactPrHeadControllerGatePending": false,
+    "productFailureClaimed": true
+  },
+  "successorDisposition": {
     "technicalArtifactComplete": true,
     "focusedFallbackStatus": "PASS",
     "sourceFallbackStatus": "PASS",
@@ -129,6 +216,6 @@
   },
   "integrity": {
     "algorithm": "sha256-of-canonical-json-without-integrity.auditSha256",
-    "auditSha256": "cb7d4ccf822c724e61029336771c56989545522cfd4174ee2e36ee49626d59f9"
+    "auditSha256": "72f1185e36b064f796370c8f5297b1384e8a3de6f5b205e2671492a618d63333"
   }
 }

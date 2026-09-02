@@ -102,6 +102,8 @@ const PATHS = Object.freeze({
   package: 'package.json',
   verification: 'verification/business-bi-net-revenue-falsification-v1.json',
 });
+const HISTORICAL_ENVIRONMENT_TEST_SKIP =
+  ' --test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const CANONICAL_TEST_REGISTRATION =
   ' tests/business-bi-clean-room.test.mjs';
 
@@ -445,16 +447,18 @@ export function inspectLiveRepository() {
 }
 
 function reconstructFrozenReleasePackage(packageBytes) {
-  const current = packageBytes.toString('utf8');
-  const first = current.indexOf(CANONICAL_TEST_REGISTRATION);
-  invariant(first !== -1
-    && first === current.lastIndexOf(CANONICAL_TEST_REGISTRATION),
-  'BUSINESS_BI_CANONICAL_REGISTRATION_DENIED');
-  return Buffer.from(
-    current.slice(0, first)
-      + current.slice(first + CANONICAL_TEST_REGISTRATION.length),
-    'utf8',
-  );
+  let reconstructed = packageBytes.toString('utf8');
+  for (const addition of [
+    HISTORICAL_ENVIRONMENT_TEST_SKIP,
+    CANONICAL_TEST_REGISTRATION,
+  ]) {
+    const first = reconstructed.indexOf(addition);
+    invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),
+      'BUSINESS_BI_CANONICAL_REGISTRATION_DENIED');
+    reconstructed = reconstructed.slice(0, first)
+      + reconstructed.slice(first + addition.length);
+  }
+  return Buffer.from(reconstructed, 'utf8');
 }
 
 export async function loadFrozenInputs() {
