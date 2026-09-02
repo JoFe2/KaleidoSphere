@@ -45,6 +45,8 @@ const canonicalFocusedFamily = Object.freeze([
   'tests/business-bi-net-revenue-plan.test.mjs',
   'tests/business-bi-clean-room.test.mjs',
 ]);
+const historicalEnvironmentTestSkip =
+  '--test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const parentClosureTest = 'tests/business-bi-epic-closure.test.mjs';
 
 const predecessorEvidenceSha256 = Object.freeze({
@@ -92,7 +94,13 @@ test('tracked source and derived Oracle bytes match the content-addressed source
 
 test('the three-test business BI predecessor family remains registered once and contiguously', async () => {
   const pkg = JSON.parse(await readFile('package.json', 'utf8'));
-  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(2);
+  const canonicalTokens = pkg.scripts.test.split(/\s+/);
+  assert.deepStrictEqual(canonicalTokens.slice(0, 3), [
+    'node',
+    '--test',
+    historicalEnvironmentTestSkip,
+  ]);
+  const canonicalTests = canonicalTokens.slice(3);
   const start = canonicalTests.indexOf(canonicalFocusedFamily[0]);
   assert.notEqual(start, -1);
   assert.deepStrictEqual(
@@ -110,7 +118,7 @@ test('the E-BI-1 parent test is registered once through the canonical source gat
     readFile('tests/source-map.test.mjs', 'utf8'),
     readFile('SOURCE-MAP.json', 'utf8').then(JSON.parse),
   ]);
-  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(2);
+  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(3);
   assert.equal(canonicalTests.includes(parentClosureTest), false);
   assert.equal(
     (source.match(/import '\.\/business-bi-epic-closure\.test\.mjs';/g) ?? []).length,

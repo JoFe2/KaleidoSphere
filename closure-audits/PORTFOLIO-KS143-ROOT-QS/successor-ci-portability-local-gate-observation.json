@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "kaleidosphere.local-gate-observation/v1",
+  "taskId": "PORTFOLIO-KS143-ROOT-QS",
+  "artifactTaskId": "PORTFOLIO-KS143-INTEGRATE",
+  "observedAt": "2026-09-02T16:16:34Z",
+  "baseMain": "b2f1b825d2ac23d0e9800fff888934ef3eafb7cf",
+  "subjectCandidate": {
+    "commit": null,
+    "productTree": "50ae82e3248cd6d2739802c72160eff83072d0c2",
+    "semantics": "TECHNICAL_PRODUCT_TREE_BEFORE_APPEND_ONLY_LOCAL_OBSERVATION",
+    "productPaths": [
+      "SOURCE-MAP.json",
+      "package.json",
+      "tests/business-bi-epic-closure.test.mjs",
+      "tests/source-map.test.mjs"
+    ]
+  },
+  "failedPublicGate": {
+    "run": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33649756231",
+    "check": "test",
+    "classification": "REBASE_REQUIRED_CI_PORTABILITY_DEFECT",
+    "observedRuntime": "v24.20.0",
+    "frozenEvidenceRuntime": "v24.19.0",
+    "baseMain": "b2f1b825d2ac23d0e9800fff888934ef3eafb7cf"
+  },
+  "correction": {
+    "supportedNodeRange": ">=24 <25",
+    "historicalFrozenEnvironmentChanged": false,
+    "historicalFrozenEnvironmentSha256": "ae82ec35cbb149f52da9d6a2cf281ec8f2412c0a87015c545a5393b494627575",
+    "historicalTestBytesChanged": false,
+    "canonicalHistoricalTestSelection": "SKIP_ONLY_OBSOLETE_LIVE_PATCH_EQUALITY_TEST",
+    "portableReplacement": "The parent source gate reasserts every frozen identity, repository policy, environment digest, package preimage digest, Node ABI, platform, architecture and endianness while accepting patch releases inside the declared Node 24 engine range.",
+    "environmentSubstitutionStillFailsClosed": true,
+    "remainingHistoricalTestsStillCanonical": 9,
+    "sourceMapRebound": true,
+    "secondIndependentIntegratedReviewPerformed": false,
+    "independentIntegratedReviewCountChanged": false
+  },
+  "exactProfileAttempts": [
+    {
+      "command": "node --test tests/business-bi-epic-closure.test.mjs",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    },
+    {
+      "command": "npm run test:source",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    },
+    {
+      "command": "node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    }
+  ],
+  "jitlessFallbackObservations": [
+    {
+      "command": "NODE_OPTIONS=--jitless node --test tests/business-bi-epic-closure.test.mjs",
+      "exitCode": 0,
+      "passed": 11,
+      "failed": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--jitless node --import <process.version=v24.20.0 preload> --test tests/business-bi-epic-closure.test.mjs",
+      "processVersionSimulationOnly": true,
+      "authoritative": false,
+      "exitCode": 0,
+      "passed": 11,
+      "failed": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--jitless npm run test:source",
+      "exitCode": 0,
+      "passed": 15,
+      "failed": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--jitless node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0
+    }
+  ],
+  "finalFullSuiteObservation": {
+    "command": "NODE_OPTIONS=--jitless npm test",
+    "authoritative": false,
+    "completed": false,
+    "foregroundAttempt": {
+      "toolTimeoutSeconds": 420,
+      "productVerdict": null
+    },
+    "backgroundRetry": {
+      "freshRetryAfterToolTimeout": true,
+      "minimumObservedElapsedSeconds": 649,
+      "termination": "MANUAL_AFTER_EXCEEDING_CI_TIMEOUT_BUDGET",
+      "remainingWorker": "tests/superset-fingerprint.test.mjs",
+      "aggregateSummaryEmitted": false,
+      "productVerdict": null
+    },
+    "classification": "INCOMPATIBLE_LOCAL_JITLESS_FALLBACK_NO_PRODUCT_VERDICT",
+    "authoritativeExactNode2420CiGatePending": true
+  },
+  "disposition": {
+    "technicalArtifactComplete": true,
+    "focusedFallbackStatus": "PASS",
+    "sourceFallbackStatus": "PASS",
+    "releaseFallbackStatus": "PASS",
+    "exactProfileStatus": "BLOCKED_LOCAL_INFRASTRUCTURE",
+    "fullSuiteStatus": "BLOCKED_LOCAL_INFRASTRUCTURE",
+    "authoritativeExactPrHeadControllerGatePending": true,
+    "productFailureClaimed": false
+  },
+  "deliveryBoundary": {
+    "pushPerformed": false,
+    "mergePerformed": false,
+    "releasePerformed": false,
+    "issueClosed": false,
+    "queueMutated": false,
+    "credentialsUsed": false,
+    "customerDataUsed": false,
+    "productiveSystemsCalled": false,
+    "authorityWidened": false
+  },
+  "integrity": {
+    "algorithm": "sha256-of-canonical-json-without-integrity.auditSha256",
+    "auditSha256": "cb7d4ccf822c724e61029336771c56989545522cfd4174ee2e36ee49626d59f9"
+  }
+}
