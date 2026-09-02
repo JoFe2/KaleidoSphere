@@ -26,6 +26,8 @@ const businessBiFalsificationPathClasses = Object.freeze({
     'docs/evidence/business-bi-net-revenue-v1.md',
     'scripts/run-business-bi-falsification-clean-room.mjs',
     'tests/business-bi-clean-room.test.mjs',
+    'tests/business-bi-epic-closure.test.mjs',
+    'verification/business-bi-epic-closure-v1.json',
     'verification/business-bi-net-revenue-falsification-v1.json',
   ]),
 });
@@ -50,7 +52,7 @@ test('release archive checksum is portable from a clean verifier directory', asy
     cwd: root,
     env: { ...process.env, CM_BI_RELEASE_ALLOW_DIRTY: '1' },
   });
-  assert.match(build.stdout, /^release-paths public=1 evidence=4\n/);
+  assert.match(build.stdout, /^release-paths public=1 evidence=6\n/);
 
   const checksumPath = path.join(buildDir, 'KaleidoSphere-v0.26.0.tar.gz.sha256');
   const archivePath = path.join(buildDir, 'KaleidoSphere-v0.26.0.tar.gz');
@@ -74,7 +76,7 @@ test('release archive checksum is portable from a clean verifier directory', asy
   );
   const classifiedPaths = Object.values(businessBiFalsificationPathClasses).flat();
   assert.equal(new Set(classifiedPaths).size, classifiedPaths.length);
-  assert.equal(classifiedPaths.length, 5);
+  assert.equal(classifiedPaths.length, 7);
   for (const file of classifiedPaths) {
     assert(listing.includes(`KaleidoSphere-v0.26.0/${file}\n`), file);
   }

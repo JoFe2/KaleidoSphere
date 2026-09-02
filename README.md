@@ -222,6 +222,11 @@ read visibility for the declared schemas. Details are in
   clean-room falsification; no production or broader BI claim is made. The
   result reports 3/3 satisfied criteria separately from 1 delivered local
   evidence package and 0 published packages.
+- The `E-BI-1` cumulative evidence record binds the exact public
+  terminal/release/readback and Queue-DONE chains for #145, #146, and #147,
+  reports `PASS`, `FALSIFIED`, and `BLOCKED_EXTERNAL` as separate classes, and
+  leaves parent #143 open for its own controlled delivery. It adds no second
+  metric, production claim, external effect, or Authority.
 - The v0.25.0 authority-bound local object extension defines
   `bi.object.search.read`, `bi.object.details.read` and
   `bi.database.overview.read`, with capability-specific bindings and read-only
