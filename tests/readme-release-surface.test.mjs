@@ -28,6 +28,10 @@ function validateReadme(readme) {
     '3/3 satisfied criteria',
     '1 delivered local evidence package',
     '0 published packages',
+    '`E-BI-1` cumulative evidence record',
+    'Queue-DONE chains for #145, #146, and #147',
+    'reports `PASS`, `FALSIFIED`, and `BLOCKED_EXTERNAL` as separate classes',
+    'leaves parent #143 open for its own controlled delivery',
     'local library/contract',
     'synthetic test evidence only',
     'JoFe2/kaleidosphere-dsh-plugin',
@@ -75,6 +79,9 @@ function validateReadme(readme) {
   assert.match(localContracts, /no free SQL, real-source,\s+dashboard, mutation, or shipped CLI\/HTTP authority/i);
   assert.match(localContracts, /Exactly one admitted-holdout metric, synthetic net-revenue v1, passed\s+clean-room falsification; no production or broader BI claim is made/i);
   assert.match(localContracts, /3\/3 satisfied criteria separately from 1 delivered local\s+evidence package and 0 published packages/i);
+  assert.match(localContracts, /`E-BI-1` cumulative evidence record binds the exact public\s+terminal\/release\/readback and Queue-DONE chains for #145, #146, and #147/i);
+  assert.match(localContracts, /reports `PASS`, `FALSIFIED`, and `BLOCKED_EXTERNAL` as separate classes/i);
+  assert.match(localContracts, /leaves parent #143 open for its own controlled delivery/i);
   assert.equal((readme.match(/Exactly one admitted-holdout metric/gi) ?? []).length, 1);
   assert.match(synthetic, /no shipped CLI or HTTP invocation path/i);
   assert.match(dsh, /not part\s+of the KaleidoSphere v0\.26\.0 release assets/i);
@@ -96,6 +103,8 @@ function validateReadme(readme) {
   assert.doesNotMatch(normalized, /BI_ENGINE\s*=\s*postgres|\/v2\/promotion|\.\/bin\/bi\s+promotion\s+apply|promotion(?:-bundle)?\s+(?:execute|apply)/i);
   assert.doesNotMatch(normalized, /net-revenue[^.\n]*(?:accepts free SQL|production relation|shipped public CLI|public HTTP)/i);
   assert.doesNotMatch(normalized, /(?:two|2) admitted-holdout metrics|admitted holdout establishes general production BI capability|criteria and .*delivered packages are the same count/i);
+  assert.doesNotMatch(normalized, /E-BI-1[^.\n]*(?:closes|closed) (?:parent )?#143/i);
+  assert.doesNotMatch(normalized, /E-BI-1[^.\n]*(?:second metric|general BI|business-wide|production-ready)/i);
 }
 
 test('README distinguishes the current release surfaces and optional DSH preview', async () => {
@@ -141,6 +150,8 @@ test('README release-surface gate rejects contradictory overclaims', async () =>
     'Two admitted-holdout metrics passed clean-room falsification.',
     'The admitted holdout establishes general production BI capability.',
     'Three criteria and three delivered packages are the same count.',
+    'E-BI-1 closes parent #143.',
+    'E-BI-1 establishes general BI production readiness.',
   ]) {
     assert.throws(() => validateReadme(`${readme}\n${overclaim}\n`), undefined, overclaim);
   }

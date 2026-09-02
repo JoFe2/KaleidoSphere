@@ -1,0 +1,742 @@
+{
+  "schemaVersion": "kaleidosphere.e-bi-1/business-bi-epic-closure/v1",
+  "taskId": "PORTFOLIO-KS143-INTEGRATE",
+  "status": "INTEGRATION_READY_FOR_DELIVERY_NOT_PARENT_CLOSED",
+  "authority": {
+    "operatingModel": "Operating Model v1.1",
+    "preservedDecisions": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "frozenPortfolio": {
+      "authorityDecision": "D-044",
+      "manifestPath": "planning/portfolios/portfolio-rolling-v1.json",
+      "manifestSha256": "ed5a4228960969045687d136040c0231bff2c066ce894e7d018dcc7242971031",
+      "portfolioItem": "PORTFOLIO-V1-KS-143",
+      "parentDependencies": [
+        "JoFe2/KaleidoSphere#145",
+        "JoFe2/KaleidoSphere#146",
+        "JoFe2/KaleidoSphere#147"
+      ]
+    },
+    "closureGraph": {
+      "graphId": "JoFe2/KaleidoSphere#143@2cdcdd956f522ee27717db8597a5828b15a934e8",
+      "artifactSha256": "092508718c4c5bf020ed59b517e4355d4cf3e82120a68eaeb4f0e23e335e6a97",
+      "graphManifestDigest": "fe928025ca9b09d83aed2f613c588ffba05105dc8ff3de866dbc423bc90435cf",
+      "materializationReceiptSha256": "c7b41cd2e9b8f0be4dea75045bb2400b261f57de3238665cf8cb2cd3f10c194b",
+      "predecessorStates": {
+        "JoFe2/KaleidoSphere#145": "PUBLIC_CLOSED_RELEASE_READBACK_QUEUE_DONE",
+        "JoFe2/KaleidoSphere#146": "PUBLIC_CLOSED_RELEASE_READBACK_QUEUE_DONE",
+        "JoFe2/KaleidoSphere#147": "PUBLIC_CLOSED_RELEASE_READBACK_QUEUE_DONE"
+      }
+    }
+  },
+  "capture": {
+    "capturedAt": "2026-09-02T14:27:20Z",
+    "repository": "JoFe2/KaleidoSphere",
+    "currentMain": {
+      "branch": "main",
+      "commit": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+      "parent": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+      "tree": "51d5be66ac612781301df2736354e63140f8323f",
+      "publicApiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/commits/main",
+      "publicCommitUrl": "https://github.com/JoFe2/KaleidoSphere/commit/2cdcdd956f522ee27717db8597a5828b15a934e8"
+    },
+    "anonymousPublicReadback": true,
+    "publicTransport": "ANONYMOUS_GITHUB_REST",
+    "authorizationHeaderSent": false,
+    "queueReadOnly": true,
+    "queueMutationCount": 0,
+    "productiveSystemsCalled": false,
+    "credentialsUsed": false,
+    "customerDataUsed": false
+  },
+  "parent": {
+    "issueKey": "JoFe2/KaleidoSphere#143",
+    "title": "[E-BI-1] Narrow business BI falsification proof",
+    "publicIssueState": "open",
+    "publicIssueStateReason": null,
+    "integrationAcceptance": [
+      {
+        "id": "E-BI-1-AC01",
+        "title": "Every child Acceptance ID remains uniquely owned and dependency-correct.",
+        "sourceAnchor": "issue-body:parent-acceptance-child-ownership",
+        "owner": "PORTFOLIO-KS143-INTEGRATE",
+        "status": "PASS"
+      },
+      {
+        "id": "E-BI-1-AC02",
+        "title": "Every child reaches a public evidence-bound terminal outcome.",
+        "sourceAnchor": "issue-body:parent-acceptance-child-terminal",
+        "owner": "PORTFOLIO-KS143-INTEGRATE",
+        "status": "PASS"
+      },
+      {
+        "id": "E-BI-1-AC03",
+        "title": "The parent reports PASS, FALSIFIED, and BLOCKED_EXTERNAL separately and closes only after exact child readback.",
+        "sourceAnchor": "issue-body:parent-acceptance-outcome-readback",
+        "owner": "PORTFOLIO-KS143-INTEGRATE",
+        "status": "PASS"
+      }
+    ],
+    "remainingCriterionIds": [],
+    "acceptanceSummary": {
+      "satisfiedCriteria": 3,
+      "totalCriteria": 3
+    },
+    "publicClosurePerformed": false,
+    "finalOwner": "PORTFOLIO-KS143-ROOT-QS"
+  },
+  "publicIssues": [
+    {
+      "issueKey": "JoFe2/KaleidoSphere#143",
+      "repository": "JoFe2/KaleidoSphere",
+      "number": 143,
+      "title": "[E-BI-1] Narrow business BI falsification proof",
+      "bodySha256": "c068cb5c43c27a8305c47b3d46212e8276379d2f686f195007060279de532c02",
+      "state": "open",
+      "stateReason": null,
+      "createdAt": "2026-08-31T19:32:41Z",
+      "updatedAt": "2026-08-31T19:33:09Z",
+      "closedAt": null,
+      "url": "https://github.com/JoFe2/KaleidoSphere/issues/143",
+      "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/143",
+      "comments": []
+    },
+    {
+      "issueKey": "JoFe2/KaleidoSphere#145",
+      "repository": "JoFe2/KaleidoSphere",
+      "number": 145,
+      "title": "[BI-KS-01] Freeze one admitted net-revenue metric, holdout, and independent oracle",
+      "bodySha256": "7148f787413bc62fe2f9a2bd0a1c35d3969dbc1c06222934a231618e7f650d17",
+      "state": "closed",
+      "stateReason": "completed",
+      "createdAt": "2026-08-31T19:32:49Z",
+      "updatedAt": "2026-09-01T16:51:55Z",
+      "closedAt": "2026-09-01T16:51:55Z",
+      "url": "https://github.com/JoFe2/KaleidoSphere/issues/145",
+      "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/145",
+      "comments": [
+        {
+          "id": 5497389020,
+          "author": "JoFe2",
+          "authorAssociation": "OWNER",
+          "createdAt": "2026-09-01T16:51:55Z",
+          "updatedAt": "2026-09-01T16:51:55Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/issues/145#issuecomment-5497389020",
+          "bodySha256": "d0cbd285b63389b243a52bc9c70510f1896b6e95a812399c3cd16de84dc07694"
+        }
+      ]
+    },
+    {
+      "issueKey": "JoFe2/KaleidoSphere#146",
+      "repository": "JoFe2/KaleidoSphere",
+      "number": 146,
+      "title": "[BI-KS-02] Execute one closed typed net-revenue aggregate and deterministic JSON/TABLE readback",
+      "bodySha256": "3015cf6355bd2c204eedd818370264e5dd24aa61abba59393dfa440284419001",
+      "state": "closed",
+      "stateReason": "completed",
+      "createdAt": "2026-08-31T19:32:50Z",
+      "updatedAt": "2026-09-02T09:23:06Z",
+      "closedAt": "2026-09-02T09:23:06Z",
+      "url": "https://github.com/JoFe2/KaleidoSphere/issues/146",
+      "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/146",
+      "comments": [
+        {
+          "id": 5507368104,
+          "author": "JoFe2",
+          "authorAssociation": "OWNER",
+          "createdAt": "2026-09-02T09:23:05Z",
+          "updatedAt": "2026-09-02T09:23:05Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/issues/146#issuecomment-5507368104",
+          "bodySha256": "0871101399f2e7932374436cbd648d38005c558025852312af644ae7b5bc3a00"
+        }
+      ]
+    },
+    {
+      "issueKey": "JoFe2/KaleidoSphere#147",
+      "repository": "JoFe2/KaleidoSphere",
+      "number": 147,
+      "title": "[BI-KS-03] Falsify the narrow BI claim in an isolated clean-room and publish bounded evidence",
+      "bodySha256": "32777a27dabac1cca9d86e3ea007032e5e2663cf051cf4049923c06d3b0369c0",
+      "state": "closed",
+      "stateReason": "completed",
+      "createdAt": "2026-08-31T19:32:52Z",
+      "updatedAt": "2026-09-02T13:36:13Z",
+      "closedAt": "2026-09-02T13:36:13Z",
+      "url": "https://github.com/JoFe2/KaleidoSphere/issues/147",
+      "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/issues/147",
+      "comments": [
+        {
+          "id": 5510406071,
+          "author": "JoFe2",
+          "authorAssociation": "OWNER",
+          "createdAt": "2026-09-02T13:36:12Z",
+          "updatedAt": "2026-09-02T13:36:12Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/issues/147#issuecomment-5510406071",
+          "bodySha256": "fc7258d30354a2992d2f2ceef2d13b3b0a4ef2bdb65c63d15e5dd951200534fa"
+        }
+      ]
+    }
+  ],
+  "children": [
+    {
+      "ordinal": 1,
+      "issueKey": "JoFe2/KaleidoSphere#145",
+      "acceptanceOwner": "PORTFOLIO-KS145-ROOT-QS",
+      "acceptance": [
+        {
+          "id": "BI-KS-01-AC01",
+          "title": "Contract fixes one relation, one order-date role, one currency, two periods, and explicit credit/cancel/UNKNOWN rules.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-01-AC02",
+          "title": "Frozen holdout contains positive, credit, cancelled, boundary-date, null, and UNKNOWN cases without production/customer data.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-01-AC03",
+          "title": "An independent calculator emits exact period totals and delta without importing production analysis code.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-01-AC04",
+          "title": "Applicability and non-applicability of PSai Canon laws are recorded at issue admission.",
+          "status": "PASS"
+        }
+      ],
+      "dependencies": {
+        "declared": []
+      },
+      "evidenceBindings": [
+        {
+          "path": "closure-audits/PORTFOLIO-KS145-ROOT-QS/exact-head-local-gate-receipt.json",
+          "sha256": "e98eba9ff1d4a62c09852c18c8a1b6a6552d1e46a0eb0ba6dede2ec551acdd11"
+        },
+        {
+          "path": "contracts/business-bi/v1/net-revenue.metric.json",
+          "sha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
+        }
+      ],
+      "terminalOutcome": {
+        "class": "PASS",
+        "basis": "METRIC_HOLDOUT_AND_INDEPENDENT_ORACLE_ACCEPTED",
+        "acceptanceSatisfied": 4,
+        "acceptanceTotal": 4,
+        "falsified": false,
+        "blockedExternal": false,
+        "unknown": false
+      },
+      "publicDelivery": {
+        "pr": {
+          "number": 154,
+          "state": "closed",
+          "baseSha": "90c574e9a06cb752be06270395d44a31eabc44ae",
+          "headSha": "9bf02230cd9cea8cced8352c9a9a2cc35fdde974",
+          "mergeSha": "22b3d38b33a96165be11b98c347c371f31c95d12",
+          "mergedAt": "2026-09-01T16:51:09Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/pull/154"
+        },
+        "prCi": {
+          "runId": 33534218190,
+          "name": "CI",
+          "event": "pull_request",
+          "headSha": "9bf02230cd9cea8cced8352c9a9a2cc35fdde974",
+          "status": "completed",
+          "conclusion": "success",
+          "runAttempt": 1,
+          "createdAt": "2026-09-01T16:50:33Z",
+          "updatedAt": "2026-09-01T16:51:02Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33534218190"
+        },
+        "finalMergeSha": "22b3d38b33a96165be11b98c347c371f31c95d12",
+        "mainCi": {
+          "runId": 33534283854,
+          "name": "CI",
+          "event": "push",
+          "headSha": "22b3d38b33a96165be11b98c347c371f31c95d12",
+          "status": "completed",
+          "conclusion": "success",
+          "runAttempt": 1,
+          "createdAt": "2026-09-01T16:51:12Z",
+          "updatedAt": "2026-09-01T16:51:46Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33534283854"
+        },
+        "relationToCapturedMain": "ANCESTOR",
+        "release": {
+          "id": 380675389,
+          "tag": "2026_09_01_v2",
+          "target": "22b3d38b33a96165be11b98c347c371f31c95d12",
+          "createdAt": "2026-09-01T16:51:09Z",
+          "publishedAt": "2026-09-01T16:51:51Z",
+          "draft": false,
+          "prerelease": false,
+          "assets": [],
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_09_01_v2",
+          "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/380675389"
+        },
+        "receiptCommentId": 5497389020,
+        "anonymousReadback": {
+          "status": "PASS",
+          "transport": "ANONYMOUS_GITHUB_REST",
+          "authorizationHeaderSent": false,
+          "issueState": "closed",
+          "issueStateReason": "completed",
+          "capturedMainSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "finalMergeReachableFromCapturedMain": true,
+          "releaseTarget": "22b3d38b33a96165be11b98c347c371f31c95d12",
+          "tagRef": "refs/tags/2026_09_01_v2",
+          "tagObjectType": "commit",
+          "tagResolvedSha": "22b3d38b33a96165be11b98c347c371f31c95d12",
+          "releaseDraft": false,
+          "releasePrerelease": false,
+          "assets": []
+        }
+      },
+      "terminalProof": {
+        "kind": "QUEUE_DONE",
+        "taskId": "PORTFOLIO-KS145-ROOT-QS",
+        "state": "DONE",
+        "attempt": 0,
+        "claimGeneration": 18,
+        "resultHead": "9bf02230cd9cea8cced8352c9a9a2cc35fdde974",
+        "resultHeadSemantics": "REVIEWED_PR_HEAD",
+        "deliveryFinalHead": "22b3d38b33a96165be11b98c347c371f31c95d12",
+        "packageDoneSubstitution": false,
+        "unowned": true,
+        "lease": {
+          "claimedAt": null,
+          "controllerId": null,
+          "heartbeatAt": null,
+          "workerPid": null,
+          "workerStartTicks": null
+        },
+        "doneEvent": {
+          "eventId": 8584,
+          "fromState": "RELEASED",
+          "toState": "DONE",
+          "occurredAtEpochSeconds": 1788281516.8344033,
+          "attempt": 0,
+          "controllerId": "pop-os:1006352:closure:JoFe2-KaleidoSphere",
+          "details": null
+        }
+      }
+    },
+    {
+      "ordinal": 2,
+      "issueKey": "JoFe2/KaleidoSphere#146",
+      "acceptanceOwner": "PORTFOLIO-KS146-ROOT-QS",
+      "acceptance": [
+        {
+          "id": "BI-KS-02-AC01",
+          "title": "Only one versioned operation with the exact metric/holdout/oracle tuple can execute.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-02-AC02",
+          "title": "Execution is read-only, bounded, timeout/cancellation-aware, returns one aggregate row, and never collapses partial/denied/unsupported/unknown to success.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-02-AC03",
+          "title": "JSON and TABLE readbacks bind metric, oracle, result, coverage, and nonclaims identically.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-02-AC04",
+          "title": "Exact oracle match and all negative tests pass before publication.",
+          "status": "PASS"
+        }
+      ],
+      "dependencies": {
+        "declared": [
+          "JoFe2/KaleidoSphere#145"
+        ]
+      },
+      "evidenceBindings": [
+        {
+          "path": "closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json",
+          "sha256": "314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918"
+        },
+        {
+          "path": "verification/business-bi-net-revenue-holdout-v1.json",
+          "sha256": "9a962e48ea2d4252d208a03900a92bb4e0d337b9ae30fc2819b7dcce4ba445e7"
+        }
+      ],
+      "terminalOutcome": {
+        "class": "PASS",
+        "basis": "CLOSED_TYPED_AGGREGATE_AND_IDENTITY_EQUAL_READBACK_ACCEPTED",
+        "acceptanceSatisfied": 4,
+        "acceptanceTotal": 4,
+        "falsified": false,
+        "blockedExternal": false,
+        "unknown": false
+      },
+      "publicDelivery": {
+        "pr": {
+          "number": 156,
+          "state": "closed",
+          "baseSha": "06631e2cebce56f50f37e15610de3cd73b84a6a6",
+          "headSha": "c01ae391cf432a7e7d133b18b97c71b38c0425f4",
+          "mergeSha": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+          "mergedAt": "2026-09-02T09:22:24Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/pull/156"
+        },
+        "prCi": {
+          "runId": 33613680938,
+          "name": "CI",
+          "event": "pull_request",
+          "headSha": "c01ae391cf432a7e7d133b18b97c71b38c0425f4",
+          "status": "completed",
+          "conclusion": "success",
+          "runAttempt": 1,
+          "createdAt": "2026-09-02T09:21:44Z",
+          "updatedAt": "2026-09-02T09:22:17Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33613680938"
+        },
+        "finalMergeSha": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+        "mainCi": {
+          "runId": 33613748752,
+          "name": "CI",
+          "event": "push",
+          "headSha": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+          "status": "completed",
+          "conclusion": "success",
+          "runAttempt": 1,
+          "createdAt": "2026-09-02T09:22:27Z",
+          "updatedAt": "2026-09-02T09:22:56Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33613748752"
+        },
+        "relationToCapturedMain": "ANCESTOR",
+        "release": {
+          "id": 381121360,
+          "tag": "2026_09_02_v1",
+          "target": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+          "createdAt": "2026-09-02T09:22:24Z",
+          "publishedAt": "2026-09-02T09:23:02Z",
+          "draft": false,
+          "prerelease": false,
+          "assets": [],
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_09_02_v1",
+          "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/381121360"
+        },
+        "receiptCommentId": 5507368104,
+        "anonymousReadback": {
+          "status": "PASS",
+          "transport": "ANONYMOUS_GITHUB_REST",
+          "authorizationHeaderSent": false,
+          "issueState": "closed",
+          "issueStateReason": "completed",
+          "capturedMainSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "finalMergeReachableFromCapturedMain": true,
+          "releaseTarget": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+          "tagRef": "refs/tags/2026_09_02_v1",
+          "tagObjectType": "commit",
+          "tagResolvedSha": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+          "releaseDraft": false,
+          "releasePrerelease": false,
+          "assets": []
+        }
+      },
+      "terminalProof": {
+        "kind": "QUEUE_DONE",
+        "taskId": "PORTFOLIO-KS146-ROOT-QS",
+        "state": "DONE",
+        "attempt": 0,
+        "claimGeneration": 18,
+        "resultHead": "c01ae391cf432a7e7d133b18b97c71b38c0425f4",
+        "resultHeadSemantics": "REVIEWED_PR_HEAD",
+        "deliveryFinalHead": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+        "packageDoneSubstitution": false,
+        "unowned": true,
+        "lease": {
+          "claimedAt": null,
+          "controllerId": null,
+          "heartbeatAt": null,
+          "workerPid": null,
+          "workerStartTicks": null
+        },
+        "doneEvent": {
+          "eventId": 16522,
+          "fromState": "RELEASED",
+          "toState": "DONE",
+          "occurredAtEpochSeconds": 1788340987.3773723,
+          "attempt": 0,
+          "controllerId": "pop-os:702040:closure:JoFe2-KaleidoSphere",
+          "details": null
+        }
+      }
+    },
+    {
+      "ordinal": 3,
+      "issueKey": "JoFe2/KaleidoSphere#147",
+      "acceptanceOwner": "PORTFOLIO-KS147-ROOT-QS",
+      "acceptance": [
+        {
+          "id": "BI-KS-03-AC01",
+          "title": "Clean-room runs from exact Main/release head with frozen input, metric, plan, oracle, result, coverage, and environment digests.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-03-AC02",
+          "title": "Wrong oracle, substituted metric, widened scope, UNKNOWN-to-zero, and cancelled-row inclusion each fail closed.",
+          "status": "PASS"
+        },
+        {
+          "id": "BI-KS-03-AC03",
+          "title": "Public claim is exactly one admitted-holdout metric and reports satisfied criteria/total criteria separately from delivered packages.",
+          "status": "PASS"
+        }
+      ],
+      "dependencies": {
+        "declared": [
+          "JoFe2/KaleidoSphere#146"
+        ]
+      },
+      "evidenceBindings": [
+        {
+          "path": "closure-audits/PORTFOLIO-KS147-ROOT-QS/exact-head-local-gate-receipt.json",
+          "sha256": "deec59beebc2a8447cbb4b2abdbd8898f0956ad73322f1b83dc689e89a0113ab"
+        },
+        {
+          "path": "verification/business-bi-net-revenue-falsification-v1.json",
+          "sha256": "6c543bea0255b841cf46b0858b1b0aa64ea7e32ee43d1a3846b80dfc78538742"
+        }
+      ],
+      "terminalOutcome": {
+        "class": "PASS",
+        "basis": "NARROW_SYNTHETIC_CLAIM_SURVIVED_ISOLATED_FALSIFICATION",
+        "acceptanceSatisfied": 3,
+        "acceptanceTotal": 3,
+        "falsified": false,
+        "blockedExternal": false,
+        "unknown": false
+      },
+      "publicDelivery": {
+        "pr": {
+          "number": 158,
+          "state": "closed",
+          "baseSha": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+          "headSha": "09253e7375eff4bf541dd2986b05f0e6a8fa117e",
+          "mergeSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "mergedAt": "2026-09-02T13:35:29Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/pull/158"
+        },
+        "prCi": {
+          "runId": 33636594248,
+          "name": "CI",
+          "event": "pull_request",
+          "headSha": "09253e7375eff4bf541dd2986b05f0e6a8fa117e",
+          "status": "completed",
+          "conclusion": "success",
+          "runAttempt": 1,
+          "createdAt": "2026-09-02T13:34:56Z",
+          "updatedAt": "2026-09-02T13:35:23Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33636594248"
+        },
+        "finalMergeSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+        "mainCi": {
+          "runId": 33636657853,
+          "name": "CI",
+          "event": "push",
+          "headSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "status": "completed",
+          "conclusion": "success",
+          "runAttempt": 1,
+          "createdAt": "2026-09-02T13:35:32Z",
+          "updatedAt": "2026-09-02T13:36:01Z",
+          "url": "https://github.com/JoFe2/KaleidoSphere/actions/runs/33636657853"
+        },
+        "relationToCapturedMain": "EQUAL",
+        "release": {
+          "id": 381289961,
+          "tag": "2026_09_02_v2",
+          "target": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "createdAt": "2026-09-02T13:35:29Z",
+          "publishedAt": "2026-09-02T13:36:06Z",
+          "draft": false,
+          "prerelease": false,
+          "assets": [],
+          "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/2026_09_02_v2",
+          "apiUrl": "https://api.github.com/repos/JoFe2/KaleidoSphere/releases/381289961"
+        },
+        "receiptCommentId": 5510406071,
+        "anonymousReadback": {
+          "status": "PASS",
+          "transport": "ANONYMOUS_GITHUB_REST",
+          "authorizationHeaderSent": false,
+          "issueState": "closed",
+          "issueStateReason": "completed",
+          "capturedMainSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "finalMergeReachableFromCapturedMain": true,
+          "releaseTarget": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "tagRef": "refs/tags/2026_09_02_v2",
+          "tagObjectType": "commit",
+          "tagResolvedSha": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+          "releaseDraft": false,
+          "releasePrerelease": false,
+          "assets": []
+        }
+      },
+      "terminalProof": {
+        "kind": "QUEUE_DONE",
+        "taskId": "PORTFOLIO-KS147-ROOT-QS",
+        "state": "DONE",
+        "attempt": 0,
+        "claimGeneration": 14,
+        "resultHead": "09253e7375eff4bf541dd2986b05f0e6a8fa117e",
+        "resultHeadSemantics": "REVIEWED_PR_HEAD",
+        "deliveryFinalHead": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+        "packageDoneSubstitution": false,
+        "unowned": true,
+        "lease": {
+          "claimedAt": null,
+          "controllerId": null,
+          "heartbeatAt": null,
+          "workerPid": null,
+          "workerStartTicks": null
+        },
+        "doneEvent": {
+          "eventId": 16617,
+          "fromState": "RELEASED",
+          "toState": "DONE",
+          "occurredAtEpochSeconds": 1788356174.3135405,
+          "attempt": 0,
+          "controllerId": "pop-os:1398293:closure:JoFe2-KaleidoSphere",
+          "details": null
+        }
+      }
+    }
+  ],
+  "outcomeReport": {
+    "classes": [
+      {
+        "class": "PASS",
+        "childIssueKeys": [
+          "JoFe2/KaleidoSphere#145",
+          "JoFe2/KaleidoSphere#146",
+          "JoFe2/KaleidoSphere#147"
+        ],
+        "count": 3
+      },
+      {
+        "class": "FALSIFIED",
+        "childIssueKeys": [],
+        "count": 0
+      },
+      {
+        "class": "BLOCKED_EXTERNAL",
+        "childIssueKeys": [],
+        "count": 0
+      }
+    ],
+    "unknown": {
+      "childIssueKeys": [],
+      "count": 0,
+      "promotedToSuccess": false
+    },
+    "collapsed": false,
+    "parentDisposition": "PASS"
+  },
+  "claimBoundary": {
+    "admittedMetricCount": 1,
+    "metricIds": [
+      "bi-ks-01-net-revenue"
+    ],
+    "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+    "productionMetricCount": 0,
+    "broaderBiCapabilityClaimed": false,
+    "productiveSourceUsed": false,
+    "customerDataUsed": false,
+    "externalEffectPerformed": false
+  },
+  "governance": {
+    "packageDoneSubstitutesForDone": false,
+    "unknownMayPromoteToSuccess": false,
+    "outcomeClassesMayCollapse": false,
+    "canonicalTestRegistration": {
+      "testPath": "tests/business-bi-epic-closure.test.mjs",
+      "gatePath": "tests/source-map.test.mjs",
+      "method": "SOURCE_GATE_IMPORT",
+      "packageJsonMutated": false,
+      "reason": "PRESERVE_BI_KS_03_FROZEN_PACKAGE_PREIMAGE",
+      "executionSurfaces": [
+        "node --test tests/business-bi-epic-closure.test.mjs",
+        "npm run test:source",
+        "npm test"
+      ]
+    },
+    "releaseGovernance": {
+      "sourcePath": "scripts/build-release.mjs",
+      "sourceSha256": "a8a87c765fcfa84611d1448fd422639eb845c4685fefc29de88f2798a8b0479b",
+      "repositoryVersion": "0.26.0",
+      "serialWithinRepository": true,
+      "parentReleaseRequired": true,
+      "tagStrategy": "DAILY_SEQUENCE",
+      "prerelease": false,
+      "assets": []
+    },
+    "childReleaseOrder": [
+      {
+        "issueKey": "JoFe2/KaleidoSphere#145",
+        "tag": "2026_09_01_v2",
+        "publishedAt": "2026-09-01T16:51:51Z"
+      },
+      {
+        "issueKey": "JoFe2/KaleidoSphere#146",
+        "tag": "2026_09_02_v1",
+        "publishedAt": "2026-09-02T09:23:02Z"
+      },
+      {
+        "issueKey": "JoFe2/KaleidoSphere#147",
+        "tag": "2026_09_02_v2",
+        "publishedAt": "2026-09-02T13:36:06Z"
+      }
+    ],
+    "deliveryBoundary": {
+      "externalEffectsPerformed": false,
+      "sourceDatabaseWritten": false,
+      "credentialsUsed": false,
+      "realOrCustomerDataUsed": false,
+      "pushPerformed": false,
+      "mergePerformed": false,
+      "releasePerformed": false,
+      "parentIssueClosed": false,
+      "queueMutated": false
+    },
+    "deferredParentStages": {
+      "owner": "PORTFOLIO-KS143-ROOT-QS",
+      "workerPerformed": false,
+      "requiredStages": [
+        "ONE_INDEPENDENT_INTEGRATED_REVIEW",
+        "EXACT_PR_HEAD_CI",
+        "SHA_BOUND_MERGE",
+        "EXACT_MAIN_CI",
+        "SERIAL_DAILY_RELEASE",
+        "ANONYMOUS_PARENT_READBACK",
+        "PARENT_ISSUE_CLOSED_COMPLETED",
+        "PARENT_QUEUE_DONE"
+      ]
+    }
+  },
+  "nonclaims": [
+    "This cumulative repository record does not close public parent issue #143; its own controlled delivery, release, readback, issue closure, and Queue DONE remain with PORTFOLIO-KS143-ROOT-QS.",
+    "All child public outcomes are historical anonymous readback inputs; this worker did not push, merge, tag, publish, release, close an issue, or mutate Queue.",
+    "Exactly one admitted synthetic non-production net-revenue metric is covered; no second metric, general BI capability, dashboard, forecasting, cohort, funnel, anomaly, production, or business-wide claim is made.",
+    "No productive source, customer data, credential, external effect, Risk-D action, service change, or Authority widening is authorized or claimed.",
+    "UNKNOWN is never promoted to PASS, zero, absence, or truth, and PACKAGE_DONE never substitutes for public release/readback plus Queue DONE.",
+    "Empty FALSIFIED and BLOCKED_EXTERNAL buckets record observed zero counts; the outcome classes remain explicit and are not collapsed into PASS.",
+    "Child acceptance ownership, semantics, and evidence remain child-owned; this parent aggregates exact readback without rewriting or weakening them."
+  ],
+  "integrity": {
+    "childSetSha256": "89fb260bec130261b8ad3f8aa4def473e511d1feb1f30ba9bfd62c3b9f40ef64",
+    "publicThreadSetSha256": "41f6e3a24e7a67f673b87925d082996b970f008718bcc94405d75d5e8d35b3e8",
+    "recordSha256": "e5bb99559082db20cec2a73c3679b14de27dda2af4bdf2e3bb0c0ee0cd6a69c3"
+  }
+}

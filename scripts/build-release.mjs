@@ -32,7 +32,7 @@ function classifiedBusinessBiReleasePaths() {
       throw new Error('business BI release paths must be arrays');
     }
   }
-  if (classes.public.length !== 1 || classes.evidence.length !== 4) {
+  if (classes.public.length !== 1 || classes.evidence.length !== 6) {
     throw new Error('business BI release path class counts drifted');
   }
 

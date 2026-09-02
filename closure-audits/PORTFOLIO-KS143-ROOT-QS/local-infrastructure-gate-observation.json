@@ -1,0 +1,130 @@
+{
+  "schemaVersion": "kaleidosphere.local-gate-observation/v1",
+  "taskId": "PORTFOLIO-KS143-INTEGRATE",
+  "queueRoot": "PORTFOLIO-KS143-ROOT-QS",
+  "observedAt": "2026-09-02T15:12:07Z",
+  "baseMain": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+  "subjectCandidate": {
+    "commit": "a0f8a5ebfc18811b18ebabd2da449ece2dcd03af",
+    "parent": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+    "tree": "65aebd79fae4257b11b5907bd1b5fe643fbdade2",
+    "commitCountFromBase": 1,
+    "semantics": "TECHNICAL_PRODUCT_CANDIDATE_BEFORE_APPEND_ONLY_AUDIT_OBSERVATION",
+    "productPaths": [
+      "README.md",
+      "SOURCE-MAP.json",
+      "scripts/build-release.mjs",
+      "tests/business-bi-epic-closure.test.mjs",
+      "tests/readme-release-surface.test.mjs",
+      "tests/release.test.mjs",
+      "tests/source-map.test.mjs",
+      "verification/business-bi-epic-closure-v1.json"
+    ]
+  },
+  "exactProfileAttempts": [
+    {
+      "command": "node --test tests/business-bi-epic-closure.test.mjs",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    },
+    {
+      "command": "node --test tests/business-bi-metric-oracle.test.mjs tests/business-bi-net-revenue-plan.test.mjs tests/business-bi-clean-room.test.mjs",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    },
+    {
+      "command": "npm run test:source",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    },
+    {
+      "command": "node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    },
+    {
+      "command": "npm run test",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "classification": "LOCAL_NODE_INFRASTRUCTURE",
+      "diagnostic": "V8 OS::SetPermissions failed with errno 12 during isolate initialization; no test body executed."
+    }
+  ],
+  "focusedJitlessObservations": [
+    {
+      "command": "node --jitless --test tests/business-bi-epic-closure.test.mjs",
+      "exitCode": 0,
+      "passed": 10,
+      "failed": 0
+    },
+    {
+      "command": "node --jitless --test tests/business-bi-metric-oracle.test.mjs tests/business-bi-net-revenue-plan.test.mjs tests/business-bi-clean-room.test.mjs",
+      "exitCode": 0,
+      "passed": 42,
+      "failed": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--jitless npm run test:source",
+      "exitCode": 0,
+      "passed": 14,
+      "failed": 0
+    },
+    {
+      "command": "NODE_OPTIONS=--jitless node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "exitCode": 0,
+      "passed": 3,
+      "failed": 0
+    }
+  ],
+  "fullSuiteFallbackObservation": {
+    "command": "NODE_OPTIONS=--jitless npm run test",
+    "authoritative": false,
+    "completed": false,
+    "classification": "INCOMPATIBLE_INFRASTRUCTURE_FALLBACK",
+    "foregroundTimeoutSeconds": 420,
+    "backgroundAttemptTerminatedAfterSeconds": 181,
+    "isolatedDiagnostic": {
+      "command": "NODE_OPTIONS=--jitless node --test tests/bi-specialist.test.mjs",
+      "exitCode": 1,
+      "passed": 17,
+      "failed": 4,
+      "cause": "The required --jitless fallback disables WebAssembly, while Node's built-in undici fetch path requires WebAssembly."
+    },
+    "productVerdict": null
+  },
+  "nonNodeGate": {
+    "command": "git diff --check 2cdcdd956f522ee27717db8597a5828b15a934e8...HEAD",
+    "exitCode": 0,
+    "status": "PASS"
+  },
+  "disposition": {
+    "technicalArtifactComplete": true,
+    "focusedFallbackStatus": "PASS",
+    "exactProfileStatus": "BLOCKED_LOCAL_INFRASTRUCTURE",
+    "fullSuiteStatus": "BLOCKED_LOCAL_INFRASTRUCTURE",
+    "authoritativePinnedNodeControllerGatePending": true,
+    "productFailureClaimed": false
+  },
+  "deliveryBoundary": {
+    "pushPerformed": false,
+    "mergePerformed": false,
+    "releasePerformed": false,
+    "issueClosed": false,
+    "queueMutated": false,
+    "credentialsUsed": false,
+    "customerDataUsed": false,
+    "productiveSystemsCalled": false,
+    "authorityWidened": false
+  },
+  "integrity": {
+    "auditSha256": "0745ec1acd37f0aee84de1a25837ebec72dfd5a8a7e0723011da4b56ff2ad8bb"
+  }
+}
