@@ -1,0 +1,342 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v2",
+  "taskId": "PORTFOLIO-KS143-ROOT-QS-FINALIZER-01",
+  "issue": {
+    "id": "E-BI-1",
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 143,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/143"
+  },
+  "recordedAt": "2026-09-02T17:30:35+02:00",
+  "processContext": {
+    "operatingModel": "Operating Model v1.1",
+    "decisionsPreserved": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "processVariant": "NONE"
+  },
+  "review": {
+    "independentIntegratedReviewCount": 1,
+    "status": "COMPLETE",
+    "evidenceSource": "controller-provided finalizer finding",
+    "reviewedHead": "ec55094af2a2d2c936c498f2b7dba7d73763abd2",
+    "secondIndependentReviewPerformed": false,
+    "finalOwner": "PORTFOLIO-KS143-ROOT-QS-FINALIZER-01",
+    "ownershipTransferred": false
+  },
+  "currentMainIntegration": {
+    "observedRef": "origin/main",
+    "baseCommit": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+    "baseTree": "51d5be66ac612781301df2736354e63140f8323f",
+    "originMainIsAncestor": true,
+    "reviewedCandidateAheadByCommits": 1,
+    "reviewedCandidateBehindByCommits": 0,
+    "remoteFetchPerformed": false
+  },
+  "reviewedCandidate": {
+    "head": "ec55094af2a2d2c936c498f2b7dba7d73763abd2",
+    "parent": "2cdcdd956f522ee27717db8597a5828b15a934e8",
+    "tree": "47ad61c9c6f1a0b3ee1076ae9a453f7db2ce48ee",
+    "headReadBackImmediatelyBeforeGate": true,
+    "worktreeCleanImmediatelyBeforeGate": true,
+    "changedPaths": [
+      "README.md",
+      "SOURCE-MAP.json",
+      "closure-audits/PORTFOLIO-KS143-ROOT-QS/local-infrastructure-gate-observation.json",
+      "scripts/build-release.mjs",
+      "tests/business-bi-epic-closure.test.mjs",
+      "tests/readme-release-surface.test.mjs",
+      "tests/release.test.mjs",
+      "tests/source-map.test.mjs",
+      "verification/business-bi-epic-closure-v1.json"
+    ],
+    "productArtifactSha256": {
+      "README.md": "c77262f2fac24df8e7b52011465f600951f0eb1162423b829f95ece2c9ebd247",
+      "SOURCE-MAP.json": "1e3b76ae6e46d3bbcb0e6667b22e1baf88dcf6588f665407ebd8028a9f82399e",
+      "scripts/build-release.mjs": "a8a87c765fcfa84611d1448fd422639eb845c4685fefc29de88f2798a8b0479b",
+      "tests/business-bi-epic-closure.test.mjs": "98c0370e025720319adb51506f62edaacb3bdd2e48009964854ea37ffe3db7b1",
+      "tests/readme-release-surface.test.mjs": "df59f9726ce616eb5848c4a87f9d2fbc737a4511e89764dca2c20218f39e7d25",
+      "tests/release.test.mjs": "d22ef5d70041adac01febcf5a35ba653d1595e6b7132bf68db078404e260452e",
+      "tests/source-map.test.mjs": "5b59ac000fa0046653c9b8ba643bc16190c8840329e9c259a84221e231c52aa1",
+      "verification/business-bi-epic-closure-v1.json": "a69b2db301f656c2e0a0ed982b43354b277dffb409f406338bab1c802be1c676"
+    }
+  },
+  "priorInfrastructureObservation": {
+    "path": "closure-audits/PORTFOLIO-KS143-ROOT-QS/local-infrastructure-gate-observation.json",
+    "byteSha256": "95f6f8b398191d4a5bc99eac7705c5733f1f6a5bca3769592b3d968bdd550c42",
+    "subjectCandidate": "a0f8a5ebfc18811b18ebabd2da449ece2dcd03af",
+    "classificationPreserved": "HISTORICAL_LOCAL_INFRASTRUCTURE_EVIDENCE_NOT_A_PRODUCT_VERDICT",
+    "pendingAuthoritativeGateSupersededByThisReceipt": true
+  },
+  "findingResolution": {
+    "finding": "The mandatory pre-PR local gate had no authoritative completed full-suite product verdict bound to reviewed head ec55094af2a2d2c936c498f2b7dba7d73763abd2.",
+    "status": "FIXED",
+    "resolution": "The exact reviewed head was read back from the required workspace and mounted read-only into the digest-pinned Node v24.19.0 image with networking disabled. The controller-bound npm test execution completed and passed all 953 tests. The three focused/source/release commands also passed in the same pinned immutable execution boundary. Host exit 133/SIGTRAP observations remain classified only as local V8 infrastructure evidence.",
+    "authoritativeFullSuiteReceiptPresent": true
+  },
+  "controllerBinding": {
+    "bound": true,
+    "bindingSource": "FINALIZER_TASK_CONTEXT_PLUS_LIVE_EXACT_HEAD_READBACK",
+    "taskId": "PORTFOLIO-KS143-ROOT-QS-FINALIZER-01",
+    "repositoryPath": "/mnt/data2/ai/development-conveyor/docker-workspaces/lane-3/portfolio-ks143-bi-epic-closure",
+    "reviewedHead": "ec55094af2a2d2c936c498f2b7dba7d73763abd2",
+    "gateSubjectHead": "ec55094af2a2d2c936c498f2b7dba7d73763abd2",
+    "subjectMatch": true
+  },
+  "executionBoundary": {
+    "nodeVersion": "v24.19.0",
+    "image": "node:24.19.0-bookworm",
+    "imageDigest": "sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b",
+    "imageId": "sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b",
+    "repositoryMount": "READ_ONLY",
+    "containerRootFilesystem": "READ_ONLY",
+    "temporaryFilesystem": "/tmp:rw,nosuid,nodev",
+    "networkMode": "NONE",
+    "workingDirectory": "/workspace",
+    "credentialsUsed": false,
+    "customerDataUsed": false,
+    "externalEffectsPerformed": false,
+    "containersRemainingAfterChecks": 0
+  },
+  "checks": [
+    {
+      "gate": "focused-exact-host-command",
+      "command": "node --test tests/business-bi-epic-closure.test.mjs",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "testsExecuted": 0,
+      "failureSignature": "V8 OS::SetPermissions failed with errno 12 during isolate initialization",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "source-exact-host-command",
+      "command": "npm run test:source",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "testsExecuted": 0,
+      "failureSignature": "V8 OS::SetPermissions failed with errno 12 during isolate initialization",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "release-readback-exact-host-command",
+      "command": "node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "testsExecuted": 0,
+      "failureSignature": "V8 OS::SetPermissions failed with errno 12 during isolate initialization",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "canonical-exact-host-command",
+      "command": "npm test",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "testsExecuted": 0,
+      "failureSignature": "V8 OS::SetPermissions failed with errno 12 during isolate initialization",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "focused-controller-bound-pinned-node-host-docker",
+      "canonicalCommand": "node --test tests/business-bi-epic-closure.test.mjs",
+      "command": "docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev --mount type=bind,src=\"$PWD\",dst=/workspace,readonly -w /workspace -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/workspace node:24.19.0-bookworm@sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b node --test tests/business-bi-epic-closure.test.mjs",
+      "status": "PASS",
+      "authoritative": true,
+      "completed": true,
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 60.980019,
+      "productVerdict": "PASS"
+    },
+    {
+      "gate": "source-controller-bound-pinned-node-host-docker",
+      "canonicalCommand": "npm run test:source",
+      "command": "docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev --mount type=bind,src=\"$PWD\",dst=/workspace,readonly -w /workspace -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/workspace node:24.19.0-bookworm@sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b npm run test:source",
+      "status": "PASS",
+      "authoritative": true,
+      "completed": true,
+      "tests": 14,
+      "pass": 14,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 77.716852,
+      "productVerdict": "PASS"
+    },
+    {
+      "gate": "release-readback-controller-bound-pinned-node-host-docker",
+      "canonicalCommand": "node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "command": "docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev --mount type=bind,src=\"$PWD\",dst=/workspace,readonly -w /workspace -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/workspace node:24.19.0-bookworm@sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b node --test tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "status": "PASS",
+      "authoritative": true,
+      "completed": true,
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 575.063651,
+      "productVerdict": "PASS"
+    },
+    {
+      "gate": "canonical-controller-bound-pinned-node-host-docker",
+      "canonicalCommand": "npm test",
+      "command": "docker run --rm --network none --read-only --tmpfs /tmp:rw,nosuid,nodev --mount type=bind,src=\"$PWD\",dst=/workspace,readonly -w /workspace -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0=/workspace node:24.19.0-bookworm@sha256:4196d66a565c6f195728d9952f161f4adfe2ad753052a08b7ec7f1c5a6bda42b npm test",
+      "status": "PASS",
+      "authoritative": true,
+      "completed": true,
+      "tests": 953,
+      "pass": 953,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0,
+      "durationMs": 4198.299044,
+      "productVerdict": "PASS"
+    },
+    {
+      "gate": "required-cumulative-diff-check",
+      "command": "git diff --check origin/main...HEAD",
+      "status": "PASS"
+    }
+  ],
+  "prePrTestGate": {
+    "reviewedHead": "ec55094af2a2d2c936c498f2b7dba7d73763abd2",
+    "authoritative": true,
+    "completed": true,
+    "authoritativeCanonicalVerdict": "PASS",
+    "authoritativeCanonicalExecution": "CONTROLLER_BOUND_PINNED_NODE_HOST_DOCKER",
+    "focusedVerdict": "PASS",
+    "sourceVerdict": "PASS",
+    "releaseReadbackVerdict": "PASS",
+    "fullSuiteVerdict": "PASS",
+    "readyForPr": true,
+    "priorPendingFlagResolved": true
+  },
+  "acceptanceReconciliation": {
+    "parentAcceptanceIds": [
+      "E-BI-1-AC01",
+      "E-BI-1-AC02",
+      "E-BI-1-AC03"
+    ],
+    "satisfiedCriteria": 3,
+    "totalCriteria": 3,
+    "remainingCriterionIds": [],
+    "childIssueChain": [
+      "JoFe2/KaleidoSphere#145",
+      "JoFe2/KaleidoSphere#146",
+      "JoFe2/KaleidoSphere#147"
+    ],
+    "immutableRecord": "verification/business-bi-epic-closure-v1.json",
+    "immutableRecordSha256": "a69b2db301f656c2e0a0ed982b43354b277dffb409f406338bab1c802be1c676",
+    "status": "PASS"
+  },
+  "ownedFailClosedCases": [
+    {
+      "case": "missing child proof or remaining parent/child criterion",
+      "status": "PASS"
+    },
+    {
+      "case": "collapsed PASS, FALSIFIED, and BLOCKED_EXTERNAL outcome classes or UNKNOWN promotion",
+      "status": "PASS"
+    },
+    {
+      "case": "second independent integrated review",
+      "status": "PASS",
+      "observedReviewCount": 1
+    },
+    {
+      "case": "stale PR/Main CI or substituted head",
+      "status": "PASS"
+    },
+    {
+      "case": "release target or anonymous tag readback mismatch",
+      "status": "PASS"
+    },
+    {
+      "case": "missing anonymous readback or premature parent issue closure",
+      "status": "PASS"
+    },
+    {
+      "case": "Queue state other than DONE, PACKAGE_DONE substitution, or residual lease ownership",
+      "status": "PASS"
+    },
+    {
+      "case": "host V8 startup failure promoted to a product failure or success verdict",
+      "status": "PASS"
+    }
+  ],
+  "productAuditSeparation": {
+    "testedReviewedHead": "ec55094af2a2d2c936c498f2b7dba7d73763abd2",
+    "testedReviewedTree": "47ad61c9c6f1a0b3ee1076ae9a453f7db2ce48ee",
+    "auditPath": "closure-audits/PORTFOLIO-KS143-ROOT-QS/exact-head-local-gate-receipt.json",
+    "auditExcludedFromTestedReviewedTree": true,
+    "auditExcludedFromSourceMapAndReleasePathClasses": true,
+    "receiptSelfBinding": "The final clean audit-only commit identity is bound by git after this receipt is written; the exact reviewed head and tested bytes are bound above without a cyclic self-hash."
+  },
+  "deliveryBoundary": {
+    "workerAuthority": "LOCAL_CLEAN_COMMIT_ONLY",
+    "pushPerformed": false,
+    "prCreated": false,
+    "mergePerformed": false,
+    "releasePerformed": false,
+    "issueClosed": false,
+    "queueMutated": false,
+    "credentialsUsed": false,
+    "customerDataUsed": false,
+    "productiveSystemsCalled": false,
+    "authorityWidened": false
+  },
+  "requiredDownstreamControllerGates": [
+    {
+      "gate": "exact PR-head readback and PR CI PASS",
+      "status": "NOT_PERFORMED_BY_LOCAL_WORKER"
+    },
+    {
+      "gate": "SHA-bound merge and exact Main-head CI PASS",
+      "status": "NOT_PERFORMED_BY_LOCAL_WORKER"
+    },
+    {
+      "gate": "serial daily release and anonymous tag-to-merge readback",
+      "status": "NOT_PERFORMED_BY_LOCAL_WORKER"
+    },
+    {
+      "gate": "public issue #143 CLOSED/completed",
+      "status": "NOT_PERFORMED_BY_LOCAL_WORKER"
+    },
+    {
+      "gate": "Queue DONE, unowned lease, process and worktree cleanup reconciliation",
+      "status": "NOT_PERFORMED_BY_LOCAL_WORKER"
+    }
+  ],
+  "ownership": {
+    "finalOwner": "PORTFOLIO-KS143-ROOT-QS-FINALIZER-01",
+    "scope": "public issue closure",
+    "transferred": false,
+    "responsibilityRetainedUntilPublicIssueClosure": true
+  },
+  "nonclaims": [
+    "The unflagged host commands exited 133/SIGTRAP before test execution; those observations are infrastructure evidence and not product verdicts.",
+    "The authoritative PASS applies to the exact reviewed head in a read-only, network-disabled, digest-pinned Node v24.19.0 container.",
+    "No second independent integrated review was performed or claimed.",
+    "No push, PR creation, merge, tag, publish, release, provider mutation, issue closure, or Queue mutation was performed.",
+    "No PR CI, Main CI, release, parent anonymous readback, public #143 closure, or Queue DONE claim is made by this local receipt.",
+    "No production source, customer data, credential, external effect, general BI capability, or authority widening is claimed.",
+    "Final public-closure ownership remains with the single Sol final owner through the downstream controller gates."
+  ]
+}
