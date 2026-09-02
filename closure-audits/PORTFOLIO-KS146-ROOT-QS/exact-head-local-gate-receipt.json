@@ -1,0 +1,255 @@
+{
+  "schemaVersion": "development-conveyor/exact-head-local-gate-receipt/v2",
+  "taskId": "PORTFOLIO-KS146-INTEGRATE",
+  "issue": {
+    "id": "BI-KS-02",
+    "repository": "JoFe2/KaleidoSphere",
+    "number": 146,
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/146"
+  },
+  "recordedAt": "2026-09-02T07:21:59Z",
+  "processContext": {
+    "operatingModel": "Operating Model v1.1",
+    "decisionsPreserved": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "processVariant": "NONE"
+  },
+  "currentMainIntegration": {
+    "observedRef": "origin/main",
+    "baseCommit": "06631e2cebce56f50f37e15610de3cd73b84a6a6",
+    "baseTree": "eaca17f743c1b0f9e3688f1fcc484f8995d4f74e",
+    "originMainIsAncestor": true,
+    "candidateBehindByCommits": 0,
+    "remoteFetchPerformed": false,
+    "replayDisposition": "ACCEPTED_CANDIDATE_REPLAYED_DIRECTLY_ON_OBSERVED_CURRENT_PUBLIC_MAIN"
+  },
+  "acceptedCandidate": {
+    "commit": "04f2d6932240cc69817648afbe7c44281f5ee3be",
+    "tree": "906390fe007b6a06e4b150443d75f298247d2089",
+    "reviewDisposition": "ACCEPTED_BY_CONTROLLER_CONTEXT; REVIEW EXECUTION WAS NOT REPEATED OR CLAIMED BY THIS WORKER",
+    "paths": [
+      "scripts/run-business-bi-holdout-clean-room.mjs",
+      "services/bi-control/src/business-bi/net-revenue-plan.mjs",
+      "services/bi-control/src/business-bi/net-revenue-readback.mjs",
+      "tests/business-bi-net-revenue-plan.test.mjs",
+      "verification/business-bi-net-revenue-holdout-v1.json"
+    ]
+  },
+  "testedProductIntegration": {
+    "head": "b632762bc27c135375b6543983f288576e1ed663",
+    "tree": "87ec0bc2560948aaf35e360b36b8159101c7a347",
+    "cumulativeReviewRange": "origin/main...b632762bc27c135375b6543983f288576e1ed663",
+    "changedPaths": [
+      "README.md",
+      "SOURCE-MAP.json",
+      "package.json",
+      "scripts/run-business-bi-holdout-clean-room.mjs",
+      "services/bi-control/src/business-bi/net-revenue-plan.mjs",
+      "services/bi-control/src/business-bi/net-revenue-readback.mjs",
+      "tests/business-bi-net-revenue-plan.test.mjs",
+      "tests/readme-release-surface.test.mjs",
+      "tests/release.test.mjs",
+      "tests/source-map.test.mjs",
+      "verification/business-bi-net-revenue-holdout-v1.json"
+    ],
+    "changedPathSha256": {
+      "README.md": "99113862ee8d4c23501855ab199fa76a9626cb38b4a6d2e9576b6cba12abe477",
+      "SOURCE-MAP.json": "00c81c2495f2f63cfe016095b965d233d486789b3905dbace92aa19a7c7cb891",
+      "package.json": "cb9622a5e3b7bc8508ae7d443734db4f2606d4ca1e275192d3ecf34928a78710",
+      "scripts/run-business-bi-holdout-clean-room.mjs": "e1b3e8c9b3c44ed2b3bd85dc564763a8fa86d958bebb0fa516883be43bf4d86e",
+      "services/bi-control/src/business-bi/net-revenue-plan.mjs": "d085e1de2b95587ac81c0a44681616e3b4509b622c924dd674b165283147e966",
+      "services/bi-control/src/business-bi/net-revenue-readback.mjs": "e0e2ef0c47dfaaec20e7d47664afba1a2015a3ac917b52409529f1d54614b6b6",
+      "tests/business-bi-net-revenue-plan.test.mjs": "7c543c144cf0fe6611d5eebce0689642d288faadf3ea9a16159c3977568a72b9",
+      "tests/readme-release-surface.test.mjs": "ddd62c82f6aca7230a8d7d3d4ba546e1bf4d9a0d46f5099e4354aaff4317856e",
+      "tests/release.test.mjs": "6a738516f18c02ffa16eea4bcfd0dc86696d060d880732a69c64b7efb6229868",
+      "tests/source-map.test.mjs": "df63b7612e4711a007a74b9974717f142f6d7726800b4ec2f3e22ede89746d94",
+      "verification/business-bi-net-revenue-holdout-v1.json": "9a962e48ea2d4252d208a03900a92bb4e0d337b9ae30fc2819b7dcce4ba445e7"
+    }
+  },
+  "acceptance": {
+    "BI-KS-02-AC01": "PASS",
+    "BI-KS-02-AC02": "PASS",
+    "BI-KS-02-AC03": "PASS",
+    "BI-KS-02-AC04": "PASS"
+  },
+  "ownedPositiveCases": [
+    {
+      "case": "exact versioned net-revenue operation compiles with closed digest-bound scope",
+      "status": "PASS"
+    },
+    {
+      "case": "admitted holdout equals the independent oracle exactly",
+      "status": "PASS"
+    },
+    {
+      "case": "JSON and TABLE renderings bind identical result, metric, and oracle identities",
+      "status": "PASS"
+    }
+  ],
+  "ownedFailClosedCases": [
+    {
+      "case": "free SQL, alternate relation or column, unbounded period, extra grouping, unknown fields, and writes",
+      "status": "PASS"
+    },
+    {
+      "case": "substituted results and status collapse",
+      "status": "PASS"
+    },
+    {
+      "case": "timeout or cancellation loss",
+      "status": "PASS"
+    },
+    {
+      "case": "JSON and TABLE rendering disagreement",
+      "status": "PASS"
+    }
+  ],
+  "cleanRoomVerification": {
+    "state": "COMPLETE",
+    "oracleEquality": "EXACT",
+    "jsonTableIdentity": true,
+    "negativeCases": 23,
+    "verificationSha256": "7009c123218e3140998c9c3a32d05a88770ec7947306c0250d577b0f20452f97"
+  },
+  "checks": [
+    {
+      "gate": "focused-exact-command",
+      "command": "node --test tests/business-bi-net-revenue-plan.test.mjs",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "focused-local-no-jit-retry",
+      "command": "node --jitless --test tests/business-bi-net-revenue-plan.test.mjs",
+      "status": "PASS",
+      "tests": 15,
+      "pass": 15,
+      "fail": 0
+    },
+    {
+      "gate": "source-exact-command",
+      "command": "npm run test:source",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "source-local-no-jit-retry",
+      "command": "NODE_OPTIONS=--jitless npm run test:source",
+      "status": "PASS",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "gate": "canonical-exact-command",
+      "command": "npm test",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "canonical-local-no-jit-retry",
+      "command": "NODE_OPTIONS=--jitless npm test",
+      "status": "NO_AUTHORITATIVE_PRODUCT_VERDICT",
+      "observedFailures": 5,
+      "failureClass": "JITLESS_DISALLOWS_WEBASSEMBLY_REQUIRED_BY_NODE_FETCH_AND_PREVENTS_THE_BRAND_TEST_SERVER_FROM_BECOMING_READY",
+      "completion": "TERMINATED_AFTER_KNOWN_INCOMPATIBLE_FALLBACK_FAILURES_AND_NO_PROCESS_COMPLETION",
+      "productVerdict": "NONE",
+      "authoritativeRetry": "PENDING_PINNED_NODE_OR_HOST_DOCKER_CONTROLLER"
+    },
+    {
+      "gate": "release-exact-command",
+      "command": "npm run release:archive",
+      "status": "INFRASTRUCTURE_BLOCKED",
+      "exitCode": 133,
+      "signal": "SIGTRAP",
+      "productVerdict": "NONE"
+    },
+    {
+      "gate": "release-local-no-jit-retry",
+      "command": "NODE_OPTIONS=--jitless npm run release:archive",
+      "status": "PASS",
+      "archiveSha256": "2db3760f36e5a99d8e224490bf06383271f3abddbc1837222d99d6908b023874",
+      "externalReleasePerformed": false
+    },
+    {
+      "gate": "post-commit-focused-source-release-readme",
+      "command": "NODE_OPTIONS=--jitless node --test tests/business-bi-net-revenue-plan.test.mjs tests/source-map.test.mjs tests/release.test.mjs tests/readme-release-surface.test.mjs",
+      "status": "PASS",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0
+    },
+    {
+      "gate": "required-cumulative-diff-check",
+      "command": "git diff --check origin/main...HEAD",
+      "status": "PASS"
+    }
+  ],
+  "localInfrastructureEvidence": {
+    "nodeVersion": "v24.19.0",
+    "failureSignature": "V8_Fatal: Check failed: 12 == errno in v8::base::OS::SetPermissions",
+    "classification": "LOCAL_INFRASTRUCTURE_ONLY_NOT_A_PRODUCT_VERDICT",
+    "authoritativePinnedNodeOrHostDockerGate": "PENDING_CONTROLLER"
+  },
+  "reviewAndClosureGovernance": {
+    "independentReviews": [
+      {
+        "ordinal": 1,
+        "role": "INDEPENDENT_REVIEWER",
+        "status": "PENDING_CONTROLLER",
+        "workerSelfReview": false
+      }
+    ],
+    "finalOwners": [
+      {
+        "ordinal": 1,
+        "owner": "Sol",
+        "scope": "PUBLIC_ISSUE_CLOSURE",
+        "status": "PENDING_CONTROLLER"
+      }
+    ],
+    "publicClosureAuthorized": false,
+    "workerAuthority": "LOCAL_CLEAN_COMMIT_ONLY"
+  },
+  "productAuditSeparation": {
+    "testedProductHead": "b632762bc27c135375b6543983f288576e1ed663",
+    "testedProductTree": "87ec0bc2560948aaf35e360b36b8159101c7a347",
+    "auditPath": "closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json",
+    "auditExcludedFromTestedProductTree": true,
+    "receiptSelfBinding": "The final amended commit identity is bound by git after this receipt is written; tested product bytes are bound above without a cyclic self-hash."
+  },
+  "releaseDisposition": {
+    "workerDisposition": "NO_RELEASE_PERFORMED",
+    "candidateStatus": "LOCAL_TECHNICALLY_COMPLETE_PENDING_AUTHORITATIVE_CANONICAL_AND_PUBLIC_CLOSURE_GATES",
+    "externalEffectsPerformed": false
+  },
+  "nonclaims": [
+    "Synthetic non-customer bytes only; no live database, customer data, production credential, C1, or C2 claim.",
+    "No free SQL, second metric, real-source, Superset, chart, dashboard, or mutation authority is introduced.",
+    "No push, merge, tag, publish, deploy, release, issue closure, or Queue DONE action was performed.",
+    "No claim that an exact mandatory Node command passed locally; each Node/npm command exited 133/SIGTRAP before execution.",
+    "No claim that the incompatible no-JIT canonical fallback produced an authoritative full-suite verdict.",
+    "No transfer of final public-closure ownership from the single Sol owner."
+  ],
+  "requiredControllerAuthorityGates": [
+    "one independent review of the cumulative exact-head inputs",
+    "authoritative pinned-Node or host-Docker canonical suite verdict",
+    "exact PR-head readback and CI PASS",
+    "SHA-bound merge and exact Main-head CI PASS",
+    "explicit release or evidence-bound no-release decision",
+    "public issue CLOSED and Queue DONE reconciliation"
+  ]
+}
