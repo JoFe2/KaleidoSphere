@@ -218,6 +218,10 @@ read visibility for the declared schemas. Details are in
   digest-bound, read-only aggregate over the admitted synthetic holdout and
   emits identity-equal JSON and TABLE readbacks. It has no free SQL, real-source,
   dashboard, mutation, or shipped CLI/HTTP authority.
+- Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
+  clean-room falsification; no production or broader BI claim is made. The
+  result reports 3/3 satisfied criteria separately from 1 delivered local
+  evidence package and 0 published packages.
 - The v0.25.0 authority-bound local object extension defines
   `bi.object.search.read`, `bi.object.details.read` and
   `bi.database.overview.read`, with capability-specific bindings and read-only

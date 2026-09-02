@@ -1,0 +1,442 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-falsification-verification/v1",
+  "taskId": "PORTFOLIO-KS147-FALSIFICATION",
+  "issue": "BI-KS-03",
+  "status": "GREEN",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "processContext": {
+    "operatingModel": "Operating Model v1.1",
+    "decisionsPreserved": [
+      "D-001",
+      "D-002",
+      "D-003",
+      "D-004",
+      "D-005",
+      "D-006",
+      "D-007"
+    ],
+    "processVariant": "NONE"
+  },
+  "publicClaim": {
+    "statement": "Exactly one admitted-holdout metric, synthetic net-revenue v1, passed clean-room falsification; no production or broader BI claim is made.",
+    "admittedHoldoutMetricCount": 1,
+    "metricIds": [
+      "bi-ks-01-net-revenue"
+    ],
+    "productionMetricCount": 0,
+    "broaderBiCapabilityClaimed": false
+  },
+  "acceptanceSummary": {
+    "satisfiedCriteria": 3,
+    "totalCriteria": 3
+  },
+  "packageSummary": {
+    "deliveredPackages": 1,
+    "publishedPackages": 0,
+    "packageKind": "LOCAL_FALSIFICATION_EVIDENCE_PACKAGE"
+  },
+  "frozenIdentities": {
+    "coverage": {
+      "sha256": "aae3a6a637b58cb5eb340bebcbaa5f75ae333cade1a6438b548ebeaee7e55338"
+    },
+    "environment": {
+      "sha256": "ae82ec35cbb149f52da9d6a2cf281ec8f2412c0a87015c545a5393b494627575"
+    },
+    "input": {
+      "path": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+      "sha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d"
+    },
+    "metric": {
+      "path": "contracts/business-bi/v1/net-revenue.metric.json",
+      "sha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
+    },
+    "oracle": {
+      "independentCalculatorPath": "tests/business-bi-metric-oracle.test.mjs",
+      "independentCalculatorSha256": "2aac1ef285ac0e8637786507dd7d03fd0bcf0e4bc0ebe8e875085071bb3a17b5",
+      "path": "tests/fixtures/business-bi/net-revenue-oracle-v1.json",
+      "sha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164"
+    },
+    "plan": {
+      "sha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8"
+    },
+    "repository": {
+      "commitOid": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+      "treeOid": "e5c6b82aba35a0f760a497c78cf4826dfbb3d104"
+    },
+    "result": {
+      "sha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc"
+    }
+  },
+  "repositoryPolicy": {
+    "candidateChangedPaths": [
+      "docs/evidence/business-bi-net-revenue-v1.md",
+      "scripts/run-business-bi-falsification-clean-room.mjs",
+      "tests/business-bi-clean-room.test.mjs",
+      "verification/business-bi-net-revenue-falsification-v1.json"
+    ],
+    "candidateCommitCount": 1,
+    "candidateParentOid": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+    "gitObjectFormat": "sha1",
+    "mainCommitOid": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+    "originMainCommitOid": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+    "releaseCommitOid": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+    "releaseTreeOid": "e5c6b82aba35a0f760a497c78cf4826dfbb3d104",
+    "schemaVersion": "kaleidosphere.business-bi/falsification-repository/v1"
+  },
+  "isolatedRuns": {
+    "count": 2,
+    "isolation": "FRESH_IMMUTABLE_BYTE_SNAPSHOTS",
+    "byteIdentical": true,
+    "contentAddressAlgorithm": "sha256-of-canonical-evidence-body",
+    "firstEvidenceSha256": "35e5f4210a7f7bfb35e3f446a8342ebc8cf4a65f155d8d4a164e4ca3933110f4",
+    "secondEvidenceSha256": "35e5f4210a7f7bfb35e3f446a8342ebc8cf4a65f155d8d4a164e4ca3933110f4",
+    "evidenceByteLength": 3031
+  },
+  "oracleEquality": {
+    "status": "EXACT",
+    "exactDeepEquality": true,
+    "independentlyBound": true
+  },
+  "negativeMatrix": [
+    {
+      "ordinal": 1,
+      "id": "WRONG_ORACLE",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_ORACLE_DIGEST_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "d7b75e237fba96ddb5b951217c7227350f099605c4903f57e75ab1a62b200d07",
+      "deterministic": true
+    },
+    {
+      "ordinal": 2,
+      "id": "SUBSTITUTED_METRIC",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_METRIC_DIGEST_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "0af14fbdd6fb8c62dbb4bf8ba9309cc5c51835df354e9c6b954465b42f1bad63",
+      "deterministic": true
+    },
+    {
+      "ordinal": 3,
+      "id": "WIDENED_SCOPE",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_OPERATION_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "7662e81ed4d1d0056189741f8a8ac92666c2545be2cf64b35cc2c33d616ac43e",
+      "deterministic": true
+    },
+    {
+      "ordinal": 4,
+      "id": "UNKNOWN_TO_ZERO",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_RESULT_SUBSTITUTION_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "00dc45c9aa86062c2ffbe28dbb68cc432a73f0f3317a68b36071f2de4ddedbe3",
+      "deterministic": true
+    },
+    {
+      "ordinal": 5,
+      "id": "CANCELLED_ROW_INCLUSION",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_RESULT_SUBSTITUTION_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "c7263d813743ba970b01c6a7d06725d2195a82de53b245b1615ba1a56f911532",
+      "deterministic": true
+    },
+    {
+      "ordinal": 6,
+      "id": "DIRTY_OR_UNBOUND_BYTES",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_DIRTY_OR_UNBOUND_BYTES_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [
+        "BUSINESS_BI_CLEAN_ROOM_DIRTY_WORKTREE_DENIED",
+        "BUSINESS_BI_HOLDOUT_DIGEST_DENIED"
+      ],
+      "denialSha256": "fe83c2f37b523c5fab075bb9303212c83228d2c96c0700d56351a02f627b80a5",
+      "deterministic": true
+    },
+    {
+      "ordinal": 7,
+      "id": "MOVED_HEAD",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_CLEAN_ROOM_MOVED_HEAD_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "a84c8e21c8262fa4e7701581d71f94500efe89d373ed45be1010548c45bb34fe",
+      "deterministic": true
+    },
+    {
+      "ordinal": 8,
+      "id": "ENVIRONMENT_SUBSTITUTION",
+      "status": "PASS",
+      "observedState": "DENIED",
+      "reasonCode": "BUSINESS_BI_CLEAN_ROOM_ENVIRONMENT_DENIED",
+      "ordinaryAnswer": null,
+      "result": null,
+      "successfulOrdinaryAnswer": false,
+      "componentReasonCodes": [],
+      "denialSha256": "16b23fe7b523fd233b3d1950f4641cc5dbe668bf7959c32b2993d2fcac491fbb",
+      "deterministic": true
+    }
+  ],
+  "sequence": [
+    {
+      "ordinal": 1,
+      "id": "WRONG_ORACLE",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 2,
+      "id": "SUBSTITUTED_METRIC",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 3,
+      "id": "WIDENED_SCOPE",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 4,
+      "id": "UNKNOWN_TO_ZERO",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 5,
+      "id": "CANCELLED_ROW_INCLUSION",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 6,
+      "id": "DIRTY_OR_UNBOUND_BYTES",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 7,
+      "id": "MOVED_HEAD",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 8,
+      "id": "ENVIRONMENT_SUBSTITUTION",
+      "state": "DENIED"
+    },
+    {
+      "ordinal": 9,
+      "id": "FINAL_GREEN",
+      "state": "GREEN",
+      "evidenceSha256": "35e5f4210a7f7bfb35e3f446a8342ebc8cf4a65f155d8d4a164e4ca3933110f4"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "BI-KS-03-AC01",
+      "status": "PASS",
+      "proof": "Exact Main/release commit and tree plus input, metric, plan, oracle, result, coverage, and environment identities are frozen."
+    },
+    {
+      "id": "BI-KS-03-AC02",
+      "status": "PASS",
+      "proof": "All named sabotage and context-substitution cases deterministically deny without an ordinary answer before final GREEN."
+    },
+    {
+      "id": "BI-KS-03-AC03",
+      "status": "PASS",
+      "proof": "Two isolated immutable-byte runs are byte-identical and equal the independently bound oracle for exactly one admitted holdout metric."
+    }
+  ],
+  "finalGreen": {
+    "schemaVersion": "kaleidosphere.business-bi/net-revenue-falsification-run/v1",
+    "taskId": "PORTFOLIO-KS147-FALSIFICATION",
+    "issue": "BI-KS-03",
+    "state": "GREEN",
+    "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+    "metric": {
+      "count": 1,
+      "id": "bi-ks-01-net-revenue",
+      "operationId": "bi-ks-01-net-revenue/v1",
+      "admission": "ADMITTED_SYNTHETIC_HOLDOUT_ONLY"
+    },
+    "identities": {
+      "input": {
+        "path": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+        "sha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d"
+      },
+      "metric": {
+        "path": "contracts/business-bi/v1/net-revenue.metric.json",
+        "sha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
+      },
+      "plan": {
+        "sha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8"
+      },
+      "oracle": {
+        "path": "tests/fixtures/business-bi/net-revenue-oracle-v1.json",
+        "sha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+        "independentCalculatorPath": "tests/business-bi-metric-oracle.test.mjs",
+        "independentCalculatorSha256": "2aac1ef285ac0e8637786507dd7d03fd0bcf0e4bc0ebe8e875085071bb3a17b5"
+      },
+      "result": {
+        "sha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc"
+      },
+      "coverage": {
+        "sha256": "aae3a6a637b58cb5eb340bebcbaa5f75ae333cade1a6438b548ebeaee7e55338"
+      },
+      "environment": {
+        "sha256": "ae82ec35cbb149f52da9d6a2cf281ec8f2412c0a87015c545a5393b494627575"
+      },
+      "repository": {
+        "commitOid": "764d0f7a1bad9e8e407b96e1b2340baa1e001af6",
+        "treeOid": "e5c6b82aba35a0f760a497c78cf4826dfbb3d104"
+      }
+    },
+    "environment": {
+      "architecture": "x64",
+      "canonicalJsonSha256": "e0ab8804532a55b161407e59167cf3027ebceb7df72a4d1dd1a485b1db4400ec",
+      "endianness": "LE",
+      "nodeModulesAbi": "137",
+      "nodeVersion": "v24.19.0",
+      "packageSha256": "cb9622a5e3b7bc8508ae7d443734db4f2606d4ca1e275192d3ecf34928a78710",
+      "platform": "linux",
+      "runtime": "node",
+      "schemaVersion": "kaleidosphere.business-bi/falsification-environment/v1"
+    },
+    "execution": {
+      "state": "COMPLETE",
+      "accessMode": "READ_ONLY",
+      "mutationAuthority": false,
+      "bounded": true,
+      "rowsRead": 17,
+      "rowBudget": 17,
+      "outputRows": 1,
+      "oracleEquality": "EXACT",
+      "result": {
+        "deltaMinorUnits": 70059,
+        "excludedOutOfScopeCount": 3,
+        "periods": {
+          "comparison": {
+            "cancelCount": 1,
+            "creditMinorUnits": 5500,
+            "netMinorUnits": 30000,
+            "rowCount": 7,
+            "saleMinorUnits": 35500,
+            "unknown": {
+              "count": 2,
+              "quantifiedAmountMinorUnits": 777,
+              "unquantifiedCount": 1
+            }
+          },
+          "current": {
+            "cancelCount": 1,
+            "creditMinorUnits": 41234,
+            "netMinorUnits": 100059,
+            "rowCount": 6,
+            "saleMinorUnits": 141293,
+            "unknown": {
+              "count": 1,
+              "quantifiedAmountMinorUnits": 0,
+              "unquantifiedCount": 1
+            }
+          }
+        },
+        "unknown": {
+          "count": 4,
+          "quantifiedAmountMinorUnits": 1977,
+          "unassigned": {
+            "count": 1,
+            "quantifiedAmountMinorUnits": 1200,
+            "unquantifiedCount": 0
+          },
+          "unquantifiedCount": 2
+        }
+      },
+      "coverage": {
+        "emptyOrZeroSuccessSynthesized": false,
+        "nonSuccessCollapsed": false,
+        "resultAvailable": true,
+        "state": "COMPLETE"
+      }
+    },
+    "boundary": {
+      "sourceConnectionUsed": false,
+      "productionOrCustomerDataUsed": false,
+      "credentialAccessed": false,
+      "networkAccessed": false,
+      "arbitrarySqlAccepted": false,
+      "secondMetricAdmitted": false,
+      "externalEffectPerformed": false
+    },
+    "evidenceSha256": "35e5f4210a7f7bfb35e3f446a8342ebc8cf4a65f155d8d4a164e4ca3933110f4"
+  },
+  "publicClosureGovernance": {
+    "independentIntegratedReviews": [
+      {
+        "ordinal": 1,
+        "role": "INDEPENDENT_INTEGRATED_REVIEWER",
+        "status": "PENDING_CONTROLLER",
+        "workerSelfReview": false
+      }
+    ],
+    "finalOwners": [
+      {
+        "ordinal": 1,
+        "owner": "Sol",
+        "responsibility": "FIX_FORWARD_TO_PUBLIC_CLOSURE",
+        "status": "PENDING_CONTROLLER",
+        "requiredStages": [
+          "EXACT_PR_MAIN_CI",
+          "RELEASE",
+          "ANONYMOUS_READBACK",
+          "ISSUE_CLOSED",
+          "QUEUE_DONE"
+        ]
+      }
+    ],
+    "publicClosureAuthorized": false,
+    "workerAuthority": "ONE_LOCAL_ALLOWLISTED_COMMIT_ONLY"
+  },
+  "deliveryBoundary": {
+    "externalEffectsPerformed": false,
+    "sourceDatabaseWritten": false,
+    "credentialsUsed": false,
+    "realOrCustomerDataUsed": false,
+    "pushPerformed": false,
+    "mergePerformed": false,
+    "releasePerformed": false,
+    "anonymousReadbackClaimed": false,
+    "issueClosed": false,
+    "queueDoneClaimed": false
+  },
+  "nonclaims": [
+    "No production or customer data was accessed.",
+    "No second metric, general BI capability, dashboard, or package publication is claimed.",
+    "No credential, network, source connection, write, push, merge, release, issue-close, or Queue mutation authority is granted.",
+    "The local GREEN is falsification evidence only; integrated review and all public closure stages remain with the controller and final Sol owner."
+  ],
+  "verificationSha256": "24e753c8c4e50121f8fb561f5253c27cd8ea5f63b81783b1c7e9249b4b8ac637"
+}
