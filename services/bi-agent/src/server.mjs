@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import http from 'node:http';
 
+import { objectFromMessage, technicalFamily } from './ask-intent.mjs';
 import { capabilityManifestV1 } from './capability-manifest-v1.mjs';
 import { capabilityAttestationV2, executeExternalIntentV2 } from './external-api-v2.mjs';
 
@@ -143,23 +144,6 @@ function discoveryRequest(message) {
   if (action === 'confirm') request.confirmed = true;
   if (action === 'export') request.format = 'json';
   return request;
-}
-
-function technicalFamily(message) {
-  if (/(größte|largest|size|capacity|bytes|block|verteilung)/i.test(message)) return 'largest_tables';
-  if (/(row|zeilen|estimate|schätz|fresh|stale|statist)/i.test(message)) return 'row_estimates_freshness';
-  if (/(inventory|inventar|valid|invalid|compile|schema|object|objekt)/i.test(message)) return 'object_inventory_validity';
-  if (/(depend|abhäng|impact|uses|verwendet|nutzt|benutzt)/i.test(message)) return 'dependencies';
-  if (/(signature|signatur|argument|stored|procedure|function|package|logic|code)/i.test(message)) return 'stored_logic_signatures';
-  if (/(scheduler|job|materialized|mview|refresh|mv\b)/i.test(message)) return 'scheduler_mv_refresh';
-  if (/(coverage|blind|denied|timeout|partial|caveat|abdeckung|lücke)/i.test(message)) return 'coverage_blind_spots';
-  if (/(candidate|kandidat|bi[- ]?relev|dimension|measure|kennzahl)/i.test(message)) return 'bi_relevance_candidates';
-  return null;
-}
-
-function objectFromMessage(message) {
-  const match = /\b(?:object|objekt|table|tabelle|uses|verwendet|nutzt|impact|dependencies|abhängigkeiten|signatures?|signaturen?)\s+([A-Za-z][A-Za-z0-9_$#]*(?:\.[A-Za-z][A-Za-z0-9_$#]*)?)/i.exec(message);
-  return match ? {name: match[1]} : null;
 }
 
 function scopeFromStatus(status) {

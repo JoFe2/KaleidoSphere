@@ -106,6 +106,8 @@ const HISTORICAL_ENVIRONMENT_TEST_SKIP =
   ' --test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const CANONICAL_TEST_REGISTRATION =
   ' tests/business-bi-clean-room.test.mjs';
+const ASK_INTENT_TEST_REGISTRATION =
+  ' tests/bi-agent-ask-intent.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -451,6 +453,7 @@ function reconstructFrozenReleasePackage(packageBytes) {
   for (const addition of [
     HISTORICAL_ENVIRONMENT_TEST_SKIP,
     CANONICAL_TEST_REGISTRATION,
+    ASK_INTENT_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),
