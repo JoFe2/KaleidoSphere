@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "kaleidosphere/k4d-plugin-validate-transcripts/v1",
+  "adapter": "claude-code-plugin-validate",
+  "adapterCommand": "claude plugin validate <package-root> --json --strict",
+  "claudeVersion": "2.1.259",
+  "strict": true,
+  "successTranscript": {
+    "success": true,
+    "strict": true,
+    "target": "<package-root>/.claude-plugin/plugin.json",
+    "manifest": {
+      "file": "<package-root>/.claude-plugin/plugin.json",
+      "type": "plugin",
+      "errors": [],
+      "warnings": [],
+      "notes": []
+    },
+    "contents": []
+  },
+  "publicationPerformed": false
+}

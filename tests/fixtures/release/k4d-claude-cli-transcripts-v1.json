@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/tests/fixtures/release/k4d-claude-cli-transcripts-v1.json",
+  "schemaVersion": "kaleidosphere/k4d-claude-cli-transcripts/v1",
+  "adapter": "claude-code-plugin",
+  "claude": {
+    "binary": "claude",
+    "version": "2.1.259",
+    "versionCommand": [
+      "claude",
+      "--version"
+    ]
+  },
+  "package": {
+    "version": "0.26.0",
+    "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255",
+    "manifestSha256": "b8a53a99c90b10982ca7cd15291d000291dc6a0e511b6b6ff53b2222741ae42d",
+    "pluginName": "kaleidosphere-agent-skill",
+    "marketplaceName": "kaleidosphere-local",
+    "skillPath": "skills/kaleidosphere/SKILL.md"
+  },
+  "boundary": {
+    "cleanProfile": true,
+    "globalConfigurationMutated": false,
+    "residueAfterCleanup": false
+  },
+  "orderedCommands": [
+    {
+      "id": "claude-version",
+      "phase": "preflight",
+      "command": [
+        "claude",
+        "--version"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "2.1.259",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "2.1.259 (Claude Code)\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "install-marketplace",
+      "phase": "install",
+      "command": [
+        "claude",
+        "plugin",
+        "marketplace",
+        "add",
+        "<boundary>/marketplace"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "Successfully added marketplace",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "Adding marketplace…✔ Successfully added marketplace: kaleidosphere-local (declared in user settings)\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "install-plugin",
+      "phase": "install",
+      "command": [
+        "claude",
+        "plugin",
+        "install",
+        "kaleidosphere-agent-skill@kaleidosphere-local"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "Successfully installed plugin",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "Installing plugin \"kaleidosphere-agent-skill@kaleidosphere-local\"...✔ Successfully installed plugin: kaleidosphere-agent-skill@kaleidosphere-local (scope: user)\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "discover-skill",
+      "phase": "discovery",
+      "command": [
+        "claude",
+        "plugin",
+        "list",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "kaleidosphere-agent-skill",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "[\n  {\n    \"id\": \"kaleidosphere-agent-skill@kaleidosphere-local\",\n    \"version\": \"0.26.0\",\n    \"scope\": \"user\",\n    \"enabled\": true,\n    \"installPath\": \"<boundary>/config/plugins/cache/kaleidosphere-local/kaleidosphere-agent-skill/0.26.0\",\n    \"installedAt\": \"<ts>\",\n    \"lastUpdated\": \"<ts>\"\n  }\n]\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "use-declared-skill",
+      "phase": "positive-use",
+      "command": [
+        "claude",
+        "plugin",
+        "details",
+        "kaleidosphere-agent-skill"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "Skills (1)",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "kaleidosphere-agent-skill 0.26.0\n  Description: KaleidoSphere bounded BI AgentSkill distribution\n  Source: kaleidosphere-agent-skill@kaleidosphere-local\n\nComponent inventory\n  Skills (1)  kaleidosphere\n  Agents (0)\n  Hooks (0)\n  MCP servers (0)\n  LSP servers (0)\n\nProjected token cost\n  Always-on:   ~46 tok   added to every session\n\nPer-component (rounded)\n  component      always-on  on-invoke\n  kaleidosphere        ~50       ~910\n\n  On-invoke cost is paid each time a skill or agent fires.\n  Token counts are estimates and may differ from actual usage.\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "use-undeclared-skill-denied",
+      "phase": "negative-use",
+      "command": [
+        "claude",
+        "plugin",
+        "install",
+        "ks77-not-declared@kaleidosphere-local"
+      ],
+      "expectedOutcome": "denied",
+      "assertion": "not found in marketplace",
+      "result": {
+        "exitCode": 1,
+        "signal": null,
+        "stdout": "Installing plugin \"ks77-not-declared@kaleidosphere-local\"...\n",
+        "stderr": "✘ Failed to install plugin \"ks77-not-declared@kaleidosphere-local\": Plugin \"ks77-not-declared\" not found in marketplace \"kaleidosphere-local\". Your local copy may be out of date — try `claude plugin marketplace update kaleidosphere-local`.\n",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "malformed-install-target-denied",
+      "phase": "negative-install",
+      "command": [
+        "claude",
+        "plugin",
+        "install",
+        "kaleidosphere-agent-skill@unknown-marketplace"
+      ],
+      "expectedOutcome": "denied",
+      "assertion": "not found in marketplace",
+      "result": {
+        "exitCode": 1,
+        "signal": null,
+        "stdout": "Installing plugin \"kaleidosphere-agent-skill@unknown-marketplace\"...\n",
+        "stderr": "✘ Failed to install plugin \"kaleidosphere-agent-skill@unknown-marketplace\": Plugin \"kaleidosphere-agent-skill\" not found in marketplace \"unknown-marketplace\". Your local copy may be out of date — try `claude plugin marketplace update unknown-marketplace`.\n",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "remove-plugin",
+      "phase": "removal",
+      "command": [
+        "claude",
+        "plugin",
+        "remove",
+        "kaleidosphere-agent-skill@kaleidosphere-local"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "Successfully uninstalled plugin",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "✔ Successfully uninstalled plugin: kaleidosphere-agent-skill (scope: user)\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "discover-skill-after-removal",
+      "phase": "negative-use-after-removal",
+      "command": [
+        "claude",
+        "plugin",
+        "list",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "[]",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "[]\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "use-declared-skill-after-removal-denied",
+      "phase": "negative-use-after-removal",
+      "command": [
+        "claude",
+        "plugin",
+        "details",
+        "kaleidosphere-agent-skill"
+      ],
+      "expectedOutcome": "denied",
+      "assertion": "not found",
+      "result": {
+        "exitCode": 1,
+        "signal": null,
+        "stdout": "Plugin \"kaleidosphere-agent-skill\" not found. Run `claude plugin list` to see installed plugins, or pass --plugin-dir <path> to load one from disk.\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "remove-marketplace",
+      "phase": "removal",
+      "command": [
+        "claude",
+        "plugin",
+        "marketplace",
+        "remove",
+        "kaleidosphere-local"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "Successfully removed marketplace",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "✔ Successfully removed marketplace: kaleidosphere-local\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "marketplace-absent-readback",
+      "phase": "readback",
+      "command": [
+        "claude",
+        "plugin",
+        "marketplace",
+        "list",
+        "--json"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "[]",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "[]\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    },
+    {
+      "id": "zero-residue-readback",
+      "phase": "readback",
+      "command": [
+        "read-boundary",
+        "<boundary>/config"
+      ],
+      "expectedOutcome": "passed",
+      "assertion": "clean",
+      "result": {
+        "exitCode": 0,
+        "signal": null,
+        "stdout": "clean\n",
+        "stderr": "",
+        "errorCode": null
+      }
+    }
+  ],
+  "requiredNegativeCases": [
+    {
+      "id": "preexisting-profile-residue",
+      "expectedOutcome": "denied",
+      "assertion": "temporary boundary starts empty before any claude run"
+    },
+    {
+      "id": "absent-skill-discovery",
+      "expectedOutcome": "denied",
+      "assertion": "installed plugin absent from the post-removal list readback"
+    },
+    {
+      "id": "undeclared-skill-invocation",
+      "expectedOutcome": "denied",
+      "assertion": "not found in marketplace"
+    },
+    {
+      "id": "malformed-install-target",
+      "expectedOutcome": "denied",
+      "assertion": "not found in marketplace"
+    },
+    {
+      "id": "successful-use-after-removal",
+      "expectedOutcome": "denied",
+      "assertion": "not found"
+    },
+    {
+      "id": "residue-after-cleanup",
+      "expectedOutcome": "denied",
+      "assertion": "no active plugin or marketplace residue"
+    }
+  ],
+  "nonClaims": [
+    "Fixture mode replays a recorded, location- and time-normalized transcript and never invokes the claude runtime.",
+    "The clean-boundary lifecycle runs in a temporary CLAUDE_CONFIG_DIR/HOME boundary; no user or global Claude state is read or written.",
+    "Zero-residue is measured by the CLI plugin/marketplace readback (empty list and not-found details), not by config-dir emptiness; Claude writes baseline config state that is not submission residue.",
+    "No marketplace submission, publication, listing, or external anonymous readback is claimed."
+  ]
+}

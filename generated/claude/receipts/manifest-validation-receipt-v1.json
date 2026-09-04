@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "kaleidosphere/k4d-manifest-validation-receipt/v1",
+  "packageVersion": "0.26.0",
+  "packagePath": "generated/claude/kaleidosphere",
+  "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255",
+  "manifest": {
+    "path": ".claude-plugin/plugin.json",
+    "sha256": "b8a53a99c90b10982ca7cd15291d000291dc6a0e511b6b6ff53b2222741ae42d"
+  },
+  "canonicalVerification": {
+    "route": "repository-generator",
+    "status": "passed",
+    "generator": "scripts/release/generate-k4d-claude-plugin.mjs",
+    "fixture": "tests/fixtures/release/k4d-canonical-skill-digests-v1.json",
+    "receiptSchemaVersion": "kaleidosphere/k4d-claude-plugin-receipt/v1"
+  },
+  "claudeSchemaValidation": {
+    "adapter": "claude-code-plugin-validate",
+    "toolVersion": "2.1.259",
+    "command": "claude plugin validate generated/claude/kaleidosphere --json --strict",
+    "execution": "RECORDED_TRANSCRIPT_DRY_RUN",
+    "report": {
+      "success": true,
+      "strict": true,
+      "target": "generated/claude/kaleidosphere/.claude-plugin/plugin.json",
+      "manifest": {
+        "file": "generated/claude/kaleidosphere/.claude-plugin/plugin.json",
+        "type": "plugin",
+        "errors": [],
+        "warnings": [],
+        "notes": []
+      },
+      "contents": []
+    }
+  },
+  "publicationPerformed": false,
+  "dryRun": true,
+  "accepted": true,
+  "nonClaims": [
+    "No package publication, submission or portal mutation performed.",
+    "No marketplace listing, approval or authenticated runtime use claimed."
+  ]
+}

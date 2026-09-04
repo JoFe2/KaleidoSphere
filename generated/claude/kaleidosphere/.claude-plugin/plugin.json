@@ -1,0 +1,17 @@
+{
+  "name": "kaleidosphere-agent-skill",
+  "version": "0.26.0",
+  "description": "KaleidoSphere bounded BI AgentSkill distribution",
+  "author": {
+    "name": "JoFe2"
+  },
+  "homepage": "https://github.com/JoFe2/KaleidoSphere",
+  "repository": "https://github.com/JoFe2/KaleidoSphere",
+  "license": "Apache-2.0",
+  "keywords": [
+    "kaleidosphere",
+    "agent-skill",
+    "business-intelligence"
+  ],
+  "skills": "./skills/"
+}
