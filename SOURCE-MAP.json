@@ -247,7 +247,7 @@
     "generated/claude/receipts/claude-isolated-e2e-v1.json": "274cddc31469c5bef531b40480468ecbb10f3a1054c8f6c096ac09e6d5f7fe01",
     "generated/claude/receipts/manifest-validation-receipt-v1.json": "992acfefbf8a8b57cf2b7ab2c356b0e9a4190f060fbad353b2202a051f6d935d",
     "generated/claude/receipts/skills-only-security-license-receipt-v1.json": "bc5f8fa5440c31dfef10f7cd721c9c4a6d017327c0133d3cad8f1f16a064967c",
-    "package.json": "5bf4fbdfc36c56a3bc1e8394e9b27245e6869c6ee12b2418f0d67a30564979b3",
+    "package.json": "1d5e5b1786465bb65ff8951d3367902557120270cf8910f129ab0b134beb4102",
     "packages/codex/kaleidosphere/.codex-plugin/plugin.json": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77",
     "packages/codex/kaleidosphere/skills/kaleidosphere/SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
     "packages/codex/kaleidosphere/skills/kaleidosphere/references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
