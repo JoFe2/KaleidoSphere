@@ -1,0 +1,72 @@
+{
+  "schemaVersion": "kaleidosphere/k4d-bounded-external-wait/v1",
+  "task": {
+    "id": "KS077-CLAUDE-DISTRIBUTION",
+    "issue": "KS77"
+  },
+  "terminalState": "nonterminal-external-wait",
+  "disposition": "NOT_RELEASED",
+  "publicListingClaim": false,
+  "package": {
+    "name": "kaleidosphere",
+    "version": "0.26.0",
+    "digest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255",
+    "manifestSha256": "b8a53a99c90b10982ca7cd15291d000291dc6a0e511b6b6ff53b2222741ae42d"
+  },
+  "sourceLocalChain": [
+    {
+      "key": "manifestValidation",
+      "path": "generated/claude/receipts/manifest-validation-receipt-v1.json",
+      "schemaVersion": "kaleidosphere/k4d-manifest-validation-receipt/v1",
+      "sha256": "992acfefbf8a8b57cf2b7ab2c356b0e9a4190f060fbad353b2202a051f6d935d",
+      "accepted": true,
+      "publicationPerformed": false
+    },
+    {
+      "key": "securityLicense",
+      "path": "generated/claude/receipts/skills-only-security-license-receipt-v1.json",
+      "schemaVersion": "kaleidosphere/k4d-skills-only-security-license-receipt/v1",
+      "sha256": "bc5f8fa5440c31dfef10f7cd721c9c4a6d017327c0133d3cad8f1f16a064967c",
+      "accepted": true,
+      "publicationPerformed": false
+    },
+    {
+      "key": "claudeE2e",
+      "path": "generated/claude/receipts/claude-isolated-e2e-v1.json",
+      "schemaVersion": "kaleidosphere/k4d-claude-isolated-e2e/v1",
+      "sha256": "274cddc31469c5bef531b40480468ecbb10f3a1054c8f6c096ac09e6d5f7fe01",
+      "accepted": true,
+      "mode": "fixture"
+    }
+  ],
+  "capabilityDemos": [],
+  "externalBoundaries": [
+    {
+      "id": "marketplace-identity-verification",
+      "satisfied": false,
+      "authority": "owner-official-marketplace-ui",
+      "note": "Requires owner authority and a verified publisher identity established in the official Claude Code marketplace UI."
+    },
+    {
+      "id": "live-marketplace-submission",
+      "satisfied": false,
+      "note": "A live, same-digest marketplace submission has not been performed or established."
+    },
+    {
+      "id": "live-anonymous-directory-readback",
+      "satisfied": false,
+      "note": "A live anonymous public-directory discovery and matching-digest install readback has not been performed."
+    }
+  ],
+  "resumeActions": [
+    "Owner resumes in the official Claude Code marketplace UI to verify owner authority and publisher identity before any submission or terms acceptance."
+  ],
+  "rollback": "Safe rollback when authorized: remove the local marketplace cache, or withdraw the draft and publish the corrected successor.",
+  "side_effects": [],
+  "nonClaims": [
+    "This record is a bounded local classification of the committed receipts; it performs no marketplace submission, publication, listing, identity, credential, or release operation and uses no network.",
+    "No public listing is claimed: publicListingClaim is false until a live anonymous public-directory discovery and matching-digest install readback is recorded.",
+    "capabilityDemos is empty because no recorded-fixture marketplace capability demonstration (submission, anonymous readback, terminal evidence, or delivery readback) has been established on this base.",
+    "The single resumeAction is the exact bounded external step; it encodes no authority, performs no mutation, and transfers no execution."
+  ]
+}

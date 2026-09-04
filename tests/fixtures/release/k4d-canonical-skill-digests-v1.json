@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "kaleidosphere/k4d-canonical-skill-digests/v1",
+  "canonicalSource": "agent-skills/kaleidosphere",
+  "files": {
+    "SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
+    "references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
+    "scripts/validate-request.mjs": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509"
+  }
+}

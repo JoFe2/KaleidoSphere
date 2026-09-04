@@ -1,0 +1,190 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/tests/fixtures/release/k4d-reviewer-test-cases-v1.json",
+  "schemaVersion": "kaleidosphere/k4d-reviewer-test-cases/v1",
+  "packet": {
+    "listing": "docs/release/k4d-directory-listing.md",
+    "releaseNotes": "docs/release/k4d-release-notes.md",
+    "packageVersion": "0.26.0",
+    "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255",
+    "manifestSha256": "b8a53a99c90b10982ca7cd15291d000291dc6a0e511b6b6ff53b2222741ae42d",
+    "publicationPerformed": false
+  },
+  "requiredPositiveCaseIds": [
+    "manifest-validation",
+    "install",
+    "discovery",
+    "declared-skill-use",
+    "cleanup",
+    "package-digest-inspection"
+  ],
+  "requiredNegativeCaseIds": [
+    "undeclared-skill-use",
+    "prohibited-package-content",
+    "post-remove-residue"
+  ],
+  "positiveCases": [
+    {
+      "id": "manifest-validation",
+      "kind": "positive",
+      "objective": "Confirm the generated manifest and canonical skill bytes pass the repository and Claude Code plugin validator routes.",
+      "reviewerSteps": [
+        "Run the repository generator check against generated/claude/kaleidosphere.",
+        "Run the version-recorded Claude Code plugin validator and confirm the report records success true with zero manifest errors.",
+        "Confirm publicationPerformed is false and the returned packageDigest equals the packet digest."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "scripts/release/validate-k4d-claude-plugin.mjs",
+        "tests/fixtures/release/k4d-plugin-validate-transcripts-v1.json",
+        "generated/claude/receipts/manifest-validation-receipt-v1.json"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "install",
+      "kind": "positive",
+      "objective": "Confirm the local marketplace and KaleidoSphere plugin install in the isolated reviewer boundary.",
+      "reviewerSteps": [
+        "Create an empty temporary Claude Code boundary with global configuration excluded.",
+        "Add the local marketplace and install kaleidosphere@kaleidosphere-local.",
+        "Require both install commands to exit 0 before continuing."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "install-marketplace",
+        "install-plugin"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "discovery",
+      "kind": "positive",
+      "objective": "Confirm the installed plugin and declared kaleidosphere skill are discoverable.",
+      "reviewerSteps": [
+        "Run claude plugin list --json inside the isolated boundary.",
+        "Confirm the response names the kaleidosphere plugin and the declared skill path exists.",
+        "Reject the case if discovery succeeds without the declared skill identity."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "discover-skill",
+        "generated/claude/kaleidosphere/.claude-plugin/plugin.json"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "declared-skill-use",
+      "kind": "positive",
+      "objective": "Confirm a declared KaleidoSphere skill request is locally validated and reaches the expected external-wait boundary.",
+      "reviewerSteps": [
+        "Request a bounded status operation using the declared kaleidosphere skill.",
+        "Confirm the isolated command exits 0 and returns KaleidoSphere: WAITING_EXTERNAL.",
+        "Confirm no user-supplied endpoint, credential, or mutation is introduced."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "use-declared-skill",
+        "generated/claude/kaleidosphere/skills/kaleidosphere/SKILL.md"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "cleanup",
+      "kind": "positive",
+      "objective": "Confirm removal completes and the isolated profile, configuration, cache, data, and marketplace roots are empty on readback.",
+      "reviewerSteps": [
+        "Remove the KaleidoSphere plugin and local marketplace.",
+        "Delete the temporary marketplace root as specified by the isolated harness.",
+        "Read back every configured temporary root and require zero residue with exit code 0."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "remove-plugin",
+        "remove-marketplace",
+        "zero-residue-readback"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "package-digest-inspection",
+      "kind": "positive",
+      "objective": "Confirm the package and manifest digests are inspected and agree across the release evidence.",
+      "reviewerSteps": [
+        "Read packageDigest from the security receipt and isolated E2E receipt.",
+        "Compare both values with the packet digest and compute the manifest SHA-256 from .claude-plugin/plugin.json.",
+        "Accept only when all package and manifest digest comparisons match exactly."
+      ],
+      "expectedResult": "accepted",
+      "evidence": [
+        "generated/claude/receipts/skills-only-security-license-receipt-v1.json",
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "packageDigest",
+        "manifestSha256"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "undeclared-skill-use",
+      "kind": "negative",
+      "objective": "Reject invocation of a skill that is not declared by the package manifest.",
+      "reviewerSteps": [
+        "After install, request the undeclared skill ks77-not-declared.",
+        "Require a denied result containing KaleidoSphere: REFUSED_UNDECLARED_SKILL.",
+        "Reject the package if the undeclared request succeeds or returns an accepted evidence result."
+      ],
+      "expectedResult": "denied",
+      "evidence": [
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "use-undeclared-skill-denied",
+        "undeclared-skill-invocation"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "prohibited-package-content",
+      "kind": "negative",
+      "objective": "Reject package content that violates the skills-only policy, including app, MCP, hook, LSP, executable, symlink, dependency, secret-like, or license input.",
+      "reviewerSteps": [
+        "Run the static skills-only guard against each prohibited-package fixture input.",
+        "Require every prohibited input to be denied without echoing secret contents.",
+        "Reject any package that contains prohibited content even if its manifest digest otherwise looks valid."
+      ],
+      "expectedResult": "denied",
+      "evidence": [
+        "scripts/release/check-k4d-skills-only.mjs",
+        "tests/fixtures/release/k4d-prohibited-package-inputs-v1.json",
+        "generated/claude/receipts/skills-only-security-license-receipt-v1.json"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "post-remove-residue",
+      "kind": "negative",
+      "objective": "Reject cleanup when any profile, configuration, cache, data, marketplace, or package residue remains after removal.",
+      "reviewerSteps": [
+        "After plugin and marketplace removal, read back every isolated boundary root.",
+        "Treat any residue path or a non-empty cleanup proof as a denied result.",
+        "Reject the submission packet if post-remove residue is not explicitly denied and recorded."
+      ],
+      "expectedResult": "denied",
+      "evidence": [
+        "generated/claude/receipts/claude-isolated-e2e-v1.json",
+        "zero-residue-readback",
+        "residue-after-cleanup"
+      ],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    }
+  ],
+  "nonClaims": [
+    "No portal form, marketplace submission, publication, or release action is performed by this packet.",
+    "Fixture-mode transcripts are deterministic evidence and are not live provider responses.",
+    "A passing reviewer case does not claim host compatibility, marketplace approval, deployment, production readiness, or customer-data fitness."
+  ]
+}

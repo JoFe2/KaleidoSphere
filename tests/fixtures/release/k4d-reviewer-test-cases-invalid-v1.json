@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/tests/fixtures/release/k4d-reviewer-test-cases-invalid-v1.json",
+  "schemaVersion": "kaleidosphere/k4d-reviewer-test-cases/v1",
+  "expectedValidation": {
+    "accepted": false,
+    "error": "reviewer case matrix denied: fewer than five positive cases"
+  },
+  "packet": {
+    "listing": "docs/release/k4d-directory-listing.md",
+    "releaseNotes": "docs/release/k4d-release-notes.md",
+    "packageVersion": "0.26.0",
+    "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255",
+    "manifestSha256": "b8a53a99c90b10982ca7cd15291d000291dc6a0e511b6b6ff53b2222741ae42d",
+    "publicationPerformed": false
+  },
+  "requiredPositiveCaseIds": ["manifest-validation", "install", "discovery", "declared-skill-use", "cleanup", "package-digest-inspection"],
+  "requiredNegativeCaseIds": ["undeclared-skill-use", "prohibited-package-content", "post-remove-residue"],
+  "positiveCases": [
+    {
+      "id": "manifest-validation",
+      "kind": "positive",
+      "objective": "Confirm manifest validation.",
+      "reviewerSteps": ["Run the manifest validator."],
+      "expectedResult": "accepted",
+      "evidence": ["scripts/release/validate-k4d-claude-plugin.mjs"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "install",
+      "kind": "positive",
+      "objective": "Confirm install.",
+      "reviewerSteps": ["Install in an isolated boundary."],
+      "expectedResult": "accepted",
+      "evidence": ["install-plugin"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "discovery",
+      "kind": "positive",
+      "objective": "Confirm discovery.",
+      "reviewerSteps": ["List the installed skill."],
+      "expectedResult": "accepted",
+      "evidence": ["discover-skill"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "declared-skill-use",
+      "kind": "positive",
+      "objective": "Confirm declared use.",
+      "reviewerSteps": ["Use the declared skill."],
+      "expectedResult": "accepted",
+      "evidence": ["use-declared-skill"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    }
+  ],
+  "negativeCases": [
+    {
+      "id": "undeclared-skill-use",
+      "kind": "negative",
+      "objective": "Reject undeclared use.",
+      "reviewerSteps": ["Attempt undeclared use."],
+      "expectedResult": "denied",
+      "evidence": ["use-undeclared-skill-denied"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "prohibited-package-content",
+      "kind": "negative",
+      "objective": "Reject prohibited content.",
+      "reviewerSteps": ["Scan prohibited content."],
+      "expectedResult": "denied",
+      "evidence": ["k4d-prohibited-package-inputs-v1.json"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    },
+    {
+      "id": "post-remove-residue",
+      "kind": "negative",
+      "objective": "Reject residue.",
+      "reviewerSteps": ["Read back cleanup roots."],
+      "expectedResult": "denied",
+      "evidence": ["residue-after-cleanup"],
+      "packageDigest": "a9dfd0e40633c13ab7b04f15bdbfd8d5fa579453717272a9542a87567b13a255"
+    }
+  ],
+  "nonClaims": ["No portal submission is performed."]
+}
