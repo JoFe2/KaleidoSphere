@@ -1,0 +1,85 @@
+{
+  "schemaVersion": "kaleidosphere.pansphaira-analytics/analysis-contract/v1",
+  "issue": "XRA-KS-01",
+  "predeclaration": "Exactly one typed analysis is predeclared for this issue. Admitting a second analysis, or changing this one without a new contract version, is a contract violation.",
+  "analysis": {
+    "id": "pansphaira/projection-profile-coverage-analysis",
+    "version": "v1",
+    "count": 1
+  },
+  "computedClaims": [
+    "dateFieldCount",
+    "decimalFieldCount",
+    "fieldCount",
+    "nullableFieldCount",
+    "periodDays",
+    "periodEvaluability",
+    "projectionSignatureSha256"
+  ],
+  "observedClaims": [
+    "arithmeticUnit",
+    "fieldNames",
+    "periodWindow",
+    "provenanceStatus",
+    "sourceRelation",
+    "unknownHandling"
+  ],
+  "coverageAspects": [
+    "fields",
+    "periodEvaluability",
+    "periodWindow",
+    "relation",
+    "releaseEvidence",
+    "unknownChannel"
+  ],
+  "coverageStatuses": [
+    "HELD",
+    "OBSERVED",
+    "UNKNOWN"
+  ],
+  "periodEvaluabilityValues": [
+    "SUPPORTED",
+    "UNKNOWN"
+  ],
+  "counterevidenceClaimIds": [
+    "decimalPrecisionScale",
+    "fieldCount",
+    "periodDays",
+    "periodEvaluability",
+    "releaseEvidence",
+    "singleSourceRelation"
+  ],
+  "counterevidenceStatuses": [
+    "EVIDENCE_FOUND",
+    "HELD",
+    "MATCH",
+    "NONE_FOUND",
+    "UNKNOWN"
+  ],
+  "resultBinding": "resultSha256 is the sha256 of the canonical JSON of {claims, counterevidence, coverage}; the candidate never carries a digest of itself.",
+  "authorityFreeCandidate": {
+    "schemaVersion": "kaleidosphere.pansphaira-analytics/authority-free-candidate/v1",
+    "state": "CANDIDATE",
+    "authority": {
+      "capabilities": [],
+      "effects": [],
+      "execute": false,
+      "mutate": false,
+      "publish": false,
+      "promote": false
+    },
+    "bindings": [
+      "analysisContractSha256",
+      "environmentSha256",
+      "kaleidosphereHead",
+      "pansphairaHead",
+      "projectionContractSha256",
+      "projectionProfileSha256"
+    ]
+  },
+  "nonclaims": [
+    "No broad knowledge-effectiveness score is emitted by this analysis; claims are structural facts with UNKNOWN preserved.",
+    "No PANSPHAIRA domain model beyond the one closed projection-profile v1 shape is introduced.",
+    "A candidate is authority-free: it never promotes, mutates, executes, or publishes, and gains no capability or effect."
+  ]
+}

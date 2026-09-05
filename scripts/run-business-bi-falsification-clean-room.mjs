@@ -110,6 +110,8 @@ const ASK_INTENT_TEST_REGISTRATION =
   ' tests/bi-agent-ask-intent.test.mjs';
 const K4D_RELEASE_TEST_REGISTRATION =
   ' tests/release/check-k4d-skills-only.test.mjs tests/release/generate-k4d-claude-plugin.test.mjs tests/release/k4d-bounded-external-wait.test.mjs tests/release/k4d-claude-isolated-e2e.test.mjs tests/release/validate-k4d-claude-plugin.test.mjs tests/release/validate-k4d-submission-kit.test.mjs';
+const PANSHPHAIRA_ANALYTICS_TEST_REGISTRATION =
+  ' tests/pansphaira-analytics-service.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -457,6 +459,7 @@ function reconstructFrozenReleasePackage(packageBytes) {
     CANONICAL_TEST_REGISTRATION,
     ASK_INTENT_TEST_REGISTRATION,
     K4D_RELEASE_TEST_REGISTRATION,
+    PANSHPHAIRA_ANALYTICS_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),

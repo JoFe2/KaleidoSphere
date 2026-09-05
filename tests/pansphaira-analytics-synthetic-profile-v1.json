@@ -1,0 +1,55 @@
+{
+  "fixture": "tests/pansphaira-analytics-synthetic-profile-v1.json",
+  "notTheReleasedProjection": true,
+  "note": "Synthetic local pipeline fixtures only. These profiles are not the released PANSPHAIRA projection, are never admitted through the live service boundary (the release registry remains HELD), and no public closure, release, or external effect is claimed. The releasedVariant exists solely to prove the deterministic admission, analysis, candidate, and verifier machinery against a synthetic DI registry.",
+  "heldProfile": {
+    "profileVersion": "pansphaira/projection-profile/v1",
+    "sourceRelation": "xra_projection_orders",
+    "fields": [
+      {"name": "order_id", "type": "INT64", "nullable": false},
+      {"name": "order_date", "type": "DATE", "nullable": true},
+      {"name": "amount_minor_units", "type": "DECIMAL", "nullable": true, "precision": 12, "scale": 2},
+      {"name": "record_kind", "type": "TEXT", "nullable": false}
+    ],
+    "periodWindow": {"start": "2026-06-01", "end": "2026-07-31"},
+    "unknownHandling": "SEPARATE_CHANNEL",
+    "arithmeticUnit": "INTEGER_MINOR_UNITS",
+    "provenance": {
+      "origin": "PANSPHAIRA",
+      "dependencyIssue": "https://github.com/JoFe2/PANSPHAIRA/issues/343",
+      "status": "HELD",
+      "closedAt": null,
+      "releaseReceiptSha256": null,
+      "pansphairaHeadCommit": null
+    }
+  },
+  "releasedVariant": {
+    "profileVersion": "pansphaira/projection-profile/v1",
+    "sourceRelation": "xra_projection_orders",
+    "fields": [
+      {"name": "order_id", "type": "INT64", "nullable": false},
+      {"name": "order_date", "type": "DATE", "nullable": true},
+      {"name": "amount_minor_units", "type": "DECIMAL", "nullable": true, "precision": 12, "scale": 2},
+      {"name": "record_kind", "type": "TEXT", "nullable": false}
+    ],
+    "periodWindow": {"start": "2026-06-01", "end": "2026-07-31"},
+    "unknownHandling": "SEPARATE_CHANNEL",
+    "arithmeticUnit": "INTEGER_MINOR_UNITS",
+    "provenance": {
+      "origin": "PANSPHAIRA",
+      "dependencyIssue": "https://github.com/JoFe2/PANSPHAIRA/issues/343",
+      "status": "RELEASED",
+      "closedAt": "2026-09-04",
+      "releaseReceiptSha256": "2bf880824bedc865b0d5f449904e76422dba6077ef38c60b4ea2c7d7984290dc",
+      "pansphairaHeadCommit": "6d7a7b43f2e16ff088afd409e601520cace23c4b"
+    }
+  },
+  "syntheticRegistryEvidence": {
+    "publicClosureEvidence": "d244840f398861e76426bc8e434ebf5ea867609a80457556359f5465af655222",
+    "statement": "Deterministic synthetic digest; it is not public closure evidence for XRA-PS-01 and must never be presented as such."
+  },
+  "oracleIndependence": {
+    "productionAnalysisImports": 0,
+    "statement": "The independent oracle recomputes every computed claim inline from the raw fixture bytes; it imports no analysis, pipeline, candidate, or service module."
+  }
+}
