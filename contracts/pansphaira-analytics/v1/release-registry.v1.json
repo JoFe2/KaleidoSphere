@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "kaleidosphere.pansphaira-analytics/release-registry/v1",
+  "issue": "XRA-KS-01",
+  "admissionRule": "A projection profile is admitted for ingestion only when a RELEASED entry profileSha256 equals the canonical profile sha256, the entry releaseReceiptSha256 and pansphairaHeadCommit match the profile attested provenance edge, and the entry publicClosureEvidence is a 64-hex digest of publicly closed dependency evidence.",
+  "entries": [
+    {
+      "releaseId": "xra-ps-01",
+      "status": "HELD",
+      "profileSha256": null,
+      "releaseReceiptSha256": null,
+      "pansphairaHeadCommit": null,
+      "publicClosureEvidence": null
+    }
+  ],
+  "nonclaim": "XRA-PS-01 (https://github.com/JoFe2/PANSPHAIRA/issues/343) is not publicly closed as of this slice; the exact released PANSPHAIRA projection is not registered. The service fails closed with XRA_KS01_RELEASE_HELD for every ingestion. Registering a RELEASED entry requires controller evidence of public closure and is not performed by this worker."
+}

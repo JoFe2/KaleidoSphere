@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "kaleidosphere.pansphaira-analytics/projection-profile-contract/v1",
+  "issue": "XRA-KS-01",
+  "dependency": "XRA-PS-01",
+  "dependencyIssue": "https://github.com/JoFe2/PANSPHAIRA/issues/343",
+  "profileVersion": "pansphaira/projection-profile/v1",
+  "shape": {
+    "topLevelKeys": ["arithmeticUnit", "fields", "periodWindow", "profileVersion", "provenance", "sourceRelation", "unknownHandling"],
+    "sourceRelation": "^[a-z][a-z0-9_]{2,62}$",
+    "fieldKeys": {
+      "DECIMAL": ["name", "nullable", "precision", "scale", "type"],
+      "DEFAULT": ["name", "nullable", "type"]
+    },
+    "fieldName": "^[a-z][a-z0-9_]{1,62}$",
+    "fieldTypes": ["BOOLEAN", "DATE", "DECIMAL", "INT32", "INT64", "TEXT", "TIMESTAMP"],
+    "fieldCount": {
+      "min": 1,
+      "max": 32
+    },
+    "floatingPoint": "forbidden",
+    "decimalPrecision": {
+      "min": 1,
+      "max": 38,
+      "unit": "integer digits"
+    },
+    "decimalScale": {
+      "min": 0,
+      "max": 12,
+      "unit": "integer digits"
+    },
+    "periodWindowKeys": ["start", "end"],
+    "periodWindow": {
+      "format": "YYYY-MM-DD",
+      "boundary": "inclusive-both-ends",
+      "yearRange": [2000, 2099],
+      "maxDays": 3660
+    },
+    "unknownHandling": ["SEPARATE_CHANNEL"],
+    "knownCollapsePolicies": ["DROP", "FILL_ZERO", "IGNORE", "ZERO_COLLAPSE"],
+    "arithmeticUnit": ["INTEGER_MINOR_UNITS"],
+    "provenanceKeys": ["closedAt", "dependencyIssue", "origin", "pansphairaHeadCommit", "releaseReceiptSha256", "status"],
+    "provenance": {
+      "origin": ["PANSPHAIRA"],
+      "dependencyIssue": ["https://github.com/JoFe2/PANSPHAIRA/issues/343"],
+      "status": ["HELD", "RELEASED"],
+      "heldNulls": ["closedAt", "pansphairaHeadCommit", "releaseReceiptSha256"],
+      "releasedRequired": ["closedAt", "pansphairaHeadCommit", "releaseReceiptSha256"]
+    },
+    "canonicalWireFormat": "The HTTP body must be the canonical JSON bytes (sorted keys, no whitespace) of the profile document. The service recomputes the canonical form and compares byte-for-byte before any gate runs."
+  },
+  "gateOrder": ["XRA_KS01_REQUEST_SIZE_DENIED", "XRA_KS01_PROFILE_CANONICALITY_DENIED", "XRA_KS01_UNKNOWN_COLLAPSE_DENIED", "XRA_KS01_PROFILE_CONTRACT_DENIED", "XRA_KS01_EVIDENCE_MISSING_DENIED", "XRA_KS01_PROVENANCE_FORGERY_DENIED", "XRA_KS01_RELEASE_HELD", "XRA_KS01_PROFILE_DIGEST_MISMATCH_DENIED"],
+  "nonclaims": ["This contract fixes the exact closed shape of one projection profile (v1); it does not model a generic PANSPHAIRA domain in KaleidoSphere.", "No projection profile is admitted by this contract alone: admission additionally requires a RELEASED entry in the release registry, which is held (XRA-PS-01 not publicly closed).", "No customer, production, or marketplace data may appear in a profile body; synthetic local fixtures are the only profiles exercised in this slice."]
+}
