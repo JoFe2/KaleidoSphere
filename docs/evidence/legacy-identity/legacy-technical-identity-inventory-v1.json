@@ -1025,6 +1025,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/discovery-run-generations.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
       "path": "tests/discovery.test.mjs"
     },
     {

@@ -130,9 +130,11 @@ test('M4 discovery negative probes fail closed', async () => {
       handleDiscovery(db, {action: 'start', sessionId: 'neg_session'});
       db.prepare('UPDATE discovery_sessions SET state_json=? WHERE session_id=?').run('{"schemaVersion":"unknown"}', 'neg_session');
     }, request: {action: 'status', sessionId: 'neg_session'}, code: /DISCOVERY_STATE_INVALID/},
-    {name: 'stale snapshot mismatch', before: async (db) => {
-      handleDiscovery(db, {action: 'start', sessionId: 'neg_session'});
+    {name: 'pinned generation removed', before: async (db) => {
+      const started = handleDiscovery(db, {action: 'start', sessionId: 'neg_session'});
       ingestCatalogReceipt(db, await fixtureReceipt('mssql-next-snapshot', 'f'.repeat(64)));
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.prepare('DELETE FROM catalog_snapshots WHERE snapshot_sha256=?').run(started.state.catalog.snapshotSha256);
     }, request: {action: 'answer', sessionId: 'neg_session', field: 'audienceRole', value: 'Finance analyst'}, code: /DISCOVERY_CATALOG_SNAPSHOT_MISMATCH/},
   ];
 

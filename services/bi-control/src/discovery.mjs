@@ -51,6 +51,8 @@ function rows(db, sql, params = []) {
   return db.prepare(sql).all(...params);
 }
 
+// Checked pointer to the newest run generation: used to pin new sessions and to report
+// currency. It is not the authority for a session already bound to its own generation.
 function latest(db) {
   const snapshot = (() => {
     try { return db.prepare('SELECT * FROM catalog_snapshots WHERE active=1 ORDER BY analyzed_at DESC LIMIT 1').get(); }
@@ -294,10 +296,16 @@ function saveState(db, state, action, request) {
     .run(eventId, state.sessionId, state.revision, state.updatedAt, action, sha256(canonicalJson(request)), sha256(rendered));
 }
 
-function assertCurrentCatalog(state, snapshot) {
-  if (state.catalog.snapshotSha256 !== snapshot.snapshot_sha256 || state.catalog.receiptId !== snapshot.receipt_id) {
-    fail('DISCOVERY_CATALOG_SNAPSHOT_MISMATCH');
-  }
+// A session is bound to the immutable run generation it started from. That generation must
+// remain present and identity-intact for the session to advance; it need not be the latest
+// generation. `latest` is a checked pointer (currency), not the authority for the session.
+function assertPinnedGeneration(db, state) {
+  const row = db.prepare(
+    'SELECT receipt_id, engine, database_name FROM catalog_snapshots WHERE snapshot_sha256=?'
+  ).get(state.catalog.snapshotSha256);
+  if (!row || row.receipt_id !== state.catalog.receiptId || row.engine !== state.catalog.engine
+    || row.database_name !== state.catalog.database) fail('DISCOVERY_CATALOG_SNAPSHOT_MISMATCH');
+  return row;
 }
 
 function allSuggestionIds(state) {
@@ -448,17 +456,27 @@ function buildExport(state) {
   };
 }
 
-function response(action, state, extra = {}) {
+function response(action, state, snapshot, extra = {}) {
+  const current = state.catalog.snapshotSha256 === snapshot.snapshot_sha256;
   return {
     schemaVersion: DISCOVERY_RESPONSE_SCHEMA,
     action,
     state,
+    runGeneration: {
+      generationId: sha256([state.catalog.snapshotSha256, state.catalog.receiptId, state.catalog.engine, state.catalog.database].join(':')),
+      snapshotSha256: state.catalog.snapshotSha256,
+      receiptId: state.catalog.receiptId,
+      engine: state.catalog.engine,
+      database: state.catalog.database,
+      current,
+    },
     audit: {
       sessionId: state.sessionId,
       revision: state.revision,
       stateSha256: sha256(canonicalJson(state)),
       confirmed: state.confirmation.status === 'CONFIRMED',
     },
+    catalogSnapshotCurrent: current,
     ...extra,
   };
 }
@@ -471,44 +489,45 @@ export function handleDiscovery(db, request) {
   const snapshot = latest(db);
   if (action === 'start') {
     const existing = db.prepare('SELECT state_json FROM discovery_sessions WHERE session_id=?').get(id);
-    if (existing) return response('start', validateState(JSON.parse(existing.state_json)), { idempotent: true });
+    if (existing) return response('start', validateState(JSON.parse(existing.state_json)), snapshot, { idempotent: true });
     const state = initialState(db, snapshot, id, scopeFor(db, snapshot, request.scope));
     saveState(db, state, 'start', request);
-    return response('start', state, { idempotent: false });
+    return response('start', state, snapshot, { idempotent: false });
   }
   if (action === 'resume' || action === 'status') {
     const state = loadState(db, id);
-    return response(action, state, { catalogSnapshotCurrent: state.catalog.snapshotSha256 === snapshot.snapshot_sha256 });
+    assertPinnedGeneration(db, state);
+    return response(action, state, snapshot);
   }
   if (action === 'answer' || action === 'revise') {
     exact(request, ['action', 'sessionId', 'field', 'value'], ['action', 'sessionId', 'field', 'value']);
     const state = loadState(db, id);
-    assertCurrentCatalog(state, snapshot);
+    assertPinnedGeneration(db, state);
     applyAnswer(state, request.field, request.value);
     saveState(db, state, action, request);
-    return response(action, state, { missingForConfirmation: completionErrors(state) });
+    return response(action, state, snapshot, { missingForConfirmation: completionErrors(state) });
   }
   if (action === 'confirm') {
     exact(request, ['action', 'sessionId', 'confirmed'], ['action', 'sessionId', 'confirmed']);
     if (request.confirmed !== true) fail('DISCOVERY_CONFIRMATION_NOT_EXPLICIT');
     const state = loadState(db, id);
-    assertCurrentCatalog(state, snapshot);
+    assertPinnedGeneration(db, state);
     const missing = completionErrors(state);
     if (missing.length > 0) fail(`DISCOVERY_CONFIRMATION_INCOMPLETE_${missing.join('_').toUpperCase()}`);
     state.status = 'CONFIRMED';
     state.updatedAt = nowIso();
     state.confirmation = { status: 'CONFIRMED', confirmedAt: state.updatedAt, confirmedRevision: state.revision };
     saveState(db, state, action, request);
-    return response('confirm', state);
+    return response('confirm', state, snapshot);
   }
   if (action === 'export') {
     exact(request, ['action', 'sessionId', 'format'], ['action', 'sessionId']);
     if (request.format !== undefined && !['json', 'markdown'].includes(request.format)) fail('DISCOVERY_EXPORT_FORMAT_DENIED');
     const state = loadState(db, id);
-    assertCurrentCatalog(state, snapshot);
+    assertPinnedGeneration(db, state);
     const exported = buildExport(state);
     saveState(db, state, action, request);
-    return response('export', state, { export: exported });
+    return response('export', state, snapshot, { export: exported });
   }
   fail('DISCOVERY_ACTION_DENIED');
 }
