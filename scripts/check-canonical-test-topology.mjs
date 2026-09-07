@@ -21,6 +21,16 @@
 
 const SUITE = /^tests\/.+\.(test\.mjs)$/;
 
+// Node global test-selection/suppression flags the canonical `test` command must never
+// carry. Carrying one on the canonical route grants repository-wide global selection or
+// suppression authority; that authority belongs to an explicit, fail-closed gate, not a
+// hand-maintained flag on the canonical command.
+const FORBIDDEN_CANONICAL_TEST_FLAGS = Object.freeze([
+  '--test-skip-pattern',
+  '--test-name-pattern',
+  '--test-only',
+]);
+
 function pluralize(count, word) {
   return `${count} ${word}${count === 1 ? '' : 's'}`;
 }
@@ -106,6 +116,21 @@ export function canonicalTestTopology({ trackedTestFiles, directRoots, importEdg
   violations.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : a.reason < b.reason ? -1 : a.reason > b.reason ? 1 : 0));
 
   return { reachable, routes, violations };
+}
+
+// Returns the offending forbidden Node global test-selection/suppression flags present in
+// the canonical command tokens, in first-occurrence order. The canonical command must
+// carry none: a bare flag token or a `flag=value` token both count. Pure token scan with no
+// fs/process access, so the caller derives the tokens from the canonical command.
+export function canonicalTestSuppressionFlags(tokens) {
+  const offenders = [];
+  for (const token of tokens) {
+    for (const flag of FORBIDDEN_CANONICAL_TEST_FLAGS) {
+      const present = token === flag || token.startsWith(`${flag}=`);
+      if (present && !offenders.includes(flag)) offenders.push(flag);
+    }
+  }
+  return offenders;
 }
 
 // One-line diagnostics for test failures: "path: reason; path: reason".

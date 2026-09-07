@@ -102,8 +102,6 @@ const PATHS = Object.freeze({
   package: 'package.json',
   verification: 'verification/business-bi-net-revenue-falsification-v1.json',
 });
-const HISTORICAL_ENVIRONMENT_TEST_SKIP =
-  ' --test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const CANONICAL_TEST_REGISTRATION =
   ' tests/business-bi-clean-room.test.mjs';
 const ASK_INTENT_TEST_REGISTRATION =
@@ -475,7 +473,6 @@ export function inspectLiveRepository() {
 function reconstructFrozenReleasePackage(packageBytes) {
   let reconstructed = packageBytes.toString('utf8');
   for (const addition of [
-    HISTORICAL_ENVIRONMENT_TEST_SKIP,
     CANONICAL_TEST_REGISTRATION,
     ASK_INTENT_TEST_REGISTRATION,
     K4D_RELEASE_TEST_REGISTRATION,
