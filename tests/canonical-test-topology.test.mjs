@@ -35,13 +35,23 @@
 //
 // CI-TOPOLOGY-05 (KaleidoSphere issue #188) — pseudo-import routes: the live
 //   test-to-test edge derivation is bound to a pure deterministic lexical scanner
-//   (staticTestImportRoutes in scripts/check-canonical-test-topology.mjs) instead of
+//   (staticTestModuleRoutes in scripts/check-canonical-test-topology.mjs) instead of
 //   a raw-byte regex, so routes derive only from executable static import
 //   declarations: import-looking bytes inside line comments, block comments,
 //   single/double-quoted strings, template literal text, or regex literals never
 //   create an edge, and malformed/unterminated lexical input or an ambiguous
 //   import-like construct targeting a tracked test suite fails closed with a
 //   diagnostic naming the importer and reason.
+//
+// CI-TOPOLOGY-06 (KaleidoSphere issue #190) — executable static re-export routes: the
+//   scanner is generalized so a route also derives from `export * from` and named
+//   `export { ... } from` re-export declarations whose literal relative specifier
+//   resolves to a tracked suite. A local export without `from`, a bare specifier, and an
+//   untracked target yield no edge; re-export-looking bytes inside comments, strings,
+//   template literals, or regex literals yield no edge; and a malformed or ambiguous
+//   re-export construct targeting a tracked suite fails closed naming the importer and
+//   reason. The intentional source-map -> business-bi-epic-closure route and every
+//   #179/#181/#184/#186/#188 invariant are preserved.
 //
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
@@ -61,7 +71,7 @@ import {
   formatImportRouteViolations,
   formatSuiteIdentityViolations,
   formatTopologyViolations,
-  staticTestImportRoutes,
+  staticTestModuleRoutes,
   trackedSuiteIdentities,
 } from '../scripts/check-canonical-test-topology.mjs';
 
@@ -75,7 +85,7 @@ const SLICE_FILES = Object.freeze([
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
 // CI-TOPOLOGY-05 (issue #188): test-to-test edges are derived by the pure
-// deterministic lexical scanner (staticTestImportRoutes), never by a raw-byte regex —
+// deterministic lexical scanner (staticTestModuleRoutes), never by a raw-byte regex —
 // import-looking bytes inside line comments, block comments, quoted strings, template
 // literal text, or regex literals cannot create a pseudo-route, and malformed or
 // unterminated lexical input or an ambiguous import-like construct targeting a tracked
@@ -86,7 +96,7 @@ async function staticImportEdges(trackedSuites) {
   const violations = [];
   for (const file of trackedSuites) {
     const source = await readFile(file, 'utf8');
-    const scanned = staticTestImportRoutes({ importer: file, source, trackedSuites: trackedSet });
+    const scanned = staticTestModuleRoutes({ importer: file, source, trackedSuites: trackedSet });
     edges.push(...scanned.edges);
     violations.push(...scanned.violations);
   }
@@ -592,7 +602,7 @@ test('a non-suite tracked entry fails closed, naming the offending path and reas
 
 // CI-TOPOLOGY-05 (KaleidoSphere issue #188) — pseudo-import routes: the live
 // test-to-test edge derivation is bound to a pure deterministic lexical scanner
-// (staticTestImportRoutes) instead of a raw-byte regex, so routes derive only from
+// (staticTestModuleRoutes) instead of a raw-byte regex, so routes derive only from
 // executable static import declarations. Import-looking bytes inside comments, strings,
 // template literals, or regex literals never create an edge, and malformed or ambiguous
 // import-like constructs targeting a tracked suite fail closed.
@@ -601,7 +611,7 @@ const KS188_IMPORTER = Object.freeze('tests/ks188-importer.test.mjs');
 const KS188_ORPHAN = Object.freeze('tests/ks188-orphan.test.mjs');
 
 function scan(source) {
-  return staticTestImportRoutes({
+  return staticTestModuleRoutes({
     importer: KS188_IMPORTER,
     source,
     trackedSuites: new Set([KS188_ORPHAN, KS188_IMPORTER]),
@@ -772,6 +782,187 @@ test('an otherwise-orphan tracked suite stays unreachable when its only apparent
       `orphan must remain unreachable: ${formatTopologyViolations(topology.violations)}`,
     );
     assert.match(orphan.reason, /unreachable/);
+  }
+});
+
+// CI-TOPOLOGY-06 (KaleidoSphere issue #190) — executable static re-export routes: the
+// generalized scanner derives a test-to-test route for every executable static
+// module dependency, including `export * from` and named `export { ... } from`
+// re-export declarations, while local exports without `from`, bare or untracked
+// specifiers, and re-export-looking bytes inside comments, strings, template literals,
+// or regex literals yield no edge. Malformed or ambiguous re-export constructs targeting
+// a tracked suite fail closed with an importer-and-reason diagnostic.
+
+test('a star re-export of a tracked suite is exactly one edge', () => {
+  for (const source of [
+    "export * from './ks188-orphan.test.mjs';",
+    'export * as ns from \'./ks188-orphan.test.mjs\';',
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [{ from: KS188_IMPORTER, to: KS188_ORPHAN }],
+      `${source} must yield exactly one edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${source} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('a named re-export of a tracked suite is exactly one edge', () => {
+  for (const source of [
+    "export { default as child } from './ks188-orphan.test.mjs';",
+    "export { a, b } from './ks188-orphan.test.mjs';",
+    "export { default } from './ks188-orphan.test.mjs';",
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [{ from: KS188_IMPORTER, to: KS188_ORPHAN }],
+      `${source} must yield exactly one edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${source} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('a local export without `from` never creates an edge', () => {
+  for (const source of [
+    'export { a };',
+    'export { a }\nexport const y = 2;',
+    'export const x = 1;',
+    'export default 1;',
+    'export default function () {};',
+    'export async function f() {}',
+    'export class C {}',
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${source} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${source} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('a local export immediately followed by a re-export yields exactly the re-export edge', () => {
+  const scanned = scan("export { a }\nexport * from './ks188-orphan.test.mjs';");
+  assert.deepStrictEqual(scanned.edges, [
+    { from: KS188_IMPORTER, to: KS188_ORPHAN },
+  ]);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('a re-export with a bare specifier or an untracked target is not a tracked edge', () => {
+  for (const source of [
+    "export * from 'pkg';",
+    "export { a } from 'pkg';",
+    "export * from './not-a-tracked-suite.mjs';",
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${source} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(scanned.violations, [], source);
+  }
+});
+
+test('re-export-looking bytes inside a line or block comment never create an edge', () => {
+  const cases = [
+    ['line comment', `// export * from './ks188-orphan.test.mjs';`],
+    ['block comment', '/* export * from "./ks188-orphan.test.mjs"; */'],
+  ];
+  for (const [name, source] of cases) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('re-export-looking bytes inside a quoted string, template literal, or regex never create an edge', () => {
+  const cases = [
+    ['single-quoted string', 'const spec = \'export * from "./ks188-orphan.test.mjs";\';'],
+    ['double-quoted string', 'const spec = "export { a } from \'./ks188-orphan.test.mjs\';";'],
+    ['template literal', 'const spec = `export * from \'./ks188-orphan.test.mjs\';`;'],
+    ['regex literal', 'const re = /export \\* from \'.*ks188-orphan.test.mjs\'/;'],
+  ];
+  for (const [name, source] of cases) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('an ambiguous re-export construct targeting a tracked suite fails closed, naming the importer and reason', () => {
+  // A backtick-quoted re-export specifier is a template-literal specifier, not the
+  // single/double-quoted string a static re-export declaration requires; it must fail
+  // closed rather than silently creating or dropping a route.
+  const scanned = scan('export * from `./ks188-orphan.test.mjs`;');
+  assert.deepStrictEqual(
+    scanned.edges,
+    [],
+    `ambiguous re-export must not create an edge: ${JSON.stringify(scanned.edges)}`,
+  );
+  assert.equal(scanned.violations.length, 1, JSON.stringify(scanned.violations));
+  assert.equal(scanned.violations[0].path, KS188_IMPORTER);
+  assert.match(
+    scanned.violations[0].reason,
+    /ambiguous/,
+    `reason must name the ambiguity: ${scanned.violations[0].reason}`,
+  );
+});
+
+test('an unterminated re-export specifier targeting a tracked suite fails closed, naming the importer and reason', () => {
+  for (const [name, source] of [
+    ['unterminated star re-export', "export * from './ks188-orphan.test.mjs"],
+    ['unterminated named re-export', "export { a } from './ks188-orphan.test.mjs"],
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.equal(
+      scanned.violations.length,
+      1,
+      `${name}: ${JSON.stringify(scanned.violations)}`,
+    );
+    assert.equal(scanned.violations[0].path, KS188_IMPORTER);
+    assert.match(
+      scanned.violations[0].reason,
+      /unterminated/,
+      `${name} reason must name the failure: ${scanned.violations[0].reason}`,
+    );
   }
 });
 
