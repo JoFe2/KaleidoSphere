@@ -671,7 +671,7 @@
     "tests/safe-analysis-method-parity.test.mjs": "2fed9d36eb6cab61193e53f38ccc5a5ade0a91fd07000d0a1c8b600a5c2484ec",
     "tests/safe-analysis-method-result-canonical-number.test.mjs": "f25d0710fc8d7a70b7ad0270ce1fa0b1a2cae58554da30f7690bb067c1318982",
     "tests/smoke.sh": "ccbb0a40470b0d7505d7b6d60d6f8f57fd1d4887897c9d56db80c6f41b9645fd",
-    "tests/source-map.test.mjs": "b5d9126f9618058582f7197be90eabbe20ac33588fba43421da556f37e3586c6",
+    "tests/source-map.test.mjs": "b68806fb7ac95cf26081b792b4c876839b67785a9176065edce31dcdc4a91b99",
     "tests/superset-fingerprint.test.mjs": "d3cc8f752906863a031893924b528327025f114d5410947cb7a6d59200779bb7",
     "tests/trusted-workflow.test.mjs": "deaa52d757efc3460271b7313b1de6967bbb57383da8c2d5281f4148a80b1504",
     "tests/validate-synthetic-connector-spike-plan.test.mjs": "3177eea357a7105db87f7a4b5825f28bd90995de1093fe7e6773d88ad9e53685",

@@ -167,20 +167,19 @@ test('the accepted #146 evidence bytes remain exact and outside the self-binding
   );
 });
 
-test('the PostgreSQL C1 runtime/test/evidence family is content-addressed in the source map', async () => {
-  const sourceMap = JSON.parse(await readFile('SOURCE-MAP.json', 'utf8'));
-  for (const file of Object.values(postgresqlC1Family)) {
-    assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
-    assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
-  }
-});
-
-test('the PostgreSQL product-dispatch suite is content-addressed and canonically registered once', async () => {
+test('the PostgreSQL C1 and product-dispatch source-local families are content-addressed and the product-dispatch suite is registered once', async () => {
   const [pkg, sourceMap] = await Promise.all([
     readFile('package.json', 'utf8').then(JSON.parse),
     readFile('SOURCE-MAP.json', 'utf8').then(JSON.parse),
   ]);
-  // Content-addressed: the suite bytes are bound in the source map and match on disk.
+  // The PostgreSQL C1 runtime/test/evidence family is content-addressed: each bound
+  // byte set matches on disk.
+  for (const file of Object.values(postgresqlC1Family)) {
+    assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
+    assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
+  }
+  // The product-dispatch suite is content-addressed: its bytes are bound in the source
+  // map and match on disk.
   assert.match(
     sourceMap.files[postgresqlProductDispatchSuite] ?? '',
     /^[a-f0-9]{64}$/,
@@ -191,8 +190,9 @@ test('the PostgreSQL product-dispatch suite is content-addressed and canonically
     sourceMap.files[postgresqlProductDispatchSuite],
     postgresqlProductDispatchSuite,
   );
-  // Canonically registered exactly once, at its codepoint-sorted slot in the PostgreSQL
-  // family: immediately after its predecessor and immediately before its successor.
+  // ... and canonically registered exactly once, at its codepoint-sorted slot in the
+  // PostgreSQL family: immediately after its predecessor and before its successor, so
+  // removing, duplicating, or moving the registration fails this regression.
   const canonicalTests = pkg.scripts.test.split(/\s+/).slice(3);
   assert.equal(
     canonicalTests.filter((candidate) => candidate === postgresqlProductDispatchSuite).length,
