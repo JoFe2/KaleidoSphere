@@ -120,6 +120,10 @@ const CONSUMER_SUPPORT_MANIFEST_TEST_REGISTRATION =
   ' tests/consumer-support-manifest.test.mjs';
 const CONSUMER_SUPPORT_MANIFEST_BUILD_SCRIPT_REGISTRATION =
   '\n    "build": "node scripts/build-consumer-support-manifest.mjs --check",';
+const KS073_EPIC_CLOSURE_ALIAS_REGISTRATION =
+  ',\n    "test:ks73-epic-closure": "node --test tests/release/ks73-epic-closure.test.mjs"';
+const KS073_EPIC_CLOSURE_TEST_REGISTRATION =
+  ' tests/release/ks73-epic-closure.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -472,6 +476,8 @@ function reconstructFrozenReleasePackage(packageBytes) {
     CONSUMER_SUPPORT_MANIFEST_ALIAS_REGISTRATION,
     CONSUMER_SUPPORT_MANIFEST_TEST_REGISTRATION,
     CONSUMER_SUPPORT_MANIFEST_BUILD_SCRIPT_REGISTRATION,
+    KS073_EPIC_CLOSURE_ALIAS_REGISTRATION,
+    KS073_EPIC_CLOSURE_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),
