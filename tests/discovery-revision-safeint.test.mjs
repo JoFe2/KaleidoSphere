@@ -202,9 +202,11 @@ test('KS #73 retained fail-closed denials hold beside the revision boundary', as
       forged.catalog.snapshotSha256 = 'f'.repeat(64);
       db.prepare('UPDATE discovery_sessions SET state_json=? WHERE session_id=?').run(canonicalJson(forged), id);
     }, request: {action: 'answer', sessionId: 'ks73_ret', field: 'audienceRole', value: 'Sales analyst'}, code: /DISCOVERY_CATALOG_SNAPSHOT_MISMATCH/},
-    {name: 'stale snapshot drift', before: async (db, id) => {
-      handleDiscovery(db, {action: 'start', sessionId: id});
+    {name: 'pinned generation removed', before: async (db, id) => {
+      const started = handleDiscovery(db, {action: 'start', sessionId: id});
       ingestCatalogReceipt(db, await fixtureReceipt('mssql-next-snapshot', 'e'.repeat(64)));
+      db.exec('PRAGMA foreign_keys=OFF');
+      db.prepare('DELETE FROM catalog_snapshots WHERE snapshot_sha256=?').run(started.state.catalog.snapshotSha256);
     }, request: {action: 'answer', sessionId: 'ks73_ret', field: 'audienceRole', value: 'Sales analyst'}, code: /DISCOVERY_CATALOG_SNAPSHOT_MISMATCH/},
   ];
 

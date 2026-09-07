@@ -129,3 +129,15 @@ M4 does not infer business semantics from technical names. It offers
 catalog-backed candidates and records confirmed interests. Dynamic BI object
 generation belongs to M5 and must start from a confirmed M4 brief plus a separate
 materialization gate.
+
+## KS169 Refinement (2026-09-07)
+
+The safety property above that a session "bound to the catalog snapshot active at
+start" fails answer/confirm/export with `DISCOVERY_CATALOG_SNAPSHOT_MISMATCH` when
+the active catalog changes was refined by KS169. The session's binding is unchanged,
+but the authority model changed: the session's own **pinned run generation** is now
+authoritative for its state, and `latest` is a checked pointer for currency only.
+A **stale-but-intact** generation is isolated and fully readable/operable (reported as
+`current: false`); `DISCOVERY_CATALOG_SNAPSHOT_MISMATCH` is now reserved for a pinned
+generation that is removed or identity-tampered (a genuine integrity violation).
+See `KS169_RUN_GENERATION_ISOLATION.md`.
