@@ -22,6 +22,17 @@
 //   or the exact malformed prefix. Duplicate/root reachability reporting stays in the
 //   existing topology kernel.
 //
+// CI-TOPOLOGY-04 (KaleidoSphere issue #186) — tracked-suite Git identity: the live
+//   topology is bound to machine-readable `git ls-files -s` index identity (mode +
+//   object type), never filesystem-following metadata, and every tracked suite's
+//   identity is proven before its source is read or its import edges are derived.
+//   trackedSuiteIdentities is the pure validator: it accepts only unique
+//   tests/**/*.test.mjs records whose mode/type is exactly "100644 blob" and rejects
+//   symlinks (120000), executable blobs (100755), non-blob/special modes, duplicate
+//   paths, malformed records, and non-suite paths — each diagnostic names the
+//   offending path/record and reason. A suite-shaped symlink or special-mode entry
+//   therefore fails closed instead of masquerading as a tracked blob.
+//
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -38,7 +49,9 @@ import {
   canonicalTestSuppressionFlags,
   canonicalTestTopology,
   formatCommandViolations,
+  formatSuiteIdentityViolations,
   formatTopologyViolations,
+  trackedSuiteIdentities,
 } from '../scripts/check-canonical-test-topology.mjs';
 
 const SUITE = /^tests\/.+\.(test\.mjs)$/;
@@ -56,11 +69,46 @@ const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 // test-reachability graph.
 const STATIC_IMPORT = /(?:^|\n)\s*import\s+(?:[\w$\s,{}*]+?\sfrom\s+)?['"]([^'"]+)['"]/g;
 
-function trackedTestSuites() {
-  const tracked = execFileSync('git', ['ls-files', '-z', '--', 'tests/'], { encoding: 'utf8' })
+// CI-TOPOLOGY-04 (issue #186): machine-readable Git index identity for the tracked
+// suite set. `git ls-files -s` reports each index entry as "<mode> <object> <stage>
+// \t<path>" (NUL-separated under -z). The mode + object type bind a suite path to its
+// tracked Git object and are read from the index, never by following the filesystem,
+// so a symlink or special-mode entry named tests/*.test.mjs cannot masquerade as a
+// regular tracked blob.
+function gitModeObjectClass(mode) {
+  switch (mode) {
+    case '100644':
+    case '100755':
+    case '120000':
+      return 'blob';
+    case '160000':
+      return 'commit';
+    case '040000':
+      return 'tree';
+    default:
+      return 'unknown';
+  }
+}
+
+function parseLsFilesEntry(entry) {
+  const separator = entry.indexOf('\t');
+  const meta = separator === -1 ? entry : entry.slice(0, separator);
+  const file = separator === -1 ? entry : entry.slice(separator + 1);
+  const [mode] = meta.split(' ');
+  return { path: file, mode, type: gitModeObjectClass(mode) };
+}
+
+function trackedSuiteRecords() {
+  const raw = execFileSync('git', ['ls-files', '-s', '-z', '--', 'tests/'], { encoding: 'utf8' });
+  return raw
     .split('\0')
-    .filter(Boolean);
-  return tracked.filter((suite) => SUITE.test(suite)).sort();
+    .filter(Boolean)
+    .map(parseLsFilesEntry)
+    .filter((record) => SUITE.test(record.path));
+}
+
+function trackedTestSuites() {
+  return trackedSuiteRecords().map((record) => record.path).sort();
 }
 
 function canonicalDirectRoots(pkg) {
@@ -93,14 +141,21 @@ async function staticImportEdges(trackedSuites) {
 }
 
 async function realTopology() {
-  const [pkg, tracked] = await Promise.all([
+  const [pkg, records] = await Promise.all([
     readFile('package.json', 'utf8').then(JSON.parse),
-    Promise.resolve(trackedTestSuites()),
+    Promise.resolve(trackedSuiteRecords()),
   ]);
+  // CI-TOPOLOGY-04 (issue #186): bind the live topology to machine-readable Git index
+  // identity and prove every tracked suite is a regular non-executable 100644 blob
+  // BEFORE its source is read or its import edges are derived — a suite-shaped symlink
+  // or special-mode entry fails closed here.
+  const identity = trackedSuiteIdentities(records);
+  const tracked = identity.suites;
   const directRoots = canonicalDirectRoots(pkg);
   const importEdges = await staticImportEdges(tracked);
   return {
     tracked,
+    identity,
     directRoots,
     importEdges,
     topology: canonicalTestTopology({ trackedTestFiles: tracked, directRoots, importEdges }),
@@ -118,7 +173,16 @@ function assertSingleViolation(topology, expectedPath, reasonPattern) {
 }
 
 test('every tracked test suite has exactly one route from the canonical npm test roots', async () => {
-  const { tracked, directRoots, importEdges, topology } = await realTopology();
+  const { tracked, identity, directRoots, importEdges, topology } = await realTopology();
+  // CI-TOPOLOGY-04 (issue #186): every tracked suite is bound to a regular
+  // non-executable 100644 Git blob BEFORE its source is read or its import edges are
+  // derived — the machine-readable index identity fails closed on a symlink or
+  // special-mode suite-shaped entry.
+  assert.equal(
+    identity.ok,
+    true,
+    `tracked-suite identity violations: ${formatSuiteIdentityViolations(identity.violations)}`,
+  );
   assert.deepStrictEqual(
     topology.violations,
     [],
@@ -398,4 +462,113 @@ test('the #179 slice files are content-addressed in the source map and match on 
     assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
     assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
   }
+});
+
+// CI-TOPOLOGY-04 (KaleidoSphere issue #186) — tracked-suite Git identity: only a
+// regular non-executable 100644 blob may occupy a tests/**/*.test.mjs suite slot.
+
+test('a well-formed tracked-suite set of regular 100644 blobs passes identity', () => {
+  const identity = trackedSuiteIdentities([
+    { path: 'tests/alpha.test.mjs', mode: '100644', type: 'blob' },
+    { path: 'tests/beta.test.mjs', mode: '100644', type: 'blob' },
+  ]);
+  assert.deepStrictEqual(identity.violations, []);
+  assert.equal(identity.ok, true);
+  assert.deepStrictEqual(identity.suites, ['tests/alpha.test.mjs', 'tests/beta.test.mjs']);
+});
+
+test('every live tracked suite is a regular non-executable 100644 Git blob (machine-readable index identity)', () => {
+  const records = trackedSuiteRecords();
+  assert.ok(records.length > 0, 'expected a non-empty tracked suite set');
+  for (const record of records) {
+    assert.equal(record.mode, '100644', record.path);
+    assert.equal(record.type, 'blob', record.path);
+  }
+  const identity = trackedSuiteIdentities(records);
+  assert.deepStrictEqual(
+    identity.violations,
+    [],
+    `tracked-suite identity violations: ${formatSuiteIdentityViolations(identity.violations)}`,
+  );
+  assert.equal(identity.ok, true);
+});
+
+test('a suite-shaped tracked symlink fails closed, naming the offending path and reason', () => {
+  const identity = trackedSuiteIdentities([
+    { path: 'tests/ks186-symlink.test.mjs', mode: '120000', type: 'blob' },
+  ]);
+  assert.equal(identity.ok, false);
+  const violation = identity.violations.find((candidate) => candidate.path === 'tests/ks186-symlink.test.mjs');
+  assert.ok(violation, formatSuiteIdentityViolations(identity.violations));
+  assert.match(violation.reason, /symlink/);
+  assert.match(violation.reason, /120000/);
+});
+
+test('an executable tracked suite blob fails closed, naming the offending path and reason', () => {
+  const identity = trackedSuiteIdentities([
+    { path: 'tests/ks186-executable.test.mjs', mode: '100755', type: 'blob' },
+  ]);
+  assert.equal(identity.ok, false);
+  const violation = identity.violations.find((candidate) => candidate.path === 'tests/ks186-executable.test.mjs');
+  assert.ok(violation, formatSuiteIdentityViolations(identity.violations));
+  assert.match(violation.reason, /executable/);
+  assert.match(violation.reason, /100755/);
+});
+
+test('a non-blob gitlink or unknown special-mode tracked suite fails closed, naming the offending path and reason', () => {
+  const cases = [
+    ['160000', 'commit', /gitlink|non-blob/],
+    ['040000', 'tree', /non-regular|special|not a 100644 blob/],
+    ['777777', 'unknown', /non-regular|special|not a 100644 blob/],
+  ];
+  for (const [mode, type, pattern] of cases) {
+    const identity = trackedSuiteIdentities([
+      { path: 'tests/ks186-special.test.mjs', mode, type },
+    ]);
+    assert.equal(identity.ok, false, `mode ${mode}`);
+    const violation = identity.violations.find((candidate) => candidate.path === 'tests/ks186-special.test.mjs');
+    assert.ok(violation, `mode ${mode}: ${formatSuiteIdentityViolations(identity.violations)}`);
+    assert.match(violation.reason, pattern, `mode ${mode}`);
+  }
+});
+
+test('a duplicate tracked-suite path with conflicting identity fails closed, naming the offending path', () => {
+  const identity = trackedSuiteIdentities([
+    { path: 'tests/ks186-duplicate.test.mjs', mode: '100644', type: 'blob' },
+    { path: 'tests/ks186-duplicate.test.mjs', mode: '120000', type: 'blob' },
+  ]);
+  assert.equal(identity.ok, false);
+  const violation = identity.violations.find(
+    (candidate) => candidate.path === 'tests/ks186-duplicate.test.mjs' && /duplicate/.test(candidate.reason),
+  );
+  assert.ok(violation, formatSuiteIdentityViolations(identity.violations));
+});
+
+test('a malformed tracked-suite record fails closed, naming the offending record', () => {
+  const malformedCases = [
+    { path: 'tests/ks186-malformed.test.mjs' }, // missing mode
+    'not-a-record', // not an object
+    null, // not an object
+  ];
+  for (const malformed of malformedCases) {
+    const identity = trackedSuiteIdentities([
+      { path: 'tests/alpha.test.mjs', mode: '100644', type: 'blob' },
+      malformed,
+    ]);
+    assert.equal(identity.ok, false, JSON.stringify(malformed));
+    assert.ok(
+      identity.violations.some((candidate) => /malformed/.test(candidate.reason)),
+      `malformed record must be named: ${formatSuiteIdentityViolations(identity.violations)}`,
+    );
+  }
+});
+
+test('a non-suite tracked entry fails closed, naming the offending path and reason', () => {
+  const identity = trackedSuiteIdentities([
+    { path: 'tests/smoke.sh', mode: '100644', type: 'blob' },
+  ]);
+  assert.equal(identity.ok, false);
+  const violation = identity.violations.find((candidate) => candidate.path === 'tests/smoke.sh');
+  assert.ok(violation, formatSuiteIdentityViolations(identity.violations));
+  assert.match(violation.reason, /suite shape|outside/);
 });
