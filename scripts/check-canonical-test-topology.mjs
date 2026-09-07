@@ -20,6 +20,18 @@
 // invocation; canonicalTestCommand below fails closed on every token outside that
 // shape. Duplicate/root reachability reporting stays in the topology kernel above.
 //
+// CI-TOPOLOGY-04 (KaleidoSphere issue #186) — tracked-suite Git identity: a canonical
+// test suite occupies a tests/**/*.test.mjs slot in the tracked source. The gate must
+// reject a canonical CI run unless every such suite is a regular non-executable Git
+// blob (mode/type exactly "100644 blob"): a suite-shaped symlink (120000), an
+// executable blob (100755), a non-blob/special entry (e.g. a 160000 gitlink), a
+// duplicate path, a malformed record, or a non-suite path would otherwise remain
+// suite-shaped by name while redirecting or masking the tracked source identity.
+// trackedSuiteIdentities is the pure validator: it takes the machine-readable index
+// records the caller derives (each { path, mode, type }) and reports a fail-closed
+// [{ path, reason }] list, accepting only unique tests/**/*.test.mjs records whose
+// mode/type is exactly "100644 blob".
+//
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -242,5 +254,111 @@ export function formatCommandViolations(violations) {
 
 // One-line diagnostics for test failures: "path: reason; path: reason".
 export function formatTopologyViolations(violations) {
+  return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
+}
+
+// CI-TOPOLOGY-04 (issue #186) — tracked-suite Git identity validation.
+//
+// A canonical test suite occupies a tests/**/*.test.mjs slot in the tracked source.
+// The gate must reject a canonical CI run unless every such suite is a regular
+// non-executable Git blob (mode/type exactly "100644 blob"). A suite-shaped symlink
+// (120000), executable blob (100755), non-blob/special entry (e.g. a 160000 gitlink),
+// duplicate path, malformed record, or non-suite path would otherwise remain
+// suite-shaped by name while redirecting or masking the tracked source identity.
+//
+// Pure deterministic validator: it takes the machine-readable index records the caller
+// derives (each { path, mode, type }) — the caller reads them from `git ls-files -s`,
+// never by following the filesystem — and reports a fail-closed [{ path, reason }]
+// list. It accepts only unique tests/**/*.test.mjs records whose mode/type is exactly
+// "100644 blob" and rejects symlinks, executable blobs, non-blob/special modes,
+// duplicate paths, malformed records, and non-suite paths; each diagnostic names the
+// offending path/record and reason.
+const REGULAR_NON_EXECUTABLE_BLOB_MODE = Object.freeze('100644');
+const REGULAR_NON_EXECUTABLE_BLOB_TYPE = Object.freeze('blob');
+const SUITE_SLOT_SHAPE = 'tests/**/*.test.mjs';
+
+function suiteIdentityModeReason({ path, mode, type }) {
+  if (mode === '120000') {
+    return `tracked suite "${path}" is a Git symlink (mode 120000, type ${type}), not a regular non-executable 100644 blob`;
+  }
+  if (mode === '100755') {
+    return `tracked suite "${path}" is an executable Git blob (mode 100755, type ${type}), not a regular non-executable 100644 blob`;
+  }
+  if (mode === '160000') {
+    return `tracked suite "${path}" is a Git gitlink (mode 160000, type ${type}), a non-blob special mode, not a 100644 blob`;
+  }
+  if (mode === REGULAR_NON_EXECUTABLE_BLOB_MODE && type !== REGULAR_NON_EXECUTABLE_BLOB_TYPE) {
+    return `tracked suite "${path}" has mode 100644 but object type ${type} (not a blob), not a regular non-executable 100644 blob`;
+  }
+  return `tracked suite "${path}" has a non-regular Git mode "${mode}" (type ${type}), a special mode, not a 100644 blob`;
+}
+
+// records: the machine-readable tracked index records the caller derives from
+//   `git ls-files -s` (each { path, mode, type } for a tests/** entry).
+// Returns { ok, suites, violations }:
+//   suites — the sorted unique paths that are exactly regular non-executable 100644
+//     blobs AND suite-shaped (the bindable tracked suite set);
+//   violations — a deterministic fail-closed [{ path, reason }] naming every malformed
+//     record, non-suite path, non-100644-blob identity, or duplicate path; empty iff
+//     every record is a unique, well-formed tests/**/*.test.mjs 100644 blob.
+export function trackedSuiteIdentities(records) {
+  const list = Array.isArray(records) ? records : [];
+  const violations = [];
+  const pathCounts = new Map();
+  const suiteSet = new Set();
+
+  list.forEach((record, index) => {
+    // Malformed record: not a well-formed { path, mode } object.
+    if (record === null || typeof record !== 'object') {
+      violations.push({
+        path: `<record ${index}>`,
+        reason: `malformed tracked-suite record (each entry must be an object with a non-empty string path and a string Git mode): <record ${index}>`,
+      });
+      return;
+    }
+    const suitePath = record.path;
+    const hasPath = typeof suitePath === 'string' && suitePath !== '';
+    if (!hasPath || typeof record.mode !== 'string' || record.mode === '') {
+      const label = hasPath ? `"${suitePath}"` : `<record ${index}>`;
+      violations.push({
+        path: hasPath ? suitePath : `<record ${index}>`,
+        reason: `malformed tracked-suite record (each entry must be an object with a non-empty string path and a string Git mode): ${label}`,
+      });
+      return;
+    }
+
+    pathCounts.set(suitePath, (pathCounts.get(suitePath) ?? 0) + 1);
+
+    // A tracked index record outside the tests/**/*.test.mjs suite shape is not a
+    // canonical suite and must not occupy a suite slot.
+    if (!SUITE.test(suitePath)) {
+      violations.push({
+        path: suitePath,
+        reason: `tracked index record is outside the ${SUITE_SLOT_SHAPE} suite shape: "${suitePath}"`,
+      });
+    }
+
+    if (record.mode === REGULAR_NON_EXECUTABLE_BLOB_MODE && record.type === REGULAR_NON_EXECUTABLE_BLOB_TYPE) {
+      if (SUITE.test(suitePath)) suiteSet.add(suitePath);
+    } else {
+      violations.push({ path: suitePath, reason: suiteIdentityModeReason(record) });
+    }
+  });
+
+  for (const [suitePath, count] of [...pathCounts.entries()].sort()) {
+    if (count > 1) {
+      violations.push({
+        path: suitePath,
+        reason: `duplicate tracked index record for "${suitePath}" appears ${count} times where a single regular non-executable 100644 blob identity is required`,
+      });
+    }
+  }
+
+  violations.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : a.reason < b.reason ? -1 : a.reason > b.reason ? 1 : 0));
+  return { ok: violations.length === 0, suites: [...suiteSet].sort(), violations };
+}
+
+// One-line diagnostics for tracked-suite identity failures: "path: reason; path: reason".
+export function formatSuiteIdentityViolations(violations) {
   return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
 }
