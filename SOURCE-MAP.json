@@ -251,7 +251,7 @@
     "generated/claude/receipts/claude-isolated-e2e-v1.json": "274cddc31469c5bef531b40480468ecbb10f3a1054c8f6c096ac09e6d5f7fe01",
     "generated/claude/receipts/manifest-validation-receipt-v1.json": "992acfefbf8a8b57cf2b7ab2c356b0e9a4190f060fbad353b2202a051f6d935d",
     "generated/claude/receipts/skills-only-security-license-receipt-v1.json": "bc5f8fa5440c31dfef10f7cd721c9c4a6d017327c0133d3cad8f1f16a064967c",
-    "package.json": "3c7b7a0d35a4cfcc5fe48a8310659901834b80955433dc5bf085b099828296bb",
+    "package.json": "1c7c086c3a8b8343a7369a68f69e99e2a52d6142ceb4dfbea76ede86a407a6dc",
     "packages/codex/kaleidosphere/.codex-plugin/plugin.json": "64494f3a2e993ba476834dd49dfb1a1a60cfe8671b8ab6f08eb5f86045873b77",
     "packages/codex/kaleidosphere/skills/kaleidosphere/SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
     "packages/codex/kaleidosphere/skills/kaleidosphere/references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
@@ -291,7 +291,7 @@
     "scripts/release/validate-k4d-submission-kit.mjs": "a06588bf393e2d9b796976a93dadf38d6b041c7444f3562b610b4194722f0ebb",
     "scripts/run-ambiguous-outcome-reconciliation-evidence.mjs": "b7e447fb49dbeabe8aff58888793552b67e1440f36c695d6321db298d5e2623b",
     "scripts/run-bi-specialist-evidence.mjs": "986a1372bf04ae4e43b1d01b61ecb7e40539456dd5926043a76ca912cb1ed718",
-    "scripts/run-business-bi-falsification-clean-room.mjs": "8827ef545eb441b8636d07ab9f8d886fa61270c3b7f7e5f4a07988202c1541ae",
+    "scripts/run-business-bi-falsification-clean-room.mjs": "fd630d7bc24366595c40a2bf0075183b5871ffe91d0ea39d5bf02ec6e9e02da7",
     "scripts/run-business-bi-holdout-clean-room.mjs": "e1b3e8c9b3c44ed2b3bd85dc564763a8fa86d958bebb0fa516883be43bf4d86e",
     "scripts/run-external-api-v2-clean-room.mjs": "670c9aa22fdba18df697da83a073e48d680733de9f61f6bf83409be872d33331",
     "scripts/run-graph-adaptive-v1-evidence.mjs": "f87cc9b087b0192c06c2f411a41448893ef5fd17590f1266914d316de06a46e6",
@@ -671,7 +671,7 @@
     "tests/safe-analysis-method-parity.test.mjs": "2fed9d36eb6cab61193e53f38ccc5a5ade0a91fd07000d0a1c8b600a5c2484ec",
     "tests/safe-analysis-method-result-canonical-number.test.mjs": "f25d0710fc8d7a70b7ad0270ce1fa0b1a2cae58554da30f7690bb067c1318982",
     "tests/smoke.sh": "ccbb0a40470b0d7505d7b6d60d6f8f57fd1d4887897c9d56db80c6f41b9645fd",
-    "tests/source-map.test.mjs": "6eddeceb8ed4dba40cbdedaee5d4ef9567186307ff0e31b7e78a565ecccb386f",
+    "tests/source-map.test.mjs": "b5d9126f9618058582f7197be90eabbe20ac33588fba43421da556f37e3586c6",
     "tests/superset-fingerprint.test.mjs": "d3cc8f752906863a031893924b528327025f114d5410947cb7a6d59200779bb7",
     "tests/trusted-workflow.test.mjs": "deaa52d757efc3460271b7313b1de6967bbb57383da8c2d5281f4148a80b1504",
     "tests/validate-synthetic-connector-spike-plan.test.mjs": "3177eea357a7105db87f7a4b5825f28bd90995de1093fe7e6773d88ad9e53685",
@@ -688,7 +688,7 @@
     "verification/k4c/portal-submission-receipt-v1.json": "013fd90eb5a6aad8122953284e825cf47741f51526916fcb18b8726ea994e3fc",
     "verification/k4c/security-license-receipt-v1.json": "3e417d7bad6339c4313bc785bd4c606c9c8e599ed1622bbe364120f6968ce9af",
     "verification/k4c/terminal-evidence-v1.json": "d80cf57f869db6bffc833b7f53948a7bd1ba48c84ab92a635c2321199d38e0da",
-    "verification/postgresql/postgresql-c1-evidence-v1.json": "3e2d0f9d4669ea6c7f0c2610809360b895ecae7ea9a00f8051de0287b7fb4ccf"
+    "verification/postgresql/postgresql-c1-evidence-v1.json": "5d23f6cde6bca670daa80e30286388a68cc02f291a8855cb564555efebdaa7ef"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {
