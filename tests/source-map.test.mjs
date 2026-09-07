@@ -59,6 +59,21 @@ const postgresqlC1Family = Object.freeze({
   evidence: 'verification/postgresql/postgresql-c1-evidence-v1.json',
 });
 
+// The PostgreSQL product-dispatch source-local CI repair (KaleidoSphere issue #175): the
+// descriptor-selection suite must be both content-addressed in the source map and
+// canonically registered exactly once, in the codepoint-sorted PostgreSQL test family.
+// The predecessor/successor anchors pin its exact codepoint slot so that removing,
+// duplicating, or moving its registration fails this regression.
+const postgresqlProductDispatchSuite = Object.freeze(
+  'tests/postgresql-product-dispatch.test.mjs',
+);
+const postgresqlProductDispatchPredecessor = Object.freeze(
+  'tests/postgresql-e2e.test.mjs',
+);
+const postgresqlProductDispatchSuccessor = Object.freeze(
+  'tests/postgresql-structure-scan.test.mjs',
+);
+
 const predecessorEvidenceSha256 = Object.freeze({
   'closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json':
     '314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918',
@@ -152,10 +167,48 @@ test('the accepted #146 evidence bytes remain exact and outside the self-binding
   );
 });
 
-test('the PostgreSQL C1 runtime/test/evidence family is content-addressed in the source map', async () => {
-  const sourceMap = JSON.parse(await readFile('SOURCE-MAP.json', 'utf8'));
+test('the PostgreSQL C1 and product-dispatch source-local families are content-addressed and the product-dispatch suite is registered once', async () => {
+  const [pkg, sourceMap] = await Promise.all([
+    readFile('package.json', 'utf8').then(JSON.parse),
+    readFile('SOURCE-MAP.json', 'utf8').then(JSON.parse),
+  ]);
+  // The PostgreSQL C1 runtime/test/evidence family is content-addressed: each bound
+  // byte set matches on disk.
   for (const file of Object.values(postgresqlC1Family)) {
     assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
     assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
   }
+  // The product-dispatch suite is content-addressed: its bytes are bound in the source
+  // map and match on disk.
+  assert.match(
+    sourceMap.files[postgresqlProductDispatchSuite] ?? '',
+    /^[a-f0-9]{64}$/,
+    postgresqlProductDispatchSuite,
+  );
+  assert.equal(
+    sha256(await readFile(postgresqlProductDispatchSuite)),
+    sourceMap.files[postgresqlProductDispatchSuite],
+    postgresqlProductDispatchSuite,
+  );
+  // ... and canonically registered exactly once, at its codepoint-sorted slot in the
+  // PostgreSQL family: immediately after its predecessor and before its successor, so
+  // removing, duplicating, or moving the registration fails this regression.
+  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(3);
+  assert.equal(
+    canonicalTests.filter((candidate) => candidate === postgresqlProductDispatchSuite).length,
+    1,
+    postgresqlProductDispatchSuite,
+  );
+  const slot = canonicalTests.indexOf(postgresqlProductDispatchSuite);
+  assert.notEqual(slot, -1);
+  assert.equal(
+    canonicalTests[slot - 1],
+    postgresqlProductDispatchPredecessor,
+    'predecessor must be the codepoint-sorted PostgreSQL e2e suite',
+  );
+  assert.equal(
+    canonicalTests[slot + 1],
+    postgresqlProductDispatchSuccessor,
+    'successor must be the codepoint-sorted PostgreSQL structure-scan suite',
+  );
 });
