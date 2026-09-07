@@ -1,0 +1,188 @@
+{
+  "schemaVersion": "kaleidosphere/ks73-epic-closure/v1",
+  "task": {
+    "id": "KS073-DISTRIBUTION-EPIC",
+    "issue": 73,
+    "repository": "JoFe2/KaleidoSphere",
+    "title": "Epic: Single-source AgentSkill marketplace distribution"
+  },
+  "baseCommit": "d038aaf0595f0bef4a762ddd06d1938ccb82eda9",
+  "terminalState": "nonterminal-external-wait",
+  "disposition": "SOURCE_LOCAL_COMPLETE",
+  "publicListingClaim": false,
+  "singleSource": {
+    "root": "agent-skills/kaleidosphere",
+    "files": {
+      "SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
+      "references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
+      "scripts/validate-request.mjs": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509"
+    },
+    "hostContracts": {
+      "path": "agent-skills/host-contracts.json",
+      "sha256": "f35481aff657e92593278ed680eeba9b44fb6d47f248701526efcef446dfabcc"
+    }
+  },
+  "children": [
+    {
+      "issue": 74,
+      "slice": "K4a",
+      "scope": "Deterministic one-source distribution builder + drift/security gates",
+      "terminalState": "source-local-terminal",
+      "disposition": "COMPLETE",
+      "publicListingClaim": false,
+      "evidence": [
+        { "path": "scripts/build-agent-skill-distribution.mjs", "sha256": "264a16c39dc1c383a2b743268cf1a4e299b51c6b262970c8f2eaacabec0328fe" },
+        { "path": "tests/agent-skill-distribution.test.mjs", "sha256": "4484d1b3c5e152697be13156fdac058fbb75112dc55507c44d482712dade8bc2" },
+        { "path": "docs/decisions/K4-SINGLE-SOURCE-AGENTSKILL-DISTRIBUTION.md", "sha256": "f00caf1a6c72f9325f459972385221a9df50554572ca2b12f424ce606097acec" }
+      ],
+      "externalWaits": []
+    },
+    {
+      "issue": 75,
+      "slice": "K4b",
+      "scope": "ClawHub publication + OpenClaw anonymous search/install/use/remove + Hermes path",
+      "terminalState": "local-terminal-external-wait",
+      "disposition": "LOCAL_COMPLETE_NOT_PUBLISHED",
+      "publicListingClaim": false,
+      "evidence": [
+        { "path": "scripts/verify-hermes-consumption.mjs", "sha256": "5ed5da170fdb4df00cd8ef820433c91f68033e390d82fa2cf3c662d1b2ca239e" },
+        { "path": "tests/hermes-consumption.test.mjs", "sha256": "ab1e976aec69f05e5787e7ac705fffb5b2129c5e28cc1b40e56563fc723c77f8" },
+        { "path": "docs/decisions/K4B-HERMES-CONSUMPTION.md", "sha256": "fc993ae1e279de5afee32a534ec918eb3ba1c55ba18c3e6c02a8c169077b6314" }
+      ],
+      "externalWaits": ["clawhub-publication"]
+    },
+    {
+      "issue": 76,
+      "slice": "K4c",
+      "taskId": "KS076-CODEX-DISTRIBUTION",
+      "scope": "Codex skills-only plugin/package + local runtime E2E + directory submission",
+      "terminalState": "nonterminal-external-wait",
+      "disposition": "NOT_RELEASED",
+      "publicListingClaim": false,
+      "evidence": [
+        { "path": "docs/release/k4c-bounded-external-wait-v1.json", "sha256": "4ef5bd9d15ac369d09853f81e924dc664b8c31fc5e8c437bc851a8e6a33dd16c" },
+        { "path": "docs/evidence/conveyor/ks76-authenticated-codex-boundary-v1.json", "sha256": "0a4d7e1aa4b29c8a3ffb021a9a1327da4904ba47f8baee788cf1e23ed8c2837f" },
+        { "path": "docs/evidence/conveyor/ks76-live-codex-local-readback-v1.json", "sha256": "07654bd22f982f1b9de1aa87f79ed7ab1b2979b9943d213abff39854dba07f57" }
+      ],
+      "externalWaits": ["codex-portal-identity"]
+    },
+    {
+      "issue": 77,
+      "slice": "K4d",
+      "taskId": "KS077-CLAUDE-DISTRIBUTION",
+      "scope": "Claude Code skills-only plugin/package + runtime E2E + directory submission",
+      "terminalState": "nonterminal-external-wait",
+      "disposition": "NOT_RELEASED",
+      "publicListingClaim": false,
+      "evidence": [
+        { "path": "docs/release/k4d-bounded-external-wait-v1.json", "sha256": "a57e03272f2b00c40b0c67fd71ef56d2d36b5f63d8845ffd3ac691a318b09c93" },
+        { "path": "generated/claude/receipts/manifest-validation-receipt-v1.json", "sha256": "992acfefbf8a8b57cf2b7ab2c356b0e9a4190f060fbad353b2202a051f6d935d" },
+        { "path": "generated/claude/receipts/skills-only-security-license-receipt-v1.json", "sha256": "bc5f8fa5440c31dfef10f7cd721c9c4a6d017327c0133d3cad8f1f16a064967c" },
+        { "path": "generated/claude/receipts/claude-isolated-e2e-v1.json", "sha256": "274cddc31469c5bef531b40480468ecbb10f3a1054c8f6c096ac09e6d5f7fe01" }
+      ],
+      "externalWaits": ["claude-marketplace-identity"]
+    },
+    {
+      "issue": 78,
+      "slice": "K4e",
+      "scope": "Portable no-full-runtime utility layer, serially after K4a",
+      "terminalState": "source-local-terminal",
+      "disposition": "COMPLETE",
+      "publicListingClaim": false,
+      "ordering": { "after": 74, "afterSatisfied": true },
+      "intentBound": {
+        "externalApiV2RuntimeIntents": ["status", "discovery", "analyze", "plan", "preview", "readback"],
+        "widened": false,
+        "runtimeDispatch": false
+      },
+      "evidence": [
+        { "path": "contracts/portable-companion/v1/portable-companion.schema.json", "sha256": "dd1ea27146098fcd6ea585cd5ff548da12342fdd2ea638c12d1c25d7b39f98f9" },
+        { "path": "contracts/portable-companion/v1/compatibility-matrix.json", "sha256": "78b4b9f83a792dca7cbb8f21026673e4d854c899738bb9ed8107de8d7d748eaf" },
+        { "path": "contracts/portable-companion/v1/profile-template.schema.json", "sha256": "d8661f3ff7be0245748b8768a6a94343d8af9c2fa6b2f9f82fdca1df66de9dfd" },
+        { "path": "contracts/portable-companion/v1/receipt-envelope.schema.json", "sha256": "d65665786bafc9dc468d27d20efed3d4aff9b84c90a7ea69b650b42558937aab" }
+      ],
+      "externalWaits": []
+    }
+  ],
+  "branchReconciliation": [
+    {
+      "taskId": "KS076-CODEX-DISTRIBUTION",
+      "issue": 76,
+      "remoteBranch": "qwen180/KS076-CODEX-DISTRIBUTION",
+      "remoteTip": "eaf2947dc78ba84320e116496746d153cb7f6fd1",
+      "deliveryCommit": "458001487d9a6453cf6a2a75acef32bdf741f17b",
+      "deliveryPullRequest": 163,
+      "integratedInBase": true,
+      "integrationProof": "The accepted K4c delivery is in the base history and its K4c evidence files are present at this base with the exact pinned digests; the accepted branch tip's K4c payload was verified byte-identical to the delivered commit by an empty file-set diff on this clone."
+    },
+    {
+      "taskId": "KS077-CLAUDE-DISTRIBUTION",
+      "issue": 77,
+      "remoteBranch": "qwen180/KS077-CLAUDE-DISTRIBUTION",
+      "remoteTip": "54409896be6234f87a968b3dc1e09c0216f7c9ea",
+      "deliveryCommit": "0385e15ecb67ab97194432dbb6ec0f9199ecad04",
+      "deliveryPullRequest": 164,
+      "integratedInBase": true,
+      "integrationProof": "The accepted K4d delivery is in the base history and its K4d evidence files (bounded external-wait record and generated/claude receipts) are present at this base with the exact pinned digests; the accepted branch tip's K4d payload was verified byte-identical to the delivered commit by an empty file-set diff on this clone."
+    }
+  ],
+  "externalWaits": [
+    {
+      "id": "clawhub-publication",
+      "child": 75,
+      "host": "clawhub-openclaw-hermes",
+      "satisfied": false,
+      "blocker": "No publisher identity or ClawHub listing is established, so the anonymous OpenClaw search/install/use/negative/remove/zero-residue readback cannot be performed.",
+      "resumeAction": "Owner publishes the MIT-0 generated kaleidosphere skill bundle from the official ClawHub account, then performs the anonymous OpenClaw search/install/use/negative/remove readback with zero-residue verification."
+    },
+    {
+      "id": "codex-portal-identity",
+      "child": 76,
+      "host": "codex",
+      "satisfied": false,
+      "blocker": "Owner authority and a verified publisher identity are not established in the official Codex portal UI, and no live same-digest portal submission or live anonymous directory readback has been performed.",
+      "resumeAction": "Owner resumes in the official portal UI to verify owner authority and publisher identity."
+    },
+    {
+      "id": "claude-marketplace-identity",
+      "child": 77,
+      "host": "claude-code",
+      "satisfied": false,
+      "blocker": "Owner authority and a verified publisher identity are not established in the official Claude Code marketplace UI, and no live same-digest marketplace submission or live anonymous directory readback has been performed.",
+      "resumeAction": "Owner resumes in the official Claude Code marketplace UI to verify owner authority and publisher identity before any submission or terms acceptance."
+    }
+  ],
+  "acceptanceEvidence": {
+    "deterministicRebuildFromCanonicalBytes": {
+      "state": "PASS",
+      "proof": "tests/agent-skill-distribution.test.mjs rebuilds every host view from the canonical skill bytes plus package version and asserts byte and digest equality; tests/release.test.mjs asserts the three v0.26.0 distribution archives and their SHA256 sidecars against sha256sum -c."
+    },
+    "archivesAndSidecarsOnRegularLatestRelease": {
+      "state": "NOT_CLAIMED_EXTERNAL",
+      "note": "The local release build deterministically emits the distribution archives and SHA256 sidecars. Whether a public regular Latest release carries them is an external fact not verified on this base."
+    },
+    "publicCatalogAnonymousReadback": {
+      "state": "NOT_SATISFIED",
+      "note": "No anonymous search/install/use/negative/remove/zero-residue readback exists for any host; every per-child publicListingClaim is false."
+    },
+    "externalWaitsExactOneStepResume": {
+      "state": "PASS",
+      "note": "Each external wait is nonterminal (satisfied false) and records exactly one bounded resume action."
+    },
+    "k4eSerialAfterK4aAndIntentBound": {
+      "state": "PASS",
+      "note": "K4e was implemented only after K4a reached source-local terminal, and the six External API v2 runtime intents are exact and unwidened with runtimeDispatch false."
+    }
+  },
+  "nonClaims": [
+    "NO_MARKETPLACE_LISTING",
+    "NO_PUBLIC_INSTALLABILITY",
+    "NO_CLAWHUB_OR_CODEX_OR_CLAUDE_RUNTIME_EXECUTION",
+    "NO_LIVE_CODEX_PROVIDER_RESPONSE",
+    "NO_RELEASE_OR_TAG_CREATED",
+    "NO_HOSTED_SERVICE_OR_MANAGED_CONNECTOR",
+    "NO_PRODUCTION_READINESS",
+    "NO_CREDENTIAL_OR_NETWORK_ACCESS",
+    "NO_SECOND_MAINTAINED_SKILL_COPY"
+  ]
+}
