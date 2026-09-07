@@ -114,6 +114,12 @@ const PANSHPHAIRA_ANALYTICS_TEST_REGISTRATION =
   ' tests/pansphaira-analytics-service.test.mjs';
 const DISCOVERY_RUN_GENERATIONS_TEST_REGISTRATION =
   ' tests/discovery-run-generations.test.mjs';
+const CONSUMER_SUPPORT_MANIFEST_ALIAS_REGISTRATION =
+  ',\n    "test:consumer-support-manifest": "node --test tests/consumer-support-manifest.test.mjs"';
+const CONSUMER_SUPPORT_MANIFEST_TEST_REGISTRATION =
+  ' tests/consumer-support-manifest.test.mjs';
+const CONSUMER_SUPPORT_MANIFEST_BUILD_SCRIPT_REGISTRATION =
+  '\n    "build": "node scripts/build-consumer-support-manifest.mjs --check",';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -463,6 +469,9 @@ function reconstructFrozenReleasePackage(packageBytes) {
     K4D_RELEASE_TEST_REGISTRATION,
     PANSHPHAIRA_ANALYTICS_TEST_REGISTRATION,
     DISCOVERY_RUN_GENERATIONS_TEST_REGISTRATION,
+    CONSUMER_SUPPORT_MANIFEST_ALIAS_REGISTRATION,
+    CONSUMER_SUPPORT_MANIFEST_TEST_REGISTRATION,
+    CONSUMER_SUPPORT_MANIFEST_BUILD_SCRIPT_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),

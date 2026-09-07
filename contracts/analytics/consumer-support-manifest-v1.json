@@ -1,0 +1,204 @@
+{
+  "schemaVersion": "kaleidosphere.analytics/consumer-support-manifest/v1",
+  "manifestVersion": "1.0.0",
+  "issue": "PAR-KS-01",
+  "consumer": {
+    "product": {
+      "id": "superset-bi-agent",
+      "version": "v0.18.1",
+      "component": "bi-agent-runtime"
+    },
+    "contract": {
+      "id": "superset-bi-agent.external",
+      "version": "2.0.0"
+    },
+    "profileSchema": "superset-bi-agent.external/consumer-profile/v1",
+    "profileDigest": "sha256:203fab47d7f37110e6de37e71cd5d61f245baeb7ddcde17f3fa6b208c90d4378"
+  },
+  "capabilityAttestationDigest": "sha256:7379d493c1dceeaa83a1266e420cb866efb2216c3b56c0d93212863c5b87bb8a",
+  "channels": {
+    "projection": {
+      "status": "SUPPORTED",
+      "version": "superset-bi-agent.external/intent-request/v2",
+      "reasonCode": null,
+      "evidence": {
+        "derivedFrom": "validateExternalIntentV2",
+        "readback": "acceptedRequest.schemaVersion",
+        "negativeProbe": "v1 denied EXTERNAL_BI_REQUEST_IDENTITY_DENIED"
+      }
+    },
+    "semantic": {
+      "status": "SUPPORTED",
+      "version": "superset-bi-agent.external/consumer-profile/v1",
+      "reasonCode": null,
+      "evidence": {
+        "derivedFrom": "externalBiConsumerProfileV1",
+        "readback": "profile.schemaVersion"
+      }
+    },
+    "analysis": {
+      "status": "SUPPORTED",
+      "version": "superset-bi-agent.external/analysis-readback/v2",
+      "reasonCode": null,
+      "evidence": {
+        "derivedFrom": "executeExternalIntentV2[analyze]",
+        "readback": "result.schemaVersion"
+      }
+    },
+    "result": {
+      "status": "SUPPORTED",
+      "version": "superset-bi-agent.external/intent-result/v2",
+      "reasonCode": null,
+      "evidence": {
+        "derivedFrom": "executeExternalIntentV2[status]",
+        "readback": "envelope.schemaVersion"
+      }
+    },
+    "returnChannel": {
+      "status": "SUPPORTED",
+      "version": "superset-bi-agent.external/superset-readback/v2",
+      "reasonCode": null,
+      "evidence": {
+        "derivedFrom": "executeExternalIntentV2[readback]",
+        "readback": "result.schemaVersion"
+      }
+    }
+  },
+  "support": {
+    "supported": [
+      {
+        "id": "bi.status.read",
+        "action": "status",
+        "authority": "read-only",
+        "status": "SUPPORTED",
+        "reasonCode": null
+      },
+      {
+        "id": "bi.discovery.run",
+        "action": "discovery",
+        "authority": "local-evidence-write",
+        "status": "SUPPORTED",
+        "reasonCode": null
+      },
+      {
+        "id": "bi.analysis.run",
+        "action": "analyze",
+        "authority": "source-read-only",
+        "status": "SUPPORTED",
+        "reasonCode": null
+      },
+      {
+        "id": "bi.graph.adaptive-v1.plan",
+        "action": "plan",
+        "authority": "proposal-only",
+        "status": "SUPPORTED",
+        "reasonCode": null
+      },
+      {
+        "id": "bi.preview.create",
+        "action": "preview",
+        "authority": "proposal-only",
+        "status": "SUPPORTED",
+        "reasonCode": null
+      },
+      {
+        "id": "bi.readback.read",
+        "action": "readback",
+        "authority": "read-only",
+        "status": "SUPPORTED",
+        "reasonCode": null
+      }
+    ],
+    "partial": [
+      {
+        "id": "superset.trusted-apply",
+        "action": "trusted-apply",
+        "authority": "trusted-approval-only",
+        "externalIntent": false,
+        "status": "PARTIAL",
+        "reasonCode": "EXTERNAL_INTENT_NOT_DISPATCHABLE"
+      },
+      {
+        "id": "superset.trusted-readback",
+        "action": "trusted-readback",
+        "authority": "trusted-approval-only",
+        "externalIntent": false,
+        "status": "PARTIAL",
+        "reasonCode": "EXTERNAL_INTENT_NOT_DISPATCHABLE"
+      },
+      {
+        "id": "superset.trusted-rollback",
+        "action": "trusted-rollback",
+        "authority": "trusted-approval-only",
+        "externalIntent": false,
+        "status": "PARTIAL",
+        "reasonCode": "EXTERNAL_INTENT_NOT_DISPATCHABLE"
+      }
+    ],
+    "unsupported": [
+      {
+        "surface": "sourceDatabaseCredentials",
+        "accepted": false,
+        "status": "UNSUPPORTED",
+        "reasonCode": "UNSUPPORTED_SOURCE_DATABASE_CREDENTIALS"
+      },
+      {
+        "surface": "freeSql",
+        "accepted": false,
+        "status": "UNSUPPORTED",
+        "reasonCode": "UNSUPPORTED_FREE_SQL"
+      },
+      {
+        "surface": "rawSourceRows",
+        "accepted": false,
+        "status": "UNSUPPORTED",
+        "reasonCode": "UNSUPPORTED_RAW_SOURCE_ROWS"
+      },
+      {
+        "surface": "modelMutation",
+        "accepted": false,
+        "status": "UNSUPPORTED",
+        "reasonCode": "UNSUPPORTED_MODEL_MUTATION"
+      },
+      {
+        "surface": "directSupersetMutationIntent",
+        "accepted": false,
+        "status": "UNSUPPORTED",
+        "reasonCode": "UNSUPPORTED_DIRECT_SUPERSET_MUTATION_INTENT"
+      }
+    ],
+    "unknown": [],
+    "reasonCodes": {
+      "partial": "EXTERNAL_INTENT_NOT_DISPATCHABLE",
+      "unknown": "NO_RESIDUAL_UNKNOWN_AT_HEAD",
+      "unsupported": [
+        "UNSUPPORTED_DIRECT_SUPERSET_MUTATION_INTENT",
+        "UNSUPPORTED_FREE_SQL",
+        "UNSUPPORTED_MODEL_MUTATION",
+        "UNSUPPORTED_RAW_SOURCE_ROWS",
+        "UNSUPPORTED_SOURCE_DATABASE_CREDENTIALS"
+      ]
+    }
+  },
+  "nonclaims": [
+    "No producer-truth claim: this manifest states only the consumer support surface derived from executable runtime behavior; it asserts nothing about any upstream producer, source system, or external release truth.",
+    "No broad analytics support: the manifest is scoped to the one external consumer profile (superset-bi-agent.external v2); it does not claim support for any analytics domain, projection profile, or capability beyond the runtime-derived set.",
+    "No manually asserted runtime capability: every supported/partial/unsupported fact, every reason code, and every channel version is derived from the live runtime (capability attestation, consumer profile, and intent dispatch); no capability is asserted by documentation, hand-edit, or caller input."
+  ],
+  "bindings": {
+    "kaleidosphereHead": {
+      "commitOid": "995cd4dd64e99216594347e741c5a50913bde846",
+      "treeOid": "848f439edbcd783102365dea55ce80f28b70bb37"
+    },
+    "config": {
+      "canonicalJsonSha256": "e0ab8804532a55b161407e59167cf3027ebceb7df72a4d1dd1a485b1db4400ec",
+      "contractVersion": "2.0.0",
+      "packageSha256": "826bcc27fa1a59514001b550a8d07c2fd129bf68089ddc98bdf626b2eb346145",
+      "productVersion": "v0.18.1"
+    }
+  },
+  "integrity": {
+    "algorithm": "sha256-canonical-json",
+    "digest": "sha256:c3fb22e6f1948607a248abe096c0f6769eecd622749224ebf97e1cfc7583f32a"
+  }
+}
