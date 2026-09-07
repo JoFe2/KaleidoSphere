@@ -15,6 +15,11 @@
 // the static import edges), so this check never holds a second hand-maintained suite
 // allowlist that could drift in parallel with the canonical command.
 //
+// CI-TOPOLOGY-03 (KaleidoSphere issue #184) — canonical command shape integrity: the
+// canonical command must be exactly one unwrapped `node --test <suite roots...>`
+// invocation; canonicalTestCommand below fails closed on every token outside that
+// shape. Duplicate/root reachability reporting stays in the topology kernel above.
+//
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -131,6 +136,108 @@ export function canonicalTestSuppressionFlags(tokens) {
     }
   }
   return offenders;
+}
+
+// CI-TOPOLOGY-03 (KaleidoSphere issue #184) — canonical command shape validation.
+//
+// The canonical `npm test` command must be exactly one unwrapped Node test invocation
+// of the shape `node --test <tests/**/*.test.mjs roots...>`. The suite-shape filter in
+// the topology kernel derivation is not sufficient: extra shell/control tokens (`||
+// true`, `&& ...`, `; ...`), pipes and redirections, command substitution,
+// environment/wrapper prefixes, extra Node options, and non-suite positional
+// arguments can preserve a clean suite-shape filter while changing or masking the
+// canonical CI execution. canonicalTestCommand accepts only the exact shape, rejects
+// every token outside it, and requires at least one direct suite root. Duplicate
+// suite roots are suite-shaped and are preserved in command order — duplicate/root
+// reachability reporting belongs to canonicalTestTopology.
+const NODE = Object.freeze('node');
+const TEST_FLAG = Object.freeze('--test');
+const CANONICAL_SHAPE =
+  'the canonical command must be exactly "node --test <tests/**/*.test.mjs roots...>"';
+const SHELL_OPERATOR_TOKENS = Object.freeze(new Set(['|', '||', '&&', ';', '&']));
+const REDIRECT_TOKENS = Object.freeze(
+  new Set(['<', '<<', '<<<', '>', '>>', '2>', '2>>', '&>', '&>>']),
+);
+const ENV_ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/;
+
+function classifyOffendingToken(token) {
+  if (SHELL_OPERATOR_TOKENS.has(token)) {
+    return `shell operator token "${token}" is not allowed; ${CANONICAL_SHAPE}`;
+  }
+  if (REDIRECT_TOKENS.has(token)) {
+    return `redirect token "${token}" is not allowed; ${CANONICAL_SHAPE}`;
+  }
+  if (token.includes('$(') || token.includes('`')) {
+    return `command substitution token "${token}" is not allowed; ${CANONICAL_SHAPE}`;
+  }
+  if (ENV_ASSIGNMENT.test(token)) {
+    return `environment assignment token "${token}" is not allowed; ${CANONICAL_SHAPE}`;
+  }
+  if (token.startsWith('-')) {
+    return `extra Node option token "${token}" is not allowed; ${CANONICAL_SHAPE}`;
+  }
+  return `non-suite positional token "${token}" is not allowed; ${CANONICAL_SHAPE}`;
+}
+
+// tokens: whitespace-split canonical command tokens.
+// Returns { ok, roots, violations }:
+//   roots — the suite-shaped direct roots at index >= 2, in command order, duplicates
+//     preserved (feed these to canonicalTestTopology as directRoots; the kernel keeps
+//     the duplicate/root reachability reporting);
+//   violations — a deterministic [{ token, reason }] naming every offending token or
+//     the exact malformed prefix; empty iff the command is exactly one unwrapped
+//     `node --test` invocation carrying at least one direct suite root.
+export function canonicalTestCommand(tokens) {
+  const list = (Array.isArray(tokens) ? tokens : []).filter(
+    (token) => typeof token === 'string' && token !== '',
+  );
+  const violations = [];
+  const roots = [];
+
+  const firstNode = list.indexOf(NODE);
+  if (firstNode !== 0) {
+    const prefix = list.slice(0, firstNode === -1 ? list.length : firstNode).join(' ');
+    violations.push({
+      token: prefix,
+      reason: prefix === ''
+        ? `empty canonical command: ${CANONICAL_SHAPE}`
+        : `canonical command must begin exactly with "node"; found malformed prefix "${prefix}" (wrapper or environment prefix is not allowed)`,
+    });
+  }
+
+  for (let index = 1; index < list.length; index += 1) {
+    const token = list[index];
+    if (index === 1) {
+      if (token !== TEST_FLAG) {
+        violations.push({
+          token,
+          reason: `canonical command token 1 must be exactly "--test"; found "${token}"`,
+        });
+      }
+      continue;
+    }
+    if (SUITE.test(token)) {
+      roots.push(token);
+    } else {
+      violations.push({ token, reason: classifyOffendingToken(token) });
+    }
+  }
+
+  if (roots.length === 0) {
+    violations.push({
+      token: list.join(' '),
+      reason: `canonical command carries no direct suite root: it must be exactly "node --test <roots...>" with at least one direct tests/**/*.test.mjs root`,
+    });
+  }
+
+  return { ok: violations.length === 0, roots, violations };
+}
+
+// One-line diagnostics for command-shape failures: "\"token\": reason; \"token\": reason".
+export function formatCommandViolations(violations) {
+  return violations
+    .map((violation) => `${violation.token === '' ? '(empty)' : `"${violation.token}"`}: ${violation.reason}`)
+    .join('; ');
 }
 
 // One-line diagnostics for test failures: "path: reason; path: reason".
