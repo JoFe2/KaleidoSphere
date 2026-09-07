@@ -45,8 +45,6 @@ const canonicalFocusedFamily = Object.freeze([
   'tests/business-bi-net-revenue-plan.test.mjs',
   'tests/business-bi-clean-room.test.mjs',
 ]);
-const historicalEnvironmentTestSkip =
-  '--test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const parentClosureTest = 'tests/business-bi-epic-closure.test.mjs';
 
 // The PostgreSQL C1 source-local integrity family (KaleidoSphere issue #172): the
@@ -142,12 +140,11 @@ test('tracked source and derived Oracle bytes match the content-addressed source
 test('the three-test business BI predecessor family remains registered once and contiguously', async () => {
   const pkg = JSON.parse(await readFile('package.json', 'utf8'));
   const canonicalTokens = pkg.scripts.test.split(/\s+/);
-  assert.deepStrictEqual(canonicalTokens.slice(0, 3), [
+  assert.deepStrictEqual(canonicalTokens.slice(0, 2), [
     'node',
     '--test',
-    historicalEnvironmentTestSkip,
   ]);
-  const canonicalTests = canonicalTokens.slice(3);
+  const canonicalTests = canonicalTokens.slice(2);
   const start = canonicalTests.indexOf(canonicalFocusedFamily[0]);
   assert.notEqual(start, -1);
   assert.deepStrictEqual(
@@ -165,7 +162,7 @@ test('the E-BI-1 parent test is registered once through the canonical source gat
     readFile('tests/source-map.test.mjs', 'utf8'),
     readFile('SOURCE-MAP.json', 'utf8').then(JSON.parse),
   ]);
-  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(3);
+  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(2);
   assert.equal(canonicalTests.includes(parentClosureTest), false);
   assert.equal(
     (source.match(/import '\.\/business-bi-epic-closure\.test\.mjs';/g) ?? []).length,
@@ -215,7 +212,7 @@ test('the PostgreSQL and K4c source-local CI families are content-addressed and 
   // ... and canonically registered exactly once, at its codepoint-sorted slot in the
   // PostgreSQL family: immediately after its predecessor and before its successor, so
   // removing, duplicating, or moving the registration fails this regression.
-  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(3);
+  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(2);
   assert.equal(
     canonicalTests.filter((candidate) => candidate === postgresqlProductDispatchSuite).length,
     1,

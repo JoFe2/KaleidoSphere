@@ -12,6 +12,11 @@
 //          reason.
 //   AC03 — Reality is derived from the git-tracked suite set plus the canonical command
 //          and static test-import graph: no second hand-maintained suite allowlist.
+//   AC04 — CI-SUPPRESSION-01 (KaleidoSphere issue #181): the canonical command carries
+//          no Node global test-selection/suppression flag. The dead global
+//          --test-skip-pattern that matched no test title is removed, and each of the
+//          three forbidden flags (--test-skip-pattern, --test-name-pattern, --test-only)
+//          fails a fail-closed regression that names the offending flag.
 //
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
@@ -25,7 +30,10 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  FORBIDDEN_CANONICAL_TEST_FLAGS,
+  canonicalTestSuppressionFlags,
   canonicalTestTopology,
+  formatSuppressionViolations,
   formatTopologyViolations,
 } from '../scripts/check-canonical-test-topology.mjs';
 
@@ -52,9 +60,8 @@ function trackedTestSuites() {
 }
 
 function canonicalDirectRoots(pkg) {
-  // The canonical command is `node --test --test-skip-pattern=... <suite> ...`; every
-  // token that claims to be a suite is a direct root, in command order, duplicates
-  // preserved.
+  // The canonical command is `node --test <suite> ...`; every token that claims to be a
+  // suite is a direct root, in command order, duplicates preserved.
   return pkg.scripts.test.split(/\s+/).filter((token) => SUITE.test(token));
 }
 
@@ -243,6 +250,38 @@ test('a newly tracked orphan suite on the real graph fails closed (the #179 gap)
     'tests/ks179-orphan.test.mjs',
     /unreachable from the canonical npm test roots: omitted or orphan tracked suite \(0 routes\)/,
   );
+});
+
+// CI-SUPPRESSION-01 (KaleidoSphere issue #181): the dead global --test-skip-pattern that
+// matched no test title is gone from the canonical command, and each of Node's global
+// test-selection/suppression flags fails this regression closed, naming the offending
+// flag.
+test('the canonical test command uses no global test-selection/suppression flag and each forbidden flag fails closed named', async () => {
+  const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+  const found = canonicalTestSuppressionFlags(pkg.scripts.test);
+  assert.deepStrictEqual(
+    found,
+    [],
+    `canonical test command carries forbidden global test-selection/suppression flag(s): ${formatSuppressionViolations(found)}`,
+  );
+  // Fail-closed negatives: each forbidden flag, injected into a canonical command, is
+  // the single detected violation and its diagnostic names the offending flag.
+  const negativeForms = Object.freeze({
+    '--test-skip-pattern': '--test-skip-pattern=frozen$',
+    '--test-name-pattern': '--test-name-pattern=frozen$',
+    '--test-only': '--test-only=true',
+  });
+  for (const flag of FORBIDDEN_CANONICAL_TEST_FLAGS) {
+    const violations = canonicalTestSuppressionFlags(
+      `node --test ${negativeForms[flag]} tests/alpha.test.mjs`,
+    );
+    assert.deepStrictEqual(violations, [flag], `expected exactly ${flag} to be flagged`);
+    const diagnostic = formatSuppressionViolations(violations);
+    assert.ok(
+      diagnostic.includes(flag),
+      `diagnostic must name the offending flag ${flag}: ${diagnostic}`,
+    );
+  }
 });
 
 test('the #179 slice files are content-addressed in the source map and match on disk', async () => {

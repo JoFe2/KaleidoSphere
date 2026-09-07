@@ -15,6 +15,13 @@
 // the static import edges), so this check never holds a second hand-maintained suite
 // allowlist that could drift in parallel with the canonical command.
 //
+// CI-SUPPRESSION-01 (KaleidoSphere issue #181) — the canonical test command additionally
+// carries no Node global test-selection/suppression flag. The dead global
+// --test-skip-pattern that matched no test title is removed from canonical npm test, and
+// any of the three flags (--test-skip-pattern, --test-name-pattern, --test-only)
+// re-introduced into the canonical command fails closed and is named, so future global
+// test suppression is explicit rather than a silent, drifting authority.
+//
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -111,4 +118,33 @@ export function canonicalTestTopology({ trackedTestFiles, directRoots, importEdg
 // One-line diagnostics for test failures: "path: reason; path: reason".
 export function formatTopologyViolations(violations) {
   return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
+}
+
+// CI-SUPPRESSION-01 (KaleidoSphere issue #181): Node's global test-selection/suppression
+// flags silently narrow the canonical suite set. None of them may appear in the
+// canonical npm test command; any future global test suppression is therefore explicit
+// and fail-closed, and is rejected by name.
+export const FORBIDDEN_CANONICAL_TEST_FLAGS = Object.freeze([
+  '--test-skip-pattern',
+  '--test-name-pattern',
+  '--test-only',
+]);
+
+// Returns the forbidden global test-selection/suppression flags present in a canonical
+// test command, in flag definition order. A bare `--flag` token and a `--flag=value`
+// token both count as the flag being used; suite paths and unrelated `--test*` options
+// are not flagged.
+export function canonicalTestSuppressionFlags(command) {
+  const tokens = String(command).split(/\s+/).filter(Boolean);
+  return FORBIDDEN_CANONICAL_TEST_FLAGS.filter((flag) =>
+    tokens.some((token) => token === flag || token.startsWith(`${flag}=`)),
+  );
+}
+
+// One-line diagnostics for suppression violations: "flag: reason; flag: reason".
+export function formatSuppressionViolations(flags) {
+  return flags
+    .map((flag) =>
+      `canonical test command uses forbidden global test-selection/suppression flag: ${flag}`)
+    .join('; ');
 }
