@@ -292,7 +292,7 @@
     "scripts/release/validate-k4d-submission-kit.mjs": "a06588bf393e2d9b796976a93dadf38d6b041c7444f3562b610b4194722f0ebb",
     "scripts/run-ambiguous-outcome-reconciliation-evidence.mjs": "b7e447fb49dbeabe8aff58888793552b67e1440f36c695d6321db298d5e2623b",
     "scripts/run-bi-specialist-evidence.mjs": "986a1372bf04ae4e43b1d01b61ecb7e40539456dd5926043a76ca912cb1ed718",
-    "scripts/run-business-bi-falsification-clean-room.mjs": "10c730254bcd85e72dbf5b8ba0ae6d3b81fc5806daab88e884bdd6d27e116ffc",
+    "scripts/run-business-bi-falsification-clean-room.mjs": "7756140fe944fb352b7367fbdee40bd4e8c3c758371fab1a509c78918aba8b9f",
     "scripts/run-business-bi-holdout-clean-room.mjs": "e1b3e8c9b3c44ed2b3bd85dc564763a8fa86d958bebb0fa516883be43bf4d86e",
     "scripts/run-external-api-v2-clean-room.mjs": "670c9aa22fdba18df697da83a073e48d680733de9f61f6bf83409be872d33331",
     "scripts/run-graph-adaptive-v1-evidence.mjs": "f87cc9b087b0192c06c2f411a41448893ef5fd17590f1266914d316de06a46e6",
@@ -692,7 +692,7 @@
     "verification/k4c/portal-submission-receipt-v1.json": "013fd90eb5a6aad8122953284e825cf47741f51526916fcb18b8726ea994e3fc",
     "verification/k4c/security-license-receipt-v1.json": "3e417d7bad6339c4313bc785bd4c606c9c8e599ed1622bbe364120f6968ce9af",
     "verification/k4c/terminal-evidence-v1.json": "d80cf57f869db6bffc833b7f53948a7bd1ba48c84ab92a635c2321199d38e0da",
-    "verification/postgresql/postgresql-c1-evidence-v1.json": "247e59b62b7c46cd04919f8efb1a36f264227e5771454553cd6e4c8b9f25f5ae"
+    "verification/postgresql/postgresql-c1-evidence-v1.json": "4bee83bdc9a19c99780254f589748161d950af18547efc84b86bc9b63ec319ef"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {
