@@ -1,0 +1,80 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-c1-profile/v1",
+  "profileId": "kaleidosphere-postgresql-c1-v1",
+  "engine": "postgresql",
+  "deployment": {
+    "version": "16.10",
+    "majorVersion": "16",
+    "image": {
+      "reference": "docker.io/library/postgres@sha256:94f23d40fdaf5e60cb2fd8a98c22f02a7b8724949f310d95a0ddf075e8c8b208",
+      "platform": "linux/amd64",
+      "manifestDigest": "sha256:94f23d40fdaf5e60cb2fd8a98c22f02a7b8724949f310d95a0ddf075e8c8b208"
+    },
+    "transport": "loopback-only",
+    "deploymentClass": "disposable-clean-room"
+  },
+  "auth": {
+    "mode": "SCRAM-SHA-256",
+    "secretRoute": {
+      "fileVariable": "POSTGRESQL_PASSWORD_FILE",
+      "env": "CM_POSTGRESQL_PASSWORD"
+    }
+  },
+  "principal": {
+    "roleName": "kaleidosphere_read_only_analyzer",
+    "access": "READ_ONLY",
+    "leastPrivilege": {
+      "superuser": false,
+      "createDatabase": false,
+      "createRole": false,
+      "replication": false,
+      "bypassRls": false,
+      "transactionReadOnly": true
+    }
+  },
+  "scope": {
+    "database": "ks_fixture",
+    "container": null,
+    "schemas": [
+      "public",
+      "reporting"
+    ]
+  },
+  "productDescriptor": {
+    "engine": "postgresql",
+    "version": "v1",
+    "executor": "postgresql.run-queries",
+    "capability": "postgresql.read-only-session",
+    "evidence": "preflight.coverage-ledger"
+  },
+  "productPath": {
+    "analyzeProfile": {
+      "path": "services/bi-control/fixtures/postgresql-structure-profile-v1.json",
+      "sha256": "bda7372a6f04d9d588fb07443bf5aaf75495bbabdd37f36d5c27b6eaedd7f0c4"
+    },
+    "queryPackManifest": {
+      "path": "services/bi-control/query-packs/db-analyzer/v1/postgresql/manifest.json",
+      "sha256": "41c91552bc9e830113ba7f029cb333a4b85597afa392027b8c481c601bd3796e"
+    },
+    "syntheticFixture": {
+      "path": "services/bi-control/fixtures/postgresql-structure-results-v1.json",
+      "sha256": "5df202bae748aa1742e1e7cac691eeb1a1581d6c229e05b76292a206b6be1a1b"
+    }
+  },
+  "capabilities": [
+    "identity",
+    "schemas",
+    "relations",
+    "columns",
+    "constraints",
+    "dependencies"
+  ],
+  "nonCapabilities": [
+    "indexes",
+    "row-samples",
+    "stored-logic",
+    "profiling",
+    "mutation",
+    "c2"
+  ]
+}

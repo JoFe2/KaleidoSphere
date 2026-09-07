@@ -215,6 +215,11 @@
     {
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "contracts/connectors/postgresql/c1-profile-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
       "path": "services/bi-control/src/runtime-config.mjs"
     },
     {
@@ -316,6 +321,16 @@
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
       "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "verification/postgresql/postgresql-c1-evidence-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "verification/postgresql/postgresql-c1-evidence-v1.json"
     },
     {
       "identityClass": "packageContainer",
@@ -4586,6 +4601,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/analyze-profile/v1",
       "path": "services/bi-control/src/db-analyzer/core.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/src/db-analyzer/postgresql-c1.mjs"
     },
     {
       "identityClass": "schemaIdentity",
