@@ -13,6 +13,15 @@
 //   AC03 — Reality is derived from the git-tracked suite set plus the canonical command
 //          and static test-import graph: no second hand-maintained suite allowlist.
 //
+// CI-TOPOLOGY-03 (KaleidoSphere issue #184) — canonical command shape integrity:
+//   the canonical command must be exactly one unwrapped `node --test <suite roots...>`
+//   invocation. The shape validator (canonicalTestCommand) is bound to the live
+//   package.json#scripts.test command and fails closed on any shell operator,
+//   pipe/redirect, command substitution, wrapper/environment prefix, extra Node
+//   option, or non-suite positional token; each diagnostic names the offending token
+//   or the exact malformed prefix. Duplicate/root reachability reporting stays in the
+//   existing topology kernel.
+//
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -25,8 +34,10 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  canonicalTestCommand,
   canonicalTestSuppressionFlags,
   canonicalTestTopology,
+  formatCommandViolations,
   formatTopologyViolations,
 } from '../scripts/check-canonical-test-topology.mjs';
 
@@ -53,9 +64,11 @@ function trackedTestSuites() {
 }
 
 function canonicalDirectRoots(pkg) {
-  // The canonical command is `node --test <suite> ...`; every token that claims to be a
-  // suite is a direct root, in command order, duplicates preserved.
-  return pkg.scripts.test.split(/\s+/).filter((token) => SUITE.test(token));
+  // CI-TOPOLOGY-03: the direct roots are the suite-shaped roots reported by the
+  // canonical command shape validator — the derivation itself fails closed on shell
+  // operators, wrappers, extra options, and non-suite tokens instead of silently
+  // filtering for suite-looking tokens.
+  return canonicalTestCommand(pkg.scripts.test.split(/\s+/)).roots;
 }
 
 function resolveSpec(importer, spec) {
@@ -163,6 +176,117 @@ test('the canonical npm test command carries no Node global test-selection or su
       `must name the offending flag: ${offendingFlag}`,
     );
   }
+});
+
+// CI-TOPOLOGY-03 (KaleidoSphere issue #184) — canonical command shape integrity.
+
+test('the live canonical npm test command is exactly one unwrapped node --test invocation', async () => {
+  const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+  const tokens = pkg.scripts.test.split(/\s+/);
+  const command = canonicalTestCommand(tokens);
+  // Positive: the live command is exactly the shape `node --test <suite roots...>` —
+  // no shell operator, redirect, pipe, command substitution, wrapper/environment
+  // prefix, extra Node option, or non-suite positional token anywhere in it.
+  assert.deepStrictEqual(
+    command.violations,
+    [],
+    `canonical command shape violations: ${formatCommandViolations(command.violations)}`,
+  );
+  assert.equal(command.ok, true);
+  // Exactly one invocation: every token after `node --test` is itself a suite root, so
+  // the validator's roots are the whole tail — nothing is hidden between the roots.
+  assert.deepStrictEqual(command.roots, tokens.slice(2));
+  // And the roots cover exactly the git-tracked suite set minus the one intentional
+  // imported suite, each direct root once: the 129-suite canonical route (128 direct
+  // roots + one imported-parent route) is preserved in registration terms.
+  const tracked = trackedTestSuites();
+  assert.deepStrictEqual(
+    [...command.roots].sort(),
+    tracked.filter((suite) => suite !== INTENTIONAL_IMPORTED_SUITE),
+  );
+  assert.equal(new Set(command.roots).size, command.roots.length);
+});
+
+test('shell operators, pipes/redirects, wrappers, extra options, and non-suite tokens fail closed, each diagnostic naming the offending token or exact malformed prefix', () => {
+  const ALPHA = 'tests/alpha.test.mjs';
+  const BETA = 'tests/beta.test.mjs';
+  const negatives = [
+    ['|| true suffix', ['node', '--test', ALPHA, '||', 'true'], '||', /shell operator/],
+    ['&& second invocation', ['node', '--test', ALPHA, '&&', 'node', '--test', BETA], '&&', /shell operator/],
+    ['; extra command', ['node', '--test', ALPHA, ';', 'echo', 'ci-passed'], ';', /shell operator/],
+    ['pipe to another command', ['node', '--test', ALPHA, '|', 'cat'], '|', /shell operator/],
+    ['redirect to a file', ['node', '--test', ALPHA, '>', 'tmp/last-run.log'], '>', /redirect/],
+    ['wrapper prefix', ['sh', '-c', 'node', '--test', ALPHA], 'sh -c', /malformed prefix/],
+    ['environment prefix', ['NODE_OPTIONS=--max-old-space-size=4096', 'node', '--test', ALPHA], 'NODE_OPTIONS=--max-old-space-size=4096', /malformed prefix/],
+    ['command substitution', ['node', '--test', ALPHA, '&&', '$(echo done)'], '$(echo done)', /command substitution/],
+    ['extra node option', ['node', '--test', '--test-concurrency=1', ALPHA], '--test-concurrency=1', /extra Node option/],
+    ['arbitrary non-suite path', ['node', '--test', ALPHA, 'scripts/other.mjs'], 'scripts/other.mjs', /non-suite positional/],
+  ];
+  for (const [name, tokens, namedToken, reasonPattern] of negatives) {
+    const command = canonicalTestCommand(tokens);
+    assert.equal(command.ok, false, name);
+    const named = command.violations.find((violation) => violation.token === namedToken);
+    assert.ok(
+      named,
+      `${name}: a diagnostic must name "${namedToken}": ${formatCommandViolations(command.violations)}`,
+    );
+    assert.match(named.reason, reasonPattern, name);
+  }
+});
+
+test('a canonical command without any direct suite root fails closed, naming the exact malformed prefix', () => {
+  const command = canonicalTestCommand(['node', '--test']);
+  assert.equal(command.ok, false);
+  assert.ok(
+    command.violations.some((violation) => violation.token === 'node --test'),
+    `the malformed prefix must be named: ${formatCommandViolations(command.violations)}`,
+  );
+  for (const violation of command.violations) {
+    assert.match(violation.reason, /at least one direct/, violation.reason);
+  }
+});
+
+test('grafting a shell suffix onto the live canonical command fails closed, naming the grafted tokens', async () => {
+  const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+  const live = pkg.scripts.test.split(/\s+/);
+  const command = canonicalTestCommand([...live, '||', 'true']);
+  assert.equal(command.ok, false);
+  for (const token of ['||', 'true']) {
+    assert.ok(
+      command.violations.some((violation) => violation.token === token),
+      `a diagnostic must name the grafted token "${token}": ${formatCommandViolations(command.violations)}`,
+    );
+  }
+});
+
+test('the shape validator accepts exactly the node --test suite-root shape and preserves duplicate roots for the topology kernel', () => {
+  const command = canonicalTestCommand(['node', '--test', 'tests/alpha.test.mjs', 'tests/beta.test.mjs']);
+  assert.deepStrictEqual(command, {
+    ok: true,
+    roots: ['tests/alpha.test.mjs', 'tests/beta.test.mjs'],
+    violations: [],
+  });
+  // A duplicated registration is suite-shaped: the shape validator preserves it in
+  // command order — duplicate/root reachability reporting belongs to the topology
+  // kernel, which still rejects the duplicate as multiply reachable.
+  const duplicated = canonicalTestCommand([
+    'node', '--test', 'tests/alpha.test.mjs', 'tests/alpha.test.mjs', 'tests/beta.test.mjs',
+  ]);
+  assert.equal(duplicated.ok, true);
+  assert.deepStrictEqual(
+    duplicated.roots,
+    ['tests/alpha.test.mjs', 'tests/alpha.test.mjs', 'tests/beta.test.mjs'],
+  );
+  const topology = canonicalTestTopology({
+    trackedTestFiles: ['tests/alpha.test.mjs', 'tests/beta.test.mjs'],
+    directRoots: duplicated.roots,
+    importEdges: [],
+  });
+  assertSingleViolation(
+    topology,
+    'tests/alpha.test.mjs',
+    /multiply reachable from the canonical npm test roots \(2 routes: 2 direct roots\)/,
+  );
 });
 
 // Small deterministic graph for the fail-closed regressions: alpha and beta are direct
