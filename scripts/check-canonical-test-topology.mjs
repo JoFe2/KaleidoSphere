@@ -36,14 +36,25 @@
 // test suite's route into the test graph may come only from an executable static import
 // declaration. A raw-byte regex cannot tell `import` from an import-looking byte inside a
 // comment, string, template literal, or regex literal, so it reports a pseudo-route that
-// Node would never load. staticTestImportRoutes below is the pure deterministic lexical
+// Node would never load. staticTestModuleRoutes below is the pure deterministic lexical
 // scanner: it derives the importer's test-to-test edges by a lexical state machine over
 // code / line comment / block comment / single-quoted string / double-quoted string /
-// template literal / regex literal, emitting an edge only for a static import declaration
-// whose literal relative specifier resolves to a tracked tests/**/*.test.mjs suite;
-// import(...) and import.meta never emit an edge; and unterminated lexical input or an
-// ambiguous import-like construct targeting a tracked suite fails closed with a
-// diagnostic naming the importer and reason.
+// template literal / regex literal, emitting an edge only for an executable static
+// module declaration whose literal relative specifier resolves to a tracked
+// tests/**/*.test.mjs suite; import(...) and import.meta never emit an edge; and
+// unterminated lexical input or an ambiguous import-like construct targeting a tracked
+// suite fails closed with a diagnostic naming the importer and reason.
+//
+// CI-TOPOLOGY-06 (KaleidoSphere issue #190) — executable static re-export routes: the
+// same pure deterministic lexical scanner is generalized from static import declarations
+// to every executable static test-to-test module dependency. It now emits an edge for
+// side-effect imports, binding imports, `export * from`, and named `export { ... } from`
+// re-export declarations whose literal relative specifier resolves to a tracked suite. A
+// local export without a `from` clause (export const/function/class/default, or
+// export { ... } without `from`), a bare (non-relative) specifier, and an untracked target
+// yield no edge, and re-export-looking bytes inside comments, strings, template literals,
+// or regex literals yield no edge; a malformed or ambiguous re-export construct targeting
+// a tracked suite fails closed with a diagnostic naming the importer and reason.
 //
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
@@ -376,20 +387,25 @@ export function formatSuiteIdentityViolations(violations) {
   return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
 }
 
-// CI-TOPOLOGY-05 (issue #188) — pseudo-import route scanner.
+// CI-TOPOLOGY-05 (issue #188) / CI-TOPOLOGY-06 (issue #190) — static module route
+// scanner.
 //
-// staticTestImportRoutes derives the test-to-test static import edges for one importer
-// file by scanning its source with a deterministic lexical state machine instead of a
-// raw-byte regex. An edge is produced ONLY by an executable static import declaration
-// whose specifier is a literal relative path resolving to a tracked tests/**/*.test.mjs
-// suite. Import-looking bytes inside line comments, block comments, single/double-quoted
-// strings, template-literal text, or regex literals never create an edge, and a dynamic
-// import(...) or import.meta never creates an edge. Malformed/unterminated lexical input
-// (an unterminated block comment, quoted string, template literal, or regex literal) and
-// an ambiguous import-like construct targeting a tracked test suite (a backtick/template
-// specifier where a static import declaration requires a single/double-quoted string)
-// fail closed with a diagnostic naming the importer and reason — a route is never
-// silently created or dropped.
+// staticTestModuleRoutes derives the executable static test-to-test module routes for
+// one importer file by scanning its source with a deterministic lexical state machine
+// instead of a raw-byte regex. An edge is produced ONLY by an executable static module
+// declaration — a side-effect import, a binding import, `export * from`, or a named
+// `export { ... } from` re-export — whose specifier is a literal relative path resolving
+// to a tracked tests/**/*.test.mjs suite. Import/re-export-looking bytes inside line
+// comments, block comments, single/double-quoted strings, template-literal text, or regex
+// literals never create an edge, and a dynamic import(...) or import.meta never creates an
+// edge. A local export without a `from` clause (export const/function/class/default, or
+// export { ... } without `from`), a bare (non-relative) specifier, and an untracked target
+// create no edge. Malformed/unterminated lexical input (an unterminated block comment,
+// quoted string, template literal, or regex literal) and an ambiguous import/re-export-
+// like construct targeting a tracked test suite (a backtick/template specifier where a
+// static module declaration requires a single/double-quoted string) fail closed with a
+// diagnostic naming the importer and reason — a route is never silently created or
+// dropped.
 //
 // importer: repo-relative path of the file being scanned (its directory is derived
 //   arithmetically, so the scanner never touches fs).
@@ -426,7 +442,7 @@ function resolveRelativeSpecifier(importer, specifier) {
   return out.join('/');
 }
 
-export function staticTestImportRoutes({ importer, source, trackedSuites }) {
+export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
   const edges = [];
   const violations = [];
   const text = typeof source === 'string' ? source : '';
@@ -454,6 +470,50 @@ export function staticTestImportRoutes({ importer, source, trackedSuites }) {
     if (resolved !== null && trackedSet.has(resolved)) edges.push({ from: importer, to: resolved });
   };
 
+  // Read a quoted module specifier that begins at the opening quote (one of ' " `) at
+  // index start. Returns { kind: 'ok'|'unterminated'|'ambiguous', specifier, end } where
+  // end is just past the closing quote (or n when the string never closes). A backtick
+  // specifier is 'ambiguous': it is a template literal, not the single/double-quoted
+  // string a static module declaration requires.
+  const readQuotedSpecifier = (start) => {
+    const quote = text[start];
+    if (quote === '`') {
+      let e = start + 1;
+      let buf = '';
+      while (e < n && text[e] !== '`') { buf += text[e]; e += 1; }
+      return { kind: 'ambiguous', specifier: buf, end: e < n ? e + 1 : n };
+    }
+    let e = start + 1;
+    let buf = '';
+    while (e < n && text[e] !== quote) {
+      if (text[e] === '\\') { buf += text[e] + text[e + 1]; e += 2; }
+      else { buf += text[e]; e += 1; }
+    }
+    if (e >= n) return { kind: 'unterminated', quote, end: n };
+    return { kind: 'ok', specifier: buf, end: e + 1 };
+  };
+
+  // Read the maximal word beginning at index k, or '' when text[k] is not a word char.
+  const readWordAt = (k) => {
+    if (k >= n || !LEX_WORD.test(text[k])) return '';
+    let e = k;
+    while (e < n && LEX_WORD.test(text[e])) e += 1;
+    return text.slice(k, e);
+  };
+
+  // Given that the `from` keyword begins at index k, read the module specifier that
+  // follows it (which must be a quoted literal in a static re-export). Returns the
+  // readQuotedSpecifier result, or { kind: 'none' } when `from` is not directly followed
+  // by a literal specifier.
+  const readSpecifierAfterFrom = (k) => {
+    let e = k + 4; // 'from'.length
+    while (e < n && LEX_WS.includes(text[e])) e += 1;
+    if (e >= n) return { kind: 'none', end: n };
+    const c = text[e];
+    if (c === "'" || c === '"' || c === '`') return readQuotedSpecifier(e);
+    return { kind: 'none', end: e };
+  };
+
   // Parse the static import declaration that begins just after the `import` keyword, at
   // index j. Only a strict binding region (identifiers, { } * , whitespace, and the word
   // `from`) may precede the specifier quote — any other character means this is not a
@@ -464,23 +524,7 @@ export function staticTestImportRoutes({ importer, source, trackedSuites }) {
     let k = j;
     while (k < n) {
       const ch = text[k];
-      if (ch === "'" || ch === '"') {
-        const quote = ch;
-        let e = k + 1;
-        let buf = '';
-        while (e < n && text[e] !== quote) {
-          if (text[e] === '\\') { buf += text[e] + text[e + 1]; e += 2; }
-          else { buf += text[e]; e += 1; }
-        }
-        if (e >= n) return { kind: 'unterminated', quote, end: n };
-        return { kind: 'ok', specifier: buf, end: e + 1 };
-      }
-      if (ch === '`') {
-        let e = k + 1;
-        let buf = '';
-        while (e < n && text[e] !== '`') { buf += text[e]; e += 1; }
-        return { kind: 'ambiguous', specifier: buf, end: e < n ? e + 1 : n };
-      }
+      if (ch === "'" || ch === '"' || ch === '`') return readQuotedSpecifier(k);
       if (ch === ';') return { kind: 'none', end: k + 1 };
       if (LEX_WS.includes(ch) || LEX_WORD.test(ch) || ch === '{' || ch === '}' || ch === '*' || ch === ',') {
         k += 1;
@@ -488,6 +532,50 @@ export function staticTestImportRoutes({ importer, source, trackedSuites }) {
       }
       return { kind: 'none', end: k };
     }
+    return { kind: 'none', end: k };
+  };
+
+  // Parse the static export declaration that begins just after the `export` keyword, at
+  // index j. Only a star re-export (`export * from '...'`, `export * as ns from '...'`)
+  // or a named re-export (`export { ... } from '...'`) carries a module route: the
+  // `from` keyword must directly precede a literal specifier. A local export without a
+  // `from` clause (export const/function/class/default, or export { ... } without `from`)
+  // yields no edge. A backtick specifier after `from` is ambiguous; an unterminated
+  // specifier after `from` fails closed.
+  const parseStaticExport = (j) => {
+    let k = j;
+    while (k < n && LEX_WS.includes(text[k])) k += 1;
+    if (k >= n) return { kind: 'none', end: k };
+    const ch = text[k];
+    if (ch === '*') {
+      // Star re-export: `export * from '...'` or `export * as ns from '...'`.
+      k += 1;
+      while (k < n && LEX_WS.includes(text[k])) k += 1;
+      if (readWordAt(k) === 'as') {
+        k += 2;
+        while (k < n && LEX_WS.includes(text[k])) k += 1;
+        if (k < n && LEX_WORD.test(text[k])) {
+          let e = k;
+          while (e < n && LEX_WORD.test(text[e])) e += 1;
+          k = e;
+        }
+        while (k < n && LEX_WS.includes(text[k])) k += 1;
+      }
+      if (readWordAt(k) === 'from') return readSpecifierAfterFrom(k);
+      return { kind: 'none', end: k };
+    }
+    if (ch === '{') {
+      // Named re-export: `export { ... } from '...'`. Scan the named list to its closing
+      // '}', then require the `from` keyword directly before a literal specifier.
+      k += 1;
+      while (k < n && text[k] !== '}') k += 1;
+      if (k < n) k += 1; // just past the closing '}'
+      while (k < n && LEX_WS.includes(text[k])) k += 1;
+      if (readWordAt(k) === 'from') return readSpecifierAfterFrom(k);
+      // Local export `export { ... }` without `from`: no module route.
+      return { kind: 'none', end: k };
+    }
+    // Local export (export const/function/class/default/async ...): no module route.
     return { kind: 'none', end: k };
   };
 
@@ -539,6 +627,31 @@ export function staticTestImportRoutes({ importer, source, trackedSuites }) {
             }
           }
           // 'none' or a non-tracked target: no edge, no violation.
+          lastSig = result.end < n ? text[result.end - 1] : '';
+          lastWord = '';
+          i = result.end;
+          continue;
+        }
+        if (word === 'export') {
+          const result = parseStaticExport(end);
+          if (result.kind === 'ok') {
+            pushEdge(result.specifier);
+          } else if (result.kind === 'unterminated') {
+            violations.push({
+              path: importer,
+              reason: `unterminated ${result.quote === "'" ? 'single-quoted' : 'double-quoted'} string in a static re-export specifier`,
+            });
+          } else if (result.kind === 'ambiguous') {
+            const resolved = resolveRelativeSpecifier(importer, result.specifier);
+            if (resolved !== null && trackedSet.has(resolved)) {
+              violations.push({
+                path: importer,
+                reason: `ambiguous re-export-like construct (template-literal specifier) targeting tracked suite "${resolved}"`,
+              });
+            }
+          }
+          // 'none' (a local export without `from`) or a non-tracked target: no edge, no
+          // violation; the main loop resumes just after the `export` keyword.
           lastSig = result.end < n ? text[result.end - 1] : '';
           lastWord = '';
           i = result.end;
