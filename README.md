@@ -101,7 +101,11 @@ npx skills add ./agent-skills/kaleidosphere \
 OpenClaw uses the same package under `<workspace>/skills/kaleidosphere`;
 Hermes uses `~/.hermes/skills/kaleidosphere`. Host-specific installation and
 evidence status are recorded in `agent-skills/host-contracts.json`. No
-marketplace listing is claimed.
+marketplace listing is claimed. The single-source distribution epic keeps this
+one maintained source and records its per-host terminal states and bounded
+external waits in `docs/release/ks73-epic-closure-v1.json`, verified by
+`npm run test:ks73-epic-closure`. No public Codex, Claude or ClawHub listing
+is claimed by it.
 
 ## DSH and host integrations
 
