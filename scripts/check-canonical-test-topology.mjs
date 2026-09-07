@@ -32,6 +32,19 @@
 // [{ path, reason }] list, accepting only unique tests/**/*.test.mjs records whose
 // mode/type is exactly "100644 blob".
 //
+// CI-TOPOLOGY-05 (KaleidoSphere issue #188) — pseudo-import route scanner: a canonical
+// test suite's route into the test graph may come only from an executable static import
+// declaration. A raw-byte regex cannot tell `import` from an import-looking byte inside a
+// comment, string, template literal, or regex literal, so it reports a pseudo-route that
+// Node would never load. staticTestImportRoutes below is the pure deterministic lexical
+// scanner: it derives the importer's test-to-test edges by a lexical state machine over
+// code / line comment / block comment / single-quoted string / double-quoted string /
+// template literal / regex literal, emitting an edge only for a static import declaration
+// whose literal relative specifier resolves to a tracked tests/**/*.test.mjs suite;
+// import(...) and import.meta never emit an edge; and unterminated lexical input or an
+// ambiguous import-like construct targeting a tracked suite fails closed with a
+// diagnostic naming the importer and reason.
+//
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -360,5 +373,239 @@ export function trackedSuiteIdentities(records) {
 
 // One-line diagnostics for tracked-suite identity failures: "path: reason; path: reason".
 export function formatSuiteIdentityViolations(violations) {
+  return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
+}
+
+// CI-TOPOLOGY-05 (issue #188) — pseudo-import route scanner.
+//
+// staticTestImportRoutes derives the test-to-test static import edges for one importer
+// file by scanning its source with a deterministic lexical state machine instead of a
+// raw-byte regex. An edge is produced ONLY by an executable static import declaration
+// whose specifier is a literal relative path resolving to a tracked tests/**/*.test.mjs
+// suite. Import-looking bytes inside line comments, block comments, single/double-quoted
+// strings, template-literal text, or regex literals never create an edge, and a dynamic
+// import(...) or import.meta never creates an edge. Malformed/unterminated lexical input
+// (an unterminated block comment, quoted string, template literal, or regex literal) and
+// an ambiguous import-like construct targeting a tracked test suite (a backtick/template
+// specifier where a static import declaration requires a single/double-quoted string)
+// fail closed with a diagnostic naming the importer and reason — a route is never
+// silently created or dropped.
+//
+// importer: repo-relative path of the file being scanned (its directory is derived
+//   arithmetically, so the scanner never touches fs).
+// source: the file's source text.
+// trackedSuites: the tracked tests/**/*.test.mjs set (a Set or array of repo-relative
+//   paths); only edges whose resolved specifier is in this set are emitted.
+// Returns { edges: [{ from, to }], violations: [{ path, reason }] } where `from` is the
+//   importer and `to` is the resolved tracked suite; violations each name the importer
+//   (path) and the fail-closed reason.
+const LEX_WS = Object.freeze(' \t\r\n');
+const LEX_WORD = /[A-Za-z0-9_$]/;
+// A word that can end in an expression position, so a following '/' opens a regex literal
+// rather than a division. When the last significant word is one of these, '/' is a regex.
+const REGEX_PRECEDING_WORDS = Object.freeze(
+  new Set([
+    'return', 'typeof', 'instanceof', 'in', 'of', 'new', 'delete', 'void', 'do',
+    'else', 'case', 'yield', 'await', 'throw', 'with', 'async', 'function',
+  ]),
+);
+
+// Resolve a relative specifier ('./x' or '../x') against the importer's directory, or
+// return null for a non-relative (bare) specifier. Segment arithmetic, no node:path.
+function resolveRelativeSpecifier(importer, specifier) {
+  if (!(specifier.startsWith('./') || specifier.startsWith('../'))) return null;
+  const lastSlash = importer.lastIndexOf('/');
+  const importerDir = lastSlash === -1 ? '' : importer.slice(0, lastSlash + 1);
+  const segments = (importerDir + specifier).split('/');
+  const out = [];
+  for (const segment of segments) {
+    if (segment === '' || segment === '.') continue;
+    if (segment === '..') { out.pop(); continue; }
+    out.push(segment);
+  }
+  return out.join('/');
+}
+
+export function staticTestImportRoutes({ importer, source, trackedSuites }) {
+  const edges = [];
+  const violations = [];
+  const text = typeof source === 'string' ? source : '';
+  const trackedSet = trackedSuites instanceof Set
+    ? trackedSuites
+    : new Set(Array.isArray(trackedSuites) ? trackedSuites : []);
+
+  const CODE = 0;
+  const LINE_COMMENT = 1;
+  const BLOCK_COMMENT = 2;
+  const SINGLE_QUOTED = 3;
+  const DOUBLE_QUOTED = 4;
+  const TEMPLATE_LITERAL = 5;
+  const REGEX_LITERAL = 6;
+
+  let state = CODE;
+  let i = 0;
+  const n = text.length;
+  let lastSig = ''; // last significant (non-whitespace) char seen in CODE state
+  let lastWord = ''; // last maximal word read in CODE state (lastSig is its final char)
+  let regexInClass = false; // true while the open regex literal is inside a [...] class
+
+  const pushEdge = (specifier) => {
+    const resolved = resolveRelativeSpecifier(importer, specifier);
+    if (resolved !== null && trackedSet.has(resolved)) edges.push({ from: importer, to: resolved });
+  };
+
+  // Parse the static import declaration that begins just after the `import` keyword, at
+  // index j. Only a strict binding region (identifiers, { } * , whitespace, and the word
+  // `from`) may precede the specifier quote — any other character means this is not a
+  // static import (dynamic import(...), import.meta, or other syntax), which yields no
+  // edge. A backtick specifier is ambiguous: it is a template literal, not the
+  // single/double-quoted string a static import requires.
+  const parseStaticImport = (j) => {
+    let k = j;
+    while (k < n) {
+      const ch = text[k];
+      if (ch === "'" || ch === '"') {
+        const quote = ch;
+        let e = k + 1;
+        let buf = '';
+        while (e < n && text[e] !== quote) {
+          if (text[e] === '\\') { buf += text[e] + text[e + 1]; e += 2; }
+          else { buf += text[e]; e += 1; }
+        }
+        if (e >= n) return { kind: 'unterminated', quote, end: n };
+        return { kind: 'ok', specifier: buf, end: e + 1 };
+      }
+      if (ch === '`') {
+        let e = k + 1;
+        let buf = '';
+        while (e < n && text[e] !== '`') { buf += text[e]; e += 1; }
+        return { kind: 'ambiguous', specifier: buf, end: e < n ? e + 1 : n };
+      }
+      if (ch === ';') return { kind: 'none', end: k + 1 };
+      if (LEX_WS.includes(ch) || LEX_WORD.test(ch) || ch === '{' || ch === '}' || ch === '*' || ch === ',') {
+        k += 1;
+        continue;
+      }
+      return { kind: 'none', end: k };
+    }
+    return { kind: 'none', end: k };
+  };
+
+  while (i < n) {
+    const c = text[i];
+    const next = i + 1 < n ? text[i + 1] : '';
+    if (state === CODE) {
+      if (c === '/' && next === '/') { state = LINE_COMMENT; i += 2; continue; }
+      if (c === '/' && next === '*') { state = BLOCK_COMMENT; i += 2; continue; }
+      if (c === "'") { state = SINGLE_QUOTED; i += 1; continue; }
+      if (c === '"') { state = DOUBLE_QUOTED; i += 1; continue; }
+      if (c === '`') { state = TEMPLATE_LITERAL; i += 1; continue; }
+      if (c === '/') {
+        // Regex-vs-division: '/' opens a regex literal unless the preceding significant
+        // token can be a division left operand (a non-keyword word, a closing paren/
+        // bracket, or a just-closed string).
+        const division =
+          lastSig === ')' ||
+          lastSig === ']' ||
+          lastSig === "'" ||
+          lastSig === '"' ||
+          lastSig === '`' ||
+          (LEX_WORD.test(lastSig) && !REGEX_PRECEDING_WORDS.has(lastWord));
+        if (!division) { state = REGEX_LITERAL; regexInClass = false; i += 1; continue; }
+        lastSig = '/';
+        i += 1;
+        continue;
+      }
+      if (LEX_WORD.test(c)) {
+        let end = i;
+        while (end < n && LEX_WORD.test(text[end])) end += 1;
+        const word = text.slice(i, end);
+        if (word === 'import') {
+          const result = parseStaticImport(end);
+          if (result.kind === 'ok') {
+            pushEdge(result.specifier);
+          } else if (result.kind === 'unterminated') {
+            violations.push({
+              path: importer,
+              reason: `unterminated ${result.quote === "'" ? 'single-quoted' : 'double-quoted'} string in a static import specifier`,
+            });
+          } else if (result.kind === 'ambiguous') {
+            const resolved = resolveRelativeSpecifier(importer, result.specifier);
+            if (resolved !== null && trackedSet.has(resolved)) {
+              violations.push({
+                path: importer,
+                reason: `ambiguous import-like construct (template-literal specifier) targeting tracked suite "${resolved}"`,
+              });
+            }
+          }
+          // 'none' or a non-tracked target: no edge, no violation.
+          lastSig = result.end < n ? text[result.end - 1] : '';
+          lastWord = '';
+          i = result.end;
+          continue;
+        }
+        lastWord = word;
+        lastSig = word[word.length - 1];
+        i = end;
+        continue;
+      }
+      if (!LEX_WS.includes(c)) lastSig = c;
+      lastWord = '';
+      i += 1;
+      continue;
+    }
+    if (state === LINE_COMMENT) {
+      if (c === '\n') { state = CODE; lastWord = ''; }
+      i += 1;
+      continue;
+    }
+    if (state === BLOCK_COMMENT) {
+      if (c === '*' && next === '/') { state = CODE; i += 2; continue; }
+      i += 1;
+      continue;
+    }
+    if (state === SINGLE_QUOTED || state === DOUBLE_QUOTED) {
+      const quote = state === SINGLE_QUOTED ? "'" : '"';
+      if (c === '\\') { i += 2; continue; }
+      if (c === quote) state = CODE;
+      i += 1;
+      continue;
+    }
+    if (state === TEMPLATE_LITERAL) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === '`') state = CODE;
+      i += 1;
+      continue;
+    }
+    if (state === REGEX_LITERAL) {
+      if (c === '\\') { i += 2; continue; }
+      if (c === '[') { regexInClass = true; i += 1; continue; }
+      if (c === ']' && regexInClass) { regexInClass = false; i += 1; continue; }
+      if (c === '/' && !regexInClass) { state = CODE; i += 1; continue; }
+      i += 1;
+      continue;
+    }
+  }
+
+  // Fail closed on any lexical construct still open at end of input: a comment, quoted
+  // string, template literal, or regex literal that never terminates is malformed input
+  // that must not silently create or drop a route.
+  if (state === BLOCK_COMMENT) {
+    violations.push({ path: importer, reason: 'unterminated block comment' });
+  } else if (state === SINGLE_QUOTED) {
+    violations.push({ path: importer, reason: 'unterminated single-quoted string' });
+  } else if (state === DOUBLE_QUOTED) {
+    violations.push({ path: importer, reason: 'unterminated double-quoted string' });
+  } else if (state === TEMPLATE_LITERAL) {
+    violations.push({ path: importer, reason: 'unterminated template literal' });
+  } else if (state === REGEX_LITERAL) {
+    violations.push({ path: importer, reason: 'unterminated regex literal' });
+  }
+
+  return { edges, violations };
+}
+
+// One-line diagnostics for static import-route failures: "importer: reason; importer: reason".
+export function formatImportRouteViolations(violations) {
   return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
 }
