@@ -51,8 +51,6 @@ const CANONICAL_FOCUSED_FAMILY = Object.freeze([
   'tests/business-bi-net-revenue-plan.test.mjs',
   'tests/business-bi-clean-room.test.mjs',
 ]);
-const HISTORICAL_ENVIRONMENT_TEST_SKIP =
-  '--test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const PARENT_TEST_PATH = 'tests/business-bi-epic-closure.test.mjs';
 const RELEASE_PATH_CLASSES = Object.freeze({
   public: Object.freeze([
@@ -703,12 +701,11 @@ test('validated snapshot is detached and deeply immutable after validation', () 
 test('canonical source gate, SOURCE-MAP, release, and README surfaces bind the parent evidence in repository order', () => {
   const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
   const canonicalTokens = pkg.scripts.test.split(/\s+/);
-  assert.deepStrictEqual(canonicalTokens.slice(0, 3), [
+  assert.deepStrictEqual(canonicalTokens.slice(0, 2), [
     'node',
     '--test',
-    HISTORICAL_ENVIRONMENT_TEST_SKIP,
   ]);
-  const canonicalTests = canonicalTokens.slice(3);
+  const canonicalTests = canonicalTokens.slice(2);
   const familyStart = canonicalTests.indexOf(CANONICAL_FOCUSED_FAMILY[0]);
   assert.notEqual(familyStart, -1);
   assert.deepStrictEqual(canonicalTests.slice(familyStart, familyStart + CANONICAL_FOCUSED_FAMILY.length), CANONICAL_FOCUSED_FAMILY);

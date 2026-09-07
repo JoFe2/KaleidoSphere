@@ -94,7 +94,7 @@ test('checked verification is byte-exact generated, canonical content-addressed 
   assert.equal(verification.issue, ISSUE_ID);
 });
 
-test('input, metric, plan, oracle, result, coverage, environment, commit, and tree identities are frozen', () => {
+test('input, metric, plan, oracle, result, coverage, environment, commit, and tree identities are frozen', async () => {
   assert.deepStrictEqual(verification.frozenIdentities, {
     coverage: { sha256: FROZEN_COVERAGE_SHA256 },
     environment: { sha256: FROZEN_ENVIRONMENT_SHA256 },
@@ -123,7 +123,16 @@ test('input, metric, plan, oracle, result, coverage, environment, commit, and tr
   assert.equal(sha256(canonicalJson(FROZEN_ENVIRONMENT)), FROZEN_ENVIRONMENT_SHA256);
   assert.equal(FROZEN_ENVIRONMENT.canonicalJsonSha256, CANONICAL_JSON_SHA256);
   assert.equal(FROZEN_ENVIRONMENT.packageSha256, PACKAGE_JSON_SHA256);
-  assert.equal(process.version, FROZEN_ENVIRONMENT.nodeVersion);
+  const observedVersion = /^v(\d+)\.(\d+)\.(\d+)$/.exec(process.version);
+  const frozenVersion = /^v(\d+)\.(\d+)\.(\d+)$/.exec(FROZEN_ENVIRONMENT.nodeVersion);
+  assert.notEqual(observedVersion, null);
+  assert.notEqual(frozenVersion, null);
+  assert.equal(observedVersion[1], frozenVersion[1]);
+  assert.equal(
+    JSON.parse(await readFile(path.join(ROOT, 'package.json'), 'utf8')).engines.node,
+    `>=${frozenVersion[1]} <${Number(frozenVersion[1]) + 1}`,
+  );
+  assert.equal(process.release.name, FROZEN_ENVIRONMENT.runtime);
   assert.equal(process.versions.modules, FROZEN_ENVIRONMENT.nodeModulesAbi);
   assert.equal(process.platform, FROZEN_ENVIRONMENT.platform);
   assert.equal(process.arch, FROZEN_ENVIRONMENT.architecture);

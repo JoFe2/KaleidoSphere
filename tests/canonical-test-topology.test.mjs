@@ -25,6 +25,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  canonicalTestSuppressionFlags,
   canonicalTestTopology,
   formatTopologyViolations,
 } from '../scripts/check-canonical-test-topology.mjs';
@@ -52,9 +53,8 @@ function trackedTestSuites() {
 }
 
 function canonicalDirectRoots(pkg) {
-  // The canonical command is `node --test --test-skip-pattern=... <suite> ...`; every
-  // token that claims to be a suite is a direct root, in command order, duplicates
-  // preserved.
+  // The canonical command is `node --test <suite> ...`; every token that claims to be a
+  // suite is a direct root, in command order, duplicates preserved.
   return pkg.scripts.test.split(/\s+/).filter((token) => SUITE.test(token));
 }
 
@@ -139,6 +139,29 @@ test('every tracked test suite has exactly one route from the canonical npm test
   for (const edge of importEdges) {
     assert.ok(trackedSet.has(edge.from), edge.from);
     assert.ok(trackedSet.has(edge.to), edge.to);
+  }
+});
+
+test('the canonical npm test command carries no Node global test-selection or suppression flag', async () => {
+  const pkg = JSON.parse(await readFile('package.json', 'utf8'));
+  const tokens = pkg.scripts.test.split(/\s+/);
+  // Positive: the real canonical command carries none of the forbidden Node global
+  // test-selection/suppression flags — the dead global --test-skip-pattern authority is
+  // gone and no replacement suppression flag is present.
+  assert.deepStrictEqual(canonicalTestSuppressionFlags(tokens), []);
+  // Negative: reintroducing any of the three forbidden flags on the canonical route is
+  // rejected, and the diagnostic names exactly the offending flag.
+  const negativeCases = [
+    ['--test-skip-pattern', ['node', '--test', '--test-skip-pattern=^input$']],
+    ['--test-name-pattern', ['node', '--test', '--test-name-pattern=^input$']],
+    ['--test-only', ['node', '--test', '--test-only']],
+  ];
+  for (const [offendingFlag, command] of negativeCases) {
+    assert.deepStrictEqual(
+      canonicalTestSuppressionFlags(command),
+      [offendingFlag],
+      `must name the offending flag: ${offendingFlag}`,
+    );
   }
 });
 
