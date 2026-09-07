@@ -692,7 +692,7 @@
     "verification/k4c/portal-submission-receipt-v1.json": "013fd90eb5a6aad8122953284e825cf47741f51526916fcb18b8726ea994e3fc",
     "verification/k4c/security-license-receipt-v1.json": "3e417d7bad6339c4313bc785bd4c606c9c8e599ed1622bbe364120f6968ce9af",
     "verification/k4c/terminal-evidence-v1.json": "d80cf57f869db6bffc833b7f53948a7bd1ba48c84ab92a635c2321199d38e0da",
-    "verification/postgresql/postgresql-c1-evidence-v1.json": "4bee83bdc9a19c99780254f589748161d950af18547efc84b86bc9b63ec319ef"
+    "verification/postgresql/postgresql-c1-evidence-v1.json": "c7538d786fe3a6740faecd60b1b68d1f13eaaec70cebecd87ab87a098831bfcb"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {
