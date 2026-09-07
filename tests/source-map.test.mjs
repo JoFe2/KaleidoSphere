@@ -49,6 +49,16 @@ const historicalEnvironmentTestSkip =
   '--test-skip-pattern=^input,.metric,.plan,.oracle,.result,.coverage,.environment,.commit,.and.tree.identities.are.frozen$';
 const parentClosureTest = 'tests/business-bi-epic-closure.test.mjs';
 
+// The PostgreSQL C1 source-local integrity family (KaleidoSphere issue #172): the
+// clean-room runtime that mints the certificate, the canonical verifier, and the
+// checked certificate. Bound in the content-addressed source map so the family stays
+// replayable and tamper-evident without a full repository re-digest.
+const postgresqlC1Family = Object.freeze({
+  runtime: 'scripts/run-postgresql-c1-clean-room.mjs',
+  test: 'tests/postgresql-c1-certification.test.mjs',
+  evidence: 'verification/postgresql/postgresql-c1-evidence-v1.json',
+});
+
 const predecessorEvidenceSha256 = Object.freeze({
   'closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json':
     '314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918',
@@ -140,4 +150,12 @@ test('the accepted #146 evidence bytes remain exact and outside the self-binding
     sourceMap.files['closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json'],
     undefined,
   );
+});
+
+test('the PostgreSQL C1 runtime/test/evidence family is content-addressed in the source map', async () => {
+  const sourceMap = JSON.parse(await readFile('SOURCE-MAP.json', 'utf8'));
+  for (const file of Object.values(postgresqlC1Family)) {
+    assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
+    assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
+  }
 });
