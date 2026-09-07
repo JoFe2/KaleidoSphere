@@ -53,6 +53,17 @@
 //   reason. The intentional source-map -> business-bi-epic-closure route and every
 //   #179/#181/#184/#186/#188 invariant are preserved.
 //
+// CI-TOPOLOGY-07 (KaleidoSphere issue #192) — executable routes across comment trivia:
+//   the scanner treats valid JavaScript line/block comment trivia inside an executable
+//   static import or re-export declaration as declaration trivia — the comment content
+//   is never a route — so `import /* t */ './suite'`, `import // t` (newline)
+//   ` './suite'`, trivia inside a named clause, and trivia around `*`, `as ns`, `from`,
+//   or the literal specifier still yield exactly one edge for a tracked target; an
+//   unterminated block comment inside declaration trivia fails closed naming the
+//   importer and reason; and a focused Node-execution fixture proves the corresponding
+//   modules actually execute. Every #179/#181/#184/#186/#188/#190 invariant is
+//   preserved.
+//
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -60,7 +71,10 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 
 import {
@@ -961,6 +975,250 @@ test('an unterminated re-export specifier targeting a tracked suite fails closed
     assert.match(
       scanned.violations[0].reason,
       /unterminated/,
+      `${name} reason must name the failure: ${scanned.violations[0].reason}`,
+    );
+  }
+});
+
+// CI-TOPOLOGY-07 (KaleidoSphere issue #192) — executable routes across comment trivia:
+// valid JavaScript line/block comment trivia inside an executable static import or
+// re-export declaration is declaration trivia, not route content. The focused Node
+// fixture proves the corresponding modules actually execute, the scanner derives
+// exactly one tracked edge for the same declarations, comment content never creates an
+// extra edge, and an unterminated block comment inside declaration trivia fails closed.
+
+const KS192_IMPORTER = Object.freeze('tests/ks192-parent.test.mjs');
+const KS192_CHILD = Object.freeze('tests/child.test.mjs');
+
+test('Node v24 executes static import and re-export declarations carrying valid comment trivia (the #192 current-Main gap fixture)', () => {
+  // The concrete gap: Node executes these executable static declarations, but the
+  // pre-#192 scanner returned zero edges and zero violations for the same bytes, so a
+  // tracked suite could execute through a valid static dependency while the canonical
+  // topology checker reported no route. The focused fixture runs the real Node module
+  // loader over a parent/child pair in a scratch directory, proves the child module
+  // actually executes, and binds the scanner to exactly one tracked edge for the same
+  // declaration.
+  const forms = [
+    ['side-effect import, block trivia', "import /* route trivia */ './child.test.mjs';"],
+    ['side-effect import, line trivia', "import // route trivia\n'./child.test.mjs';"],
+    ['default-binding import, block trivia', "import /* route trivia */ child from './child.test.mjs';"],
+    ['star re-export, block trivia around `*` and `from`', "export /* route trivia */ * from /* route trivia */ './child.test.mjs';"],
+    ['named re-export, block trivia in the clause and before `from`', "export { child /* route trivia */ } /* route trivia */ from './child.test.mjs';"],
+  ];
+  for (const [name, source] of forms) {
+    const dir = mkdtempSync(join(tmpdir(), 'ks192-'));
+    try {
+      writeFileSync(
+        join(dir, 'child.test.mjs'),
+        "export const child = 1;\nexport default 2;\nconsole.log('KS192_CHILD_EXECUTED');\n",
+      );
+      writeFileSync(join(dir, 'parent.mjs'), source);
+      const out = execFileSync('node', [join(dir, 'parent.mjs')], { encoding: 'utf8' });
+      assert.ok(
+        out.includes('KS192_CHILD_EXECUTED'),
+        `${name}: Node must execute the child module, got: ${JSON.stringify(out)}`,
+      );
+      const scanned = staticTestModuleRoutes({
+        importer: KS192_IMPORTER,
+        source,
+        trackedSuites: new Set([KS192_CHILD, KS192_IMPORTER]),
+      });
+      assert.deepStrictEqual(
+        scanned.edges,
+        [{ from: KS192_IMPORTER, to: KS192_CHILD }],
+        `${name}: the scanner must derive exactly one tracked edge: ${JSON.stringify(scanned.edges)}`,
+      );
+      assert.deepStrictEqual(
+        scanned.violations,
+        [],
+        `${name}: the scanner must not fail closed: ${JSON.stringify(scanned.violations)}`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+test('valid block or line comment trivia in side-effect and binding static imports is exactly one edge', () => {
+  for (const [name, source] of [
+    ['block trivia before the specifier', "import /* t */ './ks188-orphan.test.mjs';"],
+    ['line trivia before the specifier', "import // t\n'./ks188-orphan.test.mjs';"],
+    ['block trivia between `import` and the binding', "import /* t */ child from './ks188-orphan.test.mjs';"],
+    ['line trivia between `import` and the binding', "import // t\nchild from './ks188-orphan.test.mjs';"],
+    ['block trivia inside the named clause', "import { a /* t */ , b /* } */ } from './ks188-orphan.test.mjs';"],
+    ['line trivia inside the named clause', "import { a // t\n, b }\nfrom './ks188-orphan.test.mjs';"],
+    ['block trivia before `from`', "import child from /* t */ './ks188-orphan.test.mjs';"],
+    ['line trivia before `from`', "import child from // t\n'./ks188-orphan.test.mjs';"],
+    ['multiple consecutive trivia runs', "import /* a */ /* b */ // c\n'./ks188-orphan.test.mjs';"],
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [{ from: KS188_IMPORTER, to: KS188_ORPHAN }],
+      `${name}: must yield exactly one edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('valid comment trivia around the star, named clause, `from`, and specifier of static re-exports is exactly one edge', () => {
+  for (const [name, source] of [
+    ['block trivia before the star', "export /* t */ * from './ks188-orphan.test.mjs';"],
+    ['block trivia after the star', "export * /* t */ from './ks188-orphan.test.mjs';"],
+    ['line trivia after the star', "export * // t\nfrom './ks188-orphan.test.mjs';"],
+    ['block trivia around the namespace', "export * as /* t */ ns /* t */ from './ks188-orphan.test.mjs';"],
+    ['block trivia before `from` in a star re-export', "export * from /* t */ './ks188-orphan.test.mjs';"],
+    ['line trivia before `from` in a star re-export', "export * from // t\n'./ks188-orphan.test.mjs';"],
+    ['block trivia in the named clause and before `from`', "export { a /* t */ , b /* } */ } /* t */ from './ks188-orphan.test.mjs';"],
+    ['line trivia in the named clause', "export { a // t\n, b }\nfrom './ks188-orphan.test.mjs';"],
+    ['block trivia before `from` in a named re-export', "export { a } from /* t */ './ks188-orphan.test.mjs';"],
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [{ from: KS188_IMPORTER, to: KS188_ORPHAN }],
+      `${name}: must yield exactly one edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('comment trivia does not make local exports, bare specifiers, or untracked targets into routes', () => {
+  for (const [name, source] of [
+    ['block trivia before a local export', "export /* t */ const x = 1;"],
+    ['line trivia before a local export', "export // t\nconst x = 1;"],
+    ['block trivia before a bare star re-export specifier', "export * from /* t */ 'pkg';"],
+    ['block trivia in a local named export list', "export { a /* t */ , b // t\n };"],
+    ['block trivia before a bare import specifier', "import /* t */ 'pkg';"],
+    ['block trivia before an untracked import specifier', "import /* t */ './not-a-tracked-suite.mjs';"],
+    ['block trivia before an untracked re-export specifier', "export { a } from /* t */ './not-a-tracked-suite.mjs';"],
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('import/re-export-looking tokens and tracked-suite paths inside declaration trivia create no extra edge', () => {
+  // The trivia content is comment content, never a route: import- and re-export-looking
+  // bytes, including a second copy of the tracked specifier, stay inside the comment and
+  // the declaration still yields exactly one edge.
+  for (const source of [
+    "import /* import './ks188-orphan.test.mjs'; */ './ks188-orphan.test.mjs';",
+    "import /* export * from './ks188-orphan.test.mjs'; */ child from './ks188-orphan.test.mjs';",
+    "export * from /* import './ks188-orphan.test.mjs'; export { a } from './ks188-orphan.test.mjs'; */ './ks188-orphan.test.mjs';",
+    "export { a /* import './ks188-orphan.test.mjs' */ , b } from './ks188-orphan.test.mjs';",
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [{ from: KS188_IMPORTER, to: KS188_ORPHAN }],
+      `${source}: must yield exactly one edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${source}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('comments outside executable declarations remain non-routes', () => {
+  for (const source of [
+    "// import './ks188-orphan.test.mjs';\nconst x = 1;",
+    "/* import './ks188-orphan.test.mjs'; */\nconst x = 1;",
+    "const x = 1; // import './ks188-orphan.test.mjs';",
+    "export const x = 1; /* export * from './ks188-orphan.test.mjs'; */",
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${source}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${source}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('edge multiplicity remains exact across declaration trivia', () => {
+  // Two real declarations carrying trivia yield exactly two edges: the trivia neither
+  // duplicates nor drops an edge.
+  const scanned = scan(
+    "import /* a */ './ks188-orphan.test.mjs';\nimport // b\n'./ks188-orphan.test.mjs';\n",
+  );
+  assert.deepStrictEqual(scanned.edges, [
+    { from: KS188_IMPORTER, to: KS188_ORPHAN },
+    { from: KS188_IMPORTER, to: KS188_ORPHAN },
+  ]);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('an unterminated declaration-trivia block comment fails closed, naming the importer and reason', () => {
+  for (const [name, source, declaration] of [
+    ['import declaration', "import /* t './ks188-orphan.test.mjs';", 'static import declaration'],
+    ['import binding region', "import child from /* t './ks188-orphan.test.mjs';", 'static import declaration'],
+    ['star re-export after `from`', "export * from /* t './ks188-orphan.test.mjs';", 'static re-export declaration'],
+    ['named re-export clause', "export { a /* t './ks188-orphan.test.mjs'; } from './ks188-orphan.test.mjs';", 'static re-export declaration'],
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.equal(
+      scanned.violations.length,
+      1,
+      `${name}: ${JSON.stringify(scanned.violations)}`,
+    );
+    assert.equal(scanned.violations[0].path, KS188_IMPORTER);
+    assert.match(scanned.violations[0].reason, /unterminated block comment/, name);
+    assert.match(scanned.violations[0].reason, new RegExp(declaration), name);
+  }
+});
+
+test('a malformed or ambiguous declaration with comment trivia is never promoted to a route', () => {
+  for (const [name, source, reasonPattern] of [
+    ['template specifier after trivia', 'import /* t */ `./ks188-orphan.test.mjs`;', /ambiguous/],
+    ['template re-export specifier after trivia', 'export * from /* t */ `./ks188-orphan.test.mjs`;', /ambiguous/],
+    ['unterminated quoted specifier after trivia', "import /* t */ './ks188-orphan.test.mjs", /unterminated/],
+    ['unterminated quoted re-export specifier after trivia', "export * from /* t */ './ks188-orphan.test.mjs", /unterminated/],
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.equal(
+      scanned.violations.length,
+      1,
+      `${name}: ${JSON.stringify(scanned.violations)}`,
+    );
+    assert.equal(scanned.violations[0].path, KS188_IMPORTER);
+    assert.match(
+      scanned.violations[0].reason,
+      reasonPattern,
       `${name} reason must name the failure: ${scanned.violations[0].reason}`,
     );
   }

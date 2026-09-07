@@ -56,6 +56,17 @@
 // or regex literals yield no edge; a malformed or ambiguous re-export construct targeting
 // a tracked suite fails closed with a diagnostic naming the importer and reason.
 //
+// CI-TOPOLOGY-07 (KaleidoSphere issue #192) — executable routes across comment trivia:
+// the same scanner now treats valid JavaScript line and block comment trivia inside an
+// executable static import or re-export declaration as declaration trivia. Trivia
+// between `import` and the binding or specifier, inside a named clause, and around `*`,
+// `as ns`, `from`, or the literal specifier of a re-export preserves the exactly-one
+// edge for a literal relative specifier resolving to a tracked suite, and import- or
+// re-export-looking bytes (including tracked-suite paths) inside that trivia are comment
+// content, never routes. An unterminated block comment inside declaration trivia fails
+// closed with a diagnostic naming the importer and reason, and a malformed or ambiguous
+// declaration is never promoted to a route.
+//
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -387,8 +398,8 @@ export function formatSuiteIdentityViolations(violations) {
   return violations.map((violation) => `${violation.path}: ${violation.reason}`).join('; ');
 }
 
-// CI-TOPOLOGY-05 (issue #188) / CI-TOPOLOGY-06 (issue #190) — static module route
-// scanner.
+// CI-TOPOLOGY-05 (issue #188) / CI-TOPOLOGY-06 (issue #190) / CI-TOPOLOGY-07 (issue
+// #192) — static module route scanner.
 //
 // staticTestModuleRoutes derives the executable static test-to-test module routes for
 // one importer file by scanning its source with a deterministic lexical state machine
@@ -400,8 +411,13 @@ export function formatSuiteIdentityViolations(violations) {
 // literals never create an edge, and a dynamic import(...) or import.meta never creates an
 // edge. A local export without a `from` clause (export const/function/class/default, or
 // export { ... } without `from`), a bare (non-relative) specifier, and an untracked target
-// create no edge. Malformed/unterminated lexical input (an unterminated block comment,
-// quoted string, template literal, or regex literal) and an ambiguous import/re-export-
+// create no edge. Valid line/block comment trivia inside the declaration itself (between
+// `import` and the binding or specifier, inside a named clause, and around `*`, `as ns`,
+// `from`, or the specifier of a re-export) is declaration trivia, never route content:
+// the declaration still yields exactly one edge and the comment bytes create none.
+// Malformed/unterminated lexical input (an unterminated block comment — including one
+// inside declaration trivia — an unterminated quoted string, template literal, or regex
+// literal) and an ambiguous import/re-export-
 // like construct targeting a tracked test suite (a backtick/template specifier where a
 // static module declaration requires a single/double-quoted string) fail closed with a
 // diagnostic naming the importer and reason — a route is never silently created or
@@ -501,13 +517,48 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
     return text.slice(k, e);
   };
 
+  // Skip one line or block comment that begins at index k (text[k] === '/'). Returns
+  // { kind: 'ok', end } where end is just past the comment — a line comment ends at its
+  // newline or at end of input, both of which terminate it — or { kind: 'unterminated',
+  // end: n } when a block comment never terminates.
+  const skipCommentAt = (k) => {
+    if (text[k + 1] === '/') {
+      let e = k + 2;
+      while (e < n && text[e] !== '\n') e += 1;
+      return { kind: 'ok', end: e < n ? e + 1 : n };
+    }
+    let e = k + 2;
+    while (e < n && !(text[e] === '*' && text[e + 1] === '/')) e += 1;
+    if (e >= n) return { kind: 'unterminated', end: n };
+    return { kind: 'ok', end: e + 2 };
+  };
+
+  // Skip whitespace and comment trivia (valid JavaScript declaration trivia) beginning
+  // at index k. Returns { kind: 'ok', end } or { kind: 'unterminated-block-comment',
+  // end: n } when a block comment inside the trivia never terminates.
+  const skipTrivia = (k) => {
+    let e = k;
+    for (;;) {
+      while (e < n && LEX_WS.includes(text[e])) e += 1;
+      if (e < n && text[e] === '/' && (text[e + 1] === '/' || text[e + 1] === '*')) {
+        const comment = skipCommentAt(e);
+        if (comment.kind === 'unterminated') return { kind: 'unterminated-block-comment', end: n };
+        e = comment.end;
+        continue;
+      }
+      return { kind: 'ok', end: e };
+    }
+  };
+
   // Given that the `from` keyword begins at index k, read the module specifier that
-  // follows it (which must be a quoted literal in a static re-export). Returns the
-  // readQuotedSpecifier result, or { kind: 'none' } when `from` is not directly followed
-  // by a literal specifier.
+  // follows it (which must be a quoted literal in a static re-export, possibly after
+  // comment trivia). Returns the readQuotedSpecifier result, { kind: 'none' } when
+  // `from` is not followed by a literal specifier, or { kind: 'unterminated-block-
+  // comment' } when a trivia block comment never terminates.
   const readSpecifierAfterFrom = (k) => {
-    let e = k + 4; // 'from'.length
-    while (e < n && LEX_WS.includes(text[e])) e += 1;
+    const trivia = skipTrivia(k + 4); // 'from'.length
+    if (trivia.kind === 'unterminated-block-comment') return trivia;
+    const e = trivia.end;
     if (e >= n) return { kind: 'none', end: n };
     const c = text[e];
     if (c === "'" || c === '"' || c === '`') return readQuotedSpecifier(e);
@@ -515,17 +566,24 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
   };
 
   // Parse the static import declaration that begins just after the `import` keyword, at
-  // index j. Only a strict binding region (identifiers, { } * , whitespace, and the word
-  // `from`) may precede the specifier quote — any other character means this is not a
-  // static import (dynamic import(...), import.meta, or other syntax), which yields no
-  // edge. A backtick specifier is ambiguous: it is a template literal, not the
-  // single/double-quoted string a static import requires.
+  // index j. Only a strict binding region (identifiers, { } * , whitespace, comment
+  // trivia, and the word `from`) may precede the specifier quote — any other character
+  // means this is not a static import (dynamic import(...), import.meta, or other
+  // syntax), which yields no edge. A backtick specifier is ambiguous: it is a template
+  // literal, not the single/double-quoted string a static import requires. An
+  // unterminated block comment inside the declaration trivia fails closed.
   const parseStaticImport = (j) => {
     let k = j;
     while (k < n) {
       const ch = text[k];
       if (ch === "'" || ch === '"' || ch === '`') return readQuotedSpecifier(k);
       if (ch === ';') return { kind: 'none', end: k + 1 };
+      if (ch === '/' && (text[k + 1] === '/' || text[k + 1] === '*')) {
+        const trivia = skipCommentAt(k);
+        if (trivia.kind === 'unterminated') return { kind: 'unterminated-block-comment', end: n };
+        k = trivia.end;
+        continue;
+      }
       if (LEX_WS.includes(ch) || LEX_WORD.test(ch) || ch === '{' || ch === '}' || ch === '*' || ch === ',') {
         k += 1;
         continue;
@@ -538,39 +596,58 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
   // Parse the static export declaration that begins just after the `export` keyword, at
   // index j. Only a star re-export (`export * from '...'`, `export * as ns from '...'`)
   // or a named re-export (`export { ... } from '...'`) carries a module route: the
-  // `from` keyword must directly precede a literal specifier. A local export without a
-  // `from` clause (export const/function/class/default, or export { ... } without `from`)
-  // yields no edge. A backtick specifier after `from` is ambiguous; an unterminated
-  // specifier after `from` fails closed.
+  // `from` keyword must directly precede a literal specifier (comment trivia between
+  // the declaration's tokens is allowed). A local export without a
+  // `from` clause (export const/function/class/default, or export { ... } without
+  // `from`) yields no edge. A backtick specifier after `from` is ambiguous; an
+  // unterminated specifier after `from` fails closed; an unterminated block comment
+  // inside the declaration trivia fails closed.
   const parseStaticExport = (j) => {
-    let k = j;
-    while (k < n && LEX_WS.includes(text[k])) k += 1;
+    const head = skipTrivia(j);
+    if (head.kind === 'unterminated-block-comment') return head;
+    let k = head.end;
     if (k >= n) return { kind: 'none', end: k };
     const ch = text[k];
     if (ch === '*') {
       // Star re-export: `export * from '...'` or `export * as ns from '...'`.
-      k += 1;
-      while (k < n && LEX_WS.includes(text[k])) k += 1;
+      const afterStar = skipTrivia(k + 1);
+      if (afterStar.kind === 'unterminated-block-comment') return afterStar;
+      k = afterStar.end;
       if (readWordAt(k) === 'as') {
-        k += 2;
-        while (k < n && LEX_WS.includes(text[k])) k += 1;
+        const afterAs = skipTrivia(k + 2);
+        if (afterAs.kind === 'unterminated-block-comment') return afterAs;
+        k = afterAs.end;
         if (k < n && LEX_WORD.test(text[k])) {
           let e = k;
           while (e < n && LEX_WORD.test(text[e])) e += 1;
           k = e;
         }
-        while (k < n && LEX_WS.includes(text[k])) k += 1;
+        const beforeFrom = skipTrivia(k);
+        if (beforeFrom.kind === 'unterminated-block-comment') return beforeFrom;
+        k = beforeFrom.end;
       }
       if (readWordAt(k) === 'from') return readSpecifierAfterFrom(k);
       return { kind: 'none', end: k };
     }
     if (ch === '{') {
-      // Named re-export: `export { ... } from '...'`. Scan the named list to its closing
-      // '}', then require the `from` keyword directly before a literal specifier.
+      // Named re-export: `export { ... } from '...'`. Scan the named list, skipping any
+      // comment trivia, to its closing '}', then require the `from` keyword directly
+      // before a literal specifier.
       k += 1;
-      while (k < n && text[k] !== '}') k += 1;
-      if (k < n) k += 1; // just past the closing '}'
-      while (k < n && LEX_WS.includes(text[k])) k += 1;
+      while (k < n && text[k] !== '}') {
+        if (text[k] === '/' && (text[k + 1] === '/' || text[k + 1] === '*')) {
+          const trivia = skipCommentAt(k);
+          if (trivia.kind === 'unterminated') return { kind: 'unterminated-block-comment', end: n };
+          k = trivia.end;
+          continue;
+        }
+        k += 1;
+      }
+      if (k >= n) return { kind: 'none', end: n };
+      k += 1; // just past the closing '}'
+      const afterBrace = skipTrivia(k);
+      if (afterBrace.kind === 'unterminated-block-comment') return afterBrace;
+      k = afterBrace.end;
       if (readWordAt(k) === 'from') return readSpecifierAfterFrom(k);
       // Local export `export { ... }` without `from`: no module route.
       return { kind: 'none', end: k };
@@ -617,6 +694,11 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
               path: importer,
               reason: `unterminated ${result.quote === "'" ? 'single-quoted' : 'double-quoted'} string in a static import specifier`,
             });
+          } else if (result.kind === 'unterminated-block-comment') {
+            violations.push({
+              path: importer,
+              reason: 'unterminated block comment in a static import declaration',
+            });
           } else if (result.kind === 'ambiguous') {
             const resolved = resolveRelativeSpecifier(importer, result.specifier);
             if (resolved !== null && trackedSet.has(resolved)) {
@@ -640,6 +722,11 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
             violations.push({
               path: importer,
               reason: `unterminated ${result.quote === "'" ? 'single-quoted' : 'double-quoted'} string in a static re-export specifier`,
+            });
+          } else if (result.kind === 'unterminated-block-comment') {
+            violations.push({
+              path: importer,
+              reason: 'unterminated block comment in a static re-export declaration',
             });
           } else if (result.kind === 'ambiguous') {
             const resolved = resolveRelativeSpecifier(importer, result.specifier);
