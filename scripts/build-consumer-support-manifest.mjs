@@ -358,9 +358,26 @@ function verifySupportShape(support) {
   if (typeof support.reasonCodes?.unknown !== 'string' || support.reasonCodes.unknown.length === 0) fail('CONSUMER_SUPPORT_MANIFEST_REASON_CODE_DENIED');
 }
 
-// CLI: regenerate the committed baseline. Runs only when invoked directly; importing
-// this module has no side effects.
-async function main() {
+// CLI: by default, regenerate the committed baseline at the current head. With
+// `--check`, run the build gate non-mutatingly: prove the committed baseline is
+// byte-reproducible from the live runtime at the head the file records and verifies
+// VERIFIED against the live runtime; any drift fails with a specific code. Runs only
+// when invoked directly; importing this module has no side effects.
+async function main(check = false) {
+  if (check) {
+    const baseline = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
+    const recordedHead = baseline?.bindings?.kaleidosphereHead;
+    if (recordedHead === null || typeof recordedHead !== 'object'
+      || typeof recordedHead.commitOid !== 'string' || typeof recordedHead.treeOid !== 'string') fail('CONSUMER_SUPPORT_MANIFEST_CHECK_HEAD_UNRESOLVED');
+    const { config, configSha256 } = buildConfigIdentity();
+    const fresh = await buildConsumerSupportManifest({ heads: recordedHead, config });
+    if (fresh.integrity.digest !== baseline?.integrity?.digest) fail('CONSUMER_SUPPORT_MANIFEST_CHECK_DRIFT_DENIED');
+    await verifyConsumerSupportManifest(baseline, { expectedHead: recordedHead, configSha256, strict: true });
+    console.log('consumer-support-manifest build gate: VERIFIED');
+    console.log(`  head:      ${recordedHead.commitOid}`);
+    console.log(`  integrity: ${baseline.integrity.digest}`);
+    return;
+  }
   const heads = gitHeads();
   const { config } = buildConfigIdentity();
   const manifest = await buildConsumerSupportManifest({ heads, config });
@@ -376,7 +393,7 @@ async function main() {
 
 const isDirectRun = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 if (isDirectRun) {
-  main().catch((error) => {
+  main(process.argv.includes('--check')).catch((error) => {
     console.error(`CONSUMER_SUPPORT_MANIFEST_BUILD_DENIED ${error.code ?? error.message}`);
     process.exit(1);
   });
