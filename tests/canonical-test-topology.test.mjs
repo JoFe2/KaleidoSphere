@@ -33,6 +33,16 @@
 //   offending path/record and reason. A suite-shaped symlink or special-mode entry
 //   therefore fails closed instead of masquerading as a tracked blob.
 //
+// CI-TOPOLOGY-05 (KaleidoSphere issue #188) — pseudo-import routes: the live
+//   test-to-test edge derivation is bound to a pure deterministic lexical scanner
+//   (staticTestImportRoutes in scripts/check-canonical-test-topology.mjs) instead of
+//   a raw-byte regex, so routes derive only from executable static import
+//   declarations: import-looking bytes inside line comments, block comments,
+//   single/double-quoted strings, template literal text, or regex literals never
+//   create an edge, and malformed/unterminated lexical input or an ambiguous
+//   import-like construct targeting a tracked test suite fails closed with a
+//   diagnostic naming the importer and reason.
+//
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -41,7 +51,6 @@ import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -49,8 +58,10 @@ import {
   canonicalTestSuppressionFlags,
   canonicalTestTopology,
   formatCommandViolations,
+  formatImportRouteViolations,
   formatSuiteIdentityViolations,
   formatTopologyViolations,
+  staticTestImportRoutes,
   trackedSuiteIdentities,
 } from '../scripts/check-canonical-test-topology.mjs';
 
@@ -63,11 +74,50 @@ const SLICE_FILES = Object.freeze([
 ]);
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
-// Static import statements (side-effect or bound, single-line or multi-line). Only
-// relative specifiers that resolve to a tracked tests/**/*.test.mjs file form topology
-// edges; everything else (node: builtins, service modules, fixtures) is outside the
-// test-reachability graph.
-const STATIC_IMPORT = /(?:^|\n)\s*import\s+(?:[\w$\s,{}*]+?\sfrom\s+)?['"]([^'"]+)['"]/g;
+// CI-TOPOLOGY-05 (issue #188): test-to-test edges are derived by the pure
+// deterministic lexical scanner (staticTestImportRoutes), never by a raw-byte regex —
+// import-looking bytes inside line comments, block comments, quoted strings, template
+// literal text, or regex literals cannot create a pseudo-route, and malformed or
+// unterminated lexical input or an ambiguous import-like construct targeting a tracked
+// suite fails closed with a diagnostic naming the importer and reason.
+async function staticImportEdges(trackedSuites) {
+  const trackedSet = new Set(trackedSuites);
+  const edges = [];
+  const violations = [];
+  for (const file of trackedSuites) {
+    const source = await readFile(file, 'utf8');
+    const scanned = staticTestImportRoutes({ importer: file, source, trackedSuites: trackedSet });
+    edges.push(...scanned.edges);
+    violations.push(...scanned.violations);
+  }
+  return { edges, violations };
+}
+
+async function realTopology() {
+  const [pkg, records] = await Promise.all([
+    readFile('package.json', 'utf8').then(JSON.parse),
+    Promise.resolve(trackedSuiteRecords()),
+  ]);
+  // CI-TOPOLOGY-04 (issue #186): bind the live topology to machine-readable Git index
+  // identity and prove every tracked suite is a regular non-executable 100644 blob
+  // BEFORE its source is read or its import edges are derived — a suite-shaped symlink
+  // or special-mode entry fails closed here.
+  const identity = trackedSuiteIdentities(records);
+  const tracked = identity.suites;
+  const directRoots = canonicalDirectRoots(pkg);
+  // CI-TOPOLOGY-05 (issue #188): the test-to-test edges are derived by the
+  // pseudo-import-aware scanner before any route counting; its fail-closed
+  // diagnostics are bound to the live derivation below.
+  const { edges: importEdges, violations: importRouteViolations } = await staticImportEdges(tracked);
+  return {
+    tracked,
+    identity,
+    directRoots,
+    importEdges,
+    importRouteViolations,
+    topology: canonicalTestTopology({ trackedTestFiles: tracked, directRoots, importEdges }),
+  };
+}
 
 // CI-TOPOLOGY-04 (issue #186): machine-readable Git index identity for the tracked
 // suite set. `git ls-files -s` reports each index entry as "<mode> <object> <stage>
@@ -119,49 +169,6 @@ function canonicalDirectRoots(pkg) {
   return canonicalTestCommand(pkg.scripts.test.split(/\s+/)).roots;
 }
 
-function resolveSpec(importer, spec) {
-  const dir = importer.slice(0, importer.lastIndexOf('/'));
-  return path.posix.join(dir, spec);
-}
-
-async function staticImportEdges(trackedSuites) {
-  const trackedSet = new Set(trackedSuites);
-  const edges = [];
-  for (const file of trackedSuites) {
-    const source = await readFile(file, 'utf8');
-    for (const match of source.matchAll(STATIC_IMPORT)) {
-      const spec = match[1];
-      if (!spec.startsWith('./') && !spec.startsWith('../')) continue;
-      const resolved = resolveSpec(file, spec);
-      if (resolved === file || !trackedSet.has(resolved)) continue;
-      edges.push({ from: file, to: resolved });
-    }
-  }
-  return edges;
-}
-
-async function realTopology() {
-  const [pkg, records] = await Promise.all([
-    readFile('package.json', 'utf8').then(JSON.parse),
-    Promise.resolve(trackedSuiteRecords()),
-  ]);
-  // CI-TOPOLOGY-04 (issue #186): bind the live topology to machine-readable Git index
-  // identity and prove every tracked suite is a regular non-executable 100644 blob
-  // BEFORE its source is read or its import edges are derived — a suite-shaped symlink
-  // or special-mode entry fails closed here.
-  const identity = trackedSuiteIdentities(records);
-  const tracked = identity.suites;
-  const directRoots = canonicalDirectRoots(pkg);
-  const importEdges = await staticImportEdges(tracked);
-  return {
-    tracked,
-    identity,
-    directRoots,
-    importEdges,
-    topology: canonicalTestTopology({ trackedTestFiles: tracked, directRoots, importEdges }),
-  };
-}
-
 function assertSingleViolation(topology, expectedPath, reasonPattern) {
   assert.equal(
     topology.violations.length,
@@ -173,7 +180,7 @@ function assertSingleViolation(topology, expectedPath, reasonPattern) {
 }
 
 test('every tracked test suite has exactly one route from the canonical npm test roots', async () => {
-  const { tracked, identity, directRoots, importEdges, topology } = await realTopology();
+  const { tracked, identity, directRoots, importEdges, importRouteViolations, topology } = await realTopology();
   // CI-TOPOLOGY-04 (issue #186): every tracked suite is bound to a regular
   // non-executable 100644 Git blob BEFORE its source is read or its import edges are
   // derived — the machine-readable index identity fails closed on a symlink or
@@ -182,6 +189,16 @@ test('every tracked test suite has exactly one route from the canonical npm test
     identity.ok,
     true,
     `tracked-suite identity violations: ${formatSuiteIdentityViolations(identity.violations)}`,
+  );
+  // CI-TOPOLOGY-05 (issue #188): the test-to-test edge derivation is bound to the
+  // pseudo-import-aware lexical scanner before route counting — malformed or
+  // unterminated lexical input, or an ambiguous import-like construct targeting a
+  // tracked suite, fails closed here instead of silently creating or dropping a
+  // route; each diagnostic names the importer and reason.
+  assert.deepStrictEqual(
+    importRouteViolations,
+    [],
+    `static import-route violations: ${formatImportRouteViolations(importRouteViolations)}`,
   );
   assert.deepStrictEqual(
     topology.violations,
@@ -571,4 +588,212 @@ test('a non-suite tracked entry fails closed, naming the offending path and reas
   const violation = identity.violations.find((candidate) => candidate.path === 'tests/smoke.sh');
   assert.ok(violation, formatSuiteIdentityViolations(identity.violations));
   assert.match(violation.reason, /suite shape|outside/);
+});
+
+// CI-TOPOLOGY-05 (KaleidoSphere issue #188) — pseudo-import routes: the live
+// test-to-test edge derivation is bound to a pure deterministic lexical scanner
+// (staticTestImportRoutes) instead of a raw-byte regex, so routes derive only from
+// executable static import declarations. Import-looking bytes inside comments, strings,
+// template literals, or regex literals never create an edge, and malformed or ambiguous
+// import-like constructs targeting a tracked suite fail closed.
+
+const KS188_IMPORTER = Object.freeze('tests/ks188-importer.test.mjs');
+const KS188_ORPHAN = Object.freeze('tests/ks188-orphan.test.mjs');
+
+function scan(source) {
+  return staticTestImportRoutes({
+    importer: KS188_IMPORTER,
+    source,
+    trackedSuites: new Set([KS188_ORPHAN, KS188_IMPORTER]),
+  });
+}
+
+test('import-looking bytes inside a line or block comment never create an edge', () => {
+  const cases = [
+    ['line comment', `// import './ks188-orphan.test.mjs';`],
+    ['block comment', '/* import "./ks188-orphan.test.mjs"; */'],
+  ];
+  for (const [name, source] of cases) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('import-looking bytes inside a quoted string never create an edge', () => {
+  const cases = [
+    ["single-quoted string", "const spec = './ks188-orphan.test.mjs';"],
+    ["double-quoted string", 'const spec = "./ks188-orphan.test.mjs";'],
+    ['import inside a string', "const text = \"import './ks188-orphan.test.mjs';\";"],
+  ];
+  for (const [name, source] of cases) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name} must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('import-looking bytes inside template literal text never create an edge', () => {
+  const source = 'const spec = `./ks188-orphan.test.mjs`;';
+  const scanned = scan(source);
+  assert.deepStrictEqual(scanned.edges, []);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('a real static side-effect import of a tracked suite is exactly one edge', () => {
+  const scanned = scan("import './ks188-orphan.test.mjs';");
+  assert.deepStrictEqual(scanned.edges, [
+    { from: KS188_IMPORTER, to: KS188_ORPHAN },
+  ]);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('a real static named import from a tracked suite is exactly one edge', () => {
+  const scanned = scan("import { test } from './ks188-orphan.test.mjs';");
+  assert.deepStrictEqual(scanned.edges, [
+    { from: KS188_IMPORTER, to: KS188_ORPHAN },
+  ]);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('a dynamic import and import.meta never create an edge', () => {
+  for (const source of ["await import('./ks188-orphan.test.mjs');", 'const m = import.meta.url;']) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${source} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(scanned.violations, []);
+  }
+});
+
+test('a regex literal containing import text never creates an edge', () => {
+  const scanned = scan("const re = /import '.*ks188-orphan.test.mjs'/;");
+  assert.deepStrictEqual(scanned.edges, []);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('an import of an untracked relative specifier is not a tracked edge', () => {
+  const scanned = scan("import './not-a-tracked-suite.mjs';");
+  assert.deepStrictEqual(scanned.edges, []);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('an unterminated lexical construct fails closed, naming the importer and reason', () => {
+  const cases = [
+    ['unterminated template', 'const spec = `./ks188-orphan.test.mjs;'],
+    ['unterminated block comment', '/* import "./ks188-orphan.test.mjs";'],
+    ['unterminated single-quoted string', "const spec = './ks188-orphan.test.mjs;"],
+    ['unterminated double-quoted string', 'const spec = "./ks188-orphan.test.mjs;'],
+  ];
+  for (const [name, source] of cases) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name} must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.equal(
+      scanned.violations.length,
+      1,
+      `${name}: ${JSON.stringify(scanned.violations)}`,
+    );
+    assert.equal(scanned.violations[0].path, KS188_IMPORTER);
+    assert.match(
+      scanned.violations[0].reason,
+      /unterminated|unterminated/,
+      `${name} reason must name the failure: ${scanned.violations[0].reason}`,
+    );
+  }
+});
+
+test('an ambiguous import-like construct targeting a tracked suite fails closed, naming the importer and reason', () => {
+  // A backtick-quoted import specifier is a template-literal specifier, not the
+  // single/double-quoted string form a static import declaration requires; it cannot be
+  // resolved deterministically and must fail closed rather than silently creating or
+  // dropping a route.
+  const scanned = scan('import `./ks188-orphan.test.mjs`;');
+  assert.deepStrictEqual(
+    scanned.edges,
+    [],
+    `ambiguous construct must not create an edge: ${JSON.stringify(scanned.edges)}`,
+  );
+  assert.equal(scanned.violations.length, 1, JSON.stringify(scanned.violations));
+  assert.equal(scanned.violations[0].path, KS188_IMPORTER);
+  assert.match(
+    scanned.violations[0].reason,
+    /ambiguous/,
+    `reason must name the ambiguity: ${scanned.violations[0].reason}`,
+  );
+});
+
+test('an otherwise-orphan tracked suite stays unreachable when its only apparent route is in a comment, string, or template literal', () => {
+  // The importer is itself a tracked direct root; the orphan is reachable only through
+  // the apparent import, which is non-executable. Across every non-executable form the
+  // derived edge set is empty, so the orphan remains unreachable (0 routes).
+  for (const source of [
+    "// import './ks188-orphan.test.mjs';",
+    '/* import "./ks188-orphan.test.mjs"; */',
+    "const spec = './ks188-orphan.test.mjs';",
+    'const spec = "./ks188-orphan.test.mjs";',
+    'const spec = `./ks188-orphan.test.mjs`;',
+  ]) {
+    const scanned = scan(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `non-executable apparent route must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    const topology = canonicalTestTopology({
+      trackedTestFiles: [KS188_IMPORTER, KS188_ORPHAN],
+      directRoots: [KS188_IMPORTER],
+      importEdges: scanned.edges,
+    });
+    const orphan = topology.violations.find((candidate) => candidate.path === KS188_ORPHAN);
+    assert.ok(
+      orphan,
+      `orphan must remain unreachable: ${formatTopologyViolations(topology.violations)}`,
+    );
+    assert.match(orphan.reason, /unreachable/);
+  }
+});
+
+test('the live derived test-to-test edge set is exactly the intentional source-map -> business-bi-epic-closure route', async () => {
+  const { importEdges, importRouteViolations } = await realTopology();
+  assert.deepStrictEqual(
+    importRouteViolations,
+    [],
+    `static import-route violations: ${formatImportRouteViolations(importRouteViolations)}`,
+  );
+  assert.deepStrictEqual(importEdges, [
+    { from: INTENTIONAL_IMPORTED_PARENT, to: INTENTIONAL_IMPORTED_SUITE },
+  ]);
+});
+
+test('formatImportRouteViolations renders importer-and-reason diagnostics', () => {
+  const rendered = formatImportRouteViolations([
+    { path: 'tests/alpha.test.mjs', reason: 'unterminated template literal' },
+    { path: 'tests/beta.test.mjs', reason: 'ambiguous import-like construct' },
+  ]);
+  assert.equal(
+    rendered,
+    'tests/alpha.test.mjs: unterminated template literal; tests/beta.test.mjs: ambiguous import-like construct',
+  );
 });
