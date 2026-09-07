@@ -128,6 +128,8 @@ const C1_CERTIFICATION_TEST_REGISTRATION =
   ' tests/postgresql-c1-certification.test.mjs';
 const PRODUCT_DISPATCH_TEST_REGISTRATION =
   ' tests/postgresql-product-dispatch.test.mjs';
+const K4C_CI_TEST_REGISTRATION =
+  ' tests/release/k4c-bounded-external-wait.test.mjs tests/release/k4c-codex-clean-boundary.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -484,6 +486,7 @@ function reconstructFrozenReleasePackage(packageBytes) {
     KS073_EPIC_CLOSURE_TEST_REGISTRATION,
     C1_CERTIFICATION_TEST_REGISTRATION,
     PRODUCT_DISPATCH_TEST_REGISTRATION,
+    K4C_CI_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),

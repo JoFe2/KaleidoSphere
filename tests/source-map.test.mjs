@@ -74,6 +74,28 @@ const postgresqlProductDispatchSuccessor = Object.freeze(
   'tests/postgresql-structure-scan.test.mjs',
 );
 
+// The K4c canonical-CI source-local safety regressions (KaleidoSphere issue #177): the two
+// previously omitted safety suites must be both content-addressed in the source map and
+// canonically registered exactly once, in deterministic codepoint order within the
+// release-test family. The predecessor/successor anchors pin each exact codepoint slot so
+// that removing, duplicating, or reordering either registration fails this regression.
+const k4cCiFamily = Object.freeze({
+  boundedExternalWait: 'tests/release/k4c-bounded-external-wait.test.mjs',
+  codexCleanBoundary: 'tests/release/k4c-codex-clean-boundary.test.mjs',
+});
+const k4cBoundedExternalWaitPredecessor = Object.freeze(
+  'tests/release/k4c-anonymous-directory-readback.test.mjs',
+);
+const k4cBoundedExternalWaitSuccessor = Object.freeze(
+  'tests/release/k4c-codex-clean-boundary.test.mjs',
+);
+const k4cCodexCleanBoundaryPredecessor = Object.freeze(
+  'tests/release/k4c-bounded-external-wait.test.mjs',
+);
+const k4cCodexCleanBoundarySuccessor = Object.freeze(
+  'tests/release/k4c-terminal-evidence-classifier.test.mjs',
+);
+
 const predecessorEvidenceSha256 = Object.freeze({
   'closure-audits/PORTFOLIO-KS146-ROOT-QS/exact-head-local-gate-receipt.json':
     '314459ef8ee132efb924c3aa95767127a94d20d91403747ac443b4706810c918',
@@ -167,7 +189,7 @@ test('the accepted #146 evidence bytes remain exact and outside the self-binding
   );
 });
 
-test('the PostgreSQL C1 and product-dispatch source-local families are content-addressed and the product-dispatch suite is registered once', async () => {
+test('the PostgreSQL and K4c source-local CI families are content-addressed and their suites are canonically registered once', async () => {
   const [pkg, sourceMap] = await Promise.all([
     readFile('package.json', 'utf8').then(JSON.parse),
     readFile('SOURCE-MAP.json', 'utf8').then(JSON.parse),
@@ -210,5 +232,41 @@ test('the PostgreSQL C1 and product-dispatch source-local families are content-a
     canonicalTests[slot + 1],
     postgresqlProductDispatchSuccessor,
     'successor must be the codepoint-sorted PostgreSQL structure-scan suite',
+  );
+  // The K4c CI safety pair is content-addressed and canonically registered exactly once,
+  // each at its deterministic codepoint slot within the release-test family, so removing,
+  // duplicating, or reordering either registration fails this regression.
+  for (const file of Object.values(k4cCiFamily)) {
+    assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
+    assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
+    assert.equal(
+      canonicalTests.filter((candidate) => candidate === file).length,
+      1,
+      file,
+    );
+  }
+  const k4cBoundedSlot = canonicalTests.indexOf(k4cCiFamily.boundedExternalWait);
+  assert.notEqual(k4cBoundedSlot, -1);
+  assert.equal(
+    canonicalTests[k4cBoundedSlot - 1],
+    k4cBoundedExternalWaitPredecessor,
+    'predecessor must be the codepoint-sorted anonymous directory readback suite',
+  );
+  assert.equal(
+    canonicalTests[k4cBoundedSlot + 1],
+    k4cBoundedExternalWaitSuccessor,
+    'successor must be the codepoint-sorted clean-boundary suite',
+  );
+  const k4cCleanBoundarySlot = canonicalTests.indexOf(k4cCiFamily.codexCleanBoundary);
+  assert.notEqual(k4cCleanBoundarySlot, -1);
+  assert.equal(
+    canonicalTests[k4cCleanBoundarySlot - 1],
+    k4cCodexCleanBoundaryPredecessor,
+    'predecessor must be the codepoint-sorted bounded external-wait suite',
+  );
+  assert.equal(
+    canonicalTests[k4cCleanBoundarySlot + 1],
+    k4cCodexCleanBoundarySuccessor,
+    'successor must be the codepoint-sorted terminal evidence classifier suite',
   );
 });
