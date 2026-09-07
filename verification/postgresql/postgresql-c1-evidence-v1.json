@@ -1,0 +1,144 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-c1-evidence/v1",
+  "profileId": "kaleidosphere-postgresql-c1-v1",
+  "profileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+  "release": {
+    "version": "0.26.0",
+    "manifestSha256": "eeff1a6dfe5d44742b41d493993af4d2db37950e8384587f790ef3decb0b65f9"
+  },
+  "binding": {
+    "productDescriptor": {
+      "engine": "postgresql",
+      "version": "v1",
+      "executor": "postgresql.run-queries",
+      "capability": "postgresql.read-only-session",
+      "evidence": "preflight.coverage-ledger",
+      "secretEnv": "CM_POSTGRESQL_PASSWORD",
+      "secretFileVariable": "POSTGRESQL_PASSWORD_FILE"
+    },
+    "deployment": {
+      "version": "16.10",
+      "majorVersion": "16",
+      "imageManifestDigest": "sha256:94f23d40fdaf5e60cb2fd8a98c22f02a7b8724949f310d95a0ddf075e8c8b208",
+      "transport": "loopback-only",
+      "deploymentClass": "disposable-clean-room"
+    },
+    "auth": {
+      "mode": "SCRAM-SHA-256",
+      "secretEnv": "CM_POSTGRESQL_PASSWORD",
+      "secretFileVariable": "POSTGRESQL_PASSWORD_FILE"
+    },
+    "principal": {
+      "roleName": "kaleidosphere_read_only_analyzer",
+      "access": "READ_ONLY",
+      "leastPrivilege": {
+        "superuser": false,
+        "createDatabase": false,
+        "createRole": false,
+        "replication": false,
+        "bypassRls": false,
+        "transactionReadOnly": true
+      }
+    },
+    "scope": {
+      "database": "ks_fixture",
+      "container": null,
+      "schemas": [
+        "public",
+        "reporting"
+      ]
+    },
+    "capabilities": [
+      "identity",
+      "schemas",
+      "relations",
+      "columns",
+      "constraints",
+      "dependencies"
+    ],
+    "nonCapabilities": [
+      "indexes",
+      "row-samples",
+      "stored-logic",
+      "profiling",
+      "mutation",
+      "c2"
+    ],
+    "config": {
+      "analyzeProfileSha256": "bda7372a6f04d9d588fb07443bf5aaf75495bbabdd37f36d5c27b6eaedd7f0c4",
+      "queryPackManifestSha256": "41c91552bc9e830113ba7f029cb333a4b85597afa392027b8c481c601bd3796e"
+    },
+    "fixtures": {
+      "syntheticFixtureSha256": "5df202bae748aa1742e1e7cac691eeb1a1581d6c229e05b76292a206b6be1a1b"
+    }
+  },
+  "productPath": {
+    "mode": "SYNTHETIC",
+    "dispatch": "REGULAR",
+    "engine": "postgresql",
+    "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+    "snapshotSha256": "badf9d2b0c57e5a237f9af6bef5d52ad8f648392ca9185edbd6954d8c2b5b8cc",
+    "readbackSha256": "0c1b8333a7de95418f1021be1e590d03d1ae0b04a36022e3ecaef73278bd6852",
+    "readbackByteStable": true,
+    "diskReadbackValidated": true,
+    "projectionDigests": {
+      "inventorySha256": "6938476f753ed51a7f1d890a6febb7b3eb7df25cb0014306de7bfe87f8a8cb60",
+      "relationshipsSha256": "f8eb9452b132c44b8d3a06d0565fd419d4e4ed684ea23686f7f61d7235025c36",
+      "coverageSha256": "05d2433b9482640eeabbdf36fc7853673d48a9393c427e63be6b954be6843a27"
+    },
+    "coverage": {
+      "allComplete": true,
+      "succeeded": 6,
+      "partial": 0,
+      "denied": 0,
+      "unsupported": 0,
+      "timeout": 0,
+      "error": 0
+    },
+    "counts": {
+      "preflight": 1,
+      "schemas": 2,
+      "relations": 3,
+      "columns": 6,
+      "constraints": 5,
+      "dependencies": 1
+    },
+    "categories": [
+      "columns",
+      "constraints",
+      "dependencies",
+      "preflight",
+      "relations",
+      "schemas"
+    ]
+  },
+  "failClosed": {
+    "badSecret": "DB_ANALYZE_CREDENTIAL_MISSING",
+    "scopeSubstitution": "DB_ANALYZE_SCOPE_OVERRIDE_DENIED",
+    "crossEngineSecretSubstitution": "DB_ANALYZE_SECRET_BINDING_MISMATCH",
+    "staleDescriptor": "DB_ANALYZE_DESCRIPTOR_STALE",
+    "rawRowSource": "DB_QUERY_ROW_SOURCE_DENIED",
+    "mutationStatement": "DB_QUERY_MUTATION_DENIED",
+    "readOnlySessionViolation": "DB_ANALYZE_PRINCIPAL_NOT_READ_ONLY",
+    "deniedMetadata": {
+      "state": "DENIED",
+      "visibility": "INVISIBLE",
+      "emptyInterpretation": "NOT_CLAIMED",
+      "coercedToSuccess": false
+    }
+  },
+  "realDisprovablePostgresql": {
+    "state": "BLOCKED_EXTERNAL",
+    "reason": "NO_REAL_DISPOSABLE_POSTGRESQL",
+    "ac01VerifiedLeastPrivilegePrincipal": "BLOCKED_EXTERNAL",
+    "ac02RealSourcePositiveRun": "BLOCKED_EXTERNAL",
+    "ac03RealNegativeMatrix": "BLOCKED_EXTERNAL"
+  },
+  "nonClaims": [
+    "C1 is certified only for the exact tested PostgreSQL 16.10 version, digest-pinned image, SCRAM-SHA-256 auth and loopback-only disposable-clean-room deployment named in the C1 profile.",
+    "No production, customer-data, HA, scale, performance, extension or all-PostgreSQL-versions/auth-modes claim; C2 is out of scope.",
+    "The certified structural categories are identity, schemas, relations, columns, constraints and dependencies; index enumeration is NOT a tested capability of this C1 structural pack and is not claimed.",
+    "Real-disposable-PostgreSQL execution (verified least-privilege principal connect and role readback, real-source positive run, and the live timeout/cancel/denied matrix) is BLOCKED_EXTERNAL and not proven by this source-local certificate."
+  ],
+  "certificateSha256": "e8bc492286179f9f01d12999ab70548b8153e59a4b2fd9b892d5fc8067e0f45f"
+}
