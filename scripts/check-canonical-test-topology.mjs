@@ -67,6 +67,20 @@
 // closed with a diagnostic naming the importer and reason, and a malformed or ambiguous
 // declaration is never promoted to a route.
 //
+// CI-TOPOLOGY-08 (KaleidoSphere issue #194) — escaped static module specifiers: a
+// valid ECMAScript \uNNNN escape inside a quoted executable static import or
+// re-export module specifier resolves to exactly one character of the specifier
+// before relative resolution, so an escaped spelling of a tracked relative path
+// yields the same exactly-one edge the real Node module loader executes (the #194
+// current-Main gap: Node executes an escaped side-effect import of a tracked child
+// while the scanner reported zero edges and zero violations for those same source
+// bytes). Escape-looking bytes in comments, ordinary strings, template text, and
+// regex literals remain non-routes, a decoded bare specifier or a decoded untracked
+// target remains a non-route, and edge multiplicity remains exact. A malformed,
+// truncated, or otherwise unsupported escape in such a declaration fails closed with
+// an importer-and-reason diagnostic when the specifier could still target a tracked
+// suite, rather than silently creating or dropping a route.
+//
 // Nonclaim: a clean report proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -422,6 +436,10 @@ export function formatSuiteIdentityViolations(violations) {
 // static module declaration requires a single/double-quoted string) fail closed with a
 // diagnostic naming the importer and reason — a route is never silently created or
 // dropped.
+// A valid \uNNNN escape in a quoted specifier resolves to exactly one character of the
+// specifier before relative resolution (CI-TOPOLOGY-08, issue #194), and a malformed,
+// truncated, or otherwise unsupported escape in such a specifier fails closed with an
+// importer-and-reason diagnostic when the specifier could still target a tracked suite.
 //
 // importer: repo-relative path of the file being scanned (its directory is derived
 //   arithmetically, so the scanner never touches fs).
@@ -442,6 +460,14 @@ const REGEX_PRECEDING_WORDS = Object.freeze(
   ]),
 );
 
+// CI-TOPOLOGY-08 (issue #194): escape decoding of quoted static module specifiers. The
+// only escape the bounded handler decodes is the valid ECMAScript \uNNNN form
+// (backslash, 'u', exactly four hex digits); every other escape byte is unsupported and
+// fails closed when the specifier could still target a tracked suite.
+const LEX_BACKSLASH = Object.freeze(String.fromCharCode(92));
+const HEX_DIGIT = /[0-9a-fA-F]/;
+const HEX4 = /^[0-9a-fA-F]{4}$/;
+
 // Resolve a relative specifier ('./x' or '../x') against the importer's directory, or
 // return null for a non-relative (bare) specifier. Segment arithmetic, no node:path.
 function resolveRelativeSpecifier(importer, specifier) {
@@ -456,6 +482,80 @@ function resolveRelativeSpecifier(importer, specifier) {
     out.push(segment);
   }
   return out.join('/');
+}
+
+// CI-TOPOLOGY-08 (issue #194) — decode the escape bytes of a quoted static module
+// specifier's raw text. The only escape this bounded handler decodes is the valid
+// ECMAScript \uNNNN form (backslash, 'u', exactly four hex digits), which resolves to
+// exactly one character of the specifier — the same character Node's module loader
+// uses when it resolves the same declaration. Any other escape byte (an unsupported
+// escape leader, a truncated or malformed \u form, an escaped backslash, or a
+// trailing lone backslash) is reported as invalid: the first offending escape is
+// returned as `escape`, and `pattern` is the specifier with exactly that escape
+// replaced by '?' (each unsupported escape is one unknown character; all other bytes
+// stay literal), for the fail-closed "could target a tracked suite" check. Returns
+// { status: 'ok', specifier } or { status: 'invalid', pattern, escape }.
+function decodeSpecifierEscapes(raw) {
+  let out = '';
+  let e = 0;
+  while (e < raw.length) {
+    const ch = raw[e];
+    if (ch !== LEX_BACKSLASH) { out += ch; e += 1; continue; }
+    const after = e + 1 < raw.length ? raw[e + 1] : '';
+    if (after === 'u') {
+      const hex = raw.slice(e + 2, e + 6);
+      if (HEX4.test(hex)) {
+        out += String.fromCharCode(parseInt(hex, 16));
+        e += 6;
+        continue;
+      }
+      // Truncated or malformed \u escape: count the hex digits actually present so the
+      // escape unit matches the bytes it claims.
+      let digits = 0;
+      while (e + 2 + digits < raw.length && HEX_DIGIT.test(raw[e + 2 + digits])) digits += 1;
+      const unit = 2 + digits;
+      return { status: 'invalid', pattern: out + '?' + raw.slice(e + unit), escape: raw.slice(e, e + unit) };
+    }
+    if (after === 'x') {
+      // \x is a valid ECMAScript string escape but not one this bounded handler
+      // decodes for module specifiers; unsupported.
+      let digits = 0;
+      while (e + 2 + digits < raw.length && HEX_DIGIT.test(raw[e + 2 + digits])) digits += 1;
+      const unit = 2 + digits;
+      return { status: 'invalid', pattern: out + '?' + raw.slice(e + unit), escape: raw.slice(e, e + unit) };
+    }
+    // Any other escape byte (including an escaped backslash and a trailing lone
+    // backslash): unsupported; the escape is at most these two bytes.
+    const unit = Math.min(2, raw.length - e);
+    return { status: 'invalid', pattern: out + '?' + raw.slice(e + unit), escape: raw.slice(e, e + unit) };
+  }
+  return { status: 'ok', specifier: out };
+}
+
+// The './'- or '../'-canonical relative form of `suite` as seen from `importer`'s
+// directory (segment arithmetic, no node:path), for the fail-closed "could target"
+// comparison. Returns '' when `suite` is not under the importer's directory tree.
+function relativeSpecifierTo(importer, suite) {
+  const lastSlash = importer.lastIndexOf('/');
+  const importerSegments = lastSlash === -1 ? [] : importer.slice(0, lastSlash).split('/');
+  const suiteSegments = suite.split('/');
+  let common = 0;
+  const maxCommon = Math.min(importerSegments.length, suiteSegments.length);
+  while (common < maxCommon && importerSegments[common] === suiteSegments[common]) common += 1;
+  const up = importerSegments.length - common;
+  const tail = suiteSegments.slice(common);
+  const prefix = up > 0 ? '../'.repeat(up) : './';
+  return prefix + tail.join('/');
+}
+
+// True when `pattern` (a specifier with exactly one unsupported escape replaced by
+// '?') could still be `literal`: same length and every position equal or a '?'.
+function wildcardMatches(pattern, literal) {
+  if (pattern.length !== literal.length) return false;
+  for (let e = 0; e < pattern.length; e += 1) {
+    if (pattern[e] !== '?' && pattern[e] !== literal[e]) return false;
+  }
+  return true;
 }
 
 export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
@@ -481,16 +581,49 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
   let lastWord = ''; // last maximal word read in CODE state (lastSig is its final char)
   let regexInClass = false; // true while the open regex literal is inside a [...] class
 
-  const pushEdge = (specifier) => {
-    const resolved = resolveRelativeSpecifier(importer, specifier);
-    if (resolved !== null && trackedSet.has(resolved)) edges.push({ from: importer, to: resolved });
+  // CI-TOPOLOGY-08 (issue #194): route decision for a readQuotedSpecifier result of
+  // kind 'ok' (a single/double-quoted specifier) or 'ambiguous' (a backtick specifier).
+  // A valid \uNNNN escape resolves to exactly one character of the specifier before
+  // relative resolution, so an escaped spelling of a tracked relative path yields
+  // exactly one edge — the same child Node's module loader executes. A decoded bare
+  // specifier or a decoded untracked target remains a non-route. A malformed, truncated,
+  // or otherwise unsupported escape fails closed with an importer-and-reason diagnostic
+  // when the specifier could still target a tracked suite (the wildcard check); a
+  // 'ambiguous' backtick specifier that decodes to a tracked suite keeps its existing
+  // fail-closed diagnostic.
+  const handleSpecifier = (result, phrase, importLike) => {
+    const decoded = decodeSpecifierEscapes(result.specifier);
+    if (decoded.status === 'ok') {
+      const resolved = resolveRelativeSpecifier(importer, decoded.specifier);
+      if (resolved === null || !trackedSet.has(resolved)) return;
+      if (result.kind === 'ok') {
+        edges.push({ from: importer, to: resolved });
+        return;
+      }
+      violations.push({
+        path: importer,
+        reason: `ambiguous ${importLike ? 'import' : 're-export'}-like construct (template-literal specifier) targeting tracked suite "${resolved}"`,
+      });
+      return;
+    }
+    for (const suite of [...trackedSet].sort()) {
+      if (wildcardMatches(decoded.pattern, relativeSpecifierTo(importer, suite))) {
+        violations.push({
+          path: importer,
+          reason: `malformed or unsupported escape "${decoded.escape}" in a ${phrase} specifier that could target tracked suite "${suite}"`,
+        });
+        return;
+      }
+    }
   };
 
   // Read a quoted module specifier that begins at the opening quote (one of ' " `) at
   // index start. Returns { kind: 'ok'|'unterminated'|'ambiguous', specifier, end } where
   // end is just past the closing quote (or n when the string never closes). A backtick
   // specifier is 'ambiguous': it is a template literal, not the single/double-quoted
-  // string a static module declaration requires.
+  // string a static module declaration requires. The single/double-quoted `specifier`
+  // is the raw quoted bytes (escape sequences are not expanded here; the route decision
+  // applies decodeSpecifierEscapes before relative resolution).
   const readQuotedSpecifier = (start) => {
     const quote = text[start];
     if (quote === '`') {
@@ -687,8 +820,8 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
         const word = text.slice(i, end);
         if (word === 'import') {
           const result = parseStaticImport(end);
-          if (result.kind === 'ok') {
-            pushEdge(result.specifier);
+          if (result.kind === 'ok' || result.kind === 'ambiguous') {
+            handleSpecifier(result, result.kind === 'ok' ? 'static import' : 'template-literal import', true);
           } else if (result.kind === 'unterminated') {
             violations.push({
               path: importer,
@@ -699,14 +832,6 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
               path: importer,
               reason: 'unterminated block comment in a static import declaration',
             });
-          } else if (result.kind === 'ambiguous') {
-            const resolved = resolveRelativeSpecifier(importer, result.specifier);
-            if (resolved !== null && trackedSet.has(resolved)) {
-              violations.push({
-                path: importer,
-                reason: `ambiguous import-like construct (template-literal specifier) targeting tracked suite "${resolved}"`,
-              });
-            }
           }
           // 'none' or a non-tracked target: no edge, no violation.
           lastSig = result.end < n ? text[result.end - 1] : '';
@@ -716,8 +841,8 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
         }
         if (word === 'export') {
           const result = parseStaticExport(end);
-          if (result.kind === 'ok') {
-            pushEdge(result.specifier);
+          if (result.kind === 'ok' || result.kind === 'ambiguous') {
+            handleSpecifier(result, result.kind === 'ok' ? 'static re-export' : 'template-literal re-export', false);
           } else if (result.kind === 'unterminated') {
             violations.push({
               path: importer,
@@ -728,14 +853,6 @@ export function staticTestModuleRoutes({ importer, source, trackedSuites }) {
               path: importer,
               reason: 'unterminated block comment in a static re-export declaration',
             });
-          } else if (result.kind === 'ambiguous') {
-            const resolved = resolveRelativeSpecifier(importer, result.specifier);
-            if (resolved !== null && trackedSet.has(resolved)) {
-              violations.push({
-                path: importer,
-                reason: `ambiguous re-export-like construct (template-literal specifier) targeting tracked suite "${resolved}"`,
-              });
-            }
           }
           // 'none' (a local export without `from`) or a non-tracked target: no edge, no
           // violation; the main loop resumes just after the `export` keyword.
