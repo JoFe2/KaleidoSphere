@@ -80,6 +80,10 @@ case "${1:-help}" in
     printf 'Setup complete. Runtime secrets stay in gitignored files.\n'
     ;;
   up)
+    # The state-changing up boundary accepts exactly one total argv entry: up
+    # and nothing else. Any trailing argument fails before setup, Compose, or
+    # any other action.
+    [ "$#" -eq 1 ] || fail 'usage: ./bin/bi up'
     require_setup
     compose up --detach --build --wait
     printf 'Superset: http://127.0.0.1:%s\nKaleidoSphere: http://127.0.0.1:%s\n' "$(published_port superset 8088)" "$(published_port bi-agent 18790)"
