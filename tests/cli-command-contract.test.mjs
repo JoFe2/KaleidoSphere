@@ -8,12 +8,24 @@
 // the help/unknown paths are proven to require no setup, Docker, network, credential,
 // or runtime-state action.
 //
-// Nonclaim: this suite exercises only the top-level dispatch boundary. It does not
-// execute the known command bodies (setup/up/analyze/...), does not start containers,
-// and makes no production-compatibility claim.
+// Nonclaim: this suite exercises only the top-level dispatch boundary and the
+// destructive reset argument boundary. It does not start containers, uses only a
+// fake local docker executable and disposable synthetic sandbox state, and makes
+// no production-compatibility claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
@@ -140,4 +152,221 @@ test('CLI-01-AC04: known-command dispatch and argument validation remain unchang
     unknown.stderr,
     `KaleidoSphere ERROR: unknown command: "promotion-bundlez"\n${USAGE}\n`,
   );
+});
+
+// ---------------------------------------------------------------------------
+// CLI-02 (KaleidoSphere issue #198) — the destructive reset boundary must fail
+// closed on every malformed argument form.
+//
+// Every case runs a byte-identical copy of the shipped bin/bi from a disposable
+// synthetic sandbox: a fresh mkdtemp directory (under the repository root, an
+// executable filesystem, since the host tmp may be mounted noexec) holding the
+// four documented owned .runtime directories seeded with sentinel top-level
+// regular files, nested content, and a symlink; source config, an external
+// .secrets entry, and unrelated paths that reset must never touch; and a fake
+// `docker` executable first on PATH that only appends its argv to a local call
+// log. Each sandbox is removed when its test finishes. No real Docker, network,
+// credential, database, or productive state is reached.
+// ---------------------------------------------------------------------------
+
+const RESET_CONFIRMATION_DIAGNOSTIC =
+  'KaleidoSphere ERROR: reset deletes only this repo runtime state; confirm with: ./bin/bi reset --yes-i-understand\n';
+const RESET_SUCCESS_LINE =
+  'Owned runtime metadata, projections, receipts, and generated internal secrets removed. Source config and external secret files retained.\n';
+
+function buildResetSandbox({ configured = true } = {}) {
+  const root = mkdtempSync(path.join(ROOT, '.bi-reset-sandbox-'));
+  const fakeBin = path.join(root, 'fake-bin');
+  const logPath = path.join(root, 'docker-calls.log');
+  const owned = Object.freeze({
+    metadata: path.join(root, '.runtime', 'metadata'),
+    projection: path.join(root, '.runtime', 'projection'),
+    receipts: path.join(root, '.runtime', 'receipts'),
+    secrets: path.join(root, '.runtime', 'secrets'),
+  });
+  const externalSecretsDir = path.join(root, '.secrets');
+  const sentinels = Object.freeze({
+    metadataTop: path.join(owned.metadata, 'metadata-sentinel.json'),
+    projectionTop: path.join(owned.projection, 'projection-sentinel.bin'),
+    receiptsTop: path.join(owned.receipts, 'receipt-sentinel.json'),
+    secretsTop: path.join(owned.secrets, 'internal-sentinel.txt'),
+    controlToken: path.join(owned.secrets, 'control_token'),
+    nestedDir: path.join(owned.metadata, 'nested'),
+    nestedFile: path.join(owned.metadata, 'nested', 'inner.txt'),
+    symlink: path.join(owned.receipts, 'nested-link'),
+    sourceConfig: path.join(root, 'config', 'source-config.json'),
+    dotEnv: path.join(root, '.env'),
+    externalSecret: path.join(externalSecretsDir, 'mssql_password'),
+    runtimeStray: path.join(root, '.runtime', 'stray.txt'),
+    unrelatedRoot: path.join(root, 'README-sentinel.md'),
+  });
+  for (const directory of Object.values(owned)) mkdirSync(directory, { recursive: true });
+  mkdirSync(fakeBin);
+  mkdirSync(path.join(root, 'bin'), { recursive: true });
+  mkdirSync(path.dirname(sentinels.sourceConfig), { recursive: true });
+  mkdirSync(externalSecretsDir, { recursive: true });
+  // Nested content and a symlink inside owned directories: reset deletes only
+  // top-level regular files, so nested entries and non-regular entries survive.
+  mkdirSync(sentinels.nestedDir);
+  writeFileSync(sentinels.nestedFile, 'nested synthetic content\n');
+  symlinkSync(sentinels.nestedFile, sentinels.symlink);
+  // Top-level regular-file sentinels: the only entries a valid reset removes.
+  writeFileSync(sentinels.metadataTop, '{}\n');
+  writeFileSync(sentinels.projectionTop, 'projection-sentinel\n');
+  writeFileSync(sentinels.receiptsTop, '{}\n');
+  writeFileSync(sentinels.secretsTop, 'internal sentinel\n');
+  // Preserve-target sentinels outside the owned top-level regular-file surface.
+  writeFileSync(sentinels.sourceConfig, '{ "source": true }\n');
+  writeFileSync(sentinels.runtimeStray, 'stray\n');
+  writeFileSync(sentinels.unrelatedRoot, 'unrelated\n');
+  if (configured) {
+    writeFileSync(sentinels.dotEnv, 'SYNTHETIC=1\n');
+    writeFileSync(sentinels.controlToken, '0123456789abcdef\n');
+    writeFileSync(sentinels.externalSecret, '');
+    // require_setup demands mode 0600 on every existing secret file.
+    for (const directory of [owned.secrets, externalSecretsDir]) {
+      for (const entry of readdirSync(directory)) {
+        chmodSync(path.join(directory, entry), 0o600);
+      }
+    }
+  }
+  // The fake docker recorder: one line of joined argv per invocation, nothing
+  // else. It shadows any real docker because fake-bin is first on PATH.
+  const dockerPath = path.join(fakeBin, 'docker');
+  writeFileSync(
+    dockerPath,
+    `#!/bin/sh\n{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\nexit 0\n`,
+  );
+  chmodSync(dockerPath, 0o755);
+  // Run the exact shipped script bytes from inside the sandbox so bi_here is
+  // the disposable sandbox root, never this repository.
+  const biPath = path.join(root, 'bin', 'bi');
+  writeFileSync(biPath, readFileSync(path.join(ROOT, 'bin', 'bi')));
+  chmodSync(biPath, 0o755);
+  return Object.freeze({
+    root,
+    logPath,
+    sentinels,
+    deleteAll: () => rmSync(root, { recursive: true, force: true }),
+  });
+}
+
+function runBiInSandbox(sandbox, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(path.join(sandbox.root, 'bin', 'bi'), args, {
+      cwd: sandbox.root,
+      env: Object.freeze({
+        PATH: `${path.join(sandbox.root, 'fake-bin')}${path.delimiter}/usr/bin:/bin`,
+      }),
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('error', (error) => reject(error));
+    child.on('close', (status) => resolve({ status, stdout, stderr }));
+  });
+}
+
+function dockerCalls(sandbox) {
+  if (!existsSync(sandbox.logPath)) return [];
+  return readFileSync(sandbox.logPath, 'utf8').split('\n').filter((line) => line.length > 0);
+}
+
+function deletedSentinels(sandbox) {
+  return Object.entries(sandbox.sentinels)
+    .filter(([, file]) => !existsSync(file))
+    .map(([name]) => name);
+}
+
+test('CLI-02-AC01: a trailing argument after the exact confirmation flag fails closed with zero compose calls', async (t) => {
+  const sandbox = buildResetSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['reset', '--yes-i-understand', '--typo']);
+  const observation = `exit ${result.status}, composeCalls=${JSON.stringify(
+    dockerCalls(sandbox),
+  )}, deletedSentinels=${JSON.stringify(deletedSentinels(sandbox))}`;
+  assert.equal(
+    result.status,
+    1,
+    `trailing reset argument must fail closed before the mutation boundary, observed: ${observation}`,
+  );
+  assert.equal(result.stdout, '', 'nothing to stdout on a failed reset');
+  assert.equal(result.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'the existing deterministic confirmation diagnostic');
+  assert.deepEqual(dockerCalls(sandbox), [], `zero Compose calls, observed: ${observation}`);
+  assert.deepEqual(deletedSentinels(sandbox), [], `every sandbox sentinel must survive, ${observation}`);
+});
+
+test('CLI-02-AC02: missing, wrong, non-byte-exact, or extra reset arguments all fail closed with the same diagnostic', async (t) => {
+  const forms = Object.freeze([
+    Object.freeze(['reset']),
+    Object.freeze(['reset', '--no']),
+    Object.freeze(['reset', 'yes']),
+    Object.freeze(['reset', '--YES-i-understand']),
+    Object.freeze(['reset', 'extra', '--yes-i-understand']),
+    Object.freeze(['reset', '--yes-i-understand', '--typo']),
+    Object.freeze(['reset', '--yes-i-understand', 'extra']),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const form of forms) {
+    const sandbox = buildResetSandbox();
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, form);
+    const observation = `exit ${result.status}, composeCalls=${JSON.stringify(
+      dockerCalls(sandbox),
+    )}, deletedSentinels=${JSON.stringify(deletedSentinels(sandbox))}`;
+    assert.equal(result.status, 1, `${JSON.stringify(form)} must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${JSON.stringify(form)}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      RESET_CONFIRMATION_DIAGNOSTIC,
+      `${JSON.stringify(form)}: the existing deterministic confirmation diagnostic`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(form)}: zero Compose calls, ${observation}`);
+    assert.deepEqual(deletedSentinels(sandbox), [], `${JSON.stringify(form)}: sentinels must survive, ${observation}`);
+  }
+});
+
+test('CLI-02-AC03: the exact valid form retains bounded existing behavior: one compose down, owned top-level regular files only', async (t) => {
+  const sandbox = buildResetSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['reset', '--yes-i-understand']);
+  assert.equal(result.status, 0, `valid reset must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.equal(result.stderr, '', 'nothing to stderr on a successful reset');
+  assert.equal(result.stdout, RESET_SUCCESS_LINE, 'the existing deterministic success line');
+  assert.deepEqual(
+    dockerCalls(sandbox),
+    [`docker compose --file ${sandbox.root}/compose.yaml down --remove-orphans`],
+    'exactly one repository-scoped compose down call',
+  );
+  // Only top-level regular files in the four documented owned directories are
+  // removed (including the generated internal control token).
+  for (const name of ['metadataTop', 'projectionTop', 'receiptsTop', 'secretsTop', 'controlToken']) {
+    assert.equal(existsSync(sandbox.sentinels[name]), false, `${name} must be removed`);
+  }
+  // Nested content, symlinks and other non-regular entries, source config, the
+  // external .secrets entry, and unrelated paths all survive.
+  for (const name of ['nestedDir', 'nestedFile', 'symlink', 'sourceConfig', 'dotEnv', 'externalSecret', 'runtimeStray', 'unrelatedRoot']) {
+    assert.equal(existsSync(sandbox.sentinels[name]), true, `${name} must be preserved`);
+  }
+});
+
+test('CLI-02-AC04: malformed reset arguments fail with the confirmation diagnostic before require_setup', async (t) => {
+  // An unconfigured sandbox (no .env, no control token) proves the arity and
+  // confirmation gate runs before any setup check: a malformed reset must
+  // report the confirmation diagnostic, never the setup diagnostic.
+  const sandbox = buildResetSandbox({ configured: false });
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['reset', '--typo']);
+  assert.equal(result.status, 1, 'malformed reset must fail non-zero');
+  assert.equal(result.stdout, '', 'nothing to stdout');
+  assert.equal(result.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'confirmation gate must precede require_setup');
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero Compose calls');
 });
