@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
@@ -237,4 +237,91 @@ test('generated validator remains closed and rejects widening probes', async () 
     assert.equal(result.status, 2);
     assert.equal(JSON.parse(result.stdout).valid, false);
   }
+});
+
+const declaredSourceInputs = [
+  'package.json',
+  'scripts/build-agent-skill-distribution.mjs',
+  'agent-skills/host-contracts.json',
+  'agent-skills/kaleidosphere/SKILL.md',
+  'agent-skills/kaleidosphere/references/contract.json',
+  'agent-skills/kaleidosphere/scripts/validate-request.mjs',
+  'contracts/external-api/v2/external-bi-api.schema.json',
+  'contracts/portable-companion/v1/compatibility-matrix.json',
+  'contracts/portable-companion/v1/portable-companion.schema.json',
+  'contracts/portable-companion/v1/profile-template.schema.json',
+  'contracts/portable-companion/v1/receipt-envelope.schema.json',
+];
+
+async function copyDeclaredSourceInputs(destinationRoot) {
+  for (const file of declaredSourceInputs) {
+    const destination = path.join(destinationRoot, file);
+    await mkdir(path.dirname(destination), { recursive: true });
+    await writeFile(destination, await readFile(path.join(root, file)));
+  }
+}
+
+function runIsolatedBuilder(isolatedRoot, outputRoot) {
+  return spawnSync(process.execPath, [path.join(isolatedRoot, 'scripts', 'build-agent-skill-distribution.mjs'), outputRoot], {
+    cwd: isolatedRoot,
+    encoding: 'utf8',
+  });
+}
+
+test('builder denies a symlinked canonical source parent before reading bytes', async () => {
+  const repo = await mkdtemp(path.join(tmpdir(), 'ks-skill-source-parent-'));
+  await copyDeclaredSourceInputs(repo);
+  const outside = await mkdtemp(path.join(tmpdir(), 'ks-skill-source-outside-'));
+  const externalReferences = path.join(outside, 'references');
+  await mkdir(externalReferences, { recursive: true });
+  // Invalid JSON at the external target: if the builder read bytes through the
+  // symlink, the run would fail with a JSON parse error instead of the denial.
+  await writeFile(path.join(externalReferences, 'contract.json'), '{invalid\n');
+  const referencesSource = path.join(repo, 'agent-skills', 'kaleidosphere', 'references');
+  await rm(referencesSource, { recursive: true, force: true });
+  await symlink(externalReferences, referencesSource);
+  const result = runIsolatedBuilder(repo, path.join(repo, 'dist', 'agent-skill-distribution'));
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /symlinked canonical input path component denied/);
+});
+
+test('builder denies a symlinked repository-source parent before reading bytes', async () => {
+  const repo = await mkdtemp(path.join(tmpdir(), 'ks-skill-source-parent-'));
+  await copyDeclaredSourceInputs(repo);
+  const outside = await mkdtemp(path.join(tmpdir(), 'ks-skill-source-outside-'));
+  const externalContracts = path.join(outside, 'v1');
+  await mkdir(externalContracts, { recursive: true });
+  await writeFile(path.join(externalContracts, 'compatibility-matrix.json'), '{invalid\n');
+  const v1Source = path.join(repo, 'contracts', 'portable-companion', 'v1');
+  await rm(v1Source, { recursive: true, force: true });
+  await symlink(externalContracts, v1Source);
+  const result = runIsolatedBuilder(repo, path.join(repo, 'dist', 'agent-skill-distribution'));
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /symlinked repository source input path component denied/);
+});
+
+test('isolated declared source inputs still build and verify deterministically', async () => {
+  const repo = await mkdtemp(path.join(tmpdir(), 'ks-skill-source-plain-'));
+  await copyDeclaredSourceInputs(repo);
+  const scratch = await mkdtemp(path.join(tmpdir(), 'ks-skill-source-out-'));
+  const first = runIsolatedBuilder(repo, path.join(scratch, 'a'));
+  assert.equal(first.status, 0, first.stderr || first.stdout);
+  const second = runIsolatedBuilder(repo, path.join(scratch, 'b'));
+  assert.equal(second.status, 0, second.stderr || second.stdout);
+
+  for (const output of [path.join(scratch, 'a'), path.join(scratch, 'b')]) {
+    const verified = spawnSync(process.execPath, [path.join(repo, 'scripts', 'build-agent-skill-distribution.mjs'), '--verify', output], { cwd: repo, encoding: 'utf8' });
+    assert.equal(verified.status, 0, verified.stderr || verified.stdout);
+  }
+
+  const manifest = JSON.parse(await readFile(path.join(scratch, 'a', 'manifest.json'), 'utf8'));
+  assert.equal(manifest.canonicalSource, 'agent-skills/kaleidosphere');
+  for (const file of canonicalFiles) {
+    assert.equal(await digest(path.join(scratch, 'a', 'clawhub', 'kaleidosphere', file)), await digest(path.join(canonical, file)), file);
+    assert.equal(manifest.canonicalFiles[file], await digest(path.join(canonical, file)), `manifest ${file}`);
+  }
+
+  const archivesFirst = JSON.parse(await readFile(path.join(scratch, 'a', 'archives.json'), 'utf8'));
+  const archivesSecond = JSON.parse(await readFile(path.join(scratch, 'b', 'archives.json'), 'utf8'));
+  assert.deepEqual(archivesFirst, archivesSecond);
 });

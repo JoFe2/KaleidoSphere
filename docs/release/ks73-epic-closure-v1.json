@@ -31,8 +31,8 @@
       "disposition": "COMPLETE",
       "publicListingClaim": false,
       "evidence": [
-        { "path": "scripts/build-agent-skill-distribution.mjs", "sha256": "264a16c39dc1c383a2b743268cf1a4e299b51c6b262970c8f2eaacabec0328fe" },
-        { "path": "tests/agent-skill-distribution.test.mjs", "sha256": "4484d1b3c5e152697be13156fdac058fbb75112dc55507c44d482712dade8bc2" },
+        { "path": "scripts/build-agent-skill-distribution.mjs", "sha256": "0ceff56816541eb3fc5c65728513fca8336ae1a434bdacf55484c93254c3d391" },
+        { "path": "tests/agent-skill-distribution.test.mjs", "sha256": "c727ac5985730ed3f039fb9afa6236dced36396bcb828771fd4dd5c13eea4313" },
         { "path": "docs/decisions/K4-SINGLE-SOURCE-AGENTSKILL-DISTRIBUTION.md", "sha256": "f00caf1a6c72f9325f459972385221a9df50554572ca2b12f424ce606097acec" }
       ],
       "externalWaits": []

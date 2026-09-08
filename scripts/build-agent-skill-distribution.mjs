@@ -45,9 +45,20 @@ function sha256(bytes) {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
+async function assertSymlinkFreeInputPath(absolute, label) {
+  if (!absolute.startsWith(`${root}${path.sep}`)) throw new Error(`${label} input path escaped repository: ${absolute}`);
+  let cursor = root;
+  for (const component of path.relative(root, absolute).split(path.sep)) {
+    cursor = path.join(cursor, component);
+    const stat = await lstat(cursor);
+    if (stat.isSymbolicLink()) throw new Error(`symlinked ${label} input path component denied: ${component}`);
+  }
+}
+
 async function readCanonical(file) {
   const relative = relSafe(file);
   const absolute = path.join(root, canonicalSkill, relative);
+  await assertSymlinkFreeInputPath(absolute, 'canonical');
   const stat = await lstat(absolute);
   if (!stat.isFile()) throw new Error(`canonical file is not a regular file: ${file}`);
   const bytes = await readFile(absolute);
@@ -61,6 +72,7 @@ async function readRepoSource(file) {
   const relative = relSafe(file);
   const absolute = path.join(root, relative);
   if (!absolute.startsWith(`${root}${path.sep}`)) throw new Error(`source path escaped repository: ${file}`);
+  await assertSymlinkFreeInputPath(absolute, 'repository source');
   const stat = await lstat(absolute);
   if (!stat.isFile()) throw new Error(`canonical source is not a regular file: ${file}`);
   const bytes = await readFile(absolute);
