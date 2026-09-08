@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "chimpmaera.cks/kaleidosphere-analytics-projection/v1",
+  "projectionId": "pansphaira:cks-xra-ps-01-kaleidosphere-analytics-001",
+  "contractVersion": "1.0.0",
+  "purpose": "PANSPHAIRA_EDGE_EVIDENCE_ANALYTICS",
+  "source": {
+    "contract": "pansphaira.fnd-ps-02/owner-edge-evidence-inputs/v2",
+    "contractVersion": "v2",
+    "contractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44"
+  },
+  "nodes": [
+    {
+      "id": "knowledge-001",
+      "kind": "KNOWLEDGE",
+      "sourceEvidence": {
+        "contract": "pansphaira.fnd-ps-02/owner-edge-evidence-inputs/v2",
+        "contractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44",
+        "reference": "canonicalKnowledge"
+      },
+      "coverage": "FULL",
+      "unknown": false,
+      "counterevidence": [],
+      "authority": "NONE"
+    },
+    {
+      "id": "decision-001",
+      "kind": "DECISION",
+      "sourceEvidence": {
+        "contract": "pansphaira.fnd-ps-02/owner-edge-evidence-inputs/v2",
+        "contractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44",
+        "reference": "relation"
+      },
+      "coverage": "FULL",
+      "unknown": false,
+      "counterevidence": [],
+      "authority": "NONE"
+    }
+  ],
+  "edges": [
+    {
+      "from": "knowledge-001",
+      "to": "decision-001",
+      "relation": "KNOWLEDGE_USED_BY_DECISION",
+      "sourceEvidence": {
+        "contract": "pansphaira.fnd-ps-02/owner-edge-evidence-inputs/v2",
+        "contractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44",
+        "reference": "edge"
+      },
+      "evidence": [
+        {
+          "evidenceId": "CKS-12-VALIDATION-RECEIPT-001",
+          "evidenceVersion": "v1",
+          "evidenceRole": "KNOWLEDGE_QUALIFICATION",
+          "evidenceSha256": "6d61cbfd4d81cb9c0eabcc0ae17c13e4320c4491a49935122b81331e2b50ecf4"
+        },
+        {
+          "evidenceId": "CKS-12-LINEAGE-RECEIPT-001",
+          "evidenceVersion": "v1",
+          "evidenceRole": "RELATION_ASSERTION",
+          "evidenceSha256": "ec0a30c55bafa447fe160ba4f18f2cb85680c4ebef7d0c7af3006989b324af74"
+        }
+      ],
+      "evidenceSha256": "0b97651654dc4e090a1e3718273210bd28e66612de39dfc5674298f2f678ca0f",
+      "coverage": "FULL",
+      "unknown": false,
+      "counterevidence": [],
+      "authority": "NONE",
+      "promotion": "NOT_AUTHORIZED",
+      "effect": "NONE",
+      "relationTruthClaimed": false,
+      "relationTruth": "NOT_GRANTED"
+    }
+  ],
+  "authority": "NONE",
+  "promotion": "NOT_AUTHORIZED",
+  "effect": "NONE",
+  "relationTruth": "NOT_GRANTED",
+  "nonclaims": [
+    "NO_RELATION_TRUTH_FROM_ENDPOINTS",
+    "NO_AUTHORITY",
+    "NO_PROMOTION",
+    "NO_EFFECT",
+    "NO_CANONICAL_KNOWLEDGE_MUTATION",
+    "NO_PRODUCTION_OR_CUSTOMER_DATA_CLAIM"
+  ],
+  "projectionDigest": "cc5f6cc9591ccf4b6b3c4b9f954aa9da09695b784d7abaa585c082aea195ef1b"
+}
