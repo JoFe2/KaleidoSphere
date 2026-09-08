@@ -63,6 +63,60 @@ const build = ({ manifest, sqlByQueryId, resultSets, profileContext }) => buildP
   manifest, sqlByQueryId, resultSets, profileContext,
 });
 
+// Source-local synthetic oracle for the emitted index query mapping. It interprets the
+// actually-emitted bounded query (ordinal expansion tuples, the pg_index.indkey subscript
+// column, the indnkeyatts row bound and the expression rule) and applies that mapping to
+// independently specified native catalog state. PostgreSQL's int2vector lower bound is 0
+// (REL_17_0 src/backend/utils/adt/int.c buildint2vector sets result->lbound1 = 0), so a
+// correctly emitted query resolves the emitted 1-based key ordinal through a 0-based
+// native vector offset; a subscript that uses the 1-based ordinal directly shifts every
+// key and drops the last one. This is a source-local synthetic proof, not C1 certification.
+function interpretEmittedIndexMapping(indexSql) {
+  const expansion = indexSql.match(/CROSS JOIN \(VALUES([\s\S]*?)\)\s+AS\s+key_ordinal_range\s*\(([^)]*)\)/i);
+  assert.ok(expansion, 'the emitted query bounds the ordinal space with an explicit expansion');
+  const columns = expansion[2].split(',').map((column) => column.trim());
+  const tuples = [...expansion[1].matchAll(/\(\s*(\d+)\s*(?:,\s*(\d+))?\s*\)/g)]
+    .map((match) => [Number(match[1]), match[2] === undefined ? null : Number(match[2])]);
+  assert.ok(tuples.length > 0, 'the expansion enumerates bounded ordinal rows');
+  const emitted = indexSql.match(/key_ordinal_range\.([A-Za-z_][A-Za-z0-9_]*)\s+AS\s+key_ordinal\b/i);
+  assert.ok(emitted, 'the emitted key_ordinal is projected from the expansion');
+  const subscript = indexSql.match(/index_row\.indkey\s*\[\s*([A-Za-z_][A-Za-z0-9_]*)\s*\]/i);
+  assert.ok(subscript, 'key positions are read positionally from the pg_index.indkey vector');
+  const bound = indexSql.match(/key_ordinal_range\.([A-Za-z_][A-Za-z0-9_]*)\s*<=\s*index_row\.indnkeyatts/i);
+  assert.ok(bound, 'the expansion is row-bounded by the index key-attribute count');
+  const orderBy = indexSql.match(/ORDER\s+BY\s+([\s\S]*?);\s*$/i);
+  assert.ok(orderBy, 'the emitted query is deterministically ordered');
+  const emittedOrdinalIndex = columns.indexOf(emitted[1]);
+  const offsetIndex = columns.indexOf(subscript[1]);
+  const boundIndex = columns.indexOf(bound[1]);
+  assert.ok(emittedOrdinalIndex >= 0, 'the emitted ordinal is an expansion column');
+  assert.ok(offsetIndex >= 0, 'the vector subscript is an expansion column');
+  assert.ok(boundIndex >= 0, 'the row bound is an expansion column');
+  return {
+    tuples,
+    emittedOrdinalIndex,
+    offsetIndex,
+    boundIndex,
+    emittedColumn: emitted[1],
+    offsetColumn: subscript[1],
+    sortKeys: orderBy[1].split(',').map((key) => key.trim()),
+  };
+}
+
+function resolveSyntheticIndexKeys(mapping, { indkey, indnkeyatts, attributes }) {
+  const rows = [];
+  for (const tuple of mapping.tuples) {
+    if (tuple[mapping.boundIndex] > indnkeyatts) continue;
+    const vectorOffset = tuple[mapping.offsetIndex];
+    const attnum = Number.isInteger(vectorOffset) && vectorOffset >= 0 && vectorOffset < indkey.length
+      ? indkey[vectorOffset]
+      : null;
+    const attribute = attnum === null || attnum < 1 ? undefined : attributes.get(attnum);
+    rows.push([tuple[mapping.emittedOrdinalIndex], attribute ? attribute.name : null, attribute ? 'COLUMN' : 'EXPRESSION', attribute ? attribute.type : null]);
+  }
+  return rows;
+}
+
 test('PostgreSQL structure fixture yields deterministic catalog-only inventory, constraints and declared dependencies', async () => {
   const evidence = await runAnalyzeProfile(`${fixtureDirectory}/postgresql-structure-profile-v1.json`, {
     repositoryRoot: 'services/bi-control',
@@ -271,9 +325,13 @@ test('PostgreSQL v2 pack is SELECT-only, catalog-allowlisted and reads pg_catalo
 test('the v2 index query resolves key columns position- and expression-aware from pg_index.indkey', async () => {
   const inputs = await loadV2Inputs();
   const indexSql = inputs.sqlByQueryId['postgresql.structure.indexes'];
-  // Each key ordinal is resolved from the pg_index.indkey position vector, never from an
-  // uncorrelated scan of every user column of the indexed relation.
-  assert.match(indexSql, /\bindkey\s*\[\s*key_ordinal\s*\]/i);
+  // Each key position is resolved from the pg_index.indkey position vector, never from an
+  // uncorrelated scan of every user column of the indexed relation. The subscript must be
+  // the expansion's native 0-based vector offset (int2vector lower bound 0); using the
+  // 1-based emitted key_ordinal directly would shift every key and drop the last one.
+  const subscript = indexSql.match(/\bindkey\s*\[\s*([A-Za-z_][A-Za-z0-9_]*)\s*\]/i);
+  assert.ok(subscript, 'the key columns are resolved positionally from pg_index.indkey');
+  assert.notEqual(subscript[1], 'key_ordinal', 'the 1-based emitted ordinal is not used as the 0-based vector subscript');
   assert.match(indexSql, /attribute\.attrelid\s*=\s*index_row\.indrelid\s+AND\s+attribute\.attnum\s*=\s*index_row\.indkey/i);
   assert.doesNotMatch(indexSql, /attribute\.attnum\s*>\s*0/i);
   // The bounded ordinal expansion is capped at the index's key-attribute count...
@@ -291,12 +349,85 @@ test('the v2 index key-ordinal expansion spans the full PostgreSQL 32-key attrib
   // hard limit on index key attributes (indnkeyatts <= 32). Any smaller expansion would
   // silently truncate wide composite keys, and any gap or duplicate would misorder them,
   // so neither "exactly N key columns" nor "N shown of more" can be inferred either way.
-  const expansion = indexSql.match(/CROSS JOIN \(VALUES([\s\S]*?)\)\s+AS\s+key_ordinal_range/i);
+  // Each emitted 1-based key ordinal must also carry its native 0-based indkey vector
+  // offset, because int2vector's lower bound is 0 (REL_17_0 adt/int.c buildint2vector).
+  const expansion = indexSql.match(/CROSS JOIN \(VALUES([\s\S]*?)\)\s+AS\s+key_ordinal_range\s*\(([^)]*)\)/i);
   assert.ok(expansion, 'the key ordinal expansion is an explicit bounded VALUES list');
-  const ordinals = [...expansion[1].matchAll(/\(\s*(\d+)\s*\)/g)].map((match) => Number(match[1]));
-  assert.deepEqual(ordinals, Array.from({ length: 32 }, (_, offset) => offset + 1));
+  const tuples = [...expansion[1].matchAll(/\(\s*(\d+)\s*(?:,\s*(\d+))?\s*\)/g)]
+    .map((match) => [Number(match[1]), match[2] === undefined ? null : Number(match[2])]);
+  assert.equal(tuples.length, 32, 'the expansion spans all 32 key positions');
+  assert.deepEqual(tuples.map(([ordinal]) => ordinal), Array.from({ length: 32 }, (_unused, offset) => offset + 1));
+  const offsets = tuples.map(([, vectorOffset]) => vectorOffset);
+  assert.ok(offsets.every((offset) => Number.isInteger(offset)),
+    'each emitted ordinal carries its native 0-based indkey vector offset');
+  assert.deepEqual(offsets, Array.from({ length: 32 }, (_unused, offset) => offset));
   // The expansion stays row-budget bounded by the index's own key-attribute count.
   assert.match(indexSql, /key_ordinal_range\.key_ordinal\s*<=\s*index_row\.indnkeyatts/i);
+});
+
+test('the emitted v2 index query mapping resolves native int2vector key positions against independent catalog data', async () => {
+  const inputs = await loadV2Inputs();
+  const mapping = interpretEmittedIndexMapping(inputs.sqlByQueryId['postgresql.structure.indexes']);
+  // The emitted key ordinal stays 1-based and is the row-order key of the query...
+  assert.equal(mapping.sortKeys.at(-1), `key_ordinal_range.${mapping.emittedColumn}`);
+  // ...while the native int2vector (lower bound 0) is subscripted through the expansion's
+  // own offset column, never through the emitted ordinal itself.
+  assert.notEqual(mapping.offsetColumn, mapping.emittedColumn);
+  // Independently specified native catalog state (pg_index.indkey as a 0-based vector plus
+  // the relation attributes), not the materialized fixture rows.
+  const syntheticIndexes = [
+    {
+      // Single key: first key is the last key; a shifted or out-of-range offset reads
+      // NULL and the only key disappears.
+      caseId: 'single-key first/last',
+      indkey: [1],
+      indnkeyatts: 1,
+      attributes: new Map([[1, {name: 'id', type: 'int8'}]]),
+      expected: [[1, 'id', 'COLUMN', 'int8']],
+    },
+    {
+      // Composite: first and last keys resolve to their own positions, not shifted.
+      caseId: 'composite first/last',
+      indkey: [2, 4],
+      indnkeyatts: 2,
+      attributes: new Map([[2, {name: 'customer_id', type: 'int8'}], [4, {name: 'status', type: 'text'}]]),
+      expected: [[1, 'customer_id', 'COLUMN', 'int8'], [2, 'status', 'COLUMN', 'text']],
+    },
+    {
+      // Expression key: the indkey entry 0 stays an explicit EXPRESSION row and the
+      // following real key keeps its own position.
+      caseId: 'expression plus column',
+      indkey: [0, 3],
+      indnkeyatts: 2,
+      attributes: new Map([[3, {name: 'created_at', type: 'timestamp'}]]),
+      expected: [[1, null, 'EXPRESSION', null], [2, 'created_at', 'COLUMN', 'timestamp']],
+    },
+    {
+      // One key plus an INCLUDE column: indkey holds both entries but indnkeyatts bounds
+      // the key count; the INCLUDE column must never replace a real key.
+      caseId: 'key plus include column',
+      indkey: [1, 2],
+      indnkeyatts: 1,
+      attributes: new Map([[1, {name: 'id', type: 'int8'}], [2, {name: 'email', type: 'text'}]]),
+      expected: [[1, 'id', 'COLUMN', 'int8']],
+    },
+    {
+      // 32-key boundary: every ordinal 1..32 pins its own 0-based offset through distinct
+      // attribute numbers; any shifted offset drops or duplicates a key.
+      caseId: 'thirty-two key boundary',
+      indkey: Array.from({length: 32}, (_unused, offset) => offset + 1),
+      indnkeyatts: 32,
+      attributes: new Map(Array.from({length: 32}, (_unused, offset) => [offset + 1, {name: `key_column_${offset + 1}`, type: 'int8'}])),
+      expected: Array.from({length: 32}, (_unused, offset) => [offset + 1, `key_column_${offset + 1}`, 'COLUMN', 'int8']),
+    },
+  ];
+  for (const syntheticIndex of syntheticIndexes) {
+    assert.deepEqual(
+      resolveSyntheticIndexKeys(mapping, syntheticIndex),
+      syntheticIndex.expected,
+      syntheticIndex.caseId,
+    );
+  }
 });
 
 test('a six-key composite unique index is read back with every key column in ordinal order', async () => {
