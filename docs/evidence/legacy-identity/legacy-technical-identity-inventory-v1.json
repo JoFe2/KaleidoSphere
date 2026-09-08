@@ -4605,6 +4605,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/analyze-profile/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-profile-v2.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/analyze-profile/v1",
       "path": "services/bi-control/src/db-analyzer/core.mjs"
     },
     {
@@ -4681,6 +4686,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/catalog-scan-policy/v1",
       "path": "services/bi-control/fixtures/postgresql-structure-profile-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-profile-v2.json"
     },
     {
       "identityClass": "schemaIdentity",
@@ -4980,6 +4990,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/query-manifest/v1",
+      "path": "services/bi-control/query-packs/db-analyzer/v2/postgresql/manifest.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/query-manifest/v1",
       "path": "services/bi-control/src/db-analyzer/core.mjs"
     },
     {
@@ -5130,7 +5145,17 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/synthetic-query-results/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-results-incomplete-v2.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-query-results/v1",
       "path": "services/bi-control/fixtures/postgresql-structure-results-v1.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/synthetic-query-results/v1",
+      "path": "services/bi-control/fixtures/postgresql-structure-results-v2.json"
     },
     {
       "identityClass": "schemaIdentity",
