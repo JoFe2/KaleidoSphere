@@ -126,13 +126,18 @@ case "${1:-help}" in
         "http://127.0.0.1:$(published_port bi-agent 18790)/api/chat"
     ;;
   discovery)
-    require_setup
+    # The zero-payload discovery boundary accepts exactly three total argv
+    # entries for start, resume, status, confirm, and export: discovery, the
+    # action, and the session. The action and session must be present, and
+    # any fourth or later entry — explicit-empty or not — fails with the
+    # action-specific usage diagnostic before require_setup, stat, Compose,
+    # curl, or any other downstream action.
     action="${2:-}"
     session_id="${3:-}"
     [ -n "$action" ] && [ -n "$session_id" ] || fail 'usage: ./bin/bi discovery {start|resume|status|answer|revise|confirm|export} session [field json-or-text]'
     case "$action" in
       start|resume|status|confirm|export)
-        [ -z "${4:-}" ] || fail "usage: ./bin/bi discovery $action $session_id"
+        [ "$#" -eq 3 ] || fail "usage: ./bin/bi discovery $action $session_id"
         message="Discovery $action $session_id"
         ;;
       answer|revise)
@@ -143,6 +148,7 @@ case "${1:-help}" in
         ;;
       *) fail 'discovery action must be start, resume, status, answer, revise, confirm, or export' ;;
     esac
+    require_setup
     node -e 'process.stdout.write(JSON.stringify({message: process.argv[1]}))' "$message" | \
       curl --fail --silent --show-error \
         --header 'content-type: application/json' \

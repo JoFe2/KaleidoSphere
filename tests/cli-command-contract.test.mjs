@@ -10,10 +10,10 @@
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
 // destructive reset, down, state-changing up, state-changing setup,
-// request-bearing analyze, read-only status, and read-only logs argument
-// boundaries. It does not start containers, uses only fake local docker,
-// openssl, and curl executables, and disposable synthetic sandbox state, and
-// makes no production-compatibility claim.
+// request-bearing analyze, read-only status, read-only logs, and zero-payload
+// discovery argument boundaries. It does not start containers, uses only fake
+// local docker, openssl, and curl executables, and disposable synthetic
+// sandbox state, and makes no production-compatibility claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -1633,4 +1633,334 @@ test('CLI-08-AC04: the logs operand gate leaves the prior #196/#198/#200/#202/#2
   assert.equal(status.status, 1, 'trailing status argument must still fail non-zero');
   assert.equal(status.stderr, STATUS_USAGE_DIAGNOSTIC, 'the unchanged status usage diagnostic');
   assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
+});
+
+// ---------------------------------------------------------------------------
+// CLI-09 (KaleidoSphere issue #212) — the zero-payload discovery action
+// boundary must fail closed on every fourth-or-later argv form.
+//
+// discovery <action> <session> (with action one of start, resume, status,
+// confirm, or export) carries no payload and accepts exactly three total argv
+// entries. Every case runs a fresh disposable synthetic sandbox: a new
+// mkdtemp directory holding a byte-identical copy of the shipped bin/bi,
+// optional valid-looking setup sentinels (a synthetic .env plus a mode-0600
+// control token), and two fake executables first on PATH — a `docker`
+// recorder that appends its argv to a local call log and answers `compose
+// port <service> <port>` with a deterministic 127.0.0.1:<port> binding, and
+// a `curl` recorder that appends its argv to a local call log, records the
+// request stdin payload byte-for-byte, and prints a deterministic synthetic
+// downstream response, so the exact valid discovery request path is
+// observable end-to-end without a real daemon, network, or service. The
+// sandbox PATH additionally provides the suite's own node executable,
+// because the discovery branch is the only one in this suite that invokes
+// node for local JSON payload encoding; the fakes remain exactly the local
+// docker and curl argv recorders. Each sandbox is removed when its test
+// finishes. No real Docker, network, credential, database, or productive
+// state is reached.
+// ---------------------------------------------------------------------------
+
+const DISCOVERY_ACTIONS = Object.freeze(['start', 'resume', 'status', 'confirm', 'export']);
+// The usage diagnostic is action-specific: it names the exact zero-payload
+// action and session the operator attempted.
+const discoveryUsageDiagnostic = (action) =>
+  `KaleidoSphere ERROR: usage: ./bin/bi discovery ${action} demo\n`;
+// The usage diagnostic is a single-line stderr record: printable ASCII only
+// and terminated by exactly one newline, so it is single-line and
+// injection-free.
+const DISCOVERY_USAGE_DIAGNOSTIC_SHAPE = /^[\x20-\x7E]+\n$/;
+// The deterministic synthetic downstream response the fake curl recorder
+// returns for the exact valid discovery requests.
+const DISCOVERY_FAKE_RESPONSE = '{"answer":"synthetic-discovery"}\n';
+
+function buildDiscoverySandbox({ configured = true } = {}) {
+  const root = mkdtempSync(path.join(ROOT, '.bi-discovery-sandbox-'));
+  const fakeBin = path.join(root, 'fake-bin');
+  const logPath = path.join(root, 'docker-calls.log');
+  const curlLogPath = path.join(root, 'curl-calls.log');
+  const payloadLogPath = path.join(root, 'curl-payloads.log');
+  const controlToken = path.join(root, '.runtime', 'secrets', 'control_token');
+  mkdirSync(fakeBin);
+  mkdirSync(path.join(root, 'bin'), { recursive: true });
+  if (configured) {
+    // Valid-looking setup sentinels: a synthetic .env, a mode-0600 control
+    // token, a mode-0600 external connector secret, and an unrelated root
+    // file, so a fourth-or-later entry must be rejected by the arity gate
+    // alone, never by passing into require_setup and then the Compose/curl
+    // request path.
+    writeFileSync(path.join(root, '.env'), 'SYNTHETIC=1\n');
+    mkdirSync(path.dirname(controlToken), { recursive: true });
+    writeFileSync(controlToken, '0123456789abcdef\n');
+    chmodSync(controlToken, 0o600);
+    mkdirSync(path.join(root, '.secrets'), { recursive: true });
+    writeFileSync(path.join(root, '.secrets', 'mssql_password'), '');
+    chmodSync(path.join(root, '.secrets', 'mssql_password'), 0o600);
+    writeFileSync(path.join(root, 'README-sentinel.md'), 'unrelated\n');
+  }
+  // The fake docker recorder: one line of joined argv per invocation,
+  // nothing else. It shadows any real docker because fake-bin is first on
+  // PATH and answers `compose port <service> <port>` with a deterministic
+  // 127.0.0.1:<port> binding, modeling a healthy local daemon so the exact
+  // valid discovery request path is observable end-to-end.
+  const dockerPath = path.join(fakeBin, 'docker');
+  const dockerScript =
+    `#!/bin/sh\n` +
+    `{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\n` +
+    `case "$4" in port) printf '127.0.0.1:%s\\n' "$6" ;; esac\n` +
+    'exit 0\n';
+  writeFileSync(dockerPath, dockerScript);
+  chmodSync(dockerPath, 0o755);
+  // The fake curl recorder: one line of joined argv per invocation, the
+  // request stdin payload appended byte-for-byte to its own log, then the
+  // deterministic synthetic downstream response on stdout. It shadows any
+  // real curl because fake-bin is first on PATH, so the discovery request
+  // and its exact JSON payload are observable without a network or service.
+  const curlPath = path.join(fakeBin, 'curl');
+  const curlScript =
+    `#!/bin/sh\n` +
+    `{ printf 'curl'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${curlLogPath}'\n` +
+    `cat >> '${payloadLogPath}'\n` +
+    `printf '{"answer":"synthetic-discovery"}\\n'\n` +
+    'exit 0\n';
+  writeFileSync(curlPath, curlScript);
+  chmodSync(curlPath, 0o755);
+  // Run the exact shipped script bytes from inside the sandbox so bi_here is
+  // the disposable sandbox root, never this repository.
+  const biPath = path.join(root, 'bin', 'bi');
+  writeFileSync(biPath, readFileSync(path.join(ROOT, 'bin', 'bi')));
+  chmodSync(biPath, 0o755);
+  return Object.freeze({
+    root,
+    logPath,
+    curlLogPath,
+    payloadLogPath,
+    sentinels: Object.freeze({
+      dotEnv: path.join(root, '.env'),
+      controlToken,
+      externalSecret: path.join(root, '.secrets', 'mssql_password'),
+      unrelatedRoot: path.join(root, 'README-sentinel.md'),
+    }),
+    deleteAll: () => rmSync(root, { recursive: true, force: true }),
+  });
+}
+
+function curlPayload(sandbox) {
+  if (!existsSync(sandbox.payloadLogPath)) return '';
+  return readFileSync(sandbox.payloadLogPath, 'utf8');
+}
+
+function runDiscoveryInSandbox(sandbox, args) {
+  // The discovery branch is the only one in this suite that invokes node for
+  // local JSON payload encoding, so its sandboxes additionally provide the
+  // suite's own node executable on PATH; the fakes remain exactly the local
+  // docker and curl argv recorders.
+  return new Promise((resolve, reject) => {
+    const child = spawn(path.join(sandbox.root, 'bin', 'bi'), args, {
+      cwd: sandbox.root,
+      env: Object.freeze({
+        PATH: `${path.join(sandbox.root, 'fake-bin')}:${path.dirname(process.execPath)}:/usr/bin:/bin`,
+      }),
+    });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString('utf8');
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString('utf8');
+    });
+    child.on('error', (error) => reject(error));
+    child.on('close', (status) => resolve({ status, stdout, stderr }));
+  });
+}
+
+test('CLI-09-AC01: every fourth-or-later discovery argument form for the zero-payload actions fails closed with the action-specific deterministic bounded printable diagnostic, empty stdout, and zero fake-Docker and fake-curl calls in configured and unconfigured sandboxes', async (t) => {
+  // The configured sandboxes carry valid-looking setup sentinels (a synthetic
+  // .env, a mode-0600 control token, a mode-0600 external connector secret,
+  // and an unrelated root file), so every form must be rejected by the
+  // arity gate alone — never by passing into require_setup and then the
+  // Compose/curl request path. The unconfigured sandboxes carry no .env and
+  // no control token. The explicit-empty fourth entry plus later values is
+  // the form the prior ${4:-} emptiness check silently accepted.
+  const fourthAndLaterForms = Object.freeze([
+    Object.freeze(['']),
+    Object.freeze(['', 'ignored']),
+    Object.freeze(['ignored']),
+    Object.freeze(['--typo']),
+    Object.freeze([' ']),
+    Object.freeze(['line1\nline2']),
+    Object.freeze(['a', 'b', 'c']),
+    Object.freeze(['x'.repeat(5000)]),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    for (const action of DISCOVERY_ACTIONS) {
+      for (const form of fourthAndLaterForms) {
+        const sandbox = buildDiscoverySandbox({ configured });
+        sandboxes.push(sandbox);
+        const args = ['discovery', action, 'demo', ...form];
+        const result = await runDiscoveryInSandbox(sandbox, args);
+        const observation = `configured=${configured}, exit ${result.status}, stdout=${JSON.stringify(
+          result.stdout,
+        )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+          dockerCalls(sandbox),
+        )}, curlCalls=${JSON.stringify(curlCalls(sandbox))}`;
+        assert.equal(
+          result.status,
+          1,
+          `${JSON.stringify(args.slice(0, 5))} must fail non-zero, observed: ${observation}`,
+        );
+        assert.equal(result.stdout, '', `${JSON.stringify(args.slice(0, 5))}: nothing to stdout`);
+        assert.equal(
+          result.stderr,
+          discoveryUsageDiagnostic(action),
+          `${JSON.stringify(args.slice(0, 5))}: the deterministic action-specific bounded usage diagnostic`,
+        );
+        assert.match(
+          result.stderr,
+          DISCOVERY_USAGE_DIAGNOSTIC_SHAPE,
+          `stderr stays printable ASCII with no control-byte injection: ${JSON.stringify(
+            args.slice(0, 5),
+          )}`,
+        );
+        assert.ok(
+          result.stderr.length < 512,
+          `${JSON.stringify(args.slice(0, 5))}: stderr must stay bounded, got ${result.stderr.length}`,
+        );
+        assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(args.slice(0, 5))}: zero fake-Docker calls, ${observation}`);
+        assert.deepEqual(curlCalls(sandbox), [], `${JSON.stringify(args.slice(0, 5))}: zero fake-curl calls, ${observation}`);
+        assert.equal(curlPayload(sandbox), '', `${JSON.stringify(args.slice(0, 5))}: zero request payloads recorded, ${observation}`);
+        if (configured) {
+          assert.deepEqual(missingSentinels(sandbox), [], `${JSON.stringify(args.slice(0, 5))}: sentinels must survive, ${observation}`);
+        }
+      }
+    }
+  }
+});
+
+test('CLI-09-AC02: the zero-payload discovery arity gate rejects before require_setup, stat, Compose, curl, or any downstream action, with zero fake-Docker and fake-curl calls in configured and unconfigured sandboxes', async (t) => {
+  // A configured sandbox proves the gate is the arity gate (the exact
+  // action-specific usage diagnostic, never a setup or request diagnostic)
+  // while valid-looking setup sentinels are present; an unconfigured sandbox
+  // (no .env, no control token) proves the arity gate runs before any setup
+  // check: a malformed discovery must report the usage diagnostic, never the
+  // setup diagnostic.
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    const sandbox = buildDiscoverySandbox({ configured });
+    sandboxes.push(sandbox);
+    const result = await runDiscoveryInSandbox(sandbox, ['discovery', 'start', 'demo', '', 'ignored']);
+    const observation = `configured=${configured}, exit ${result.status}, stdout=${JSON.stringify(
+      result.stdout,
+    )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+      dockerCalls(sandbox),
+    )}, curlCalls=${JSON.stringify(curlCalls(sandbox))}`;
+    assert.equal(result.status, 1, `malformed discovery must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${observation}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      discoveryUsageDiagnostic('start'),
+      `${observation}: the arity gate must precede require_setup, stat, Compose, and curl`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${observation}: zero fake-Docker calls`);
+    assert.deepEqual(curlCalls(sandbox), [], `${observation}: zero fake-curl calls`);
+    assert.equal(curlPayload(sandbox), '', `${observation}: zero request payloads recorded`);
+  }
+});
+
+test('CLI-09-AC03: the exact valid zero-payload discovery forms retain exactly one repository-scoped fake-Compose port lookup and exactly one fake-curl request carrying the byte-exact Discovery <action> <session> JSON payload, the deterministic fake response readback, empty stderr, a successful exit, and every sentinel preserved', async (t) => {
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const action of DISCOVERY_ACTIONS) {
+    const sandbox = buildDiscoverySandbox();
+    sandboxes.push(sandbox);
+    const result = await runDiscoveryInSandbox(sandbox, ['discovery', action, 'demo']);
+    const observation = `exit ${result.status}, stdout=${JSON.stringify(
+      result.stdout,
+    )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+      dockerCalls(sandbox),
+    )}, curlCalls=${JSON.stringify(curlCalls(sandbox))}, curlPayload=${JSON.stringify(
+      curlPayload(sandbox),
+    )}`;
+    assert.equal(result.status, 0, `valid discovery ${action} must exit 0, observed: ${observation}`);
+    assert.equal(result.stderr, '', `${action}: nothing to stderr on a successful discovery request`);
+    assert.equal(result.stdout, DISCOVERY_FAKE_RESPONSE, `${action}: the deterministic fake downstream response readback`);
+    assert.deepEqual(
+      dockerCalls(sandbox),
+      [`docker compose --file ${sandbox.root}/compose.yaml port bi-agent 18790`],
+      `${action}: exactly one repository-scoped Compose port lookup`,
+    );
+    assert.deepEqual(
+      curlCalls(sandbox),
+      [
+        'curl --fail --silent --show-error --header content-type: application/json ' +
+          '--data-binary @- ' +
+          'http://127.0.0.1:18790/api/chat',
+      ],
+      `${action}: exactly one fake-curl request to the discovered loopback endpoint`,
+    );
+    assert.equal(
+      curlPayload(sandbox),
+      `{"message":"Discovery ${action} demo"}`,
+      `${action}: the byte-exact Discovery <action> <session> JSON payload`,
+    );
+    // discovery <action> <session> must make no local mutation: every
+    // configured sentinel survives.
+    assert.deepEqual(missingSentinels(sandbox), [], `${action}: every configured sentinel must be preserved`);
+  }
+});
+
+test('CLI-09-AC04: the discovery arity gate leaves the prior #196/#198/#200/#202/#204/#206/#208/#210 boundaries byte-exact in the same sandbox machinery', async (t) => {
+  // The discovery-sandbox variant (fake docker plus fake curl recorders)
+  // must not perturb any other boundary: #196 unknown-command and
+  // known-command dispatch, #198 exact reset confirmation, #200 exact down
+  // arity, #202 exact up arity, #204 exact setup arity, #206 exact analyze
+  // arity, #208 exact status arity, and #210 exact logs operand all keep
+  // their byte-exact behavior with zero tool calls.
+  const sandbox = buildDiscoverySandbox();
+  t.after(sandbox.deleteAll);
+  const unknown = await runDiscoveryInSandbox(sandbox, ['definitely-not-a-command']);
+  assert.equal(unknown.status, 1, 'unknown command must still fail non-zero');
+  assert.equal(
+    unknown.stderr,
+    `KaleidoSphere ERROR: unknown command: "definitely-not-a-command"\n${USAGE}\n`,
+    'the unchanged unknown-command diagnostic',
+  );
+  const promotionBundle = await runDiscoveryInSandbox(sandbox, ['promotion-bundle']);
+  assert.equal(promotionBundle.status, 1, 'known-command validation must still fail non-zero');
+  assert.equal(
+    promotionBundle.stderr,
+    'KaleidoSphere ERROR: usage: ./bin/bi promotion-bundle {build|inspect|preflight} ...\n',
+    'the unchanged promotion-bundle validation diagnostic',
+  );
+  const reset = await runDiscoveryInSandbox(sandbox, ['reset', '--yes-i-understand', '--typo']);
+  assert.equal(reset.status, 1, 'trailing reset argument must still fail non-zero');
+  assert.equal(reset.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'the unchanged reset confirmation diagnostic');
+  const down = await runDiscoveryInSandbox(sandbox, ['down', '--typo']);
+  assert.equal(down.status, 1, 'trailing down argument must still fail non-zero');
+  assert.equal(down.stderr, DOWN_USAGE_DIAGNOSTIC, 'the unchanged down usage diagnostic');
+  const up = await runDiscoveryInSandbox(sandbox, ['up', '--typo']);
+  assert.equal(up.status, 1, 'trailing up argument must still fail non-zero');
+  assert.equal(up.stderr, UP_USAGE_DIAGNOSTIC, 'the unchanged up usage diagnostic');
+  const setup = await runDiscoveryInSandbox(sandbox, ['setup', '--typo']);
+  assert.equal(setup.status, 1, 'trailing setup argument must still fail non-zero');
+  assert.equal(setup.stderr, SETUP_USAGE_DIAGNOSTIC, 'the unchanged setup usage diagnostic');
+  const analyze = await runDiscoveryInSandbox(sandbox, ['analyze', '--typo']);
+  assert.equal(analyze.status, 1, 'trailing analyze argument must still fail non-zero');
+  assert.equal(analyze.stderr, ANALYZE_USAGE_DIAGNOSTIC, 'the unchanged analyze usage diagnostic');
+  const status = await runDiscoveryInSandbox(sandbox, ['status', '--typo']);
+  assert.equal(status.status, 1, 'trailing status argument must still fail non-zero');
+  assert.equal(status.stderr, STATUS_USAGE_DIAGNOSTIC, 'the unchanged status usage diagnostic');
+  const logs = await runDiscoveryInSandbox(sandbox, ['logs', '--follow']);
+  assert.equal(logs.status, 1, 'malformed logs operand must still fail non-zero');
+  assert.equal(logs.stderr, LOGS_USAGE_DIAGNOSTIC, 'the unchanged logs usage diagnostic');
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
+  assert.deepEqual(curlCalls(sandbox), [], 'zero fake-curl calls across the preserved boundaries');
 });
