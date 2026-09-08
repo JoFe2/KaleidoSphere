@@ -635,7 +635,7 @@
     "tests/postgresql-c1-certification.test.mjs": "9136c2295386e11643177e3e415530f1a1b3e8d55343a5e2be75faf39285647d",
     "tests/postgresql-e2e.test.mjs": "9fb62380ed6c22945bc2ccde27bf7f3e566de7875069cbcb2152cf6f60ec6001",
     "tests/postgresql-product-dispatch.test.mjs": "757ea70f13db969f16f137b6c1b2ac0e7febb4f5e52d059f030673139c6e8341",
-    "tests/postgresql-structure-scan.test.mjs": "89413b040df5472b68f48fef9bace4ca0d5caa25d95139eb9dfc8b2905a441ff",
+    "tests/postgresql-structure-scan.test.mjs": "3b5d830134bca1ddc4a8791bfc3643a4c50f306a5deb10c3d6295f5a38dd33d7",
     "tests/postgresql-wave2-profile-canonical-number.test.mjs": "cfb00508d499f66fc9e8984f3f1310732ba5cc446347859bae3b3ff0965b361c",
     "tests/postgresql-wave2-profile.test.mjs": "6e73f06b8339990aaf56695d1652a8302b2ce45df09063df22915b1e4ddda4a3",
     "tests/postgresql-wave2-relationships.test.mjs": "2e326d2f101aa738c75df7d24b0aee96a71d04bb486f37553be1cde3b00a3e58",
