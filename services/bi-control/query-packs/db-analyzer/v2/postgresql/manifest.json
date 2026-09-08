@@ -291,7 +291,7 @@
         "url": "https://www.postgresql.org/docs/current/catalog-pg-index.html",
         "spdx": "PostgreSQL",
         "copiedCode": false,
-        "changeMarker": "KaleidoSphere-authored bounded index inventory SELECT; expression and predicate text omitted"
+        "changeMarker": "KaleidoSphere-authored bounded index inventory SELECT; key-ordinal expansion spans the full PostgreSQL 32-key attribute limit (indnkeyatts <= 32); expression and predicate text omitted"
       }
     }
   ]

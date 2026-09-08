@@ -23,7 +23,9 @@ FROM pg_catalog.pg_index AS index_row
 JOIN pg_catalog.pg_class AS index_relation ON index_relation.oid = index_row.indexrelid
 JOIN pg_catalog.pg_class AS relation ON relation.oid = index_row.indrelid
 JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = relation.relnamespace
-CROSS JOIN (VALUES (1), (2), (3), (4)) AS key_ordinal_range (key_ordinal)
+CROSS JOIN (VALUES (1), (2), (3), (4), (5), (6), (7), (8), (9), (10), (11), (12), (13), (14), (15),
+               (16), (17), (18), (19), (20), (21), (22), (23), (24), (25), (26), (27), (28), (29),
+               (30), (31), (32)) AS key_ordinal_range (key_ordinal)
 LEFT JOIN pg_catalog.pg_attribute AS attribute
   ON attribute.attrelid = index_row.indrelid
   AND attribute.attnum = index_row.indkey[key_ordinal]

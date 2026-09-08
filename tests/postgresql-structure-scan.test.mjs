@@ -284,6 +284,43 @@ test('the v2 index query resolves key columns position- and expression-aware fro
   assert.match(indexSql, /attribute\.attname\s+IS\s+NULL\s+THEN\s+'EXPRESSION'/i);
 });
 
+test('the v2 index key-ordinal expansion spans the full PostgreSQL 32-key attribute limit, never a silent prefix', async () => {
+  const inputs = await loadV2Inputs();
+  const indexSql = inputs.sqlByQueryId['postgresql.structure.indexes'];
+  // The ordinal expansion must enumerate exactly the contiguous 1..32 range: PostgreSQL's
+  // hard limit on index key attributes (indnkeyatts <= 32). Any smaller expansion would
+  // silently truncate wide composite keys, and any gap or duplicate would misorder them,
+  // so neither "exactly N key columns" nor "N shown of more" can be inferred either way.
+  const expansion = indexSql.match(/CROSS JOIN \(VALUES([\s\S]*?)\)\s+AS\s+key_ordinal_range/i);
+  assert.ok(expansion, 'the key ordinal expansion is an explicit bounded VALUES list');
+  const ordinals = [...expansion[1].matchAll(/\(\s*(\d+)\s*\)/g)].map((match) => Number(match[1]));
+  assert.deepEqual(ordinals, Array.from({ length: 32 }, (_, offset) => offset + 1));
+  // The expansion stays row-budget bounded by the index's own key-attribute count.
+  assert.match(indexSql, /key_ordinal_range\.key_ordinal\s*<=\s*index_row\.indnkeyatts/i);
+});
+
+test('a six-key composite unique index is read back with every key column in ordinal order', async () => {
+  const evidence = await runAnalyzeProfile(`${fixtureDirectory}/postgresql-structure-profile-v2.json`, {
+    repositoryRoot: 'services/bi-control',
+  });
+  const indexExtract = evidence.extracts.find((entry) => entry.category === 'indexes');
+  // A composite unique index wider than any legacy ordinal cap must be represented with
+  // all of its key columns, in order, not a truncated prefix.
+  const wideKey = indexExtract.rows
+    .filter((row) => row.index_name === 'settlements_source_key')
+    .map((row) => [row.key_ordinal, row.key_column_name, row.key_column_kind, row.data_type]);
+  assert.deepEqual(wideKey, [
+    [1, 'settlement_id', 'COLUMN', 'int8'],
+    [2, 'source_ref', 'COLUMN', 'text'],
+    [3, 'account_ref', 'COLUMN', 'text'],
+    [4, 'period_code', 'COLUMN', 'text'],
+    [5, 'amount', 'COLUMN', 'numeric'],
+    [6, 'version', 'COLUMN', 'int8'],
+  ]);
+  const wideFlags = indexExtract.rows.filter((row) => row.index_name === 'settlements_source_key');
+  assert.ok(wideFlags.every((row) => row.is_unique === true && row.is_primary === false && row.is_valid === true));
+});
+
 test('PostgreSQL v2 index snapshot bytes are stable across index row order', async () => {
   const inputs = await loadV2Inputs();
   const first = build(inputs);
