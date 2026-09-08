@@ -446,15 +446,32 @@ test('clean-room runner: deterministic evidence, EXACT oracle readback, real reg
 // is not public closure evidence for XRA-PS-01, and does not close issue151.
 
 const NATIVE_FIXTURE_PATH = 'tests/pansphaira-analytics-native-released-fixture.json';
+const NATIVE_RECEIPT_FIXTURE_PATH = 'tests/pansphaira-analytics-native-source-receipt.json';
 const NATIVE_PROJECTION_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/native-projection.v1.json';
 const NATIVE_ANALYSIS_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/edge-evidence-analysis.v1.json';
 const NATIVE_RELEASE_SIDECAR_PATH = 'contracts/pansphaira-analytics/v1/native-release-registry.v1.json';
-// Source-qualified on PANSPHAIRA Main 988395110a9189d1b8cd4ee98184ed5c1d77a15d;
-// pinned independently of any caller-recomputed hash.
+// Exact controller-observed public release/source receipt bytes (public
+// synthetic source only), trailing newline preserved. Its genuine 64-hex
+// SHA256 is the actual receipt hash; the legacy v1 slot carried a 40-hex git
+// commit in this field, which is malformed and no longer accepted.
+function nativeReceiptBytes() {
+  return readFileSync(path.join(root, NATIVE_RECEIPT_FIXTURE_PATH));
+}
+// Source-qualified on PANSPHAIRA Main 988395110a9189d1b8cd4ee98184ed5c1d77a15d
+// (the later byte-equivalent head); the named release 2026_09_05_v1 resolved
+// 7f662672bfc45087342f23e5c589d43598f5c20d. Pinned independently of any
+// caller-recomputed hash; the receipt digest is verified over the raw receipt
+// bytes.
 const NATIVE_TRUSTED = Object.freeze({
   releaseId: 'pan343-2026-09-05-v1',
-  releaseReceiptSha256: '7f662672bfc45087342f23e5c589d43598f5c20d',
+  releaseTag: '2026_09_05_v1',
+  releaseCommit: '7f662672bfc45087342f23e5c589d43598f5c20d',
   pansphairaHeadCommit: '988395110a9189d1b8cd4ee98184ed5c1d77a15d',
+  releaseReceiptSha256: 'bd485d4525cfce9b843de54b2fb6e30e30e560857e6f06faa0f494f65dddb1c6',
+  sourceFileIdentity: Object.freeze({
+    path: 'tests/fixtures/cks-analytics/projection-v1.json',
+    sha256: '22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8',
+  }),
   rawArtifactSha256: '22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8',
   canonicalTransportSha256: '91c26eb69860767ec2898a48676caaeb52c808de284bb0fbfbe8a986d30ad19c',
   projectionBodyDigest: 'cc5f6cc9591ccf4b6b3c4b9f954aa9da09695b784d7abaa585c082aea195ef1b',
@@ -582,7 +599,14 @@ test('NATIVE-AC01: the native boundary is a real local service process that inge
   assert.deepEqual(candidate.authority, structuredClone(AUTHORITY_FREE));
   assert.equal(candidate.bindings.pansphairaHead.status, 'RELEASED');
   assert.equal(candidate.bindings.pansphairaHead.commitOid, NATIVE_TRUSTED.pansphairaHeadCommit);
+  assert.equal(candidate.bindings.pansphairaHead.releaseTag, NATIVE_TRUSTED.releaseTag);
+  assert.equal(candidate.bindings.pansphairaHead.releaseCommit, NATIVE_TRUSTED.releaseCommit);
+  assert.notEqual(candidate.bindings.pansphairaHead.releaseCommit, candidate.bindings.pansphairaHead.commitOid, 'named release commit and byte-equivalent head must be distinct');
+  assert.deepEqual(candidate.bindings.pansphairaHead.sourceFileIdentity, structuredClone(NATIVE_TRUSTED.sourceFileIdentity));
   assert.equal(candidate.bindings.pansphairaHead.releaseReceiptSha256, NATIVE_TRUSTED.releaseReceiptSha256);
+  // The receipt binding is the genuine 64-hex SHA256, not a 40-hex commit.
+  assert.match(candidate.bindings.pansphairaHead.releaseReceiptSha256, /^[a-f0-9]{64}$/);
+  assert.notEqual(candidate.bindings.pansphairaHead.releaseReceiptSha256, candidate.bindings.pansphairaHead.releaseCommit);
   assert.equal(candidate.bindings.rawArtifactSha256, NATIVE_TRUSTED.rawArtifactSha256);
   assert.equal(candidate.bindings.canonicalTransportSha256, NATIVE_TRUSTED.canonicalTransportSha256);
   assert.equal(candidate.bindings.projectionBodyDigest, NATIVE_TRUSTED.projectionBodyDigest);
@@ -767,6 +791,7 @@ test('NATIVE-AC04: the native candidate binds exact heads, contracts, input, res
   const materials = {
     projectionBytes: nativeCanonicalTransportBytes(),
     rawArtifactBytes: inputs.nativeFixtureBytes,
+    receiptBytes: nativeReceiptBytes(),
     nativeProjectionContractBytes: contextLike.nativeProjectionContractBytes,
     analysisContractBytes: contextLike.nativeAnalysisContractBytes,
     releaseSidecarBytes: contextLike.nativeSidecarBytes,
@@ -784,7 +809,12 @@ test('NATIVE-AC04: the native candidate binds exact heads, contracts, input, res
   assert.deepEqual(candidate.bindings.kaleidosphereHead, {commitOid: gitHead('HEAD'), treeOid: gitHead('HEAD^{tree}')});
   assert.equal(candidate.bindings.pansphairaHead.status, 'RELEASED');
   assert.equal(candidate.bindings.pansphairaHead.commitOid, NATIVE_TRUSTED.pansphairaHeadCommit);
+  assert.equal(candidate.bindings.pansphairaHead.releaseTag, NATIVE_TRUSTED.releaseTag);
+  assert.equal(candidate.bindings.pansphairaHead.releaseCommit, NATIVE_TRUSTED.releaseCommit);
+  assert.notEqual(candidate.bindings.pansphairaHead.releaseCommit, candidate.bindings.pansphairaHead.commitOid);
+  assert.deepEqual(candidate.bindings.pansphairaHead.sourceFileIdentity, structuredClone(NATIVE_TRUSTED.sourceFileIdentity));
   assert.equal(candidate.bindings.pansphairaHead.releaseReceiptSha256, NATIVE_TRUSTED.releaseReceiptSha256);
+  assert.equal(candidate.bindings.pansphairaHead.releaseReceiptSha256, sha256hex(nativeReceiptBytes()));
   assert.equal(candidate.bindings.canonicalTransportSha256, result.requestSha256);
   assert.equal(candidate.bindings.canonicalTransportSha256, NATIVE_TRUSTED.canonicalTransportSha256);
   assert.equal(candidate.bindings.rawArtifactSha256, sha256hex(inputs.nativeFixtureBytes));
@@ -805,6 +835,9 @@ test('NATIVE-AC04: the native candidate binds exact heads, contracts, input, res
     ['kaleidosphere head tree', (value) => { value.bindings.kaleidosphereHead.treeOid = '0'.repeat(40); }],
     ['pansphaira head commit', (value) => { value.bindings.pansphairaHead.commitOid = '0'.repeat(40); }],
     ['release receipt', (value) => { value.bindings.pansphairaHead.releaseReceiptSha256 = '0'.repeat(64); }],
+    ['release tag (stale candidate)', (value) => { value.bindings.pansphairaHead.releaseTag = '2099_01_01_v9'; }],
+    ['release commit (stale candidate)', (value) => { value.bindings.pansphairaHead.releaseCommit = '0'.repeat(40); }],
+    ['source file identity', (value) => { value.bindings.pansphairaHead.sourceFileIdentity.sha256 = '0'.repeat(64); }],
     ['raw artifact digest', (value) => { value.bindings.rawArtifactSha256 = sha256hex('substituted-artifact'); }],
     ['canonical transport digest', (value) => { value.bindings.canonicalTransportSha256 = sha256hex('substituted-input'); }],
     ['projection body digest', (value) => { value.bindings.projectionBodyDigest = sha256hex('substituted-body'); }],
@@ -827,6 +860,134 @@ test('NATIVE-AC04: the native candidate binds exact heads, contracts, input, res
       label,
     );
   }
+});
+
+test('NATIVE-AC05: versioned source-only provenance distinguishes the actual receipt SHA256 from the named release commit and denies trusted-source substitution', async (t) => {
+  const [pipelineModule, candidateModule, scriptModule] = await Promise.all([
+    import('../services/bi-agent/src/pansphaira-analytics/native-pipeline.mjs'),
+    import('../services/bi-agent/src/pansphaira-analytics/native-candidate.mjs'),
+    import('../scripts/run-pansphaira-analytics-service-clean-room.mjs'),
+  ]);
+  const {validateNativeSidecar} = pipelineModule;
+  const {verifyNativeAuthorityFreeCandidate} = candidateModule;
+  const {createCleanRoomContext, loadFrozenInputs, runNativePositiveRun} = scriptModule;
+
+  const realReceipt = nativeReceiptBytes();
+  // The genuine receipt is the exact controller-observed public release/source
+  // observation: a 64-hex SHA256, never a 40-hex commit OID.
+  assert.equal(sha256hex(realReceipt), NATIVE_TRUSTED.releaseReceiptSha256);
+  assert.equal(NATIVE_TRUSTED.releaseReceiptSha256.length, 64);
+
+  const realSidecar = JSON.parse(readFileSync(path.join(root, NATIVE_RELEASE_SIDECAR_PATH), 'utf8'));
+
+  // GREEN: the genuine 64-hex receipt and the v2 source-only sidecar validate,
+  // and the candidate verifies against independently reconstructed trusted pins.
+  assert.doesNotThrow(() => validateNativeSidecar(structuredClone(realSidecar), Buffer.from(realReceipt)));
+  const inputs = loadFrozenInputs();
+  const contextLike = createCleanRoomContext(inputs);
+  const {result} = runNativePositiveRun(inputs, contextLike);
+  assert.equal(result.state, 'CANDIDATE');
+
+  const alterReceipt = (mutate) => {
+    const doc = JSON.parse(realReceipt.toString('utf8'));
+    mutate(doc);
+    return Buffer.from(JSON.stringify(doc));
+  };
+  const other40 = 'f'.repeat(32) + '12345678';
+
+  // (1) Wrong-length token: a 40-hex commit OID in the receipt-SHA256 slot is the
+  //     legacy malformed pin; the v2 contract requires a genuine 64-hex digest.
+  const wrongLength = structuredClone(realSidecar);
+  wrongLength.pinnedSource.releaseReceiptSha256 = NATIVE_TRUSTED.releaseCommit;
+  wrongLength.entries[0].releaseReceiptSha256 = NATIVE_TRUSTED.releaseCommit;
+  assert.throws(() => validateNativeSidecar(wrongLength, Buffer.from(realReceipt)), {code: 'XRA_KS01_NATIVE_SIDECAR_INVALID'});
+
+  // (2) Named-release/head mismatch: the later byte-equivalent head must be a
+  //     distinct commit from the named release's resolved commit.
+  const conflated = structuredClone(realSidecar);
+  conflated.pinnedSource.pansphairaHeadCommit = conflated.pinnedSource.releaseCommit;
+  conflated.entries[0].pansphairaHeadCommit = conflated.entries[0].releaseCommit;
+  assert.throws(() => validateNativeSidecar(conflated, Buffer.from(realReceipt)), {code: 'XRA_KS01_NATIVE_SIDECAR_INVALID'});
+
+  // (3) Altered receipt with a recomputed self-hash: the digest now matches the
+  //     altered bytes, but the observed resolved commit no longer binds the named
+  //     release. A successful (re)digest does not validate a receipt.
+  const alteredReceipt = alterReceipt((doc) => { doc.resolved_commit = other40; });
+  const alteredSidecar = structuredClone(realSidecar);
+  alteredSidecar.pinnedSource.releaseReceiptSha256 = sha256hex(alteredReceipt);
+  alteredSidecar.entries[0].releaseReceiptSha256 = sha256hex(alteredReceipt);
+  assert.throws(() => validateNativeSidecar(alteredSidecar, alteredReceipt), {code: 'XRA_KS01_NATIVE_RECEIPT_MISMATCH_DENIED'});
+
+  // (4) Changed source/artifact identity: the observed source file identity no
+  //     longer binds the receipt's first source.
+  const changedSource = structuredClone(realSidecar);
+  changedSource.pinnedSource.sourceFileIdentity.sha256 = sha256hex('substituted-source-file');
+  changedSource.entries[0].sourceFileIdentity.sha256 = sha256hex('substituted-source-file');
+  assert.throws(() => validateNativeSidecar(changedSource, Buffer.from(realReceipt)), {code: 'XRA_KS01_NATIVE_RECEIPT_MISMATCH_DENIED'});
+
+  // Verifier-level substitution negatives on the trusted path: the positive
+  // candidate verifies, but each substituted binding/material is denied.
+  const baseMaterials = {
+    projectionBytes: nativeCanonicalTransportBytes(),
+    rawArtifactBytes: inputs.nativeFixtureBytes,
+    receiptBytes: realReceipt,
+    nativeProjectionContractBytes: contextLike.nativeProjectionContractBytes,
+    analysisContractBytes: contextLike.nativeAnalysisContractBytes,
+    releaseSidecarBytes: contextLike.nativeSidecarBytes,
+    sidecarEntry: contextLike.nativeSidecar.entries.find((entry) => entry.status === 'RELEASED'),
+    heads: contextLike.heads,
+    environment: contextLike.environment,
+    environmentSha256: contextLike.environmentSha256,
+    trusted: NATIVE_TRUSTED,
+  };
+  assert.deepEqual(verifyNativeAuthorityFreeCandidate(result.candidate, baseMaterials), {state: 'VERIFIED'});
+
+  // (5) Changed raw artifact bytes (source substitution) are denied on the
+  //     trusted path.
+  assert.throws(
+    () => verifyNativeAuthorityFreeCandidate(result.candidate, {...baseMaterials, rawArtifactBytes: Buffer.from('substituted-artifact-bytes')}),
+    {code: 'XRA_KS01_NATIVE_CANDIDATE_INPUT_DIGEST_DENIED'},
+  );
+
+  // (6) A wrong-length receipt token carried by the candidate is denied: the
+  //     re-derived raw-receipt digest is 64-hex and cannot equal a 40-hex OID.
+  const staleToken = structuredClone(result.candidate);
+  staleToken.bindings.pansphairaHead.releaseReceiptSha256 = NATIVE_TRUSTED.releaseCommit;
+  assert.throws(() => verifyNativeAuthorityFreeCandidate(staleToken, baseMaterials), {code: 'XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED'});
+
+  // (7) A stale/substituted candidate binding (wrong named-release commit) is
+  //     denied against the independently-pinned trusted provenance.
+  const staleCandidate = structuredClone(result.candidate);
+  staleCandidate.bindings.pansphairaHead.releaseCommit = other40;
+  assert.throws(() => verifyNativeAuthorityFreeCandidate(staleCandidate, baseMaterials), {code: 'XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED'});
+
+  // (8) A recomputed self-hash over altered receipt bytes cannot be laundered:
+  //     the observed identity bind denies it even though its digest is valid.
+  assert.throws(
+    () => verifyNativeAuthorityFreeCandidate(result.candidate, {...baseMaterials, receiptBytes: alteredReceipt}),
+    {code: 'XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED'},
+  );
+
+  // Loopback readback + service-absent falsifier: the exact released native
+  // projection is ingested by the real local service and the candidate's
+  // source-only provenance reads back as the genuine 64-hex receipt and the
+  // named release commit/head; this cannot be satisfied without the service.
+  const port = await freePort();
+  const child = startServer(port);
+  t.after(() => stopServer(child));
+  await waitForServer(port, child);
+  assert.equal(child.exitCode, null, 'native service process must stay alive for the loopback readback');
+  const response = await postNativeProjection(port, nativeCanonicalTransportBytes());
+  assert.equal(response.status, 200);
+  assert.equal(response.body.status, 'CANDIDATE');
+  const head = response.body.candidate.bindings.pansphairaHead;
+  assert.equal(head.releaseReceiptSha256, NATIVE_TRUSTED.releaseReceiptSha256);
+  assert.match(head.releaseReceiptSha256, /^[a-f0-9]{64}$/);
+  assert.equal(head.releaseCommit, NATIVE_TRUSTED.releaseCommit);
+  assert.equal(head.commitOid, NATIVE_TRUSTED.pansphairaHeadCommit);
+  assert.notEqual(head.releaseCommit, head.commitOid);
+  assert.equal(head.releaseTag, NATIVE_TRUSTED.releaseTag);
+  assert.deepEqual(head.sourceFileIdentity, structuredClone(NATIVE_TRUSTED.sourceFileIdentity));
 });
 
 test('native clean-room runner: deterministic native evidence, EXACT oracle, synthetic sidecar pin, relational registry still HELD', async () => {

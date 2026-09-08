@@ -51,10 +51,19 @@ export function buildNativeAuthorityFreeCandidate({ analysis, sidecarEntry, head
     resultSha256: analysis.resultSha256,
     bindings: {
       kaleidosphereHead: { commitOid: heads.commitOid, treeOid: heads.treeOid },
+      // Source-only provenance (v2): the named release's tag and resolved
+      // commit, the later byte-equivalent head, the genuine 64-hex SHA256 of
+      // the controller-observed receipt bytes, and the observed source file
+      // identity are bound SEPARATELY. A 40-hex commit OID is never a receipt
+      // hash, and the receipt digest is verified over the raw bytes, never
+      // recomputed from the caller sidecar or the candidate itself.
       pansphairaHead: {
         status: 'RELEASED',
         commitOid: sidecarEntry.pansphairaHeadCommit,
+        releaseTag: sidecarEntry.releaseTag,
+        releaseCommit: sidecarEntry.releaseCommit,
         releaseReceiptSha256: sidecarEntry.releaseReceiptSha256,
+        sourceFileIdentity: structuredClone(sidecarEntry.sourceFileIdentity),
       },
       rawArtifactSha256: sidecarEntry.rawArtifactSha256,
       canonicalTransportSha256,
@@ -71,12 +80,16 @@ export function buildNativeAuthorityFreeCandidate({ analysis, sidecarEntry, head
 
 // materials: {
 //   projectionBytes (canonical transport wire bytes), rawArtifactBytes (the
-//   frozen released raw artifact), nativeProjectionContractBytes,
-//   analysisContractBytes, releaseSidecarBytes, sidecarEntry (the RELEASED
-//   trusted sidecar entry), heads: {commitOid, treeOid}, environment,
-//   environmentSha256, trusted (independent pins: rawArtifactSha256,
-//   canonicalTransportSha256, projectionBodyDigest, pansphairaHeadCommit,
-//   releaseReceiptSha256),
+//   frozen released raw artifact), receiptBytes (the exact controller-observed
+//   public release/source receipt bytes, trailing newline included),
+//   nativeProjectionContractBytes, analysisContractBytes,
+//   releaseSidecarBytes, sidecarEntry (the RELEASED trusted sidecar entry),
+//   heads: {commitOid, treeOid}, environment,
+//   environmentSha256, trusted (independent pins reconstructed from the raw
+//   receipt/source bytes and the observed byte-equivalent head:
+//   releaseTag, releaseCommit, pansphairaHeadCommit, releaseReceiptSha256,
+//   sourceFileIdentity, rawArtifactSha256, canonicalTransportSha256,
+//   projectionBodyDigest),
 // }
 export function verifyNativeAuthorityFreeCandidate(candidate, materials) {
   if (candidate === null || typeof candidate !== 'object' || Array.isArray(candidate)) fail('XRA_KS01_NATIVE_CANDIDATE_STATE_DENIED');
@@ -117,10 +130,45 @@ export function verifyNativeAuthorityFreeCandidate(candidate, materials) {
   const pansphairaHead = bindings.pansphairaHead;
   if (pansphairaHead === null || typeof pansphairaHead !== 'object' || Array.isArray(pansphairaHead)) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
   if (pansphairaHead.status !== 'RELEASED') fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
-  if (pansphairaHead.commitOid !== materials.sidecarEntry.pansphairaHeadCommit) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
   if (pansphairaHead.commitOid !== materials.trusted.pansphairaHeadCommit) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
-  if (pansphairaHead.releaseReceiptSha256 !== materials.sidecarEntry.releaseReceiptSha256) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
-  if (pansphairaHead.releaseReceiptSha256 !== materials.trusted.releaseReceiptSha256) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
+
+  // Source-only provenance, re-derived from the exact raw controller-observed
+  // receipt bytes (never from the candidate or the caller sidecar): the
+  // candidate's receipt digest must equal the genuine 64-hex SHA256 of the raw
+  // bytes AND the independently-pinned trusted digest. A wrong-length token
+  // (a 40-hex commit masquerading as a receipt hash) or a recomputed self-hash
+  // over altered bytes fails here.
+  if (!Buffer.isBuffer(materials.receiptBytes) || materials.receiptBytes.length === 0) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  const receiptDigest = sha256hex(materials.receiptBytes);
+  if (receiptDigest !== pansphairaHead.releaseReceiptSha256) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (receiptDigest !== materials.trusted.releaseReceiptSha256) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (pansphairaHead.releaseTag !== materials.trusted.releaseTag) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (pansphairaHead.releaseCommit !== materials.trusted.releaseCommit) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (canonicalJson(pansphairaHead.sourceFileIdentity) !== canonicalJson(materials.trusted.sourceFileIdentity)) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+
+  // The raw receipt's observed named-release identity must bind the trusted
+  // pins: a named-release/head mismatch or a substituted source file is denied.
+  // A recomputed self-hash over altered receipt bytes (changed resolved_commit
+  // or source) fails this observed-identity bind, so it cannot be laundered
+  // into a "valid" receipt digest.
+  let receipt;
+  try {
+    receipt = JSON.parse(materials.receiptBytes.toString('utf8'));
+  } catch {
+    fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  }
+  if (receipt === null || typeof receipt !== 'object' || Array.isArray(receipt)) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (receipt.tag !== materials.trusted.releaseTag) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (receipt.resolved_commit !== materials.trusted.releaseCommit) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (!Array.isArray(receipt.sources) || receipt.sources.length < 1) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  const observedSource = receipt.sources[0];
+  if (observedSource === null || typeof observedSource !== 'object' || Array.isArray(observedSource)) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (observedSource.path !== materials.trusted.sourceFileIdentity.path
+    || observedSource.sha256 !== materials.trusted.sourceFileIdentity.sha256) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+
+  // The named release's resolved commit and the later byte-equivalent head are
+  // two distinct commits; conflating them is denied.
+  if (materials.trusted.releaseCommit === materials.trusted.pansphairaHeadCommit) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
 
   const claimIds = candidate.counterevidence.map((entry) => entry.claim).sort();
   if (JSON.stringify(claimIds) !== JSON.stringify([...NATIVE_COUNTEREVIDENCE_CLAIM_IDS].sort())) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');

@@ -1,0 +1,30 @@
+{
+  "schema_version": "controller-observed/public-release-source/v1",
+  "observed_at": "2026-09-08T20:34:17.046392+00:00",
+  "anonymous": true,
+  "repository": "JoFe2/PANSPHAIRA",
+  "release_id": 383127317,
+  "tag": "2026_09_05_v1",
+  "resolved_commit": "7f662672bfc45087342f23e5c589d43598f5c20d",
+  "release_url": "https://github.com/JoFe2/PANSPHAIRA/releases/tag/2026_09_05_v1",
+  "published_at": "2026-09-05T04:02:21Z",
+  "issue": 343,
+  "issue_state": "closed",
+  "issue_state_reason": "completed",
+  "issue_closed_at": "2026-09-05T04:02:23Z",
+  "sources": [
+    {
+      "path": "tests/fixtures/cks-analytics/projection-v1.json",
+      "url": "https://raw.githubusercontent.com/JoFe2/PANSPHAIRA/7f662672bfc45087342f23e5c589d43598f5c20d/tests/fixtures/cks-analytics/projection-v1.json",
+      "sha256": "22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8",
+      "bytes": 2927
+    },
+    {
+      "path": "packages/contracts/src/kaleidosphere-analytics-projection.ts",
+      "url": "https://raw.githubusercontent.com/JoFe2/PANSPHAIRA/7f662672bfc45087342f23e5c589d43598f5c20d/packages/contracts/src/kaleidosphere-analytics-projection.ts",
+      "sha256": "2b99689c462c0b4165d967bd82d3d266f6de1c62000bb4f9f3320b257d6b69db",
+      "bytes": 24636
+    }
+  ],
+  "nonclaim": "Actual provider observation of public synthetic source, not qualified service pair or full issue151/344 completion."
+}
