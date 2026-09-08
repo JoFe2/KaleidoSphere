@@ -105,8 +105,12 @@ case "${1:-help}" in
       "http://127.0.0.1:$(published_port bi-agent 18790)/api/chat"
     ;;
   ask)
-    require_setup
+    # The request-bearing ask boundary requires one or more operand tokens:
+    # a missing or explicit-empty operand fails with the bounded ask usage
+    # diagnostic before require_setup, stat, Compose, Node, curl, or any
+    # other downstream action.
     [ -n "${2:-}" ] || fail 'usage: ./bin/bi ask "Largest tables by size"'
+    require_setup
     message="$*"
     message="${message#ask }"
     node -e 'process.stdout.write(JSON.stringify({message: process.argv[1]}))' "$message" | \
@@ -116,8 +120,12 @@ case "${1:-help}" in
         "http://127.0.0.1:$(published_port bi-agent 18790)/api/chat"
     ;;
   search)
-    require_setup
+    # The request-bearing search boundary requires one or more operand
+    # tokens: a missing or explicit-empty operand fails with the bounded
+    # search usage diagnostic before require_setup, stat, Compose, Node,
+    # curl, or any other downstream action.
     [ -n "${2:-}" ] || fail 'usage: ./bin/bi search orders'
+    require_setup
     message="Suche ${*:2}"
     node -e 'process.stdout.write(JSON.stringify({message: process.argv[1]}))' "$message" | \
       curl --fail --silent --show-error \
