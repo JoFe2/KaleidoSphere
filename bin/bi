@@ -61,6 +61,11 @@ create_secret() {
 
 case "${1:-help}" in
   setup)
+    # The state-changing setup boundary accepts exactly one total argv entry:
+    # setup and nothing else. Any trailing argument fails before the
+    # Docker/OpenSSL checks, daemon/Compose preflight, directory creation,
+    # chmod, secret generation, Compose config, or any other action.
+    [ "$#" -eq 1 ] || fail 'usage: ./bin/bi setup'
     command -v docker >/dev/null || fail 'Docker is required'
     command -v openssl >/dev/null || fail 'OpenSSL is required'
     docker info >/dev/null 2>&1 || fail 'Docker daemon is unavailable'
