@@ -41,15 +41,25 @@
       "issue": 75,
       "slice": "K4b",
       "scope": "ClawHub publication + OpenClaw anonymous search/install/use/remove + Hermes path",
-      "terminalState": "local-terminal-external-wait",
-      "disposition": "LOCAL_COMPLETE_NOT_PUBLISHED",
-      "publicListingClaim": false,
+      "terminalState": "published-version-bound",
+      "disposition": "RECORDED_PUBLIC_DELIVERY",
+      "publicListingClaim": true,
+      "publication": {
+        "host": "clawhub",
+        "version": "0.18.2",
+        "facts": {
+          "path": "docs/release/k4b-clawhub-publication-v1.json",
+          "sha256": "d38c1c1c760fb8b416f4bbf33ee786393e13b77bc2fdfe9665e265cd254caee5"
+        },
+        "scope": "recorded ClawHub catalog version 0.18.2 only; no marketplace publication of the current source package 0.26.0, no fresh runtime install/use/remove, and no new marketplace action is claimed"
+      },
       "evidence": [
         { "path": "scripts/verify-hermes-consumption.mjs", "sha256": "5ed5da170fdb4df00cd8ef820433c91f68033e390d82fa2cf3c662d1b2ca239e" },
         { "path": "tests/hermes-consumption.test.mjs", "sha256": "ab1e976aec69f05e5787e7ac705fffb5b2129c5e28cc1b40e56563fc723c77f8" },
-        { "path": "docs/decisions/K4B-HERMES-CONSUMPTION.md", "sha256": "fc993ae1e279de5afee32a534ec918eb3ba1c55ba18c3e6c02a8c169077b6314" }
+        { "path": "docs/decisions/K4B-HERMES-CONSUMPTION.md", "sha256": "fc993ae1e279de5afee32a534ec918eb3ba1c55ba18c3e6c02a8c169077b6314" },
+        { "path": "docs/release/k4b-clawhub-publication-v1.json", "sha256": "d38c1c1c760fb8b416f4bbf33ee786393e13b77bc2fdfe9665e265cd254caee5" }
       ],
-      "externalWaits": ["clawhub-publication"]
+      "externalWaits": []
     },
     {
       "issue": 76,
@@ -128,14 +138,6 @@
   ],
   "externalWaits": [
     {
-      "id": "clawhub-publication",
-      "child": 75,
-      "host": "clawhub-openclaw-hermes",
-      "satisfied": false,
-      "blocker": "No publisher identity or ClawHub listing is established, so the anonymous OpenClaw search/install/use/negative/remove/zero-residue readback cannot be performed.",
-      "resumeAction": "Owner publishes the MIT-0 generated kaleidosphere skill bundle from the official ClawHub account, then performs the anonymous OpenClaw search/install/use/negative/remove readback with zero-residue verification."
-    },
-    {
       "id": "codex-portal-identity",
       "child": 76,
       "host": "codex",
@@ -162,8 +164,8 @@
       "note": "The local release build deterministically emits the distribution archives and SHA256 sidecars. Whether a public regular Latest release carries them is an external fact not verified on this base."
     },
     "publicCatalogAnonymousReadback": {
-      "state": "NOT_SATISFIED",
-      "note": "No anonymous search/install/use/negative/remove/zero-residue readback exists for any host; every per-child publicListingClaim is false."
+      "state": "RECORDED_K4B_CATALOG_0.18.2_ONLY",
+      "note": "The K4b child records the completed ClawHub publication at exactly catalog version 0.18.2 as version-bound recorded public delivery: a fresh anonymous page identity/version readback and the immutable GitHub release/tag/archive/sidecar readbacks are digest-bound in docs/release/k4b-clawhub-publication-v1.json, and the historical anonymous install/use/remove terminal comment is bound by scope only, not repeated. No fresh runtime install/use/remove or zero-residue readback is claimed, no marketplace publication of the current source package 0.26.0 is claimed, and the #76/#77 publicListingClaims remain false."
     },
     "externalWaitsExactOneStepResume": {
       "state": "PASS",
@@ -175,9 +177,9 @@
     }
   },
   "nonClaims": [
-    "NO_MARKETPLACE_LISTING",
-    "NO_PUBLIC_INSTALLABILITY",
-    "NO_CLAWHUB_OR_CODEX_OR_CLAUDE_RUNTIME_EXECUTION",
+    "NO_MARKETPLACE_LISTING_BESIDES_K4B_CATALOG_0.18.2",
+    "NO_PUBLIC_INSTALLABILITY_BESIDES_K4B_CATALOG_0.18.2",
+    "NO_FRESH_CLAWHUB_OR_CODEX_OR_CLAUDE_RUNTIME_EXECUTION",
     "NO_LIVE_CODEX_PROVIDER_RESPONSE",
     "NO_RELEASE_OR_TAG_CREATED",
     "NO_HOSTED_SERVICE_OR_MANAGED_CONNECTOR",

@@ -1,0 +1,45 @@
+{
+  "anonymous": true,
+  "clawhub": {
+    "page_sha256": "5da973395585a04ef08bf1dc16b5df17d125f781609f317adc95aa72136012b3",
+    "publisher": "jofe2",
+    "scope": "fresh anonymous page identity/version only; no fresh runtime/install test",
+    "url": "https://clawhub.ai/jofe2/skills/kaleidosphere",
+    "version": "0.18.2"
+  },
+  "issue": {
+    "state": "closed",
+    "state_reason": "completed",
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/75"
+  },
+  "nonclaims": [
+    "No current source version 0.26.0 marketplace publication",
+    "No fresh runtime authentication or install/uninstall",
+    "No PAN or provider change",
+    "No new marketplace write"
+  ],
+  "observed_at": "2026-09-08T13:01:57.550833+00:00",
+  "release": {
+    "archive": "kaleidosphere-clawhub-skill-v0.18.2.tar.gz",
+    "archive_sha256": "4384de5ad731dfbd81c642500c69c1f67357d0699d290f373a3afc691ae94edc",
+    "archive_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.18.2/kaleidosphere-clawhub-skill-v0.18.2.tar.gz",
+    "draft": false,
+    "files": {
+      "kaleidosphere-clawhub-skill-v0.18.2/SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
+      "kaleidosphere-clawhub-skill-v0.18.2/references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
+      "kaleidosphere-clawhub-skill-v0.18.2/scripts/validate-request.mjs": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509"
+    },
+    "sidecar_url": "https://github.com/JoFe2/KaleidoSphere/releases/download/v0.18.2/kaleidosphere-clawhub-skill-v0.18.2.tar.gz.sha256",
+    "tag": "v0.18.2",
+    "target": "3e757be1d058009c629a9142c238ace1c0dc61f5",
+    "url": "https://github.com/JoFe2/KaleidoSphere/releases/tag/v0.18.2"
+  },
+  "schema": "ks-series/k4b-public-facts/v1",
+  "terminal_comment": {
+    "body_sha256": "b5782d8c74d1d6a69c3741c8f85265be959038e40fe31d7838f0264599d5bf2b",
+    "id": 5470919529,
+    "published_at": "2026-08-30T19:56:56Z",
+    "scope": "historically recorded anonymous install/use/remove; NOT repeated in this series",
+    "url": "https://github.com/JoFe2/KaleidoSphere/issues/75#issuecomment-5470919529"
+  }
+}
