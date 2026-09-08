@@ -9,10 +9,10 @@
 // or runtime-state action.
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
-// destructive reset, down, and state-changing up argument boundaries. It does
-// not start containers, uses only a fake local docker executable and
-// disposable synthetic sandbox state, and makes no production-compatibility
-// claim.
+// destructive reset, down, state-changing up, and state-changing setup
+// argument boundaries. It does not start containers, uses only a fake local
+// docker executable, a fake local openssl executable, and disposable
+// synthetic sandbox state, and makes no production-compatibility claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -24,6 +24,7 @@ import {
   readFileSync,
   readdirSync,
   rmSync,
+  statSync,
   symlinkSync,
   writeFileSync,
 } from 'node:fs';
@@ -636,4 +637,280 @@ test('CLI-04-AC04: the up arity gate leaves the prior #196/#198/#200 boundaries 
     'the unchanged unknown-command diagnostic',
   );
   assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
+});
+
+// ---------------------------------------------------------------------------
+// CLI-05 (KaleidoSphere issue #204) — the state-changing setup boundary must
+// fail closed on every trailing argument form.
+//
+// setup takes no arguments. Every case runs a fresh disposable synthetic
+// sandbox: a new mkdtemp directory holding a byte-identical copy of the
+// shipped bin/bi, an optional synthetic .env, and two fake executables first
+// on PATH — a `docker` recorder that only appends its argv to a local call
+// log, and an `openssl` recorder that appends its argv and prints a
+// deterministic synthetic payload for `rand`, so secret generation is
+// observable end-to-end without real randomness. Each sandbox is removed when
+// its test finishes. No real Docker, OpenSSL randomness, network, credential,
+// database, or productive state is reached.
+// ---------------------------------------------------------------------------
+
+const SETUP_USAGE_DIAGNOSTIC = 'KaleidoSphere ERROR: usage: ./bin/bi setup\n';
+// The usage diagnostic is a single-line stderr record: printable ASCII only
+// and terminated by exactly one newline, so it is single-line and
+// injection-free.
+const SETUP_USAGE_DIAGNOSTIC_SHAPE = /^[\x20-\x7E]+\n$/;
+const SETUP_SUCCESS_OUTPUT = 'Setup complete. Runtime secrets stay in gitignored files.\n';
+// The seven synthetic secret files the exact setup creates, in documented
+// order: four internal runtime secrets (two hex, two base64) and three
+// empty external connector secrets.
+const SETUP_SECRET_FILES = Object.freeze([
+  '.runtime/secrets/superset_secret_key',
+  '.runtime/secrets/superset_admin_password',
+  '.runtime/secrets/superset_analyst_password',
+  '.runtime/secrets/control_token',
+  '.secrets/mssql_password',
+  '.secrets/oracle_password',
+  '.secrets/llm_api_key',
+]);
+// Every runtime/secret path the setup branch is allowed to create: the six
+// documented 0700 directories plus the seven secret files above.
+const SETUP_CREATED_PATHS = Object.freeze([
+  '.runtime',
+  '.runtime/secrets',
+  '.runtime/metadata',
+  '.runtime/projection',
+  '.runtime/receipts',
+  '.secrets',
+  ...SETUP_SECRET_FILES,
+]);
+
+function buildSetupSandbox({ configured = true } = {}) {
+  const root = mkdtempSync(path.join(ROOT, '.bi-setup-sandbox-'));
+  const fakeBin = path.join(root, 'fake-bin');
+  const logPath = path.join(root, 'docker-calls.log');
+  const opensslLogPath = path.join(root, 'openssl-calls.log');
+  mkdirSync(fakeBin);
+  mkdirSync(path.join(root, 'bin'), { recursive: true });
+  if (configured) writeFileSync(path.join(root, '.env'), 'SYNTHETIC=1\n');
+  // The fake docker recorder: one line of joined argv per invocation, nothing
+  // else. It shadows any real docker because fake-bin is first on PATH.
+  const dockerPath = path.join(fakeBin, 'docker');
+  const dockerScript =
+    `#!/bin/sh\n` +
+    `{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\n` +
+    'exit 0\n';
+  writeFileSync(dockerPath, dockerScript);
+  chmodSync(dockerPath, 0o755);
+  // The fake openssl recorder: logs the same way and answers `rand` on stdout
+  // with a deterministic synthetic payload, so the documented hex/base64
+  // secret generation is observable without real randomness.
+  const opensslPath = path.join(fakeBin, 'openssl');
+  const opensslScript =
+    `#!/bin/sh\n` +
+    `{ printf 'openssl'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${opensslLogPath}'\n` +
+    'if [ "$1" = rand ]; then\n' +
+    '  case "$2" in\n' +
+    "    -hex) printf '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef\\n' ;;\n" +
+    "    -base64) printf 'c3ludGhldGljLXNlY3JldA==\\n' ;;\n" +
+    '  esac\n' +
+    'fi\n' +
+    'exit 0\n';
+  writeFileSync(opensslPath, opensslScript);
+  chmodSync(opensslPath, 0o755);
+  // Run the exact shipped script bytes from inside the sandbox so bi_here is
+  // the disposable sandbox root, never this repository.
+  const biPath = path.join(root, 'bin', 'bi');
+  writeFileSync(biPath, readFileSync(path.join(ROOT, 'bin', 'bi')));
+  chmodSync(biPath, 0o755);
+  return Object.freeze({
+    root,
+    logPath,
+    opensslLogPath,
+    dotEnv: path.join(root, '.env'),
+    deleteAll: () => rmSync(root, { recursive: true, force: true }),
+  });
+}
+
+function opensslCalls(sandbox) {
+  if (!existsSync(sandbox.opensslLogPath)) return [];
+  return readFileSync(sandbox.opensslLogPath, 'utf8').split('\n').filter((line) => line.length > 0);
+}
+
+function setupCreatedPaths(sandbox) {
+  return SETUP_CREATED_PATHS.filter((entry) => existsSync(path.join(sandbox.root, entry)));
+}
+
+test('CLI-05-AC01: every trailing setup argument form fails closed with one deterministic bounded printable diagnostic, empty stdout, zero fake-Docker and fake-OpenSSL calls, and zero setup-created runtime/secret paths even with a synthetic .env present', async (t) => {
+  // Configured sandboxes carry a synthetic .env, so every form must be
+  // rejected by the zero-option arity gate alone — never by passing into the
+  // .env check and then the Docker/OpenSSL, daemon/Compose preflight,
+  // directory creation, chmod, or secret-generation boundary.
+  const forms = Object.freeze([
+    Object.freeze(['setup', '--typo']),
+    Object.freeze(['setup', '--force']),
+    Object.freeze(['setup', '-n']),
+    Object.freeze(['setup', '']),
+    Object.freeze(['setup', ' ']),
+    Object.freeze(['setup', '\u001b[2J\u001b[8m']),
+    Object.freeze(['setup', 'line1\nline2']),
+    Object.freeze(['setup', 'x'.repeat(5000)]),
+    Object.freeze(['setup', 'extra', 'more']),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const form of forms) {
+    const sandbox = buildSetupSandbox();
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, form);
+    const observation = `exit ${result.status}, stderr=${JSON.stringify(
+      result.stderr,
+    )}, dockerCalls=${JSON.stringify(dockerCalls(sandbox))}, opensslCalls=${JSON.stringify(
+      opensslCalls(sandbox),
+    )}, setupCreatedPaths=${JSON.stringify(setupCreatedPaths(sandbox))}`;
+    assert.equal(result.status, 1, `${JSON.stringify(form)} must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${JSON.stringify(form)}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      SETUP_USAGE_DIAGNOSTIC,
+      `${JSON.stringify(form)}: the deterministic bounded usage diagnostic`,
+    );
+    assert.match(
+      result.stderr,
+      SETUP_USAGE_DIAGNOSTIC_SHAPE,
+      `stderr stays printable ASCII with no control-byte injection: ${JSON.stringify(form)}`,
+    );
+    assert.ok(
+      result.stderr.length < 512,
+      `${JSON.stringify(form)}: stderr must stay bounded, got ${result.stderr.length}`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(form)}: zero fake-Docker calls, ${observation}`);
+    assert.deepEqual(opensslCalls(sandbox), [], `${JSON.stringify(form)}: zero fake-OpenSSL calls, ${observation}`);
+    assert.deepEqual(setupCreatedPaths(sandbox), [], `${JSON.stringify(form)}: zero setup-created runtime/secret paths, ${observation}`);
+    assert.equal(existsSync(sandbox.dotEnv), true, `${JSON.stringify(form)}: the synthetic .env must be preserved`);
+  }
+});
+
+test('CLI-05-AC02: the setup arity gate rejects before the .env check, the Docker/OpenSSL checks, and the daemon/Compose preflight, with zero tool calls in configured and unconfigured sandboxes', async (t) => {
+  // A configured sandbox proves the gate is the arity gate (the exact usage
+  // diagnostic, never the setup, Docker, or OpenSSL diagnostic) while a
+  // valid-looking synthetic .env is present; an unconfigured sandbox (no
+  // .env) proves the arity gate runs before any setup check: a malformed
+  // setup must report the usage diagnostic, never the setup diagnostic.
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    const sandbox = buildSetupSandbox({ configured });
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, ['setup', '--typo']);
+    const observation = `configured=${configured}, exit ${result.status}, stderr=${JSON.stringify(
+      result.stderr,
+    )}, dockerCalls=${JSON.stringify(dockerCalls(sandbox))}, opensslCalls=${JSON.stringify(
+      opensslCalls(sandbox),
+    )}`;
+    assert.equal(result.status, 1, `malformed setup must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${observation}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      SETUP_USAGE_DIAGNOSTIC,
+      `${observation}: the arity gate must precede the .env check, the Docker/OpenSSL checks, and the preflight`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${observation}: zero fake-Docker calls`);
+    assert.deepEqual(opensslCalls(sandbox), [], `${observation}: zero fake-OpenSSL calls`);
+    assert.deepEqual(setupCreatedPaths(sandbox), [], `${observation}: zero setup-created runtime/secret paths`);
+  }
+});
+
+test('CLI-05-AC03: the exact valid setup retains the bounded existing behavior: the exact preflight/config calls, the documented directories and modes, the seven synthetic 0600 secret files, the deterministic success output, and a successful exit', async (t) => {
+  const sandbox = buildSetupSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['setup']);
+  assert.equal(result.status, 0, `valid setup must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.equal(result.stderr, '', 'nothing to stderr on a successful setup');
+  assert.equal(result.stdout, SETUP_SUCCESS_OUTPUT, 'the deterministic success output');
+  assert.deepEqual(
+    dockerCalls(sandbox),
+    [
+      'docker info',
+      'docker compose version',
+      `docker compose --file ${sandbox.root}/compose.yaml config --quiet`,
+    ],
+    'exactly the daemon check, the Compose v2 check, and one repository-scoped compose config call',
+  );
+  for (const entry of [
+    '.runtime',
+    '.runtime/secrets',
+    '.runtime/metadata',
+    '.runtime/projection',
+    '.runtime/receipts',
+    '.secrets',
+  ]) {
+    assert.equal(
+      statSync(path.join(sandbox.root, entry)).mode & 0o777,
+      0o700,
+      `${entry} must be mode 0700`,
+    );
+  }
+  for (const file of SETUP_SECRET_FILES) {
+    assert.equal(
+      statSync(path.join(sandbox.root, file)).mode & 0o777,
+      0o600,
+      `${file} must be mode 0600`,
+    );
+  }
+  assert.equal(existsSync(sandbox.dotEnv), true, 'the synthetic .env must be preserved');
+});
+
+test('CLI-05-AC04: the exact valid setup performs exactly the four expected fake-OpenSSL rand calls in documented order, with no other OpenSSL form and no real randomness', async (t) => {
+  const sandbox = buildSetupSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['setup']);
+  assert.equal(result.status, 0, `valid setup must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.deepEqual(
+    opensslCalls(sandbox),
+    [
+      'openssl rand -hex 32',
+      'openssl rand -base64 32',
+      'openssl rand -base64 32',
+      'openssl rand -hex 32',
+    ],
+    'exactly two hex and two base64 rand calls in the documented secret order',
+  );
+});
+
+test('CLI-05-AC05: the setup arity gate leaves the prior #196/#198/#200/#202 boundaries byte-exact in the same sandbox machinery', async (t) => {
+  // The setup-sandbox variant (fake docker plus fake openssl recorders) must
+  // not perturb any other boundary: #196 unknown-command and known-command
+  // dispatch, #198 exact reset confirmation, #200 exact down arity, and #202
+  // exact up arity all keep their byte-exact behavior with zero tool calls.
+  const sandbox = buildSetupSandbox();
+  t.after(sandbox.deleteAll);
+  const unknown = await runBiInSandbox(sandbox, ['definitely-not-a-command']);
+  assert.equal(unknown.status, 1, 'unknown command must still fail non-zero');
+  assert.equal(
+    unknown.stderr,
+    `KaleidoSphere ERROR: unknown command: "definitely-not-a-command"\n${USAGE}\n`,
+    'the unchanged unknown-command diagnostic',
+  );
+  const promotionBundle = await runBiInSandbox(sandbox, ['promotion-bundle']);
+  assert.equal(promotionBundle.status, 1, 'known-command validation must still fail non-zero');
+  assert.equal(
+    promotionBundle.stderr,
+    'KaleidoSphere ERROR: usage: ./bin/bi promotion-bundle {build|inspect|preflight} ...\n',
+    'the unchanged promotion-bundle validation diagnostic',
+  );
+  const reset = await runBiInSandbox(sandbox, ['reset', '--yes-i-understand', '--typo']);
+  assert.equal(reset.status, 1, 'trailing reset argument must still fail non-zero');
+  assert.equal(reset.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'the unchanged reset confirmation diagnostic');
+  const down = await runBiInSandbox(sandbox, ['down', '--typo']);
+  assert.equal(down.status, 1, 'trailing down argument must still fail non-zero');
+  assert.equal(down.stderr, DOWN_USAGE_DIAGNOSTIC, 'the unchanged down usage diagnostic');
+  const up = await runBiInSandbox(sandbox, ['up', '--typo']);
+  assert.equal(up.status, 1, 'trailing up argument must still fail non-zero');
+  assert.equal(up.stderr, UP_USAGE_DIAGNOSTIC, 'the unchanged up usage diagnostic');
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
+  assert.deepEqual(opensslCalls(sandbox), [], 'zero fake-OpenSSL calls across the preserved boundaries');
 });
