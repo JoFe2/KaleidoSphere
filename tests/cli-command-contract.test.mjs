@@ -9,9 +9,10 @@
 // or runtime-state action.
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
-// destructive reset and down argument boundaries. It does not start containers,
-// uses only a fake local docker executable and disposable synthetic sandbox
-// state, and makes no production-compatibility claim.
+// destructive reset, down, and state-changing up argument boundaries. It does
+// not start containers, uses only a fake local docker executable and
+// disposable synthetic sandbox state, and makes no production-compatibility
+// claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -174,7 +175,7 @@ const RESET_CONFIRMATION_DIAGNOSTIC =
 const RESET_SUCCESS_LINE =
   'Owned runtime metadata, projections, receipts, and generated internal secrets removed. Source config and external secret files retained.\n';
 
-function buildResetSandbox({ configured = true } = {}) {
+function buildResetSandbox({ configured = true, respondToPort = false } = {}) {
   const root = mkdtempSync(path.join(ROOT, '.bi-reset-sandbox-'));
   const fakeBin = path.join(root, 'fake-bin');
   const logPath = path.join(root, 'docker-calls.log');
@@ -231,12 +232,17 @@ function buildResetSandbox({ configured = true } = {}) {
     }
   }
   // The fake docker recorder: one line of joined argv per invocation, nothing
-  // else. It shadows any real docker because fake-bin is first on PATH.
+  // else. It shadows any real docker because fake-bin is first on PATH. In
+  // port-responding mode it additionally answers `compose port <service>
+  // <port>` with a deterministic 127.0.0.1:<port> binding, modeling a healthy
+  // local daemon so the exact valid up path is observable end-to-end.
   const dockerPath = path.join(fakeBin, 'docker');
-  writeFileSync(
-    dockerPath,
-    `#!/bin/sh\n{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\nexit 0\n`,
-  );
+  const dockerScript =
+    `#!/bin/sh\n` +
+    `{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\n` +
+    (respondToPort ? `case "$4" in port) printf '127.0.0.1:%s\\n' "$6" ;; esac\n` : '') +
+    'exit 0\n';
+  writeFileSync(dockerPath, dockerScript);
   chmodSync(dockerPath, 0o755);
   // Run the exact shipped script bytes from inside the sandbox so bi_here is
   // the disposable sandbox root, never this repository.
@@ -484,4 +490,150 @@ test('CLI-03-AC04: the down arity gate fails with the usage diagnostic before re
   assert.equal(result.stdout, '', 'nothing to stdout');
   assert.equal(result.stderr, DOWN_USAGE_DIAGNOSTIC, 'arity gate must precede require_setup');
   assert.deepEqual(dockerCalls(sandbox), [], 'zero Compose calls');
+});
+
+// ---------------------------------------------------------------------------
+// CLI-04 (KaleidoSphere issue #202) — the state-changing up boundary must fail
+// closed on every trailing argument form.
+//
+// up takes no arguments. Every case runs the same byte-identical disposable
+// synthetic sandbox machinery as CLI-02/CLI-03: a fresh mkdtemp directory
+// holding a copy of the shipped bin/bi, the documented owned .runtime
+// sentinels, optional valid-looking setup sentinels (.env plus a mode-0600
+// control token), and a fake `docker` executable first on PATH that only
+// appends its argv to a local call log. The up cases additionally run the fake
+// docker in port-responding mode, where it answers `compose port <service>
+// <port>` with a deterministic 127.0.0.1:<port> binding, so the exact valid
+// startup path is observable end-to-end without a real daemon. Each sandbox is
+// removed when its test finishes. No real Docker, network, credential,
+// database, or productive state is reached.
+// ---------------------------------------------------------------------------
+
+const UP_USAGE_DIAGNOSTIC = 'KaleidoSphere ERROR: usage: ./bin/bi up\n';
+// The usage diagnostic is a single-line stderr record: printable ASCII only and
+// terminated by exactly one newline, so it is single-line and injection-free.
+const UP_USAGE_DIAGNOSTIC_SHAPE = /^[\x20-\x7E]+\n$/;
+const UP_SUCCESS_OUTPUT =
+  'Superset: http://127.0.0.1:8088\nKaleidoSphere: http://127.0.0.1:18790\n';
+
+test('CLI-04-AC01: every trailing up argument form fails closed with one deterministic bounded printable diagnostic and zero docker calls', async (t) => {
+  // Configured sandboxes carry valid-looking setup sentinels (a synthetic .env
+  // and a mode-0600 control token), so every form must be rejected by the
+  // zero-option arity gate alone — never by passing into require_setup and
+  // then the Compose startup/build boundary.
+  const forms = Object.freeze([
+    Object.freeze(['up', '--typo']),
+    Object.freeze(['up', '--build']),
+    Object.freeze(['up', '--detach']),
+    Object.freeze(['up', '-n']),
+    Object.freeze(['up', '']),
+    Object.freeze(['up', ' ']),
+    Object.freeze(['up', '\u001b[2J\u001b[8m']),
+    Object.freeze(['up', 'line1\nline2']),
+    Object.freeze(['up', 'x'.repeat(5000)]),
+    Object.freeze(['up', 'extra', 'more']),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const form of forms) {
+    const sandbox = buildResetSandbox({ respondToPort: true });
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, form);
+    const observation = `exit ${result.status}, stderr=${JSON.stringify(
+      result.stderr,
+    )}, dockerCalls=${JSON.stringify(dockerCalls(sandbox))}, deletedSentinels=${JSON.stringify(
+      deletedSentinels(sandbox),
+    )}`;
+    assert.equal(result.status, 1, `${JSON.stringify(form)} must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${JSON.stringify(form)}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      UP_USAGE_DIAGNOSTIC,
+      `${JSON.stringify(form)}: the deterministic bounded usage diagnostic`,
+    );
+    assert.match(
+      result.stderr,
+      UP_USAGE_DIAGNOSTIC_SHAPE,
+      `stderr stays printable ASCII with no control-byte injection: ${JSON.stringify(form)}`,
+    );
+    assert.ok(
+      result.stderr.length < 512,
+      `${JSON.stringify(form)}: stderr must stay bounded, got ${result.stderr.length}`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(form)}: zero Docker calls, ${observation}`);
+    assert.deepEqual(deletedSentinels(sandbox), [], `${JSON.stringify(form)}: sentinels must survive, ${observation}`);
+  }
+});
+
+test('CLI-04-AC02: the up arity gate rejects before require_setup, Compose, build/start/wait, or port lookup, with zero fake-Docker calls in configured and unconfigured sandboxes', async (t) => {
+  // A configured sandbox proves the gate is the arity gate (the exact usage
+  // diagnostic, never a setup or port diagnostic) while valid-looking setup
+  // sentinels are present; an unconfigured sandbox (no .env, no control token)
+  // proves the arity gate runs before any setup check: a malformed up must
+  // report the usage diagnostic, never the setup diagnostic.
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    const sandbox = buildResetSandbox({ configured, respondToPort: true });
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, ['up', '--typo']);
+    const observation = `configured=${configured}, exit ${result.status}, stderr=${JSON.stringify(
+      result.stderr,
+    )}, dockerCalls=${JSON.stringify(dockerCalls(sandbox))}`;
+    assert.equal(result.status, 1, `malformed up must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${observation}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      UP_USAGE_DIAGNOSTIC,
+      `${observation}: the arity gate must precede require_setup, Compose, and port lookup`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${observation}: zero fake-Docker calls`);
+  }
+});
+
+test('CLI-04-AC03: the exact valid up retains one repository-scoped startup call, the two expected port lookups, deterministic endpoint output, and a successful exit with no real effects', async (t) => {
+  const sandbox = buildResetSandbox({ respondToPort: true });
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['up']);
+  assert.equal(result.status, 0, `valid up must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.equal(result.stderr, '', 'nothing to stderr on a successful up');
+  assert.equal(result.stdout, UP_SUCCESS_OUTPUT, 'the deterministic endpoint output');
+  assert.deepEqual(
+    dockerCalls(sandbox),
+    [
+      `docker compose --file ${sandbox.root}/compose.yaml up --detach --build --wait`,
+      `docker compose --file ${sandbox.root}/compose.yaml port superset 8088`,
+      `docker compose --file ${sandbox.root}/compose.yaml port bi-agent 18790`,
+    ],
+    'exactly one repository-scoped startup call followed by the two expected port lookups',
+  );
+  // up must start services only: the fake docker is the only docker reached
+  // and no sandbox sentinel is deleted or touched.
+  assert.deepEqual(deletedSentinels(sandbox), [], 'every sandbox sentinel must survive a successful up');
+});
+
+test('CLI-04-AC04: the up arity gate leaves the prior #196/#198/#200 boundaries byte-exact in the same sandbox machinery', async (t) => {
+  // The port-responding sandbox variant must not perturb any other boundary:
+  // #196 unknown-command dispatch, #198 exact reset confirmation, and #200
+  // exact down arity all keep their byte-exact behavior and zero docker calls.
+  const sandbox = buildResetSandbox({ respondToPort: true });
+  t.after(sandbox.deleteAll);
+  const down = await runBiInSandbox(sandbox, ['down', '--typo']);
+  assert.equal(down.status, 1, 'trailing down argument must still fail non-zero');
+  assert.equal(down.stderr, DOWN_USAGE_DIAGNOSTIC, 'the unchanged down usage diagnostic');
+  const reset = await runBiInSandbox(sandbox, ['reset', '--yes-i-understand', '--typo']);
+  assert.equal(reset.status, 1, 'trailing reset argument must still fail non-zero');
+  assert.equal(reset.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'the unchanged reset confirmation diagnostic');
+  const unknown = await runBiInSandbox(sandbox, ['definitely-not-a-command']);
+  assert.equal(unknown.status, 1, 'unknown command must still fail non-zero');
+  assert.equal(
+    unknown.stderr,
+    `KaleidoSphere ERROR: unknown command: "definitely-not-a-command"\n${USAGE}\n`,
+    'the unchanged unknown-command diagnostic',
+  );
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
 });
