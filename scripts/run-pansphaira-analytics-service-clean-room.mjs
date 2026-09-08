@@ -322,6 +322,54 @@ export function oracleNativeComputedClaims(nativeFixture) {
   };
 }
 
+// Independent oracle: reconstructs the complete native deterministic result
+// (observed and computed claims, coverage, counterevidence, and the result
+// digest) inline from the raw released fixture and the pinned release
+// evidence. It reuses the independent computed-claims oracle, does not reuse
+// the native analysis code path, and derives no expectation from the
+// candidate or the verifier.
+export function oracleNativeResult(nativeFixture, releaseEvidence) {
+  const computed = oracleNativeComputedClaims(nativeFixture);
+  const nodes = nativeFixture.nodes;
+  const edge = nativeFixture.edges[0];
+  const unknownTotal = nodes.reduce((sum, node) => sum + (node.unknown === true ? 1 : 0), 0)
+    + nativeFixture.edges.reduce((sum, item) => sum + (item.unknown === true ? 1 : 0), 0);
+  const counterevidenceTotal = nodes.reduce((sum, node) => sum + node.counterevidence.length, 0)
+    + nativeFixture.edges.reduce((sum, item) => sum + item.counterevidence.length, 0);
+  const releaseObserved = releaseEvidence.status === 'OBSERVED';
+  const observed = {
+    nodeIds: nodes.map((node) => node.id),
+    nodeKinds: nodes.map((node) => node.kind),
+    edgeRelation: edge.relation,
+    evidenceRoles: edge.evidence.map((entry) => entry.evidenceRole),
+    sourceContract: nativeFixture.source.contract,
+    sourceContractVersion: nativeFixture.source.contractVersion,
+    authority: nativeFixture.authority,
+    promotion: nativeFixture.promotion,
+    relationTruth: nativeFixture.relationTruth,
+    nonclaimCount: nativeFixture.nonclaims.length,
+  };
+  const coverage = {
+    nodes: 'OBSERVED',
+    edges: 'OBSERVED',
+    evidence: 'OBSERVED',
+    source: releaseObserved ? 'OBSERVED' : 'HELD',
+    unknownChannel: unknownTotal === 0 ? 'OBSERVED' : 'UNKNOWN',
+    counterevidence: counterevidenceTotal === 0 ? 'OBSERVED' : 'EVIDENCE_FOUND',
+  };
+  const counterevidence = [
+    { claim: 'nodes', check: 'frozen subject inventory and duplicate node identifiers', observed: computed.nodeCount, status: 'NONE_FOUND' },
+    { claim: 'edges', check: 'the single frozen purpose-bound relation', observed: computed.edgeCount, status: 'NONE_FOUND' },
+    { claim: 'evidence', check: 'the edge established by its frozen source receipts', observed: computed.frozenReceiptsEstablishingEdge, status: 'NONE_FOUND' },
+    { claim: 'source', check: 'native source binding to the pinned CKS proof input', observed: releaseObserved ? releaseEvidence.releasedEntryCount : 0, status: releaseObserved ? 'EVIDENCE_FOUND' : 'HELD' },
+    { claim: 'unknownChannel', check: 'unknown frozen to false on every node and edge', observed: unknownTotal, status: 'NONE_FOUND' },
+    { claim: 'counterevidence', check: 'per-node and per-edge counterevidence arrays remain empty', observed: counterevidenceTotal, status: 'NONE_FOUND' },
+  ];
+  const claims = { observed, computed };
+  const resultSha256 = sha256hex(canonicalJson({ claims, coverage, counterevidence }));
+  return { claims, coverage, counterevidence, resultSha256 };
+}
+
 export function runNativePositiveRun(inputs, contextLike) {
   const nativeFixture = JSON.parse(inputs.nativeFixtureBytes.toString('utf8'));
   const canonicalBytes = Buffer.from(canonicalJson(structuredClone(nativeFixture)));

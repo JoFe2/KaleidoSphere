@@ -862,6 +862,164 @@ test('NATIVE-AC04: the native candidate binds exact heads, contracts, input, res
   }
 });
 
+test('NATIVE-AC04: the actual loopback-returned candidate binds the complete deterministic result to the independently pinned projection and predeclared analysis; re-digested result substitutions are denied', async (t) => {
+  const [scriptModule, candidateModule] = await Promise.all([
+    import('../scripts/run-pansphaira-analytics-service-clean-room.mjs'),
+    import('../services/bi-agent/src/pansphaira-analytics/native-candidate.mjs'),
+  ]);
+  const {createCleanRoomContext, loadFrozenInputs, oracleNativeResult} = scriptModule;
+  const {verifyNativeAuthorityFreeCandidate} = candidateModule;
+
+  // The actual service-boundary candidate: the exact released canonical
+  // transport bytes are sent over loopback to the real local service process,
+  // and the wire-returned candidate — not a locally rebuilt candidate labeled
+  // as service output — is the candidate under verification.
+  const port = await freePort();
+  const child = startServer(port);
+  t.after(() => stopServer(child));
+  await waitForServer(port, child);
+  assert.equal(child.exitCode, null, 'native service process must stay alive for the result-binding readback');
+
+  const inputs = loadFrozenInputs();
+  const fixtureShaBefore = sha256hex(inputs.nativeFixtureBytes);
+  const response = await postNativeProjection(port, nativeCanonicalTransportBytes());
+  assert.equal(response.status, 200);
+  assert.equal(response.body.status, 'CANDIDATE');
+  assert.equal(response.body.requestSha256, NATIVE_TRUSTED.canonicalTransportSha256);
+  const candidate = response.body.candidate;
+
+  // Separately reconstructed material pins: the trusted release pins are
+  // re-derived from the exact controller-observed receipt bytes, the observed
+  // byte-equivalent head, and the raw fixture bytes — never copied from the
+  // candidate or the verifier.
+  const contextLike = createCleanRoomContext(inputs);
+  const receiptBytes = nativeReceiptBytes();
+  const receipt = JSON.parse(receiptBytes.toString('utf8'));
+  const nativeFixture = JSON.parse(inputs.nativeFixtureBytes.toString('utf8'));
+  const sidecarEntry = contextLike.nativeSidecar.entries.find((entry) => entry.status === 'RELEASED');
+  assert.equal(receipt.tag, NATIVE_TRUSTED.releaseTag);
+  assert.equal(receipt.resolved_commit, NATIVE_TRUSTED.releaseCommit);
+  assert.equal(sha256hex(receiptBytes), NATIVE_TRUSTED.releaseReceiptSha256);
+  assert.equal(receipt.sources[0].path, NATIVE_TRUSTED.sourceFileIdentity.path);
+  assert.equal(receipt.sources[0].sha256, NATIVE_TRUSTED.sourceFileIdentity.sha256);
+  assert.equal(sha256hex(inputs.nativeFixtureBytes), NATIVE_TRUSTED.rawArtifactSha256);
+  assert.equal(sha256hex(nativeCanonicalTransportBytes()), NATIVE_TRUSTED.canonicalTransportSha256);
+  assert.equal(nativeFixture.projectionDigest, NATIVE_TRUSTED.projectionBodyDigest);
+  const materials = {
+    projectionBytes: nativeCanonicalTransportBytes(),
+    rawArtifactBytes: inputs.nativeFixtureBytes,
+    receiptBytes,
+    nativeProjectionContractBytes: contextLike.nativeProjectionContractBytes,
+    analysisContractBytes: contextLike.nativeAnalysisContractBytes,
+    releaseSidecarBytes: contextLike.nativeSidecarBytes,
+    sidecarEntry,
+    heads: contextLike.heads,
+    environment: contextLike.environment,
+    environmentSha256: contextLike.environmentSha256,
+    trusted: {
+      releaseTag: receipt.tag,
+      releaseCommit: receipt.resolved_commit,
+      pansphairaHeadCommit: NATIVE_TRUSTED.pansphairaHeadCommit,
+      releaseReceiptSha256: sha256hex(receiptBytes),
+      sourceFileIdentity: {path: receipt.sources[0].path, sha256: receipt.sources[0].sha256},
+      rawArtifactSha256: sha256hex(inputs.nativeFixtureBytes),
+      canonicalTransportSha256: sha256hex(nativeCanonicalTransportBytes()),
+      projectionBodyDigest: nativeFixture.projectionDigest,
+    },
+  };
+  assert.deepEqual(verifyNativeAuthorityFreeCandidate(candidate, materials), {state: 'VERIFIED'});
+
+  // Independent oracle readback: the complete deterministic result (observed
+  // and computed claims, coverage, counterevidence, and the result digest)
+  // equals the separately reconstructed expected semantics from the canonical
+  // authoritative fixture and the pinned release evidence.
+  const releaseEvidence = sidecarEntry.status === 'RELEASED'
+    ? {status: 'OBSERVED', releasedEntryCount: 1}
+    : {status: 'HELD', releasedEntryCount: 0};
+  const expected = oracleNativeResult(nativeFixture, releaseEvidence);
+  assert.equal(canonicalJson(candidate.claims), canonicalJson(expected.claims));
+  assert.equal(canonicalJson(candidate.coverage), canonicalJson(expected.coverage));
+  assert.equal(canonicalJson(candidate.counterevidence), canonicalJson(expected.counterevidence));
+  assert.equal(candidate.resultSha256, expected.resultSha256);
+
+  // The re-digest recomputes the candidate's own self-digest over the
+  // substituted result content — the substitution the legacy self-consistency
+  // check accepts. Where the substituted shape is not canonicalizable, a
+  // well-formed 64-hex placeholder stands in so the denial must come from the
+  // complete result binding, never from a digest mismatch.
+  const reDigest = (value) => {
+    try {
+      value.resultSha256 = sha256hex(canonicalJson({claims: value.claims, coverage: value.coverage, counterevidence: value.counterevidence}));
+    } catch {
+      value.resultSha256 = '0'.repeat(64);
+    }
+  };
+
+  // The four valid-shaped re-digested substitutions, each changing one result
+  // component (computed, observed, coverage, counterevidence) independently.
+  const redigestCases = [
+    ['computed.nodeCount', (value) => { value.claims.computed.nodeCount += 1; }],
+    ['observed.nodeIds[0]', (value) => { value.claims.observed.nodeIds[0] = 'decision-001'; }],
+    ['coverage.source OBSERVED->HELD', (value) => { value.coverage.source = 'HELD'; }],
+    ['counterevidence[0].status NONE_FOUND->UNKNOWN', (value) => { value.counterevidence[0].status = 'UNKNOWN'; }],
+  ];
+  for (const [label, mutate] of redigestCases) {
+    const tampered = structuredClone(candidate);
+    mutate(tampered);
+    reDigest(tampered);
+    assert.throws(
+      () => verifyNativeAuthorityFreeCandidate(tampered, materials),
+      {code: 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'},
+      label,
+    );
+  }
+
+  // Missing/extra result fields and malformed result shapes are a
+  // deterministic typed denial, never an uncaught TypeError.
+  const malformedCases = [
+    ['missing computed field', (value) => { delete value.claims.computed.nodeCount; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['extra computed field', (value) => { value.claims.computed.bogusClaim = 1; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['missing observed field', (value) => { delete value.claims.observed.nodeIds; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['extra coverage aspect', (value) => { value.coverage.bogusAspect = 'OBSERVED'; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['undefined computed leaf', (value) => { value.claims.computed.nodeCount = undefined; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['non-finite computed leaf', (value) => { value.claims.computed.nodeCount = Number.NaN; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['claims not an object', (value) => { value.claims = 'substituted'; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['coverage not an object', (value) => { value.coverage = null; }, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'],
+    ['counterevidence not an array', (value) => { value.counterevidence = {}; }, 'XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED'],
+    ['counterevidence null entry', (value) => { value.counterevidence[0] = null; }, 'XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED'],
+    ['counterevidence non-object entry', (value) => { value.counterevidence[1] = 42; }, 'XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED'],
+    ['counterevidence entry extra field', (value) => { value.counterevidence[0].bogus = true; }, 'XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED'],
+    ['counterevidence entry missing field', (value) => { delete value.counterevidence[0].check; }, 'XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED'],
+  ];
+  for (const [label, mutate, code] of malformedCases) {
+    const tampered = structuredClone(candidate);
+    mutate(tampered);
+    reDigest(tampered);
+    assert.throws(
+      () => verifyNativeAuthorityFreeCandidate(tampered, materials),
+      {code},
+      label,
+    );
+  }
+
+  // A substituted result digest of the wrong length is a typed denial even
+  // when the result content is otherwise exact: here the digest itself is the
+  // substitution, so no re-digest is applied.
+  {
+    const tampered = structuredClone(candidate);
+    tampered.resultSha256 = 'f'.repeat(40);
+    assert.throws(
+      () => verifyNativeAuthorityFreeCandidate(tampered, materials),
+      {code: 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED'},
+      'result digest wrong length',
+    );
+  }
+
+  // The real service producer bytes and the immutable materials are unchanged
+  // by the verification.
+  assert.equal(sha256hex(readFileSync(path.join(root, NATIVE_FIXTURE_PATH))), fixtureShaBefore);
+});
+
 test('NATIVE-AC05: versioned source-only provenance distinguishes the actual receipt SHA256 from the named release commit and denies trusted-source substitution', async (t) => {
   const [pipelineModule, candidateModule, scriptModule] = await Promise.all([
     import('../services/bi-agent/src/pansphaira-analytics/native-pipeline.mjs'),
