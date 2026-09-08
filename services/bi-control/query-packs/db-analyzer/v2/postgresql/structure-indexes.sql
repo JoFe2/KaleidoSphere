@@ -26,7 +26,7 @@ JOIN pg_catalog.pg_namespace AS namespace ON namespace.oid = relation.relnamespa
 CROSS JOIN (VALUES (1), (2), (3), (4)) AS key_ordinal_range (key_ordinal)
 LEFT JOIN pg_catalog.pg_attribute AS attribute
   ON attribute.attrelid = index_row.indrelid
-  AND attribute.attnum > 0
+  AND attribute.attnum = index_row.indkey[key_ordinal]
 LEFT JOIN pg_catalog.pg_type AS type ON type.oid = attribute.atttypid
 WHERE relation.relkind IN ('r', 'p', 'v', 'm', 'f')
   AND key_ordinal_range.key_ordinal <= index_row.indnkeyatts

@@ -268,6 +268,22 @@ test('PostgreSQL v2 pack is SELECT-only, catalog-allowlisted and reads pg_catalo
   }), /DB_QUERY_ROW_SOURCE_DENIED/);
 });
 
+test('the v2 index query resolves key columns position- and expression-aware from pg_index.indkey', async () => {
+  const inputs = await loadV2Inputs();
+  const indexSql = inputs.sqlByQueryId['postgresql.structure.indexes'];
+  // Each key ordinal is resolved from the pg_index.indkey position vector, never from an
+  // uncorrelated scan of every user column of the indexed relation.
+  assert.match(indexSql, /\bindkey\s*\[\s*key_ordinal\s*\]/i);
+  assert.match(indexSql, /attribute\.attrelid\s*=\s*index_row\.indrelid\s+AND\s+attribute\.attnum\s*=\s*index_row\.indkey/i);
+  assert.doesNotMatch(indexSql, /attribute\.attnum\s*>\s*0/i);
+  // The bounded ordinal expansion is capped at the index's key-attribute count...
+  assert.match(indexSql, /key_ordinal_range\.key_ordinal\s*<=\s*index_row\.indnkeyatts/i);
+  // ...and an expression key (indkey entry 0) LEFT JOINs to no attribute, so it is
+  // disclosed as an explicit EXPRESSION row rather than a misnamed table column.
+  assert.match(indexSql, /LEFT\s+JOIN\s+pg_catalog\.pg_attribute/i);
+  assert.match(indexSql, /attribute\.attname\s+IS\s+NULL\s+THEN\s+'EXPRESSION'/i);
+});
+
 test('PostgreSQL v2 index snapshot bytes are stable across index row order', async () => {
   const inputs = await loadV2Inputs();
   const first = build(inputs);
