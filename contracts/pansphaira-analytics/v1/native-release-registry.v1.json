@@ -1,15 +1,22 @@
 {
-  "schemaVersion": "kaleidosphere.pansphaira-analytics/native-release-sidecar/v1",
+  "schemaVersion": "kaleidosphere.pansphaira-analytics/native-release-sidecar/v2",
+  "provenanceSchema": "kaleidosphere.pansphaira-analytics/native-source-provenance/v1",
   "issue": "XRA-KS-01",
   "synthetic": true,
   "notPublicClosureEvidence": true,
-  "admissionRule": "SYNTHETIC_PRODUCER_SIDECAR_PIN_ONLY: pins the independently released public synthetic native producer (PAN343 release 2026_09_05_v1, PUBLIC_SYNTHETIC_NON_CUSTOMER) so the exact released native projection can be ingested for deterministic machinery proof. It does not admit the production XRA-PS-01 compatibility pair and is not public closure evidence.",
-  "nonclaim": "Synthetic test-only trusted release sidecar. It pins the synthetic producer source/release/head independently of any caller-recomputed hash; it is not the live release registry, does not admit a production pair, and does not close issue151.",
+  "admissionRule": "SYNTHETIC_PRODUCER_SIDECAR_PIN_ONLY: pins the independently released public synthetic native producer (PAN343 release 2026_09_05_v1, PUBLIC_SYNTHETIC_NON_CUSTOMER) through a versioned source-only provenance contract so the exact released native projection can be ingested for deterministic machinery proof. It does not admit the production XRA-PS-01 compatibility pair and is not public closure evidence.",
+  "nonclaim": "Synthetic test-only trusted release sidecar. Its v2 source-only provenance pins the named release tag/commit, the later byte-equivalent head, the actual SHA256 of the controller-observed public release/source receipt bytes, the source contract, and the source file identity separately. It is not the live release registry, does not admit a production pair, and does not close issue151. The legacy v1 pin that carried a 40-hex git commit in the releaseReceiptSha256 slot is malformed (a commit OID is not a receipt hash) and is no longer accepted or labeled as qualified evidence.",
   "pinnedSource": {
     "releaseId": "pan343-2026-09-05-v1",
-    "releaseReceiptSha256": "7f662672bfc45087342f23e5c589d43598f5c20d",
+    "releaseTag": "2026_09_05_v1",
+    "releaseCommit": "7f662672bfc45087342f23e5c589d43598f5c20d",
     "pansphairaHeadCommit": "988395110a9189d1b8cd4ee98184ed5c1d77a15d",
+    "releaseReceiptSha256": "bd485d4525cfce9b843de54b2fb6e30e30e560857e6f06faa0f494f65dddb1c6",
     "sourceContractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44",
+    "sourceFileIdentity": {
+      "path": "tests/fixtures/cks-analytics/projection-v1.json",
+      "sha256": "22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8"
+    },
     "dataClass": "PUBLIC_SYNTHETIC_NON_CUSTOMER"
   },
   "entries": [
@@ -19,9 +26,15 @@
       "rawArtifactSha256": "22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8",
       "canonicalTransportSha256": "91c26eb69860767ec2898a48676caaeb52c808de284bb0fbfbe8a986d30ad19c",
       "projectionBodyDigest": "cc5f6cc9591ccf4b6b3c4b9f954aa9da09695b784d7abaa585c082aea195ef1b",
-      "releaseReceiptSha256": "7f662672bfc45087342f23e5c589d43598f5c20d",
+      "sourceContractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44",
+      "releaseTag": "2026_09_05_v1",
+      "releaseCommit": "7f662672bfc45087342f23e5c589d43598f5c20d",
       "pansphairaHeadCommit": "988395110a9189d1b8cd4ee98184ed5c1d77a15d",
-      "sourceContractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44"
+      "releaseReceiptSha256": "bd485d4525cfce9b843de54b2fb6e30e30e560857e6f06faa0f494f65dddb1c6",
+      "sourceFileIdentity": {
+        "path": "tests/fixtures/cks-analytics/projection-v1.json",
+        "sha256": "22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8"
+      }
     }
   ]
 }

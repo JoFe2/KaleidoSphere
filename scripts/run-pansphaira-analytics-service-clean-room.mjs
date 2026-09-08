@@ -42,6 +42,12 @@ export const NATIVE_FIXTURE_PATH = 'tests/pansphaira-analytics-native-released-f
 export const NATIVE_PROJECTION_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/native-projection.v1.json';
 export const NATIVE_ANALYSIS_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/edge-evidence-analysis.v1.json';
 export const NATIVE_RELEASE_SIDECAR_PATH = 'contracts/pansphaira-analytics/v1/native-release-registry.v1.json';
+export const NATIVE_RECEIPT_FIXTURE_PATH = 'tests/pansphaira-analytics-native-source-receipt.json';
+// The later byte-equivalent head the controller observed for the named release.
+// It is NOT in the receipt (the receipt records the named release's resolved
+// commit); it is an independently-supplied trusted pin, distinct from the
+// named release's resolved commit.
+const NATIVE_TRUSTED_HEAD_COMMIT = '988395110a9189d1b8cd4ee98184ed5c1d77a15d';
 
 // Five pipeline-level cases run here; TIMEOUT is service-boundary-only.
 export const PIPELINE_ADVERSARIAL_CASE_IDS = Object.freeze([
@@ -97,6 +103,7 @@ export function loadFrozenInputs() {
     nativeProjectionContractBytes: readFileSync(path.join(ROOT, NATIVE_PROJECTION_CONTRACT_PATH)),
     nativeAnalysisContractBytes: readFileSync(path.join(ROOT, NATIVE_ANALYSIS_CONTRACT_PATH)),
     nativeSidecarBytes: readFileSync(path.join(ROOT, NATIVE_RELEASE_SIDECAR_PATH)),
+    nativeReceiptBytes: readFileSync(path.join(ROOT, NATIVE_RECEIPT_FIXTURE_PATH)),
     packageBytes: readFileSync(path.join(ROOT, 'package.json')),
     canonicalJsonBytes: readFileSync(path.join(ROOT, 'services/bi-control/src/canonical-json.js')),
   };
@@ -125,10 +132,11 @@ export function createCleanRoomContext(inputs) {
     environmentSha256: environmentIdentity.environmentSha256,
     projectionContractBytes: Buffer.from(inputs.projectionContractBytes),
     analysisContractBytes: Buffer.from(inputs.analysisContractBytes),
-    nativeSidecar: validateNativeSidecar(JSON.parse(inputs.nativeSidecarBytes.toString('utf8'))),
+    nativeSidecar: validateNativeSidecar(JSON.parse(inputs.nativeSidecarBytes.toString('utf8')), inputs.nativeReceiptBytes),
     nativeProjectionContractBytes: Buffer.from(inputs.nativeProjectionContractBytes),
     nativeAnalysisContractBytes: Buffer.from(inputs.nativeAnalysisContractBytes),
     nativeSidecarBytes: Buffer.from(inputs.nativeSidecarBytes),
+    nativeReceiptBytes: Buffer.from(inputs.nativeReceiptBytes),
   };
 }
 
@@ -320,9 +328,15 @@ export function runNativePositiveRun(inputs, contextLike) {
   const result = ingestNativeProjection(canonicalBytes, contextLike);
   if (result.state !== 'CANDIDATE') throw new Error(`native positive run denied: ${result.code}`);
   const sidecarEntry = contextLike.nativeSidecar.entries.find((entry) => entry.status === 'RELEASED');
+  // Independent trusted pins reconstructed from the exact controller-observed
+  // receipt/source bytes and the observed byte-equivalent head — never copied
+  // from the sidecar or the candidate under test.
+  const receiptBytes = contextLike.nativeReceiptBytes;
+  const receipt = JSON.parse(receiptBytes.toString('utf8'));
   verifyNativeAuthorityFreeCandidate(result.candidate, {
     projectionBytes: canonicalBytes,
     rawArtifactBytes: inputs.nativeFixtureBytes,
+    receiptBytes,
     nativeProjectionContractBytes: contextLike.nativeProjectionContractBytes,
     analysisContractBytes: contextLike.nativeAnalysisContractBytes,
     releaseSidecarBytes: contextLike.nativeSidecarBytes,
@@ -331,11 +345,14 @@ export function runNativePositiveRun(inputs, contextLike) {
     environment: contextLike.environment,
     environmentSha256: contextLike.environmentSha256,
     trusted: {
+      releaseTag: receipt.tag,
+      releaseCommit: receipt.resolved_commit,
+      pansphairaHeadCommit: NATIVE_TRUSTED_HEAD_COMMIT,
+      releaseReceiptSha256: sha256hex(receiptBytes),
+      sourceFileIdentity: { path: receipt.sources[0].path, sha256: receipt.sources[0].sha256 },
       rawArtifactSha256: sha256hex(inputs.nativeFixtureBytes),
       canonicalTransportSha256: sha256hex(canonicalBytes),
       projectionBodyDigest: nativeFixture.projectionDigest,
-      pansphairaHeadCommit: contextLike.nativeSidecar.pinnedSource.pansphairaHeadCommit,
-      releaseReceiptSha256: contextLike.nativeSidecar.pinnedSource.releaseReceiptSha256,
     },
   });
   const oracle = oracleNativeComputedClaims(nativeFixture);

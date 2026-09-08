@@ -20,6 +20,7 @@ const RELEASE_REGISTRY_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1
 const NATIVE_PROJECTION_CONTRACT_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/native-projection.v1.json');
 const NATIVE_ANALYSIS_CONTRACT_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/edge-evidence-analysis.v1.json');
 const NATIVE_RELEASE_SIDECAR_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/native-release-registry.v1.json');
+const NATIVE_RECEIPT_FIXTURE_PATH = path.join(ROOT, 'tests/pansphaira-analytics-native-source-receipt.json');
 const REQUEST_DEADLINE_MS = 1000;
 const MAX_BODY_BYTES = 16384;
 
@@ -62,7 +63,8 @@ const releasedEntryCount = registry.entries.filter((entry) => entry.status === '
 const nativeProjectionContractBytes = readFileSync(NATIVE_PROJECTION_CONTRACT_PATH);
 const nativeAnalysisContractBytes = readFileSync(NATIVE_ANALYSIS_CONTRACT_PATH);
 const nativeSidecarBytes = readFileSync(NATIVE_RELEASE_SIDECAR_PATH);
-const nativeSidecar = validateNativeSidecar(JSON.parse(nativeSidecarBytes.toString('utf8')));
+const nativeReceiptBytes = readFileSync(NATIVE_RECEIPT_FIXTURE_PATH);
+const nativeSidecar = validateNativeSidecar(JSON.parse(nativeSidecarBytes.toString('utf8')), nativeReceiptBytes);
 const nativeContext = {
   nativeSidecar,
   heads,
