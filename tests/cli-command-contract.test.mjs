@@ -9,10 +9,11 @@
 // or runtime-state action.
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
-// destructive reset, down, state-changing up, state-changing setup, and
-// request-bearing analyze argument boundaries. It does not start containers,
-// uses only fake local docker, openssl, and curl executables, and disposable
-// synthetic sandbox state, and makes no production-compatibility claim.
+// destructive reset, down, state-changing up, state-changing setup,
+// request-bearing analyze, and read-only status argument boundaries. It does
+// not start containers, uses only fake local docker, openssl, and curl
+// executables, and disposable synthetic sandbox state, and makes no
+// production-compatibility claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -1151,4 +1152,230 @@ test('CLI-06-AC04: the analyze arity gate leaves the prior #196/#198/#200/#202/#
   assert.equal(setup.stderr, SETUP_USAGE_DIAGNOSTIC, 'the unchanged setup usage diagnostic');
   assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
   assert.deepEqual(curlCalls(sandbox), [], 'zero fake-curl calls across the preserved boundaries');
+});
+
+// ---------------------------------------------------------------------------
+// CLI-07 (KaleidoSphere issue #208) — the read-only status boundary must fail
+// closed on every trailing argument form.
+//
+// status takes no arguments. Every case runs a fresh disposable synthetic
+// sandbox: a new mkdtemp directory holding a byte-identical copy of the
+// shipped bin/bi, optional valid-looking setup sentinels (a synthetic .env
+// plus a mode-0600 control token), and a fake `docker` executable first on
+// PATH that appends its argv to a local call log and answers `compose ps`
+// with a deterministic synthetic status response, so the exact valid status
+// read path is observable end-to-end without a real daemon. Each sandbox is
+// removed when its test finishes. No real Docker, network, credential,
+// database, or productive state is reached.
+// ---------------------------------------------------------------------------
+
+const STATUS_USAGE_DIAGNOSTIC = 'KaleidoSphere ERROR: usage: ./bin/bi status\n';
+// The usage diagnostic is a single-line stderr record: printable ASCII only
+// and terminated by exactly one newline, so it is single-line and
+// injection-free.
+const STATUS_USAGE_DIAGNOSTIC_SHAPE = /^[\x20-\x7E]+\n$/;
+// The deterministic synthetic Compose ps response the fake docker recorder
+// returns for the exact valid status read.
+const STATUS_FAKE_COMPOSE_PS = 'NAME        STATUS\nbi-agent  running\n';
+
+function buildStatusSandbox({ configured = true } = {}) {
+  const root = mkdtempSync(path.join(ROOT, '.bi-status-sandbox-'));
+  const fakeBin = path.join(root, 'fake-bin');
+  const logPath = path.join(root, 'docker-calls.log');
+  const controlToken = path.join(root, '.runtime', 'secrets', 'control_token');
+  mkdirSync(fakeBin);
+  mkdirSync(path.join(root, 'bin'), { recursive: true });
+  if (configured) {
+    // Valid-looking setup sentinels: a synthetic .env, a mode-0600 control
+    // token, a mode-0600 external connector secret, and an unrelated root
+    // file, so a trailing argument must be rejected by the arity gate
+    // alone, never by passing into require_setup and then the Compose
+    // status read.
+    writeFileSync(path.join(root, '.env'), 'SYNTHETIC=1\n');
+    mkdirSync(path.dirname(controlToken), { recursive: true });
+    writeFileSync(controlToken, '0123456789abcdef\n');
+    chmodSync(controlToken, 0o600);
+    mkdirSync(path.join(root, '.secrets'), { recursive: true });
+    writeFileSync(path.join(root, '.secrets', 'mssql_password'), '');
+    chmodSync(path.join(root, '.secrets', 'mssql_password'), 0o600);
+    writeFileSync(path.join(root, 'README-sentinel.md'), 'unrelated\n');
+  }
+  // The fake docker recorder: one line of joined argv per invocation,
+  // nothing else. It shadows any real docker because fake-bin is first on
+  // PATH and answers `compose ps` with a deterministic synthetic status
+  // response, modeling a healthy local daemon so the exact valid status
+  // read is observable end-to-end.
+  const dockerPath = path.join(fakeBin, 'docker');
+  const dockerScript =
+    `#!/bin/sh\n` +
+    `{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\n` +
+    `case "$4" in ps) printf 'NAME        STATUS\\nbi-agent  running\\n' ;; esac\n` +
+    'exit 0\n';
+  writeFileSync(dockerPath, dockerScript);
+  chmodSync(dockerPath, 0o755);
+  // Run the exact shipped script bytes from inside the sandbox so bi_here is
+  // the disposable sandbox root, never this repository.
+  const biPath = path.join(root, 'bin', 'bi');
+  writeFileSync(biPath, readFileSync(path.join(ROOT, 'bin', 'bi')));
+  chmodSync(biPath, 0o755);
+  return Object.freeze({
+    root,
+    logPath,
+    sentinels: Object.freeze({
+      dotEnv: path.join(root, '.env'),
+      controlToken,
+      externalSecret: path.join(root, '.secrets', 'mssql_password'),
+      unrelatedRoot: path.join(root, 'README-sentinel.md'),
+    }),
+    deleteAll: () => rmSync(root, { recursive: true, force: true }),
+  });
+}
+
+function missingSentinels(sandbox) {
+  return Object.entries(sandbox.sentinels)
+    .filter(([, file]) => !existsSync(file))
+    .map(([name]) => name);
+}
+
+test('CLI-07-AC01: every trailing status argument form fails closed with one deterministic bounded printable diagnostic, empty stdout, and zero fake-Docker calls in configured and unconfigured sandboxes', async (t) => {
+  // The configured sandboxes carry valid-looking setup sentinels (a synthetic
+  // .env, a mode-0600 control token, a mode-0600 external connector secret,
+  // and an unrelated root file), so every form must be rejected by the
+  // zero-option arity gate alone — never by passing into require_setup and
+  // then the Compose status read. The unconfigured sandboxes carry no .env
+  // and no control token.
+  const forms = Object.freeze([
+    Object.freeze(['status', '--typo']),
+    Object.freeze(['status', '--watch']),
+    Object.freeze(['status', '-n']),
+    Object.freeze(['status', '']),
+    Object.freeze(['status', ' ']),
+    Object.freeze(['status', '\u001b[2J\u001b[8m']),
+    Object.freeze(['status', 'line1\nline2']),
+    Object.freeze(['status', 'x'.repeat(5000)]),
+    Object.freeze(['status', 'extra', 'more']),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    for (const form of forms) {
+      const sandbox = buildStatusSandbox({ configured });
+      sandboxes.push(sandbox);
+      const result = await runBiInSandbox(sandbox, form);
+      const observation = `configured=${configured}, exit ${result.status}, stdout=${JSON.stringify(
+        result.stdout,
+      )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+        dockerCalls(sandbox),
+      )}, missingSentinels=${JSON.stringify(missingSentinels(sandbox))}`;
+      assert.equal(result.status, 1, `${JSON.stringify(form)} must fail non-zero, observed: ${observation}`);
+      assert.equal(result.stdout, '', `${JSON.stringify(form)}: nothing to stdout`);
+      assert.equal(
+        result.stderr,
+        STATUS_USAGE_DIAGNOSTIC,
+        `${JSON.stringify(form)}: the deterministic bounded usage diagnostic`,
+      );
+      assert.match(
+        result.stderr,
+        STATUS_USAGE_DIAGNOSTIC_SHAPE,
+        `stderr stays printable ASCII with no control-byte injection: ${JSON.stringify(form)}`,
+      );
+      assert.ok(
+        result.stderr.length < 512,
+        `${JSON.stringify(form)}: stderr must stay bounded, got ${result.stderr.length}`,
+      );
+      assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(form)}: zero fake-Docker calls, ${observation}`);
+      if (configured) {
+        assert.deepEqual(missingSentinels(sandbox), [], `${JSON.stringify(form)}: sentinels must survive, ${observation}`);
+      }
+    }
+  }
+});
+
+test('CLI-07-AC02: the status arity gate rejects before require_setup, stat, Compose, or any downstream action, with zero fake-Docker calls in configured and unconfigured sandboxes', async (t) => {
+  // A configured sandbox proves the gate is the arity gate (the exact usage
+  // diagnostic, never a setup or status-read diagnostic) while valid-looking
+  // setup sentinels are present; an unconfigured sandbox (no .env, no
+  // control token) proves the arity gate runs before any setup check: a
+  // malformed status must report the usage diagnostic, never the setup
+  // diagnostic.
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    const sandbox = buildStatusSandbox({ configured });
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, ['status', '--typo']);
+    const observation = `configured=${configured}, exit ${result.status}, stdout=${JSON.stringify(
+      result.stdout,
+    )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+      dockerCalls(sandbox),
+    )}`;
+    assert.equal(result.status, 1, `malformed status must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${observation}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      STATUS_USAGE_DIAGNOSTIC,
+      `${observation}: the arity gate must precede require_setup, stat, and Compose`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${observation}: zero fake-Docker calls`);
+  }
+});
+
+test('CLI-07-AC03: the exact valid status retains one repository-scoped compose ps call, the unchanged fake response readback, empty stderr, a successful exit, and every sentinel preserved', async (t) => {
+  const sandbox = buildStatusSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['status']);
+  assert.equal(result.status, 0, `valid status must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.equal(result.stderr, '', 'nothing to stderr on a successful status');
+  assert.equal(result.stdout, STATUS_FAKE_COMPOSE_PS, 'the unchanged fake Compose response readback');
+  assert.deepEqual(
+    dockerCalls(sandbox),
+    [`docker compose --file ${sandbox.root}/compose.yaml ps`],
+    'exactly one repository-scoped compose ps call',
+  );
+  // status must perform no local mutation: every configured sentinel survives.
+  assert.deepEqual(missingSentinels(sandbox), [], 'every configured sentinel must be preserved');
+});
+
+test('CLI-07-AC04: the status arity gate leaves the prior #196/#198/#200/#202/#204/#206 boundaries byte-exact in the same sandbox machinery', async (t) => {
+  // The status-sandbox variant (fake docker recorder answering compose ps)
+  // must not perturb any other boundary: #196 unknown-command and
+  // known-command dispatch, #198 exact reset confirmation, #200 exact down
+  // arity, #202 exact up arity, #204 exact setup arity, and #206 exact
+  // analyze arity all keep their byte-exact behavior with zero tool calls.
+  const sandbox = buildStatusSandbox();
+  t.after(sandbox.deleteAll);
+  const unknown = await runBiInSandbox(sandbox, ['definitely-not-a-command']);
+  assert.equal(unknown.status, 1, 'unknown command must still fail non-zero');
+  assert.equal(
+    unknown.stderr,
+    `KaleidoSphere ERROR: unknown command: "definitely-not-a-command"\n${USAGE}\n`,
+    'the unchanged unknown-command diagnostic',
+  );
+  const promotionBundle = await runBiInSandbox(sandbox, ['promotion-bundle']);
+  assert.equal(promotionBundle.status, 1, 'known-command validation must still fail non-zero');
+  assert.equal(
+    promotionBundle.stderr,
+    'KaleidoSphere ERROR: usage: ./bin/bi promotion-bundle {build|inspect|preflight} ...\n',
+    'the unchanged promotion-bundle validation diagnostic',
+  );
+  const reset = await runBiInSandbox(sandbox, ['reset', '--yes-i-understand', '--typo']);
+  assert.equal(reset.status, 1, 'trailing reset argument must still fail non-zero');
+  assert.equal(reset.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'the unchanged reset confirmation diagnostic');
+  const down = await runBiInSandbox(sandbox, ['down', '--typo']);
+  assert.equal(down.status, 1, 'trailing down argument must still fail non-zero');
+  assert.equal(down.stderr, DOWN_USAGE_DIAGNOSTIC, 'the unchanged down usage diagnostic');
+  const up = await runBiInSandbox(sandbox, ['up', '--typo']);
+  assert.equal(up.status, 1, 'trailing up argument must still fail non-zero');
+  assert.equal(up.stderr, UP_USAGE_DIAGNOSTIC, 'the unchanged up usage diagnostic');
+  const setup = await runBiInSandbox(sandbox, ['setup', '--typo']);
+  assert.equal(setup.status, 1, 'trailing setup argument must still fail non-zero');
+  assert.equal(setup.stderr, SETUP_USAGE_DIAGNOSTIC, 'the unchanged setup usage diagnostic');
+  const analyze = await runBiInSandbox(sandbox, ['analyze', '--typo']);
+  assert.equal(analyze.status, 1, 'trailing analyze argument must still fail non-zero');
+  assert.equal(analyze.stderr, ANALYZE_USAGE_DIAGNOSTIC, 'the unchanged analyze usage diagnostic');
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
 });

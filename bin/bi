@@ -198,6 +198,10 @@ case "${1:-help}" in
     esac
     ;;
   status)
+    # The read-only status boundary accepts exactly one total argv
+    # entry: status and nothing else. Any trailing argument fails before
+    # require_setup, stat, Compose, or any other downstream action.
+    [ "$#" -eq 1 ] || fail 'usage: ./bin/bi status'
     require_setup
     compose ps
     ;;
