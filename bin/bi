@@ -5,7 +5,32 @@ umask 077
 bi_here="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$bi_here"
 
+bi_usage='Usage: ./bin/bi {setup|up|analyze|ask "question"|search term|discovery ...|superset-fingerprint ...|promotion-bundle ...|status|logs [service]|down|reset --yes-i-understand}'
 fail() { printf >&2 'KaleidoSphere ERROR: %s\n' "$*"; exit 1; }
+render_untrusted_command() {
+  # Render an untrusted top-level command for the unknown-command diagnostic.
+  # The argument is capped at 64 raw bytes, and every control byte (C0/DEL),
+  # backslash, and double quote is escaped as \xNN / \\ / \", so the diagnostic
+  # stays single-line, bounded, and free of shell or terminal-control meaning.
+  LC_ALL=C
+  local value="$1" rendered='' i ch code
+  [ "${#value}" -le 64 ] || value="${value:0:64}"
+  for ((i = 0; i < ${#value}; i += 1)); do
+    ch="${value:i:1}"
+    case "$ch" in
+      '\') rendered+='\\' ;;
+      '"') rendered+='\"' ;;
+      *)
+        printf -v code '%d' "'$ch"
+        if (( code < 32 || code > 126 )); then
+          printf -v ch '\\x%02x' "$code"
+        fi
+        rendered+="$ch"
+        ;;
+    esac
+  done
+  printf '%s' "$rendered"
+}
 compose() { docker compose --file "$bi_here/compose.yaml" "$@"; }
 published_port() {
   local service="$1" container_port="$2" binding
@@ -181,7 +206,11 @@ case "${1:-help}" in
     done
     printf 'Owned runtime metadata, projections, receipts, and generated internal secrets removed. Source config and external secret files retained.\n'
     ;;
-  help|*)
-    printf '%s\n' 'Usage: ./bin/bi {setup|up|analyze|ask "question"|search term|discovery ...|superset-fingerprint ...|promotion-bundle ...|status|logs [service]|down|reset --yes-i-understand}'
+  help|--help)
+    printf '%s\n' "$bi_usage"
+    ;;
+  *)
+    fail "unknown command: \"$(render_untrusted_command "$1")\"
+$bi_usage"
     ;;
 esac
