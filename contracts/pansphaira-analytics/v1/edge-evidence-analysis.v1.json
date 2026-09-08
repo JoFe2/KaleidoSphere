@@ -1,0 +1,69 @@
+{
+  "schemaVersion": "kaleidosphere.pansphaira-analytics/edge-evidence-analysis-contract/v1",
+  "issue": "XRA-KS-01",
+  "predeclaration": "Exactly one predeclared native edge-evidence coverage analysis (node/edge/evidence counts; native source, UNKNOWN and counterevidence channels). No knowledge-effectiveness or relation-truth claim is emitted. Separately versioned from the relational analysis.",
+  "analysis": {
+    "id": "pansphaira/native-edge-evidence-coverage-analysis",
+    "version": "v1",
+    "count": 1
+  },
+  "computedClaims": [
+    "decisionNodeCount",
+    "edgeCount",
+    "evidenceCount",
+    "frozenReceiptsEstablishingEdge",
+    "knowledgeNodeCount",
+    "nodeCount",
+    "counterevidenceTotal",
+    "unknownTotal"
+  ],
+  "observedClaims": [
+    "authority",
+    "edgeRelation",
+    "evidenceRoles",
+    "nonclaimCount",
+    "nodeIds",
+    "nodeKinds",
+    "promotion",
+    "relationTruth",
+    "sourceContract",
+    "sourceContractVersion"
+  ],
+  "coverageAspects": [
+    "nodes",
+    "edges",
+    "evidence",
+    "source",
+    "unknownChannel",
+    "counterevidence"
+  ],
+  "coverageStatuses": [
+    "HELD",
+    "OBSERVED",
+    "UNKNOWN"
+  ],
+  "counterevidenceClaimIds": [
+    "nodes",
+    "edges",
+    "evidence",
+    "source",
+    "unknownChannel",
+    "counterevidence"
+  ],
+  "counterevidenceStatuses": [
+    "EVIDENCE_FOUND",
+    "HELD",
+    "MATCH",
+    "NONE_FOUND",
+    "UNKNOWN"
+  ],
+  "resultBinding": "resultSha256 is the sha256 of the canonical JSON of {claims, counterevidence, coverage}; the candidate never carries a digest of itself.",
+  "authorityFreeCandidate": {
+    "schemaVersion": "kaleidosphere.pansphaira-analytics/native-authority-free-candidate/v1",
+    "state": "CANDIDATE"
+  },
+  "nonclaims": [
+    "No knowledge-effectiveness or relation-truth claim is emitted by this analysis; claims are structural node/edge/evidence coverage with UNKNOWN preserved and never collapsed.",
+    "A candidate is authority-free: it never promotes, mutates, executes, or publishes, and gains no capability or effect."
+  ]
+}

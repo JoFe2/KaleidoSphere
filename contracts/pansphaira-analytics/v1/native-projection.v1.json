@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "kaleidosphere.pansphaira-analytics/native-projection-contract/v1",
+  "issue": "XRA-KS-01",
+  "predeclaration": "Separately versioned native PAN nodes/edges projection contract; distinct schema and version from the frozen relational projection-profile v1. No relational fields and no period metadata are introduced.",
+  "projection": {
+    "schemaVersion": "chimpmaera.cks/kaleidosphere-analytics-projection/v1",
+    "projectionId": "pansphaira:cks-xra-ps-01-kaleidosphere-analytics-001",
+    "contractVersion": "1.0.0",
+    "purpose": "PANSPHAIRA_EDGE_EVIDENCE_ANALYTICS"
+  },
+  "sourceBinding": {
+    "contract": "pansphaira.fnd-ps-02/owner-edge-evidence-inputs/v2",
+    "contractVersion": "v2",
+    "contractSha256": "d2995f7e8ed46031902d09a5138202a489834d4a018646c50920a482bbf7da44"
+  },
+  "digestBindings": {
+    "rawArtifactSha256": "22f34bf33874a42cde5a5a23a2242935e8b2b145aa8e2364a5aef26b8ec3e6e8",
+    "canonicalTransportSha256": "91c26eb69860767ec2898a48676caaeb52c808de284bb0fbfbe8a986d30ad19c",
+    "projectionBodyDigest": "cc5f6cc9591ccf4b6b3c4b9f954aa9da09695b784d7abaa585c082aea195ef1b"
+  },
+  "digestSemantics": "The raw released artifact digest, the canonical transport digest, and the projection body digest are three separate verified bindings. The raw digest is the frozen released artifact bytes; the canonical transport digest is the canonical JSON wire form; the body digest is the projection self-attested digest over everything except projectionDigest. The raw artifact is a trusted sidecar pin, not re-derivable from incoming transport.",
+  "gateOrder": [
+    "transport canonicality and size",
+    "native v1 exact closed shape with frozen subject, authority, and coverage freeze",
+    "native source provenance attested against the trusted release sidecar",
+    "projection body self-digest and sidecar body pin",
+    "canonical transport digest equals the sidecar pin"
+  ],
+  "authorityFreeCandidate": {
+    "schemaVersion": "kaleidosphere.pansphaira-analytics/native-authority-free-candidate/v1",
+    "state": "CANDIDATE"
+  }
+}

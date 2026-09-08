@@ -25,6 +25,11 @@ import {
   ingestProjectionProfile,
   validateRegistry,
 } from '../services/bi-agent/src/pansphaira-analytics/pipeline.mjs';
+import {
+  ingestNativeProjection,
+  validateNativeSidecar,
+} from '../services/bi-agent/src/pansphaira-analytics/native-pipeline.mjs';
+import { verifyNativeAuthorityFreeCandidate } from '../services/bi-agent/src/pansphaira-analytics/native-candidate.mjs';
 
 export const ISSUE_ID = 'XRA-KS-01';
 export const TASK_ID = 'XRA-KS-01-SERVICE-CLEAN-ROOM';
@@ -33,6 +38,10 @@ export const FIXTURE_PATH = 'tests/pansphaira-analytics-synthetic-profile-v1.jso
 export const PROJECTION_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/projection-profile.v1.json';
 export const ANALYSIS_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/analysis.v1.json';
 export const RELEASE_REGISTRY_PATH = 'contracts/pansphaira-analytics/v1/release-registry.v1.json';
+export const NATIVE_FIXTURE_PATH = 'tests/pansphaira-analytics-native-released-fixture.json';
+export const NATIVE_PROJECTION_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/native-projection.v1.json';
+export const NATIVE_ANALYSIS_CONTRACT_PATH = 'contracts/pansphaira-analytics/v1/edge-evidence-analysis.v1.json';
+export const NATIVE_RELEASE_SIDECAR_PATH = 'contracts/pansphaira-analytics/v1/native-release-registry.v1.json';
 
 // Five pipeline-level cases run here; TIMEOUT is service-boundary-only.
 export const PIPELINE_ADVERSARIAL_CASE_IDS = Object.freeze([
@@ -53,6 +62,29 @@ export const EXPECTED_DENIAL_CODES = Object.freeze({
   RELEASE_HELD: 'XRA_KS01_RELEASE_HELD',
 });
 
+// Native pipeline-level fail-closed cases (TIMEOUT is service-boundary-only, as
+// for the relational slice). The re-digested forgery is self-consistent yet
+// denied; authority widening is denied, never coerced.
+export const NATIVE_PIPELINE_ADVERSARIAL_CASE_IDS = Object.freeze([
+  'FORGED_EDGE',
+  'SUBSTITUTED_PROJECTION',
+  'MISSING_EVIDENCE',
+  'UNKNOWN_COLLAPSE',
+  'UNSUPPORTED_PROFILE',
+  'AUTHORITY_WIDENING',
+  'REDIGESTED_FORGERY',
+]);
+export const NATIVE_EXPECTED_DENIAL_CODES = Object.freeze({
+  FORGED_EDGE: 'XRA_KS01_NATIVE_PROVENANCE_FORGERY_DENIED',
+  SUBSTITUTED_PROJECTION: 'XRA_KS01_NATIVE_DIGEST_MISMATCH_DENIED',
+  MISSING_EVIDENCE: 'XRA_KS01_NATIVE_EVIDENCE_MISSING_DENIED',
+  UNKNOWN_COLLAPSE: 'XRA_KS01_NATIVE_UNKNOWN_COLLAPSE_DENIED',
+  UNSUPPORTED_PROFILE: 'XRA_KS01_NATIVE_CONTRACT_DENIED',
+  AUTHORITY_WIDENING: 'XRA_KS01_NATIVE_AUTHORITY_DENIED',
+  REDIGESTED_FORGERY: 'XRA_KS01_NATIVE_CONTRACT_DENIED',
+  TIMEOUT: 'XRA_KS01_TIMEOUT_DENIED',
+});
+
 const sha256hex = (value) => createHash('sha256').update(value).digest('hex');
 
 export function loadFrozenInputs() {
@@ -61,6 +93,10 @@ export function loadFrozenInputs() {
     projectionContractBytes: readFileSync(path.join(ROOT, PROJECTION_CONTRACT_PATH)),
     analysisContractBytes: readFileSync(path.join(ROOT, ANALYSIS_CONTRACT_PATH)),
     releaseRegistryBytes: readFileSync(path.join(ROOT, RELEASE_REGISTRY_PATH)),
+    nativeFixtureBytes: readFileSync(path.join(ROOT, NATIVE_FIXTURE_PATH)),
+    nativeProjectionContractBytes: readFileSync(path.join(ROOT, NATIVE_PROJECTION_CONTRACT_PATH)),
+    nativeAnalysisContractBytes: readFileSync(path.join(ROOT, NATIVE_ANALYSIS_CONTRACT_PATH)),
+    nativeSidecarBytes: readFileSync(path.join(ROOT, NATIVE_RELEASE_SIDECAR_PATH)),
     packageBytes: readFileSync(path.join(ROOT, 'package.json')),
     canonicalJsonBytes: readFileSync(path.join(ROOT, 'services/bi-control/src/canonical-json.js')),
   };
@@ -89,6 +125,10 @@ export function createCleanRoomContext(inputs) {
     environmentSha256: environmentIdentity.environmentSha256,
     projectionContractBytes: Buffer.from(inputs.projectionContractBytes),
     analysisContractBytes: Buffer.from(inputs.analysisContractBytes),
+    nativeSidecar: validateNativeSidecar(JSON.parse(inputs.nativeSidecarBytes.toString('utf8'))),
+    nativeProjectionContractBytes: Buffer.from(inputs.nativeProjectionContractBytes),
+    nativeAnalysisContractBytes: Buffer.from(inputs.nativeAnalysisContractBytes),
+    nativeSidecarBytes: Buffer.from(inputs.nativeSidecarBytes),
   };
 }
 
@@ -209,6 +249,122 @@ function assertFailClosed(result, caseId) {
   if (result.code !== EXPECTED_DENIAL_CODES[caseId]) throw new Error(`case ${caseId} code ${result.code}`);
 }
 
+// --- KS151-NATIVE-PROJECTION-01: separately versioned native pipeline ---
+
+// The exact released native fixture is the wire form; every variant deviates
+// from the frozen subjects or provenance and is denied, never coerced. The
+// re-digested forgery recomputes its own body digest so it is self-consistent
+// yet still denied (frozen-subject shape gate, upstream of any digest gate).
+export function buildNativeAdversarialBytes(fix) {
+  const clone = (object) => structuredClone(object);
+  const recomputeDigest = (projection) => {
+    const body = {};
+    for (const [key, value] of Object.entries(projection)) if (key !== 'projectionDigest') body[key] = value;
+    projection.projectionDigest = sha256hex(Buffer.from(canonicalJson(body)));
+  };
+  const forged = clone(fix);
+  forged.source.contractSha256 = 'f'.repeat(64);
+  const substituted = clone(fix);
+  substituted.edges[0].evidenceSha256 = sha256hex(Buffer.from('ks01-substituted-edge-evidence'));
+  recomputeDigest(substituted);
+  const missingEvidence = clone(fix);
+  missingEvidence.edges[0].evidence = [];
+  recomputeDigest(missingEvidence);
+  const unknownCollapse = clone(fix);
+  unknownCollapse.nodes[0].unknown = true;
+  recomputeDigest(unknownCollapse);
+  const unsupported = clone(fix);
+  unsupported.purpose = 'PANSPHAIRA_UNSUPPORTED_PURPOSE';
+  recomputeDigest(unsupported);
+  const authorityWidening = clone(fix);
+  authorityWidening.authority = 'PROMOTED';
+  recomputeDigest(authorityWidening);
+  const redigested = clone(fix);
+  redigested.nodes[0].kind = 'DECISION';
+  recomputeDigest(redigested);
+  return {
+    FORGED_EDGE: Buffer.from(canonicalJson(forged)),
+    SUBSTITUTED_PROJECTION: Buffer.from(canonicalJson(substituted)),
+    MISSING_EVIDENCE: Buffer.from(canonicalJson(missingEvidence)),
+    UNKNOWN_COLLAPSE: Buffer.from(canonicalJson(unknownCollapse)),
+    UNSUPPORTED_PROFILE: Buffer.from(canonicalJson(unsupported)),
+    AUTHORITY_WIDENING: Buffer.from(canonicalJson(authorityWidening)),
+    REDIGESTED_FORGERY: Buffer.from(canonicalJson(redigested)),
+  };
+}
+
+// Independent oracle: recomputes every native computed claim inline from the
+// raw fixture; it does not reuse the native analysis code path.
+export function oracleNativeComputedClaims(nativeFixture) {
+  const nodes = nativeFixture.nodes;
+  const edge = nativeFixture.edges[0];
+  const unknownTotal = nodes.reduce((sum, node) => sum + (node.unknown === true ? 1 : 0), 0)
+    + nativeFixture.edges.reduce((sum, item) => sum + (item.unknown === true ? 1 : 0), 0);
+  const counterevidenceTotal = nodes.reduce((sum, node) => sum + node.counterevidence.length, 0)
+    + nativeFixture.edges.reduce((sum, item) => sum + item.counterevidence.length, 0);
+  return {
+    nodeCount: nodes.length,
+    edgeCount: nativeFixture.edges.length,
+    evidenceCount: edge.evidence.length,
+    knowledgeNodeCount: nodes.filter((node) => node.kind === 'KNOWLEDGE').length,
+    decisionNodeCount: nodes.filter((node) => node.kind === 'DECISION').length,
+    unknownTotal,
+    counterevidenceTotal,
+    frozenReceiptsEstablishingEdge: edge.evidence.length,
+  };
+}
+
+export function runNativePositiveRun(inputs, contextLike) {
+  const nativeFixture = JSON.parse(inputs.nativeFixtureBytes.toString('utf8'));
+  const canonicalBytes = Buffer.from(canonicalJson(structuredClone(nativeFixture)));
+  const result = ingestNativeProjection(canonicalBytes, contextLike);
+  if (result.state !== 'CANDIDATE') throw new Error(`native positive run denied: ${result.code}`);
+  const sidecarEntry = contextLike.nativeSidecar.entries.find((entry) => entry.status === 'RELEASED');
+  verifyNativeAuthorityFreeCandidate(result.candidate, {
+    projectionBytes: canonicalBytes,
+    rawArtifactBytes: inputs.nativeFixtureBytes,
+    nativeProjectionContractBytes: contextLike.nativeProjectionContractBytes,
+    analysisContractBytes: contextLike.nativeAnalysisContractBytes,
+    releaseSidecarBytes: contextLike.nativeSidecarBytes,
+    sidecarEntry,
+    heads: contextLike.heads,
+    environment: contextLike.environment,
+    environmentSha256: contextLike.environmentSha256,
+    trusted: {
+      rawArtifactSha256: sha256hex(inputs.nativeFixtureBytes),
+      canonicalTransportSha256: sha256hex(canonicalBytes),
+      projectionBodyDigest: nativeFixture.projectionDigest,
+      pansphairaHeadCommit: contextLike.nativeSidecar.pinnedSource.pansphairaHeadCommit,
+      releaseReceiptSha256: contextLike.nativeSidecar.pinnedSource.releaseReceiptSha256,
+    },
+  });
+  const oracle = oracleNativeComputedClaims(nativeFixture);
+  const oracleEquality = canonicalJson(result.candidate.claims.computed) === canonicalJson(oracle) ? 'EXACT' : 'MISMATCH';
+  const evidence = {
+    admission: 'SYNTHETIC_PRODUCER_SIDECAR_PIN_ONLY',
+    requestSha256: result.requestSha256,
+    rawArtifactSha256: sha256hex(inputs.nativeFixtureBytes),
+    candidate: result.candidate,
+  };
+  return { result, evidence, evidenceSha256: sha256hex(canonicalJson(evidence)), oracle, oracleEquality };
+}
+
+export function runNativeAdversarialCase(caseId, inputs, contextLike) {
+  const nativeFixture = JSON.parse(inputs.nativeFixtureBytes.toString('utf8'));
+  const bytes = buildNativeAdversarialBytes(nativeFixture)[caseId];
+  return ingestNativeProjection(Buffer.from(bytes), contextLike);
+}
+
+function assertFailClosedNative(result, caseId) {
+  if (result.state !== 'DENIED' || result.candidate !== null || result.ordinaryAnswer !== null || result.successfulOrdinaryAnswer !== false) {
+    throw new Error(`native case ${caseId} did not fail closed`);
+  }
+  if (!/^[a-f0-9]{64}$/.test(result.denialSha256)) throw new Error(`native case ${caseId} denial digest malformed`);
+  const { denialSha256, ...rest } = result;
+  if (sha256hex(canonicalJson(rest)) !== denialSha256) throw new Error(`native case ${caseId} denial digest mismatch`);
+  if (result.code !== NATIVE_EXPECTED_DENIAL_CODES[caseId]) throw new Error(`native case ${caseId} code ${result.code}`);
+}
+
 export function buildCleanRoomEvidence(inputs, contextLike) {
   const fixture = JSON.parse(inputs.fixtureBytes.toString('utf8'));
   const first = runPositiveRun(inputs, contextLike);
@@ -258,6 +414,66 @@ export function buildCleanRoomEvidence(inputs, contextLike) {
   const releasedEntryCount = contextLike.registry.entries.filter((entry) => entry.status === 'RELEASED').length;
   if (releasedEntryCount !== 0) throw new Error('real release registry must remain HELD');
 
+  // KS151-NATIVE-PROJECTION-01: the separately versioned native slice. The
+  // trusted release sidecar pins the synthetic producer independently of any
+  // caller-recomputed hash; the relational real registry above stays HELD.
+  const nativeFixture = JSON.parse(inputs.nativeFixtureBytes.toString('utf8'));
+  const nativeCanonicalBytes = Buffer.from(canonicalJson(structuredClone(nativeFixture)));
+  const nativeFirst = runNativePositiveRun(inputs, contextLike);
+  const nativeSecond = runNativePositiveRun(inputs, contextLike);
+  if (nativeFirst.evidenceSha256 !== nativeSecond.evidenceSha256) throw new Error('native positive runs are not deterministic');
+  if (nativeFirst.oracleEquality !== 'EXACT') throw new Error('native oracle readback is not EXACT');
+
+  const nativeAdversarial = [];
+  for (const caseId of NATIVE_PIPELINE_ADVERSARIAL_CASE_IDS) {
+    const firstDenial = runNativeAdversarialCase(caseId, inputs, contextLike);
+    const secondDenial = runNativeAdversarialCase(caseId, inputs, contextLike);
+    assertFailClosedNative(firstDenial, caseId);
+    if (canonicalJson(firstDenial) !== canonicalJson(secondDenial)) throw new Error(`native case ${caseId} denial not deterministic`);
+    nativeAdversarial.push({
+      ordinal: nativeAdversarial.length + 1,
+      id: caseId,
+      status: 'PASS',
+      observedState: 'DENIED',
+      code: firstDenial.code,
+      deterministic: true,
+      ordinaryAnswer: null,
+      result: null,
+      successfulOrdinaryAnswer: false,
+    });
+  }
+
+  const nativeReleasedEntryCount = contextLike.nativeSidecar.entries.filter((entry) => entry.status === 'RELEASED').length;
+  if (nativeReleasedEntryCount < 1) throw new Error('native sidecar must pin the synthetic producer');
+  const nativeRawSha256 = sha256hex(inputs.nativeFixtureBytes);
+  const nativeCanonicalSha256 = sha256hex(nativeCanonicalBytes);
+  const nativeBodyDigest = nativeFixture.projectionDigest;
+  const native = {
+    rawFixtureSha256: nativeRawSha256,
+    digestBindings: {
+      rawArtifactSha256: nativeRawSha256,
+      canonicalTransportSha256: nativeCanonicalSha256,
+      projectionBodyDigest: nativeBodyDigest,
+      distinct: nativeRawSha256 !== nativeCanonicalSha256
+        && nativeCanonicalSha256 !== nativeBodyDigest
+        && nativeRawSha256 !== nativeBodyDigest,
+    },
+    sidecar: {
+      status: 'RELEASED',
+      entryCount: contextLike.nativeSidecar.entries.length,
+      releasedEntryCount: nativeReleasedEntryCount,
+      synthetic: contextLike.nativeSidecar.synthetic,
+    },
+    positive: {
+      admission: nativeFirst.evidence.admission,
+      evidenceSha256: nativeFirst.evidenceSha256,
+      deterministic: true,
+      oracleEquality: 'EXACT',
+      verifierState: 'VERIFIED',
+    },
+    adversarial: nativeAdversarial,
+  };
+
   return {
     issue: ISSUE_ID,
     taskId: TASK_ID,
@@ -280,6 +496,7 @@ export function buildCleanRoomEvidence(inputs, contextLike) {
       verifierState: 'VERIFIED',
     },
     adversarial,
+    native,
     boundary: {
       canonicalInputsMutated: false,
       realProjectionIngested: false,
@@ -306,6 +523,18 @@ if (process.argv[1] && path.resolve(process.argv[1]) === SELF_PATH) {
   const contextLike = createCleanRoomContext(inputs);
 
   if (caseArg !== null) {
+    const NATIVE_CASE_PREFIX = 'NATIVE_';
+    if (caseArg.startsWith(NATIVE_CASE_PREFIX)) {
+      const nativeCaseId = caseArg.slice(NATIVE_CASE_PREFIX.length);
+      if (!NATIVE_PIPELINE_ADVERSARIAL_CASE_IDS.includes(nativeCaseId)) {
+        console.error(`XRA_KS01_NATIVE_UNKNOWN_CASE ${caseArg}`);
+        process.exit(2);
+      }
+      const denial = runNativeAdversarialCase(nativeCaseId, inputs, contextLike);
+      assertFailClosedNative(denial, nativeCaseId);
+      console.log(JSON.stringify(denial, null, 2));
+      process.exit(2);
+    }
     if (!PIPELINE_ADVERSARIAL_CASE_IDS.includes(caseArg)) {
       console.error(`XRA_KS01_UNKNOWN_CASE ${caseArg}`);
       process.exit(2);

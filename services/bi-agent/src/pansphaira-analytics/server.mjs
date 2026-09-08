@@ -11,11 +11,15 @@ import { readFileSync } from 'node:fs';
 
 import { buildEnvironmentIdentity } from './candidate.mjs';
 import { ingestProjectionProfile, validateRegistry } from './pipeline.mjs';
+import { ingestNativeProjection, validateNativeSidecar } from './native-pipeline.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..');
 const PROJECTION_CONTRACT_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/projection-profile.v1.json');
 const ANALYSIS_CONTRACT_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/analysis.v1.json');
 const RELEASE_REGISTRY_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/release-registry.v1.json');
+const NATIVE_PROJECTION_CONTRACT_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/native-projection.v1.json');
+const NATIVE_ANALYSIS_CONTRACT_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/edge-evidence-analysis.v1.json');
+const NATIVE_RELEASE_SIDECAR_PATH = path.join(ROOT, 'contracts/pansphaira-analytics/v1/native-release-registry.v1.json');
 const REQUEST_DEADLINE_MS = 1000;
 const MAX_BODY_BYTES = 16384;
 
@@ -54,6 +58,21 @@ const context = {
   analysisContractBytes,
 };
 const releasedEntryCount = registry.entries.filter((entry) => entry.status === 'RELEASED').length;
+
+const nativeProjectionContractBytes = readFileSync(NATIVE_PROJECTION_CONTRACT_PATH);
+const nativeAnalysisContractBytes = readFileSync(NATIVE_ANALYSIS_CONTRACT_PATH);
+const nativeSidecarBytes = readFileSync(NATIVE_RELEASE_SIDECAR_PATH);
+const nativeSidecar = validateNativeSidecar(JSON.parse(nativeSidecarBytes.toString('utf8')));
+const nativeContext = {
+  nativeSidecar,
+  heads,
+  environment,
+  environmentSha256,
+  nativeProjectionContractBytes: Buffer.from(nativeProjectionContractBytes),
+  nativeAnalysisContractBytes: Buffer.from(nativeAnalysisContractBytes),
+  nativeSidecarBytes: Buffer.from(nativeSidecarBytes),
+};
+const nativeReleasedEntryCount = nativeSidecar.entries.filter((entry) => entry.status === 'RELEASED').length;
 
 function send(response, status, value) {
   const body = `${JSON.stringify(value)}\n`;
@@ -128,6 +147,11 @@ const server = http.createServer(async (request, response) => {
           entryCount: registry.entries.length,
           releasedEntryCount,
         },
+        nativeReleaseRegistry: {
+          status: nativeReleasedEntryCount > 0 ? 'RELEASED' : 'HELD',
+          entryCount: nativeSidecar.entries.length,
+          releasedEntryCount: nativeReleasedEntryCount,
+        },
       });
     }
     if (request.method === 'POST' && request.url === '/v1/pansphaira-analytics/projection') {
@@ -140,6 +164,21 @@ const server = http.createServer(async (request, response) => {
         return;
       }
       const result = ingestProjectionProfile(body, context);
+      if (result.state === 'CANDIDATE') {
+        return send(response, 200, { status: 'CANDIDATE', issue: 'XRA-KS-01', requestSha256: result.requestSha256, candidate: result.candidate });
+      }
+      return send(response, 400, deniedEnvelope(result.code, result.requestSha256));
+    }
+    if (request.method === 'POST' && request.url === '/v1/pansphaira-analytics/native-projection') {
+      let body;
+      try {
+        body = await readBoundedBody(request);
+      } catch (error) {
+        send(response, 400, deniedEnvelope(error.code ?? 'XRA_KS01_TIMEOUT_DENIED', null));
+        response.on('finish', () => request.destroy());
+        return;
+      }
+      const result = ingestNativeProjection(body, nativeContext);
       if (result.state === 'CANDIDATE') {
         return send(response, 200, { status: 'CANDIDATE', issue: 'XRA-KS-01', requestSha256: result.requestSha256, candidate: result.candidate });
       }
