@@ -9,10 +9,10 @@
 // or runtime-state action.
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
-// destructive reset, down, and state-changing up argument boundaries. It does
-// not start containers, uses only a fake local docker executable and
-// disposable synthetic sandbox state, and makes no production-compatibility
-// claim.
+// destructive reset, down, state-changing up, and state-changing setup
+// argument boundaries. It does not start containers, uses only a fake local
+// docker executable, a fake local openssl executable, and disposable
+// synthetic sandbox state, and makes no production-compatibility claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
