@@ -1,21 +1,28 @@
 // XRA-KS-01 — authority-free native analytics candidate: builder and verifier.
 // Separately versioned from the relational candidate. State CANDIDATE, no
 // authority. It binds both repo heads, both native contracts, the trusted
-// release sidecar, the input (three distinct digests), the result, and the
-// service environment. It never carries a digest of itself.
+// release sidecar, the input (three distinct digests), the complete
+// deterministic result (observed and computed claims, coverage, counterevidence,
+// and the result digest — bound to the pinned canonical projection and the one
+// predeclared analysis, never to a candidate-recomputed self-digest alone), and
+// the service environment. It never carries a digest of itself.
 
 import { createHash } from 'node:crypto';
 import { canonicalJson } from '../../../bi-control/src/canonical-json.js';
 
 import { AUTHORITY_FREE } from './candidate.mjs';
 import {
+  analyzeNativeProjection,
   NATIVE_ANALYSIS_ID,
   NATIVE_ANALYSIS_VERSION,
   NATIVE_COVERAGE_ASPECT_KEYS,
   NATIVE_COVERAGE_STATUSES,
+  NATIVE_COMPUTED_CLAIM_KEYS,
   NATIVE_COUNTEREVIDENCE_CLAIM_IDS,
   NATIVE_COUNTEREVIDENCE_STATUSES,
+  NATIVE_OBSERVED_CLAIM_KEYS,
 } from './native-analysis.mjs';
+import { parseCanonicalNativeProjectionBytes, validateNativeProjectionContract } from './native-contract.mjs';
 
 export const NATIVE_CANDIDATE_SCHEMA = 'kaleidosphere.pansphaira-analytics/native-authority-free-candidate/v1';
 export const NATIVE_ISSUE_ID = 'XRA-KS-01';
@@ -83,7 +90,10 @@ export function buildNativeAuthorityFreeCandidate({ analysis, sidecarEntry, head
 //   frozen released raw artifact), receiptBytes (the exact controller-observed
 //   public release/source receipt bytes, trailing newline included),
 //   nativeProjectionContractBytes, analysisContractBytes,
-//   releaseSidecarBytes, sidecarEntry (the RELEASED trusted sidecar entry),
+//   releaseSidecarBytes, sidecarEntry (the trusted sidecar's RELEASED entry;
+//   its provenance pins must equal the independently reconstructed trusted
+//   pins, and its RELEASED status is the release evidence for the
+//   predeclared analysis),
 //   heads: {commitOid, treeOid}, environment,
 //   environmentSha256, trusted (independent pins reconstructed from the raw
 //   receipt/source bytes and the observed byte-equivalent head:
@@ -170,18 +180,67 @@ export function verifyNativeAuthorityFreeCandidate(candidate, materials) {
   // two distinct commits; conflating them is denied.
   if (materials.trusted.releaseCommit === materials.trusted.pansphairaHeadCommit) fail('XRA_KS01_NATIVE_CANDIDATE_HEAD_DENIED');
 
-  const claimIds = candidate.counterevidence.map((entry) => entry.claim).sort();
-  if (JSON.stringify(claimIds) !== JSON.stringify([...NATIVE_COUNTEREVIDENCE_CLAIM_IDS].sort())) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
-  for (const entry of candidate.counterevidence) {
-    if (entry === null || typeof entry !== 'object' || !NATIVE_COUNTEREVIDENCE_STATUSES.includes(entry.status)) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
+  // Complete deterministic result binding. The candidate's result — observed
+  // and computed claims, coverage, counterevidence, and its digest — must be
+  // the exact result of the one predeclared analysis over the independently
+  // pinned canonical projection and the pinned release evidence. A
+  // self-consistent re-digest over substituted result content is denied,
+  // never laundered into VERIFIED.
+
+  // Strict closed result shape: unknown/extra/missing fields and malformed
+  // shapes are a deterministic typed denial, never an uncaught TypeError.
+  const { claims, coverage, counterevidence, resultSha256 } = candidate;
+  exactKeySet(claims, ['computed', 'observed'], 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  exactKeySet(claims.computed, NATIVE_COMPUTED_CLAIM_KEYS, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  exactKeySet(claims.observed, NATIVE_OBSERVED_CLAIM_KEYS, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  exactKeySet(coverage, NATIVE_COVERAGE_ASPECT_KEYS, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  assertFiniteJsonLeaves(claims, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  assertFiniteJsonLeaves(coverage, 'XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  if (!Array.isArray(counterevidence) || counterevidence.length !== NATIVE_COUNTEREVIDENCE_CLAIM_IDS.length) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
+  for (let index = 0; index < counterevidence.length; index += 1) {
+    const entry = counterevidence[index];
+    exactKeySet(entry, NATIVE_COUNTEREVIDENCE_ENTRY_KEYS, 'XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
+    if (entry.claim !== NATIVE_COUNTEREVIDENCE_CLAIM_IDS[index]) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
+    if (typeof entry.check !== 'string' || entry.check.length === 0) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
+    if (typeof entry.observed !== 'number' || !Number.isFinite(entry.observed)) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
+    if (!NATIVE_COUNTEREVIDENCE_STATUSES.includes(entry.status)) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
   }
+  if (typeof resultSha256 !== 'string' || !HEX64.test(resultSha256)) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+
+  // Legacy result-content gates (typed, after the shape gate guarantees the
+  // values are the closed result tree).
+  const claimIds = counterevidence.map((entry) => entry.claim).sort();
+  if (JSON.stringify(claimIds) !== JSON.stringify([...NATIVE_COUNTEREVIDENCE_CLAIM_IDS].sort())) fail('XRA_KS01_NATIVE_CANDIDATE_COUNTEREVIDENCE_DENIED');
   for (const aspect of NATIVE_COVERAGE_ASPECT_KEYS) {
-    if (!NATIVE_COVERAGE_STATUSES.includes(candidate.coverage[aspect])) fail('XRA_KS01_NATIVE_CANDIDATE_UNKNOWN_COLLAPSE_DENIED');
+    if (!NATIVE_COVERAGE_STATUSES.includes(coverage[aspect])) fail('XRA_KS01_NATIVE_CANDIDATE_UNKNOWN_COLLAPSE_DENIED');
   }
 
-  const { claims, coverage, counterevidence, resultSha256 } = candidate;
-  if (claims === null || coverage === null || !Array.isArray(counterevidence)) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
-  if (sha256hex(canonicalJson({ claims, coverage, counterevidence })) !== resultSha256) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  // The trusted release evidence: the pinned sidecar entry must be RELEASED,
+  // and its provenance pins must equal the independently reconstructed
+  // trusted pins. A HELD or re-pinned entry cannot seed the expected result.
+  const sidecarEntry = materials.sidecarEntry;
+  if (sidecarEntry === null || typeof sidecarEntry !== 'object' || Array.isArray(sidecarEntry)) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (sidecarEntry.status !== 'RELEASED') fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+  if (sidecarEntry.releaseTag !== materials.trusted.releaseTag
+    || sidecarEntry.releaseCommit !== materials.trusted.releaseCommit
+    || sidecarEntry.pansphairaHeadCommit !== materials.trusted.pansphairaHeadCommit
+    || sidecarEntry.releaseReceiptSha256 !== materials.trusted.releaseReceiptSha256) fail('XRA_KS01_NATIVE_CANDIDATE_PROVENANCE_DENIED');
+
+  // Re-derive the exact closed native v1 projection from the already
+  // digest-pinned canonical transport bytes (never from the candidate) and
+  // recompute the complete expected deterministic result with the one
+  // predeclared analysis over the pinned release evidence.
+  const projection = validateNativeProjectionContract(parseCanonicalNativeProjectionBytes(materials.projectionBytes));
+  const expected = analyzeNativeProjection(projection, { status: 'OBSERVED', releasedEntryCount: 1 });
+
+  // The bound result: every component of the complete deterministic result and
+  // its digest must equal the independently recomputed expected result,
+  // field for field. A substitution of any component — even with a
+  // recomputed self-consistent digest — is denied.
+  if (canonicalJson(claims) !== canonicalJson(expected.claims)) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  if (canonicalJson(coverage) !== canonicalJson(expected.coverage)) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  if (canonicalJson(counterevidence) !== canonicalJson(expected.counterevidence)) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
+  if (resultSha256 !== expected.resultSha256) fail('XRA_KS01_NATIVE_CANDIDATE_RESULT_DIGEST_DENIED');
   return { state: 'VERIFIED' };
 }
 
@@ -190,6 +249,42 @@ function deriveBodyDigest(projectionBytes) {
   const body = {};
   for (const [key, value] of Object.entries(parsed)) if (key !== 'projectionDigest') body[key] = value;
   return sha256hex(canonicalJson(body));
+}
+
+const HEX64 = /^[a-f0-9]{64}$/;
+// The closed counterevidence entry shape of the predeclared analysis: claim
+// (position), check, observed, status. Unknown/extra/missing fields are
+// denied by exactKeySet before any value is read.
+const NATIVE_COUNTEREVIDENCE_ENTRY_KEYS = Object.freeze(['claim', 'check', 'observed', 'status']);
+
+function isPlainObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
+}
+
+// Closed key-set gate: the value must be a plain object with exactly the
+// allowed keys (order-insensitive). Non-objects, arrays, and foreign
+// prototypes are denied typed.
+function exactKeySet(value, allowed, code) {
+  if (!isPlainObject(value)) fail(code);
+  const keys = Object.keys(value).sort();
+  if (JSON.stringify(keys) !== JSON.stringify([...allowed].sort())) fail(code);
+}
+
+// Every leaf of the result tree must be a finite JSON value. This closes the
+// canonicalJson TypeError surface (undefined, non-finite, non-plain values)
+// behind a deterministic typed denial.
+function assertFiniteJsonLeaves(value, code) {
+  if (Array.isArray(value)) {
+    for (const item of value) assertFiniteJsonLeaves(item, code);
+    return;
+  }
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') return;
+  if (typeof value === 'number' && Number.isFinite(value)) return;
+  if (isPlainObject(value)) {
+    for (const key of Object.keys(value)) assertFiniteJsonLeaves(value[key], code);
+    return;
+  }
+  fail(code);
 }
 
 function deepEqual(left, right) {
