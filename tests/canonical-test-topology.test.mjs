@@ -64,6 +64,17 @@
 //   modules actually execute. Every #179/#181/#184/#186/#188/#190 invariant is
 //   preserved.
 //
+// CI-TOPOLOGY-08 (KaleidoSphere issue #194) — escaped static module specifiers:
+// a valid ECMAScript \uNNNN escape inside a quoted executable static import or
+// re-export module specifier resolves exactly one character of the specifier before
+// relative resolution, so an escaped spelling of a tracked relative path yields the
+// same exactly-one edge the real Node module loader executes; escape-looking bytes in
+// comments, ordinary strings, template text, and regex literals remain non-routes; a
+// decoded bare or untracked target remains a non-route; and a malformed, truncated, or
+// otherwise unsupported escape in such a declaration fails closed with an
+// importer-and-reason diagnostic when it could still target a tracked suite. Every
+// #179/#181/#184/#186/#188/#190/#192 invariant is preserved.
+//
 // Nonclaim: a passing check proves source-local canonical-CI reachability from tracked
 // source. It does not execute suite bodies and does not claim production/host
 // compatibility.
@@ -1245,4 +1256,201 @@ test('formatImportRouteViolations renders importer-and-reason diagnostics', () =
     rendered,
     'tests/alpha.test.mjs: unterminated template literal; tests/beta.test.mjs: ambiguous import-like construct',
   );
+});
+
+// CI-TOPOLOGY-08 (KaleidoSphere issue #194) — escaped static module specifiers:
+// a valid ECMAScript \uNNNN escape in a quoted executable static import or re-export
+// specifier resolves exactly one character before relative resolution, so an escaped
+// spelling of a tracked relative path yields exactly one edge — the same child Node's
+// module loader executes; escape-looking bytes in comments, ordinary strings,
+// template text, and regex literals remain non-routes; a decoded bare or untracked
+// target remains a non-route; and a malformed, truncated, or otherwise unsupported
+// escape in such a declaration fails closed naming the importer and reason when it
+// could still target a tracked suite.
+
+const KS194_IMPORTER = Object.freeze('tests/ks194-parent.test.mjs');
+const KS194_CHILD = Object.freeze('tests/child.test.mjs');
+
+function scanKS194(source) {
+  return staticTestModuleRoutes({
+    importer: KS194_IMPORTER,
+    source,
+    trackedSuites: new Set([KS194_CHILD, KS194_IMPORTER]),
+  });
+}
+
+test('a valid \\uNNNN escape resolving one path character of a tracked relative specifier is exactly one edge in every executable static declaration form (CI-TOPOLOGY-08 AC01)', () => {
+  const forms = [
+    ['side-effect import, single-quoted', "import './ch\\u0069ld.test.mjs';"],
+    ['side-effect import, double-quoted', 'import "./ch\\u0069ld.test.mjs";'],
+    ['binding import, single-quoted', "import child from './ch\\u0069ld.test.mjs';"],
+    ['binding import, double-quoted', 'import child from "./ch\\u0069ld.test.mjs";'],
+    ['named import, single-quoted', "import { child } from './ch\\u0069ld.test.mjs';"],
+    ['named import, double-quoted', 'import { child } from "./ch\\u0069ld.test.mjs";'],
+    ['star re-export, single-quoted', "export * from './ch\\u0069ld.test.mjs';"],
+    ['star re-export, double-quoted', 'export * from "./ch\\u0069ld.test.mjs";'],
+    ['named re-export, single-quoted', "export { child } from './ch\\u0069ld.test.mjs';"],
+    ['named re-export, double-quoted', 'export { child } from "./ch\\u0069ld.test.mjs";'],
+    ['escape in the relative prefix, single-quoted', "import '\\u002e/child.test.mjs';"],
+    ['multiple escapes, single-quoted', "import './\\u0063hild.test.mjs';"],
+    ['uppercase hex digits, single-quoted', "import './chi\\u006Cd.test.mjs';"],
+  ];
+  for (const [name, source] of forms) {
+    const scanned = scanKS194(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [{ from: KS194_IMPORTER, to: KS194_CHILD }],
+      `${name}: must yield exactly one edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('Node executes the escaped-specifier declarations loading the same child the scanner resolves (CI-TOPOLOGY-08 AC02)', () => {
+  const forms = [
+    ['side-effect import, single-quoted', "import './ch\\u0069ld.test.mjs';"],
+    ['side-effect import, double-quoted', 'import "./ch\\u0069ld.test.mjs";'],
+    ['binding import, single-quoted', "import child from './ch\\u0069ld.test.mjs';"],
+    ['star re-export, single-quoted', "export * from './ch\\u0069ld.test.mjs';"],
+    ['named re-export, single-quoted', "export { child } from './ch\\u0069ld.test.mjs';"],
+  ];
+  for (const [name, source] of forms) {
+    const dir = mkdtempSync(join(tmpdir(), 'ks194-'));
+    try {
+      writeFileSync(
+        join(dir, 'child.test.mjs'),
+        "export const child = 1;\nexport default 2;\nconsole.log('KS194_CHILD_EXECUTED');\n",
+      );
+      writeFileSync(join(dir, 'parent.mjs'), source);
+      const out = execFileSync('node', [join(dir, 'parent.mjs')], { encoding: 'utf8' });
+      assert.ok(
+        out.includes('KS194_CHILD_EXECUTED'),
+        `${name}: Node must execute the child module, got: ${JSON.stringify(out)}`,
+      );
+      const scanned = scanKS194(source);
+      assert.deepStrictEqual(
+        scanned.edges,
+        [{ from: KS194_IMPORTER, to: KS194_CHILD }],
+        `${name}: the scanner must derive exactly one tracked edge: ${JSON.stringify(scanned.edges)}`,
+      );
+      assert.deepStrictEqual(
+        scanned.violations,
+        [],
+        `${name}: the scanner must not fail closed: ${JSON.stringify(scanned.violations)}`,
+      );
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+});
+
+test('escape-looking bytes in comments, ordinary strings, template text, and regex literals remain non-routes (CI-TOPOLOGY-08 AC03)', () => {
+  for (const [name, source] of [
+    ['line comment', "// import './ch\\u0069ld.test.mjs';"],
+    ['block comment', '/* import "./ch\\u0069ld.test.mjs"; */'],
+    ['single-quoted ordinary string', "const spec = './ch\\u0069ld.test.mjs';"],
+    ['double-quoted ordinary string', 'const spec = "./ch\\u0069ld.test.mjs";'],
+    ['template literal text', 'const spec = `./ch\\u0069ld.test.mjs`;'],
+    ['regex literal', "const re = /ch\\u0069ld/;"],
+  ]) {
+    const scanned = scanKS194(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('a decoded bare specifier or a decoded untracked target remains a non-route (CI-TOPOLOGY-08 AC03)', () => {
+  for (const [name, source] of [
+    ['decoded bare specifier', "import 'pkg\\u0065';"],
+    ['decoded untracked relative target', "import './no\\u0070e.test.mjs';"],
+    ['decoded parent-directory target outside the tracked set', "import '\\u002e\\u002e/child.test.mjs';"],
+  ]) {
+    const scanned = scanKS194(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
+});
+
+test('edge multiplicity remains exact for escaped specifiers (CI-TOPOLOGY-08 AC03)', () => {
+  const scanned = scanKS194("import './ch\\u0069ld.test.mjs';\nimport './child.test.mjs';\n");
+  assert.deepStrictEqual(scanned.edges, [
+    { from: KS194_IMPORTER, to: KS194_CHILD },
+    { from: KS194_IMPORTER, to: KS194_CHILD },
+  ]);
+  assert.deepStrictEqual(scanned.violations, []);
+});
+
+test('a malformed, truncated, or unsupported escape in a static declaration that could target a tracked suite fails closed, naming the importer and reason (CI-TOPOLOGY-08 AC04)', () => {
+  for (const [name, source, declaration] of [
+    ['truncated \\u escape, side-effect import', "import './ch\\u006ld.test.mjs';", 'static import'],
+    ['zero-hex \\u escape, side-effect import', "import './ch\\uld.test.mjs';", 'static import'],
+    ['unsupported \\x escape, side-effect import', "import './ch\\x69ld.test.mjs';", 'static import'],
+    ['unsupported single-character escape, side-effect import', "import './ch\\ild.test.mjs';", 'static import'],
+    ['escaped backslash, side-effect import', "import './ch\\\\ld.test.mjs';", 'static import'],
+    ['truncated \\u escape, star re-export', "export * from './ch\\u006ld.test.mjs';", 'static re-export'],
+    ['unsupported \\x escape, named re-export', "export { child } from './ch\\x69ld.test.mjs';", 'static re-export'],
+  ]) {
+    const scanned = scanKS194(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.equal(
+      scanned.violations.length,
+      1,
+      `${name}: ${JSON.stringify(scanned.violations)}`,
+    );
+    assert.equal(scanned.violations[0].path, KS194_IMPORTER, name);
+    assert.match(
+      scanned.violations[0].reason,
+      /malformed or unsupported escape/,
+      `${name} reason must name the failure: ${scanned.violations[0].reason}`,
+    );
+    assert.match(
+      scanned.violations[0].reason,
+      /could target tracked suite "tests\/child\.test\.mjs"/,
+      `${name} reason must name the tracked suite: ${scanned.violations[0].reason}`,
+    );
+    assert.match(scanned.violations[0].reason, new RegExp(declaration), name);
+  }
+});
+
+test('an unsupported escape that cannot target any tracked suite creates no edge and no violation (CI-TOPOLOGY-08 AC04)', () => {
+  for (const [name, source] of [
+    ['unsupported \\x escape, untracked target', "import './no\\x61pe.test.mjs';"],
+    ['truncated \\u escape, untracked target', "import './zz\\u00q.test.mjs';"],
+  ]) {
+    const scanned = scanKS194(source);
+    assert.deepStrictEqual(
+      scanned.edges,
+      [],
+      `${name}: must not create an edge: ${JSON.stringify(scanned.edges)}`,
+    );
+    assert.deepStrictEqual(
+      scanned.violations,
+      [],
+      `${name}: must not fail closed: ${JSON.stringify(scanned.violations)}`,
+    );
+  }
 });
