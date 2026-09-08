@@ -55,6 +55,9 @@ const COVERAGE_VISIBILITY = Object.freeze({
   TIMEOUT: 'UNKNOWN',
   ERROR: 'UNKNOWN',
 });
+// Versioned query-pack directory contract. v1 is the historical structure scan; v2 adds
+// bounded index catalog metadata to the same regular Analyze-to-Readback path.
+const QUERY_PACK_VERSIONS = new Set(['v1', 'v2']);
 const QUERY_CATEGORIES = new Set([
   'preflight',
   'schemas',
@@ -385,7 +388,7 @@ export function validateAnalyzeProfile(profile) {
   if (typeof profile.profileId !== 'string' || !/^[a-z0-9][a-z0-9._-]{2,63}$/.test(profile.profileId)) fail('DB_ANALYZE_PROFILE_ID_INVALID');
   if (!['mssql', 'oracle', 'postgresql'].includes(profile.engine)) fail('DB_ANALYZE_PROFILE_ENGINE_INVALID');
   if (!['SYNTHETIC', 'RUNTIME'].includes(profile.mode)) fail('DB_ANALYZE_PROFILE_MODE_UNSUPPORTED');
-  if (!hasExactKeys(profile.queryPack, ['version']) || profile.queryPack.version !== 'v1') fail('DB_ANALYZE_PROFILE_PACK_INVALID');
+  if (!hasExactKeys(profile.queryPack, ['version']) || !QUERY_PACK_VERSIONS.has(profile.queryPack.version)) fail('DB_ANALYZE_PROFILE_PACK_INVALID');
   if (!hasExactKeys(profile.scope, ['database', 'container', 'schemas'])
     || typeof profile.scope.database !== 'string' || profile.scope.database.length === 0
     || !(profile.scope.container === null || typeof profile.scope.container === 'string')

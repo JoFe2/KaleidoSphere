@@ -1,0 +1,46 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-structure-negative-cases/v1",
+  "cases": [
+    {
+      "caseId": "out-of-scope-schema",
+      "queryId": "postgresql.structure.indexes",
+      "row": {
+        "schema_name": "private",
+        "relation_name": "orders",
+        "index_name": "orders_pkey",
+        "index_oid": 5001,
+        "key_ordinal": 1,
+        "key_column_name": "id",
+        "key_column_kind": "COLUMN",
+        "data_type": "int8",
+        "is_unique": true,
+        "is_primary": true,
+        "is_valid": true,
+        "has_predicate": false,
+        "predicate_disclosure": null,
+        "definition_disclosure": "OMITTED_NO_RAW_DEFINITION"
+      },
+      "expectedError": "DB_QUERY_RESULT_SCOPE_INVALID"
+    },
+    {
+      "caseId": "substituted-index-row-short-contract",
+      "queryId": "postgresql.structure.indexes",
+      "row": {
+        "schema_name": "public",
+        "relation_name": "orders",
+        "index_name": "orders_pkey",
+        "index_oid": 5001,
+        "key_ordinal": 1,
+        "key_column_name": "id",
+        "key_column_kind": "COLUMN",
+        "is_unique": true,
+        "is_primary": true,
+        "is_valid": true,
+        "has_predicate": false,
+        "predicate_disclosure": null,
+        "definition_disclosure": "OMITTED_NO_RAW_DEFINITION"
+      },
+      "expectedError": "DB_QUERY_RESULT_COLUMNS_INVALID"
+    }
+  ]
+}
