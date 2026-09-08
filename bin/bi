@@ -193,6 +193,10 @@ case "${1:-help}" in
     compose logs --tail 200 "${2:-}"
     ;;
   down)
+    # The destructive down boundary accepts exactly one total argv entry: down
+    # and nothing else. Any trailing argument fails before setup, Compose, or
+    # any other action.
+    [ "$#" -eq 1 ] || fail 'usage: ./bin/bi down'
     require_setup
     compose down --remove-orphans
     ;;

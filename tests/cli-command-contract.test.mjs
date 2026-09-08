@@ -9,9 +9,9 @@
 // or runtime-state action.
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
-// destructive reset argument boundary. It does not start containers, uses only a
-// fake local docker executable and disposable synthetic sandbox state, and makes
-// no production-compatibility claim.
+// destructive reset and down argument boundaries. It does not start containers,
+// uses only a fake local docker executable and disposable synthetic sandbox
+// state, and makes no production-compatibility claim.
 
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
@@ -368,5 +368,120 @@ test('CLI-02-AC04: malformed reset arguments fail with the confirmation diagnost
   assert.equal(result.status, 1, 'malformed reset must fail non-zero');
   assert.equal(result.stdout, '', 'nothing to stdout');
   assert.equal(result.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'confirmation gate must precede require_setup');
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero Compose calls');
+});
+
+// ---------------------------------------------------------------------------
+// CLI-03 (KaleidoSphere issue #200) — the destructive down boundary must fail
+// closed on every trailing argument form.
+//
+// down takes no arguments. Every case runs the same byte-identical disposable
+// synthetic sandbox machinery as CLI-02: a fresh mkdtemp directory holding a
+// copy of the shipped bin/bi, the documented owned .runtime sentinels, optional
+// valid-looking setup sentinels (.env plus a mode-0600 control token), and a
+// fake `docker` executable first on PATH that only appends its argv to a local
+// call log. Each sandbox is removed when its test finishes. No real Docker,
+// network, credential, database, or productive state is reached.
+// ---------------------------------------------------------------------------
+
+const DOWN_USAGE_DIAGNOSTIC = 'KaleidoSphere ERROR: usage: ./bin/bi down\n';
+// The usage diagnostic is a single-line stderr record: printable ASCII only and
+// terminated by exactly one newline, so it is single-line and injection-free.
+const DOWN_USAGE_DIAGNOSTIC_SHAPE = /^[\x20-\x7E]+\n$/;
+
+test('CLI-03-AC01: a trailing argument after down fails closed with zero compose calls even with valid-looking setup sentinels', async (t) => {
+  // A configured sandbox carries valid-looking setup sentinels (a synthetic
+  // .env and a mode-0600 control token), so a trailing argument must be
+  // rejected by the arity gate alone, never by passing into require_setup and
+  // then Compose.
+  const sandbox = buildResetSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['down', '--typo']);
+  const observation = `exit ${result.status}, composeCalls=${JSON.stringify(
+    dockerCalls(sandbox),
+  )}, deletedSentinels=${JSON.stringify(deletedSentinels(sandbox))}`;
+  assert.equal(
+    result.status,
+    1,
+    `trailing down argument must fail closed before the shutdown boundary, observed: ${observation}`,
+  );
+  assert.equal(result.stdout, '', 'nothing to stdout on a failed down');
+  assert.equal(result.stderr, DOWN_USAGE_DIAGNOSTIC, 'the deterministic bounded usage diagnostic');
+  assert.match(result.stderr, DOWN_USAGE_DIAGNOSTIC_SHAPE, 'stderr stays printable ASCII with no control-byte injection');
+  assert.ok(result.stderr.length < 512, `stderr must stay bounded, got ${result.stderr.length}`);
+  assert.deepEqual(dockerCalls(sandbox), [], `zero Compose calls, observed: ${observation}`);
+  assert.deepEqual(deletedSentinels(sandbox), [], `every sandbox sentinel must survive, ${observation}`);
+});
+
+test('CLI-03-AC02: option-looking, empty, whitespace, control-byte, and oversized trailing arguments all fail closed with the same diagnostic', async (t) => {
+  const forms = Object.freeze([
+    Object.freeze(['down', '--typo']),
+    Object.freeze(['down', '--remove-orphans']),
+    Object.freeze(['down', '-n']),
+    Object.freeze(['down', '']),
+    Object.freeze(['down', ' ']),
+    Object.freeze(['down', '\u001b[2J\u001b[8m']),
+    Object.freeze(['down', 'line1\nline2']),
+    Object.freeze(['down', 'x'.repeat(5000)]),
+    Object.freeze(['down', 'extra', 'more']),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const form of forms) {
+    const sandbox = buildResetSandbox();
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, form);
+    const observation = `exit ${result.status}, composeCalls=${JSON.stringify(
+      dockerCalls(sandbox),
+    )}, deletedSentinels=${JSON.stringify(deletedSentinels(sandbox))}`;
+    assert.equal(result.status, 1, `${JSON.stringify(form)} must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${JSON.stringify(form)}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      DOWN_USAGE_DIAGNOSTIC,
+      `${JSON.stringify(form)}: the deterministic bounded usage diagnostic`,
+    );
+    assert.match(
+      result.stderr,
+      DOWN_USAGE_DIAGNOSTIC_SHAPE,
+      `stderr stays printable ASCII with no control-byte injection: ${JSON.stringify(form)}`,
+    );
+    assert.ok(
+      result.stderr.length < 512,
+      `${JSON.stringify(form)}: stderr must stay bounded, got ${result.stderr.length}`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(form)}: zero Compose calls, ${observation}`);
+    assert.deepEqual(deletedSentinels(sandbox), [], `${JSON.stringify(form)}: sentinels must survive, ${observation}`);
+  }
+});
+
+test('CLI-03-AC03: the exact valid form retains bounded existing behavior: one compose down call, exit 0, no mutation', async (t) => {
+  const sandbox = buildResetSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['down']);
+  assert.equal(result.status, 0, `valid down must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.equal(result.stdout, '', 'nothing to stdout on a successful down');
+  assert.equal(result.stderr, '', 'nothing to stderr on a successful down');
+  assert.deepEqual(
+    dockerCalls(sandbox),
+    [`docker compose --file ${sandbox.root}/compose.yaml down --remove-orphans`],
+    'exactly one repository-scoped compose down call',
+  );
+  // down must stop services only: no sandbox sentinel is deleted or touched.
+  assert.deepEqual(deletedSentinels(sandbox), [], 'every sandbox sentinel must survive a successful down');
+});
+
+test('CLI-03-AC04: the down arity gate fails with the usage diagnostic before require_setup', async (t) => {
+  // An unconfigured sandbox (no .env, no control token) proves the arity gate
+  // runs before any setup check: a malformed down must report the usage
+  // diagnostic, never the setup diagnostic.
+  const sandbox = buildResetSandbox({ configured: false });
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['down', '--typo']);
+  assert.equal(result.status, 1, 'malformed down must fail non-zero');
+  assert.equal(result.stdout, '', 'nothing to stdout');
+  assert.equal(result.stderr, DOWN_USAGE_DIAGNOSTIC, 'arity gate must precede require_setup');
   assert.deepEqual(dockerCalls(sandbox), [], 'zero Compose calls');
 });
