@@ -9,9 +9,9 @@
 // or runtime-state action.
 //
 // Nonclaim: this suite exercises only the top-level dispatch boundary and the
-// destructive reset, down, state-changing up, and state-changing setup
-// argument boundaries. It does not start containers, uses only a fake local
-// docker executable, a fake local openssl executable, and disposable
+// destructive reset, down, state-changing up, state-changing setup, and
+// request-bearing analyze argument boundaries. It does not start containers,
+// uses only fake local docker, openssl, and curl executables, and disposable
 // synthetic sandbox state, and makes no production-compatibility claim.
 
 import assert from 'node:assert/strict';
@@ -913,4 +913,242 @@ test('CLI-05-AC05: the setup arity gate leaves the prior #196/#198/#200/#202 bou
   assert.equal(up.stderr, UP_USAGE_DIAGNOSTIC, 'the unchanged up usage diagnostic');
   assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
   assert.deepEqual(opensslCalls(sandbox), [], 'zero fake-OpenSSL calls across the preserved boundaries');
+});
+
+// ---------------------------------------------------------------------------
+// CLI-06 (KaleidoSphere issue #206) — the request-bearing analyze boundary
+// must fail closed on every trailing argument form.
+//
+// analyze takes no arguments. Every case runs a fresh disposable synthetic
+// sandbox: a new mkdtemp directory holding a byte-identical copy of the
+// shipped bin/bi, optional valid-looking setup sentinels (a synthetic .env
+// plus a mode-0600 control token), and two fake executables first on PATH —
+// a `docker` recorder that appends its argv to a local call log and answers
+// `compose port <service> <port>` with a deterministic 127.0.0.1:<port>
+// binding, and a `curl` recorder that appends its argv to a local call log
+// and prints a deterministic synthetic downstream response, so the exact
+// valid analyze request path is observable end-to-end without a real daemon,
+// network, or service. Each sandbox is removed when its test finishes. No
+// real Docker, curl/network, credential, database, or productive state is
+// reached.
+// ---------------------------------------------------------------------------
+
+const ANALYZE_USAGE_DIAGNOSTIC = 'KaleidoSphere ERROR: usage: ./bin/bi analyze\n';
+// The usage diagnostic is a single-line stderr record: printable ASCII only
+// and terminated by exactly one newline, so it is single-line and
+// injection-free.
+const ANALYZE_USAGE_DIAGNOSTIC_SHAPE = /^[\x20-\x7E]+\n$/;
+// The deterministic synthetic downstream response the fake curl recorder
+// returns for the exact valid analyze request.
+const ANALYZE_FAKE_RESPONSE = '{"answer":"synthetic-analysis"}\n';
+
+function buildAnalyzeSandbox({ configured = true } = {}) {
+  const root = mkdtempSync(path.join(ROOT, '.bi-analyze-sandbox-'));
+  const fakeBin = path.join(root, 'fake-bin');
+  const logPath = path.join(root, 'docker-calls.log');
+  const curlLogPath = path.join(root, 'curl-calls.log');
+  const controlToken = path.join(root, '.runtime', 'secrets', 'control_token');
+  mkdirSync(fakeBin);
+  mkdirSync(path.join(root, 'bin'), { recursive: true });
+  if (configured) {
+    // Valid-looking setup sentinels: a synthetic .env and a mode-0600 control
+    // token, so a trailing argument must be rejected by the arity gate
+    // alone, never by passing into require_setup and then the request path.
+    writeFileSync(path.join(root, '.env'), 'SYNTHETIC=1\n');
+    mkdirSync(path.dirname(controlToken), { recursive: true });
+    writeFileSync(controlToken, '0123456789abcdef\n');
+    chmodSync(controlToken, 0o600);
+  }
+  // The fake docker recorder: one line of joined argv per invocation, nothing
+  // else. It shadows any real docker because fake-bin is first on PATH and
+  // answers `compose port <service> <port>` with a deterministic 127.0.0.1:
+  // <port> binding, modeling a healthy local daemon so the exact valid
+  // analyze path is observable end-to-end.
+  const dockerPath = path.join(fakeBin, 'docker');
+  const dockerScript =
+    `#!/bin/sh\n` +
+    `{ printf 'docker'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${logPath}'\n` +
+    `case "$4" in port) printf '127.0.0.1:%s\\n' "$6" ;; esac\n` +
+    'exit 0\n';
+  writeFileSync(dockerPath, dockerScript);
+  chmodSync(dockerPath, 0o755);
+  // The fake curl recorder: one line of joined argv per invocation, then the
+  // deterministic synthetic downstream response on stdout. It shadows any
+  // real curl because fake-bin is first on PATH, so the analyze request is
+  // observable without a network or service.
+  const curlPath = path.join(fakeBin, 'curl');
+  const curlScript =
+    `#!/bin/sh\n` +
+    `{ printf 'curl'; for a in "$@"; do printf ' %s' "$a"; done; printf '\\n'; } >> '${curlLogPath}'\n` +
+    `printf '{"answer":"synthetic-analysis"}\\n'\n` +
+    'exit 0\n';
+  writeFileSync(curlPath, curlScript);
+  chmodSync(curlPath, 0o755);
+  // Run the exact shipped script bytes from inside the sandbox so bi_here is
+  // the disposable sandbox root, never this repository.
+  const biPath = path.join(root, 'bin', 'bi');
+  writeFileSync(biPath, readFileSync(path.join(ROOT, 'bin', 'bi')));
+  chmodSync(biPath, 0o755);
+  return Object.freeze({
+    root,
+    logPath,
+    curlLogPath,
+    dotEnv: path.join(root, '.env'),
+    controlToken,
+    deleteAll: () => rmSync(root, { recursive: true, force: true }),
+  });
+}
+
+function curlCalls(sandbox) {
+  if (!existsSync(sandbox.curlLogPath)) return [];
+  return readFileSync(sandbox.curlLogPath, 'utf8').split('\n').filter((line) => line.length > 0);
+}
+
+test('CLI-06-AC01: every trailing analyze argument form fails closed with one deterministic bounded printable diagnostic, empty stdout, and zero fake-Docker and fake-curl calls in configured and unconfigured sandboxes', async (t) => {
+  // The configured sandboxes carry valid-looking setup sentinels (a synthetic
+  // .env and a mode-0600 control token), so every form must be rejected by
+  // the zero-option arity gate alone — never by passing into require_setup
+  // and then the Compose/curl request path. The unconfigured sandboxes carry
+  // no .env and no control token.
+  const forms = Object.freeze([
+    Object.freeze(['analyze', '--typo']),
+    Object.freeze(['analyze', '--format', 'json']),
+    Object.freeze(['analyze', '-n']),
+    Object.freeze(['analyze', '']),
+    Object.freeze(['analyze', ' ']),
+    Object.freeze(['analyze', '\u001b[2J]\u001b[8m']),
+    Object.freeze(['analyze', 'line1\nline2']),
+    Object.freeze(['analyze', 'x'.repeat(5000)]),
+    Object.freeze(['analyze', 'extra', 'more']),
+  ]);
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    for (const form of forms) {
+      const sandbox = buildAnalyzeSandbox({ configured });
+      sandboxes.push(sandbox);
+      const result = await runBiInSandbox(sandbox, form);
+      const observation = `configured=${configured}, exit ${result.status}, stdout=${JSON.stringify(
+        result.stdout,
+      )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+        dockerCalls(sandbox),
+      )}, curlCalls=${JSON.stringify(curlCalls(sandbox))}`;
+      assert.equal(result.status, 1, `${JSON.stringify(form)} must fail non-zero, observed: ${observation}`);
+      assert.equal(result.stdout, '', `${JSON.stringify(form)}: nothing to stdout`);
+      assert.equal(
+        result.stderr,
+        ANALYZE_USAGE_DIAGNOSTIC,
+        `${JSON.stringify(form)}: the deterministic bounded usage diagnostic`,
+      );
+      assert.match(
+        result.stderr,
+        ANALYZE_USAGE_DIAGNOSTIC_SHAPE,
+        `stderr stays printable ASCII with no control-byte injection: ${JSON.stringify(form)}`,
+      );
+      assert.ok(
+        result.stderr.length < 512,
+        `${JSON.stringify(form)}: stderr must stay bounded, got ${result.stderr.length}`,
+      );
+      assert.deepEqual(dockerCalls(sandbox), [], `${JSON.stringify(form)}: zero fake-Docker calls, ${observation}`);
+      assert.deepEqual(curlCalls(sandbox), [], `${JSON.stringify(form)}: zero fake-curl calls, ${observation}`);
+    }
+  }
+});
+
+test('CLI-06-AC02: the analyze arity gate rejects before require_setup, stat, Compose, and curl, with zero fake-Docker and fake-curl calls in configured and unconfigured sandboxes', async (t) => {
+  // A configured sandbox proves the gate is the arity gate (the exact usage
+  // diagnostic, never a setup or request diagnostic) while valid-looking
+  // setup sentinels are present; an unconfigured sandbox (no .env, no
+  // control token) proves the arity gate runs before any setup check: a
+  // malformed analyze must report the usage diagnostic, never the setup
+  // diagnostic.
+  const sandboxes = [];
+  t.after(() => {
+    for (const sandbox of sandboxes) sandbox.deleteAll();
+  });
+  for (const configured of [true, false]) {
+    const sandbox = buildAnalyzeSandbox({ configured });
+    sandboxes.push(sandbox);
+    const result = await runBiInSandbox(sandbox, ['analyze', '--typo']);
+    const observation = `configured=${configured}, exit ${result.status}, stdout=${JSON.stringify(
+      result.stdout,
+    )}, stderr=${JSON.stringify(result.stderr)}, dockerCalls=${JSON.stringify(
+      dockerCalls(sandbox),
+    )}, curlCalls=${JSON.stringify(curlCalls(sandbox))}`;
+    assert.equal(result.status, 1, `malformed analyze must fail non-zero, observed: ${observation}`);
+    assert.equal(result.stdout, '', `${observation}: nothing to stdout`);
+    assert.equal(
+      result.stderr,
+      ANALYZE_USAGE_DIAGNOSTIC,
+      `${observation}: the arity gate must precede require_setup, stat, Compose, and curl`,
+    );
+    assert.deepEqual(dockerCalls(sandbox), [], `${observation}: zero fake-Docker calls`);
+    assert.deepEqual(curlCalls(sandbox), [], `${observation}: zero fake-curl calls`);
+  }
+});
+
+test('CLI-06-AC03: the exact valid analyze retains one repository-scoped Compose port lookup, exactly one fake-curl request carrying the fixed German analysis message to the discovered loopback endpoint, the unchanged fake response readback, empty stderr, and a successful exit', async (t) => {
+  const sandbox = buildAnalyzeSandbox();
+  t.after(sandbox.deleteAll);
+  const result = await runBiInSandbox(sandbox, ['analyze']);
+  assert.equal(result.status, 0, `valid analyze must exit 0, stderr=${JSON.stringify(result.stderr)}`);
+  assert.equal(result.stderr, '', 'nothing to stderr on a successful analyze');
+  assert.equal(result.stdout, ANALYZE_FAKE_RESPONSE, 'the unchanged fake downstream response readback');
+  assert.deepEqual(
+    dockerCalls(sandbox),
+    [`docker compose --file ${sandbox.root}/compose.yaml port bi-agent 18790`],
+    'exactly one repository-scoped Compose port lookup',
+  );
+  assert.deepEqual(
+    curlCalls(sandbox),
+    [
+      'curl --fail --silent --show-error --header content-type: application/json ' +
+        '--data {"message":"Analysiere die konfigurierte Datenbank"} ' +
+        'http://127.0.0.1:18790/api/chat',
+    ],
+    'exactly one fake-curl request carrying the fixed German analysis message to the discovered loopback endpoint',
+  );
+  // analyze must make no local mutation: the setup sentinels survive.
+  assert.equal(existsSync(sandbox.dotEnv), true, 'the synthetic .env must be preserved');
+  assert.equal(existsSync(sandbox.controlToken), true, 'the mode-0600 control token must be preserved');
+});
+
+test('CLI-06-AC04: the analyze arity gate leaves the prior #196/#198/#200/#202/#204 boundaries byte-exact in the same sandbox machinery', async (t) => {
+  // The analyze-sandbox variant (fake docker plus fake curl recorders) must
+  // not perturb any other boundary: #196 unknown-command and known-command
+  // dispatch, #198 exact reset confirmation, #200 exact down arity, #202
+  // exact up arity, and #204 exact setup arity all keep their byte-exact
+  // behavior with zero tool calls.
+  const sandbox = buildAnalyzeSandbox();
+  t.after(sandbox.deleteAll);
+  const unknown = await runBiInSandbox(sandbox, ['definitely-not-a-command']);
+  assert.equal(unknown.status, 1, 'unknown command must still fail non-zero');
+  assert.equal(
+    unknown.stderr,
+    `KaleidoSphere ERROR: unknown command: "definitely-not-a-command"\n${USAGE}\n`,
+    'the unchanged unknown-command diagnostic',
+  );
+  const promotionBundle = await runBiInSandbox(sandbox, ['promotion-bundle']);
+  assert.equal(promotionBundle.status, 1, 'known-command validation must still fail non-zero');
+  assert.equal(
+    promotionBundle.stderr,
+    'KaleidoSphere ERROR: usage: ./bin/bi promotion-bundle {build|inspect|preflight} ...\n',
+    'the unchanged promotion-bundle validation diagnostic',
+  );
+  const reset = await runBiInSandbox(sandbox, ['reset', '--yes-i-understand', '--typo']);
+  assert.equal(reset.status, 1, 'trailing reset argument must still fail non-zero');
+  assert.equal(reset.stderr, RESET_CONFIRMATION_DIAGNOSTIC, 'the unchanged reset confirmation diagnostic');
+  const down = await runBiInSandbox(sandbox, ['down', '--typo']);
+  assert.equal(down.status, 1, 'trailing down argument must still fail non-zero');
+  assert.equal(down.stderr, DOWN_USAGE_DIAGNOSTIC, 'the unchanged down usage diagnostic');
+  const up = await runBiInSandbox(sandbox, ['up', '--typo']);
+  assert.equal(up.status, 1, 'trailing up argument must still fail non-zero');
+  assert.equal(up.stderr, UP_USAGE_DIAGNOSTIC, 'the unchanged up usage diagnostic');
+  const setup = await runBiInSandbox(sandbox, ['setup', '--typo']);
+  assert.equal(setup.status, 1, 'trailing setup argument must still fail non-zero');
+  assert.equal(setup.stderr, SETUP_USAGE_DIAGNOSTIC, 'the unchanged setup usage diagnostic');
+  assert.deepEqual(dockerCalls(sandbox), [], 'zero fake-Docker calls across the preserved boundaries');
+  assert.deepEqual(curlCalls(sandbox), [], 'zero fake-curl calls across the preserved boundaries');
 });

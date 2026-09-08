@@ -94,6 +94,10 @@ case "${1:-help}" in
     printf 'Superset: http://127.0.0.1:%s\nKaleidoSphere: http://127.0.0.1:%s\n' "$(published_port superset 8088)" "$(published_port bi-agent 18790)"
     ;;
   analyze)
+    # The request-bearing analyze boundary accepts exactly one total argv
+    # entry: analyze and nothing else. Any trailing argument fails before
+    # require_setup, stat, Compose, curl, or any other downstream action.
+    [ "$#" -eq 1 ] || fail 'usage: ./bin/bi analyze'
     require_setup
     curl --fail --silent --show-error \
       --header 'content-type: application/json' \
