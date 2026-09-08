@@ -197,8 +197,11 @@ case "${1:-help}" in
     compose down --remove-orphans
     ;;
   reset)
+    # The destructive reset boundary accepts exactly one byte-exact form: reset
+    # plus --yes-i-understand and nothing else. Any missing, wrong, or extra
+    # argument fails before setup, Compose, or filesystem mutation.
+    [ "$#" -eq 2 ] && [ "${2:-}" = '--yes-i-understand' ] || fail 'reset deletes only this repo runtime state; confirm with: ./bin/bi reset --yes-i-understand'
     require_setup
-    [ "${2:-}" = '--yes-i-understand' ] || fail 'reset deletes only this repo runtime state; confirm with: ./bin/bi reset --yes-i-understand'
     compose down --remove-orphans
     for directory in .runtime/metadata .runtime/projection .runtime/receipts .runtime/secrets; do
       [ -d "$directory" ] || continue
