@@ -132,6 +132,8 @@ const CANONICAL_TEST_TOPOLOGY_TEST_REGISTRATION =
   ' tests/canonical-test-topology.test.mjs';
 const CLI_COMMAND_CONTRACT_TEST_REGISTRATION =
   ' tests/cli-command-contract.test.mjs';
+const POSTGRESQL_V2_STRUCTURE_QUERY_PACK_SELECTOR_TEST_REGISTRATION =
+  ' tests/postgresql-v2-structure-query-pack-selector.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -490,6 +492,7 @@ function reconstructFrozenReleasePackage(packageBytes) {
     K4C_CI_TEST_REGISTRATION,
     CANONICAL_TEST_TOPOLOGY_TEST_REGISTRATION,
     CLI_COMMAND_CONTRACT_TEST_REGISTRATION,
+    POSTGRESQL_V2_STRUCTURE_QUERY_PACK_SELECTOR_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),
