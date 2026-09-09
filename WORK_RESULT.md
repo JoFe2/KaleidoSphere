@@ -14,39 +14,54 @@ Added an optional `POSTGRESQL_STRUCTURE_QUERY_PACK` selector to `buildLiveProfil
 Exact-match Map lookup over `v1`/`v2` only. mssql and oracle branches untouched (still historical v1);
 profile schema, scope/auth/session restrictions and the existing v2 querypack unchanged (not rebuilt).
 
-## TDD
-RED (pre-fix, test at its pre-rename path):
-  node --test tests/postgresql-structure-query-pack-selector.test.mjs
-  → 4 pass / 3 fail — v2 selection still returned v1 with no catalogScan; invalid values were accepted
-GREEN (post-fix, after rename to the codepoint-legal slot):
-  node --test tests/postgresql-v2-structure-query-pack-selector.test.mjs
-  → 7/7 pass
+## Review correction (blocker)
+A review blocker found that the historical C1 evidence had been re-minted despite an explicit
+preservation requirement. The minimal correction keeps the selector and its coverage but removes the
+side effects that forced the re-mint:
 
-## Files
-- `services/bi-control/src/runtime-config.mjs` — selector + fail-closed lookup
-- `tests/postgresql-v2-structure-query-pack-selector.test.mjs` — new, 7 behavioral tests
-- `package.json` — canonical `scripts.test` registration at its codepoint slot
-- `scripts/run-business-bi-falsification-clean-room.mjs` — matching frozen-preimage strip for the new
-  registration (BI-KS-03 immutable preimage stays replayable)
-- `verification/postgresql/postgresql-c1-evidence-v1.json` — re-minted via
-  `node scripts/run-postgresql-c1-clean-room.mjs`; diff shows only `manifestSha256`
-  (`2cb58003…` → `dd60b126…`) and the derived `certificateSha256` (`58ca14a8…` → `693c693c…`);
-  all other bindings and all four nonclaims byte-stable; `realDisprovablePostgresql` remains
-  `BLOCKED_EXTERNAL` — synthetic source wiring only, NOT real DB certification
-- `SOURCE-MAP.json` — content-map entries re-hashed for the files above, the new test file, and the inventory
+- the seven selector tests were migrated into the existing `tests/runtime-config-canonical-int.test.mjs`
+  suite, so `package.json#scripts.test` needed no registration change;
+- the newly introduced standalone selector test file was removed after migrating its coverage;
+- `package.json`, the BI falsification clean-room script, and the historical C1 evidence file were
+  restored byte-for-byte to base (no re-mint); the C1 certificate's `manifestSha256`/`certificateSha256`
+  revert to their historical values and remain internally consistent because `package.json` is also restored.
+
+The selector implementation and the additive legacy-identity inventory occurrence are preserved.
+
+## TDD / verification
+The seven behavioral assertions (v2 querypack selection, bounded v2 catalog policy equality against the
+committed fixture and the v2 pack manifest query ids, exact v1/absent default preservation, fail-closed
+on every other value, preserved scope/policy/session/credential restrictions, analyze-profile validation
+for both profiles, and postgresql-only scoping) were migrated verbatim into
+`tests/runtime-config-canonical-int.test.mjs` and pass there (15/15 in that suite, 8 prior + 7 migrated).
+
+## Files (final, base → corrected)
+- `services/bi-control/src/runtime-config.mjs` — selector + fail-closed lookup (kept)
+- `tests/runtime-config-canonical-int.test.mjs` — 7 selector tests migrated in (no standalone file)
 - `docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json` — one added classified
   occurrence (the bounded catalog-scan-policy schema id now also appears in `runtime-config.mjs`);
-  purely additive at its exact sorted position, `baseCommit` untouched
+  purely additive at its exact sorted position, `baseCommit` untouched (kept)
+- `SOURCE-MAP.json` — `tests/runtime-config-canonical-int.test.mjs` re-hashed; `package.json`,
+  `scripts/run-business-bi-falsification-clean-room.mjs`, and
+  `verification/postgresql/postgresql-c1-evidence-v1.json` restored to their base hashes; the removed
+  standalone selector test entry deleted. Every entry still matches on-disk bytes.
+- `package.json`, `scripts/run-business-bi-falsification-clean-room.mjs`, and
+  `verification/postgresql/postgresql-c1-evidence-v1.json` — byte-equal to base (unchanged)
 
 ## Commands and results (actual)
-  node --test tests/postgresql-v2-structure-query-pack-selector.test.mjs   → 7/7 pass
-  node --test <focused set: selector, postgresql-c1-certification, source-map,
-              canonical-test-topology, business-bi-clean-room,
-              runtime-config-canonical-int, legacy-technical-identity-plan> → 114/114 pass
+  sha256(package.json) == 2cb58003f79fd891275105484f5eac72753d60e98024a6f4863ee54295f06efd  (== base)
+  sha256(scripts/run-business-bi-falsification-clean-room.mjs) == 06c1ef14… (== base)
+  sha256(verification/postgresql/postgresql-c1-evidence-v1.json) == 3358208f… (== base)
+  git diff base -- <those 3 files> → empty (byte-equal)
+  node --test tests/runtime-config-canonical-int.test.mjs → 15/15 pass
+  node --test <focused set: runtime-config-canonical-int, postgresql-c1-certification, source-map,
+              canonical-test-topology, business-bi-clean-room, legacy-technical-identity-plan>
+              → 114/114 pass (exit 0)
   npm run build → "consumer-support-manifest build gate: VERIFIED" (exit 0)
   npm test      → tests 1206, pass 1206, fail 0 (exit 0)
   git diff --check → clean
 
 ## Constraints honored
 No DB connections, containers, services, credentials, publication, push or issue closure.
-No governance changes; no tests removed or weakened. Local commit only.
+No governance changes; no tests removed or weakened (the seven selector assertions are preserved,
+relocated into the canonical-int suite). Historical C1 evidence preserved, not re-minted. Local commit only.
