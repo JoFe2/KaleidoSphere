@@ -190,3 +190,22 @@ The six runtime intents remain exactly `status`, `discovery`, `analyze`, `plan`,
 and do not dispatch, deploy, accept credentials/free SQL/raw rows/provider
 payloads, discover arbitrary endpoints, or claim hosted/SaaS, remote-MCP,
 marketplace, customer-data, live-evidence or production readiness.
+
+JoFe2/KaleidoSphere#157 (ERV-KS-AC01..AC06) adds optional local-synthetic ERV JSON
+consumption as repository-authored clean-room work. The standalone ERV core (PAN375,
+PS365-ERV-ANALYTICS-PACK-01) ships a frozen, privacy-minimized, prebuilt aggregate pack
+`ErvAnalyticsPackV1` (`chimpmaera.incoming-invoice/erv-analytics-pack/v1`, packVersion
+1.0.0), pinned to released source `e04b452f557d5de1c9f8f0ec6a902f0d85e206a1`. The
+KaleidoSphere consumer ingests that exact versioned JSON through a read-only, digest-bound
+source adapter plus an independent metric oracle that re-derives the pack's full digest
+chain from the pack's own structure (no raw AP03/AP04 receipt rows are imported), and
+renders deterministic JSON/TABLE readback bound to the same digests. It grants no posting,
+approval, execution or query authority (authority stays all-false) and keeps KaleidoSphere
+ownership separate from the PANSPHAIRA pack schema it consumes; the standalone package
+remains fully useful without it. The baseline and adapted fixture packs are local-synthetic
+artifacts produced in an isolated prerequisite build by the released PAN375 generator
+against its public source fixtures (baseline sha-pinned to
+`3d50dd9c157e72eab46807810f63d82d6b44bd15b1887b54fa529976fd9ee71d`); the generator and its
+source fixtures never enter the consumer. The source adapter, readback renderer, focused
+test, and the two local-synthetic fixture packs are ordinary repository-authored hashes
+under `files`, not derived files.
