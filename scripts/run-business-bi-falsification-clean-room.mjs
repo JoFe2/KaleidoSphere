@@ -132,6 +132,10 @@ const CANONICAL_TEST_TOPOLOGY_TEST_REGISTRATION =
   ' tests/canonical-test-topology.test.mjs';
 const CLI_COMMAND_CONTRACT_TEST_REGISTRATION =
   ' tests/cli-command-contract.test.mjs';
+const ERV_ANALYTICS_ALIAS_REGISTRATION =
+  '\n    "test:erv-analytics": "node --test tests/erv-analytics-consumption.test.mjs",';
+const ERV_ANALYTICS_TEST_REGISTRATION =
+  ' tests/erv-analytics-consumption.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -490,6 +494,8 @@ function reconstructFrozenReleasePackage(packageBytes) {
     K4C_CI_TEST_REGISTRATION,
     CANONICAL_TEST_TOPOLOGY_TEST_REGISTRATION,
     CLI_COMMAND_CONTRACT_TEST_REGISTRATION,
+    ERV_ANALYTICS_ALIAS_REGISTRATION,
+    ERV_ANALYTICS_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),
