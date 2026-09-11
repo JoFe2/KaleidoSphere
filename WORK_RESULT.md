@@ -98,6 +98,9 @@ C1 PASS**: the full issue remains subject to AC01–AC04.
   product-dispatch, structure-scan, wave2 profile/profile-canonical-number/relationships/workflow)
   → **57/57 pass**, fail 0
 - `npm test` → **tests 1217, pass 1217, fail 0** (exit 0)
+  — recorded at the pre-commit working tree in which the live-matrix runner was still
+  untracked; it does **not** reproduce at the committed `1caeb99` bytes. Superseded by
+  the "Correction — committed-candidate integrity" section below.
 - `git merge-base --is-ancestor a4f874a… HEAD` → YES; `git merge-base --is-ancestor 0727e734… HEAD` → YES
 
 File digests (sha256) recorded for the new/changed files at this working-tree state:
@@ -110,6 +113,72 @@ f702c7ed62edabc33b814a89043c92f5e631b5f1014b0f98b81b830467620356  compose.yaml
 d800239f528f31b8c4ff6a7840a0de8dcd8c24aa820da6b0d63f07051f76eca1  .env.example
 7938cee1a3fc814a5c89b7007804442aeb9b9e65c31ef3f0ad5ebaa263e54256  SOURCE-MAP.json
 ```
+
+## Correction — committed-candidate integrity (this correction session)
+
+The candidate committed at `1caeb99d55d2186d0a52d7759cdb2a9d44bc0438` failed one canonical
+gate, and its recorded receipt did not reproduce at the committed bytes. Both facts are
+recorded honestly here. The correction is derived-integrity regeneration only: no product,
+test, certificate, or audit bytes were changed; `package.json` is unchanged; no test was
+weakened; no history was rewritten (the correction is a normal new commit on top of
+`1caeb99`; no rebase, reset, amend, squash, or cherry-pick).
+
+**What failed at `1caeb99` (reproduced before correcting):**
+
+- `node --test tests/legacy-technical-identity-plan.test.mjs` → **3 pass / 1 fail**
+  (AssertionError deepStrictEqual on "tracked legacy technical identities exactly match the
+  classified inventory").
+- Full `npm test` → **tests 1217, pass 1216, fail 1** (the same canonical test).
+- Root cause: the candidate added the tracked file `scripts/run-postgresql-c1-live-matrix.mjs`,
+  which carries the password environment identity twice, while
+  `docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json` had been
+  updated for only the earlier single schema-identity occurrence (live scan 1035 vs
+  inventory 1033).
+- Consequence: the receipt line above (`npm test → tests 1217, pass 1217, fail 0`)
+  describes a state that is not the delivered bytes. It is superseded below by results
+  that reproduce at the corrected HEAD.
+
+**Correction (minimal, repository conventions only):**
+
+1. Re-ran the canonical inventory scan exactly as defined by the frozen test
+   `tests/legacy-technical-identity-plan.test.mjs` (same exclusions, same patterns, same
+   git-tracked file source, same codepoint sort) against the committed tree. The frozen
+   `schemaVersion` and `baseCommit` anchors were preserved unchanged. The scan added
+   exactly the two missing environment occurrences for
+   `scripts/run-postgresql-c1-live-matrix.mjs` (1033 → 1035) and removed none; the
+   regeneration tool refuses to run if the scan would remove any occurrence.
+2. Rebound the inventory's content-addressed entry in `SOURCE-MAP.json` to the regenerated
+   bytes, following the repository updater convention (raw-bytes sha256, files table still
+   `localeCompare`-sorted, atomic unique-temp + rename write). All other `SOURCE-MAP.json`
+   anchors (`sourceCommit`, `oracleSourceCommit`, `releasePathClasses`, the other 682 file
+   hashes) are byte-identical; the files entry count stays 683.
+3. `WORK_RESULT.md` corrected as described here. No push, no API mutation, no queue write.
+
+**Actual commands and results (correction session, post-correction tree):**
+
+- [regenerate inventory via the canonical scan] → occurrences **1035** (was 1033), added 2,
+  removed 0; baseCommit preserved (`a709582278c0d5bc35c09cd2f89808b6b1d242d6`)
+- [rebind the inventory entry in `SOURCE-MAP.json`] → previous `d19ec197…aaf8a`, current
+  `3c137d5c…d0fc`; files entries 683 (unchanged), anchors preserved, localeCompare-sorted
+- `node --test tests/legacy-technical-identity-plan.test.mjs` → **4/4 pass**, fail 0
+- `node --test tests/source-map.test.mjs` → **16/16 pass**, fail 0
+- Full `npm test` → **tests 1217, pass 1217, fail 0** (exit 0) — now reproduces at the
+  corrected bytes
+- `npm run build` → "consumer-support-manifest build gate: VERIFIED" (exit 0)
+- `git diff --check` → clean
+- Ancestry (read-only `git merge-base --is-ancestor`): `1caeb99d55d2186d0a52d7759cdb2a9d44bc0438`
+  → YES; `0727e734a73a709215167e288caa75dbd5b28682` → YES; LAUNCH_BASE `a4f874a…` → YES
+
+File digests (sha256) of the corrected files at this working-tree state (superseding the
+`SOURCE-MAP.json` digest `7938cee1…7666` in the block above; all other digests in that
+block remain valid):
+```
+3c137d5c2f2e46479f8eb4a17712ab16b258e7aaa9ab7d9f895fcc8ecb5fd0fc  docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json
+fff7aa0238a4f272a0757853da0378b94f1af3dd36440a436d57c85c507f7666  SOURCE-MAP.json
+```
+
+The live matrix prerequisite below is unchanged by this correction: still parent-owned,
+still not executed, and still never marked PASS.
 
 ## Unresolved prerequisite (parent-owned) — NOT executed, NOT PASS
 

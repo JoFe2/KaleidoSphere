@@ -220,6 +220,16 @@
     {
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "scripts/run-postgresql-c1-live-matrix.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "scripts/run-postgresql-c1-live-matrix.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
       "path": "services/bi-control/src/runtime-config.mjs"
     },
     {
