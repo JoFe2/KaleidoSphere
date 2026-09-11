@@ -408,12 +408,22 @@ this changes product bytes, the relevant new evidence is the node_modules-free `
 - `npm run build` → "consumer-support-manifest build gate: VERIFIED" (exit 0)
 - `git diff --check` → clean
 
-**Post-commit verification (at the committed bytes):**
+**Post-commit verification (at the committed bytes, HEAD `2b3025a19da387e8e1cda86bfe7ef0e8bf753bc1`):**
 
 - Ancestry (`git merge-base --is-ancestor`): input candidate
   `c5427e8c093092c9de93097ef72349d488fe20fb` → YES; retained Main
   `0727e734a73a709215167e288caa75dbd5b28682` → YES; LAUNCH_BASE
   `a4f874ac06894bc7a90a4d7b810c13b81d1a3632` → YES
+- `git merge-tree --write-tree` of HEAD `2b3025a` × retained Main `0727e73` →
+  merged tree `f938e64a1ca703cbde913cc10e934bc3c7341413`, exit 0, **zero conflicts**
+- `git merge-tree --write-tree` of HEAD `2b3025a` × public Main
+  `3586976ae3f4670c055af7fd4777bc0489d6e9d3` → merged tree
+  `f938e64a1ca703cbde913cc10e934bc3c7341413`, exit 0, **zero conflicts**
+  (the candidate's bytes merge cleanly against both Main objects; the change is
+  product-only, so no integration-surface bytes conflict)
+- [node_modules-free, at the committed HEAD] full `npm test` → **tests 1223, pass 1223,
+  fail 0** (exit 0); the previously-failing unreachable-server test passes with the
+  truthful `ECONNREFUSED`
 - Only two files changed (the runner and `SOURCE-MAP.json`, plus this record); no test,
   registration, manifest, certificate, or audit bytes changed; `package.json` unchanged
 
