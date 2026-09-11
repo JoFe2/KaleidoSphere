@@ -180,6 +180,148 @@ fff7aa0238a4f272a0757853da0378b94f1af3dd36440a436d57c85c507f7666  SOURCE-MAP.jso
 The live matrix prerequisite below is unchanged by this correction: still parent-owned,
 still not executed, and still never marked PASS.
 
+## Correction — live-matrix runner and product-path defects (this correction session)
+
+The candidate committed at `8338778ac8fc1dfb86024be4bbddede49e5f838d` shipped a
+live-matrix runner whose committed evidence path could not produce evidence: five exact
+defects stood between the runner and the AC01–AC03 live cells it claims to bind. This
+correction fixes all five with a TDD-minimal change set. It rewrites no history (a
+normal new commit on top of `8338778`; no rebase, reset, amend, squash, or
+cherry-pick), weakens no test, and changes no certificate or frozen gate.
+
+**Inputs verified before correcting (read-only):**
+
+- HEAD == input candidate `8338778ac8fc1dfb86024be4bbddede49e5f838d`.
+- FETCH_HEAD == retained Main commit `0727e734a73a709215167e288caa75dbd5b28682` (the
+  scoped public ref fetched anonymously in the prior session; the commit object was
+  inspected before any merge consideration). Public Main
+  `3586976ae3f4670c055af7fd4777bc0489d6e9d3` (tag `2026_09_08_v18`) also resolved from
+  the local object store.
+- `git merge-tree --write-tree` of HEAD against the retained Main commit and against
+  public Main: **clean, zero conflicts** (same virtual tree
+  `88a449b066d1193da04a7e10627c9c61c858a334` for both). No conflict exists, so **no
+  merge commit was required or created**; the inputs are ancestors of HEAD as recorded
+  next.
+- Ancestry (`git merge-base --is-ancestor`): input candidate, retained Main, public
+  Main, and LAUNCH_BASE `a4f874ac06894bc7a90a4d7b810c13b81d1a3632` are all ancestors
+  of HEAD — verified before the correction commit and re-verified at the committed
+  bytes (below).
+
+**The five blockers, and their minimal fixes:**
+
+1. **Unconnected owner client (hang, not fail-closed).** The runner's owner-session
+   factory returned a driver client without ever calling connect; on the pinned
+   pg 8.16.3 driver an unconnected client never settles query(), so the committed
+   AC01–AC03 evidence path (provisioning, role/schema DDL, teardown, absence
+   verification, credential rotation) could hang instead of producing or failing
+   evidence. Fixed: every owner operation now runs inside a session that connects
+   before use and closes on every path; the unconnected factory is removed entirely.
+2. **False cleanup receipt and leak on failure.** The wrapper printed the verified
+   clean-room receipt unconditionally regardless of the runner exit status, and the
+   runner's teardown scope covered only the matrix try (provisioning preceded it), so
+   a teardown/verification failure would still claim verified absence — a
+   zero-residue boundary violation — and the runner leaked its runtime directory on
+   failure paths (observed in this session). Fixed: the wrapper prints the verified
+   receipt only when the runner exited 0 and otherwise a truthful NOT VERIFIED
+   residue notice plus the runner exit status; the runner now covers provisioning in
+   the same scope as the matrix, tears down and verifies clean-room absence on every
+   path, removes its runtime directory on every path, and exits non-zero with a
+   truthful failure receipt without writing evidence on any failure.
+3. **Denied-metadata cell bypassed the regular path, plus a spurious ledger failure.**
+   (a) The denied-metadata cell substituted a raw connect probe for the product path.
+   It now drives the denial through the product's own live gates — the read-only
+   session-proof capability gate and the descriptor-bound executor dispatch — and
+   asserts the truthful 42501 SQLSTATE at both, never coerced to an empty success
+   (preserved as INVISIBLE / NOT_CLAIMED). (b) The product core's coverage-ledger
+   normalization rejected the numeric SQLSTATE reason codes (e.g. 42501, 57014) the
+   pinned driver produces on real connection and query failures, failing closed with
+   a spurious shape error; the shape gate now admits leading-digit codes while
+   preserving the fail-closed contract for every other shape.
+4. **AC02 never ran through the regular product surface.** The runner drove the
+   descriptor-bound modules directly and injected the product secret into its own
+   environment. AC02 now runs through the control server's own HTTP surface: the
+   runner spawns the product control server as a child process on a free loopback
+   port, resolves the scan credential through the file-secret route (a runner-owned
+   0600 file, the same route the regular deployment wires), calls the analyze
+   endpoint with the bearer token, then the readback endpoint. Asserted end to end:
+   receipt status and live source mode, deterministic fixture counts, complete
+   coverage, bounded index enumeration with content omitted, bearer-auth denial with
+   the truthful denial code, byte-stability across a credential rotation performed
+   through the file-secret route, disk readback of the product's own receipt artifact
+   revalidated through the product output pipeline, and readback projection / catalog
+   / output-pipeline agreement with the receipt snapshot digest.
+5. **AC01 never named or verified the negotiated authentication mechanism.** The
+   evidence recorded only the secret route. The runner now verifies the deployment's
+   authentication method against the owner's server: the scan principal's stored
+   password verifier must carry the SCRAM-SHA-256 prefix, and the first hba rule that
+   can authorize the principal must use scram-sha-256; the evidence names the
+   mechanism and records the verification (per the scoped authorization's
+   authentication-method requirement).
+
+**TDD record (RED → GREEN):**
+
+- Six new tests were added to the existing canonical PostgreSQL product-dispatch
+  suite (`tests/postgresql-product-dispatch.test.mjs`); `package.json` is frozen, so
+  no new suite entry was added. Before the fixes the new tests were RED — the
+  SQLSTATE-ledger test, the runner owner-session/clean-room test, the
+  wrapper-receipt test, and the control-HTTP-surface/SCRAM test all failed (recorded
+  at that state); the dispatch fail-closed test and the unreachable-server boundary
+  test pinned required behavior. After the fixes: **12/12 pass** in the suite, and
+  the full `npm test` count moved 1217 → 1223 with zero failures.
+- The unreachable-server boundary test executes the runner for real against a dead
+  loopback port: non-zero exit, the truthful connection error on stderr, no
+  verified-absence or success claim on stdout, no evidence file written, and no
+  leaked runtime directory.
+
+**Actual commands and results (this correction session, post-correction tree):**
+
+- `node --check scripts/run-postgresql-c1-live-matrix.mjs` → SYNTAX_OK
+- `bash -n scripts/run-postgresql-c1-live-matrix.sh` → SYNTAX_OK
+- `node --test tests/postgresql-product-dispatch.test.mjs` → **12/12 pass**, fail 0
+- [regenerate inventory via the canonical scan] → occurrences **1036** (was 1035),
+  added 1, removed 0; the frozen schemaVersion and baseCommit anchors preserved
+  unchanged; the regeneration tool refused to run if any recorded occurrence would
+  have been removed
+- `node scripts/update-ks149-pg-c1-live-matrix-source-map.mjs` → "8 authored files,
+  683 total entries"; the inventory's content-addressed entry was re-bound following
+  the repository updater convention (raw-bytes sha256, files table
+  localeCompare-sorted, atomic unique-temp + rename write)
+- Full SOURCE-MAP re-hash scan → entries 683, **stale 0**, missing 0,
+  localeCompare-sorted
+- `node --test tests/source-map.test.mjs` → **16/16 pass**, fail 0
+- `node --test tests/legacy-technical-identity-plan.test.mjs` → **4/4 pass**, fail 0
+- Full `npm test` → **tests 1223, pass 1223, fail 0** (exit 0)
+- `npm run build` → "consumer-support-manifest build gate: VERIFIED" (exit 0)
+- `git diff --check` → clean
+- `git merge-tree --write-tree` of HEAD × retained Main and × public Main → clean,
+  zero conflicts (virtual tree `88a449b066d1193da04a7e10627c9c61c858a334` for both)
+
+**Post-commit verification (at the committed bytes):**
+
+- Ancestry (`git merge-base --is-ancestor`): input candidate
+  `8338778ac8fc1dfb86024be4bbddede49e5f838d` → YES; retained Main
+  `0727e734a73a709215167e288caa75dbd5b28682` → YES; public Main
+  `3586976ae3f4670c055af7fd4777bc0489d6e9d3` → YES; LAUNCH_BASE `a4f874a…` → YES
+- `git merge-tree --write-tree` re-run against both Main commits → clean, zero
+  conflicts
+- `node --test tests/source-map.test.mjs tests/legacy-technical-identity-plan.test.mjs`
+  → **20/20 pass**, fail 0
+
+File digests (sha256) of the corrected files at this working-tree state:
+```
+5563b37b41a20f7f8ee29eac5b7c86775f29a9ac646503fc32d9a6e4fa511f3c  scripts/run-postgresql-c1-live-matrix.mjs
+c88a2e9b2ca68097e43c51e578aaf45c421d62b5ef16ac9c72db2b554faa865b  scripts/run-postgresql-c1-live-matrix.sh
+bf95bfb180a2463dd5663828cbea766710c5c2bf785588b5e3ca34b38fdbb75f  scripts/update-ks149-pg-c1-live-matrix-source-map.mjs
+8750f9a9938b7a2f369910fb19f65b369648c5cbb397988464183afa3374e708  services/bi-control/src/db-analyzer/core.mjs
+ad4cb4eb6e3c3a4118160ec1558516ac187016bac24d5723469d7d242bfd8fd8  services/bi-control/src/server.mjs
+643d2628d35b14c80358e3677e5bedb6db193634289c9a2b733a0e3fdf53e466  tests/postgresql-product-dispatch.test.mjs
+73408d984859003e557c04c8ce055a39df1803eb1d54eee734f55c6739deaa11  docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json
+4e5ca99f38620e7bd10ca328672ff43e3f6716303b68836d74edb3cf4533bd53  SOURCE-MAP.json
+```
+
+The live matrix prerequisite below is unchanged by this correction as well: still
+parent-owned, still not executed, and still never marked PASS.
+
 ## Unresolved prerequisite (parent-owned) — NOT executed, NOT PASS
 
 The **live** C1 execution is not performed by this credential-free worker and has not been

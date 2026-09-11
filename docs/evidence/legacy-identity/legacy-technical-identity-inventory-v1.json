@@ -5080,6 +5080,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
       "path": "tests/progressive-controller.test.mjs"
     },
     {

@@ -24,6 +24,9 @@ const authoredFiles = [
   'scripts/run-postgresql-c1-live-matrix.mjs',
   'scripts/run-postgresql-c1-live-matrix.sh',
   'scripts/update-ks149-pg-c1-live-matrix-source-map.mjs',
+  'services/bi-control/src/db-analyzer/core.mjs',
+  'services/bi-control/src/server.mjs',
+  'tests/postgresql-product-dispatch.test.mjs',
 ];
 
 const sourceMap = JSON.parse(await readFile(sourceMapPath, 'utf8'));

@@ -22,10 +22,12 @@ umask 077
 #   KS149_PG_ADMIN_DATABASE     database the owner role connects to (default: postgres)
 #
 # On success the runner writes verification/postgresql/postgresql-c1-live-matrix-v1.json
-# and docs/evidence/postgresql-c1-live-matrix/README.md and prints a JSON summary.
-# Any assertion failure tears the clean room down, writes no evidence, and exits
-# non-zero. A missing live result remains an unresolved prerequisite and is never
-# marked PASS.
+# and docs/evidence/postgresql-c1-live-matrix/README.md, prints a JSON summary, and the
+# wrapper prints the verified zero-container clean-room receipt. On any failure the
+# clean room is torn down, no evidence is written, the wrapper prints a truthful
+# NOT VERIFIED residue notice instead (it cannot claim verified absence for a run that
+# died before its verified teardown), and it exits with the runner status. A missing
+# live result remains an unresolved prerequisite and is never marked PASS.
 
 repo_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 fail() { printf 'KS149_ERROR: %s\n' "$*" >&2; exit 1; }
@@ -65,5 +67,12 @@ status=$?
 set -e
 cat "$state_dir/summary.log" || true
 cleanup
-printf '%s\n' '{"runnerOwnedContainers":0,"runnerOwnedNetworks":0,"runnerOwnedVolumes":0,"runnerDockerInvocations":0,"cleanRoomDatabasesAndRoles":"created and dropped on the parent instance; absence verified by the runner"}'
+# The verified clean-room receipt is emitted only when the runner itself succeeded.
+# A failed run prints a truthful residue notice instead: the wrapper cannot claim
+# verified absence on behalf of a runner that died before its verified teardown.
+if [[ "$status" -eq 0 ]]; then
+  printf '%s\n' '{"runnerOwnedContainers":0,"runnerOwnedNetworks":0,"runnerOwnedVolumes":0,"runnerDockerInvocations":0,"cleanRoomDatabasesAndRoles":"created and dropped on the parent instance; absence verified by the runner"}'
+else
+  printf '%s\n' "{\"runnerOwnedContainers\":0,\"runnerOwnedNetworks\":0,\"runnerOwnedVolumes\":0,\"runnerDockerInvocations\":0,\"exitStatus\":$status,\"cleanRoomDatabasesAndRoles\":\"NOT VERIFIED: the runner failed before a verified teardown; the operator must inspect the parent instance for residue\"}"
+fi
 exit "$status"
