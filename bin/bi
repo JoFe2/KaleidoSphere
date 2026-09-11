@@ -79,6 +79,7 @@ case "${1:-help}" in
     create_secret .runtime/secrets/control_token hex
     create_secret .secrets/mssql_password empty
     create_secret .secrets/oracle_password empty
+    create_secret .secrets/postgresql_password empty
     create_secret .secrets/llm_api_key empty
     chmod 0600 .runtime/secrets/* .secrets/*
     compose config --quiet
