@@ -322,6 +322,110 @@ ad4cb4eb6e3c3a4118160ec1558516ac187016bac24d5723469d7d242bfd8fd8  services/bi-co
 The live matrix prerequisite below is unchanged by this correction as well: still
 parent-owned, still not executed, and still never marked PASS.
 
+## Correction — CI contract: node_modules-free `npm test` (this correction session)
+
+The candidate committed at `c5427e8c093092c9de93097ef72349d488fe20fb` broke the CI
+contract gate on the exact fresh-checkout CI. This correction is a minimal product change
+to the live-matrix runner only; it rewrites no history (a normal new commit on top of
+`c5427e8`; no rebase, reset, amend, squash, or cherry-pick), weakens no test, and changes
+no certificate, registration, or frozen gate.
+
+**What failed (reproduced before correcting):**
+
+- `.github/workflows/ci.yml` runs `npm test` with **no dependency-install step** (no
+  `npm ci` / `npm install`), so the exact fresh-checkout CI has no `node_modules`.
+- `pg` is a dependency of the `services/bi-control` sub-package, not the root. On that
+  fresh checkout the runner's top-level `const {Client} = requireFromControl('pg');`
+  (line 86) threw `MODULE_NOT_FOUND` at module load, before `main()` could run.
+- Consequence: the canonical negative test `the live-matrix runner fails closed against
+  an unreachable server without writing evidence`
+  (`tests/postgresql-product-dispatch.test.mjs:335`) saw `Error: Cannot find module 'pg'`
+  / `MODULE_NOT_FOUND` on the runner's stderr instead of the asserted `/ECONNREFUSED/`, so
+  it failed. (The parent-executable wrapper's `npm --prefix services/bi-control ci`
+  covers the live-run path, not the committed test path.)
+
+Reproduced in a controlled node_modules-free environment: with
+`services/bi-control/node_modules` absent the runner no longer resolves `pg`, and the
+unreachable-server test failed at line 335 with `MODULE_NOT_FOUND` (expected
+`/ECONNREFUSED/`) — the exact reported symptom.
+
+**Root cause:** the driver was required at module top level, so a fresh checkout crashed
+before the runner's own unreachable-server fail-closed behavior could be reached.
+
+**Minimal fix (product change, TDD):**
+
+1. Deferred the driver load: replaced the top-level `requireFromControl('pg')` with a
+   memoized lazy getter `pgClient()` so the runner's module load and its node:net-only
+   preflight succeed with no `node_modules`; the driver is required only when a
+   PostgreSQL client is about to be constructed (the parent live run installs it via
+   `npm ci`).
+2. Updated the three `new Client(...)` sites to `new (pgClient())(...)`.
+3. Added a `node:net`-only TCP reachability preflight at the start of the run (after the
+   environment/secret-file contract is validated, before the first driver use and before
+   any artifact is written): if the target host:port is unreachable the OS returns the
+   truthful connection error (`ECONNREFUSED` for a dead loopback port) and the runner
+   exits non-zero without writing evidence — in a node_modules-free checkout. On a
+   reachable (live) target the preflight connects, closes, and the run proceeds unchanged.
+
+No test, registration, manifest, certificate, or gate was removed or weakened. Because
+this changes product bytes, the relevant new evidence is the node_modules-free `npm test`
+(below).
+
+**TDD record (RED → GREEN, node_modules-free / exact fresh-checkout condition):**
+
+- RED: with `services/bi-control/node_modules` absent,
+  `node --test tests/postgresql-product-dispatch.test.mjs` → the unreachable-server test
+  **failed** at line 335 (`MODULE_NOT_FOUND` vs expected `/ECONNREFUSED/`).
+- GREEN: after the fix, the same node_modules-free run → the product-dispatch suite
+  **12/12 pass**, including the previously-failing unreachable-server test (truthful
+  `ECONNREFUSED` on stderr, non-zero exit, no evidence file, no verified-absence/success
+  claim on stdout).
+
+**Actual commands and results (this correction session, post-correction tree):**
+
+- `node --check scripts/run-postgresql-c1-live-matrix.mjs` → SYNTAX_OK
+- [node_modules-free] `node --test tests/postgresql-product-dispatch.test.mjs` → **12/12
+  pass**, fail 0 (the unreachable-server test passes with the truthful `ECONNREFUSED`)
+- [node_modules-free, the exact fresh-checkout CI condition] full `npm test` →
+  **tests 1223, pass 1223, fail 0** (exit 0). The single diff-introduced failure (the
+  unreachable-server test) is eliminated and no other failure manifests in this
+  environment. (The prior controlled runs' "50 pre-existing failures" were
+  reviewer-environment-specific and do not reproduce here; the diff-introduced failure is
+  the one fixed.)
+- [node_modules present] full `npm test` → **tests 1223, pass 1223, fail 0** (exit 0)
+- `node scripts/update-ks149-pg-c1-live-matrix-source-map.mjs` → "8 authored files,
+  683 total entries"; the changed runner's content-addressed entry was re-bound following
+  the repository updater convention (raw-bytes sha256, files table localeCompare-sorted,
+  atomic unique-temp + rename write). The other 682 `SOURCE-MAP.json` hashes and all
+  anchors are unchanged; the files entry count stays 683 (a single hash line changed).
+- Full SOURCE-MAP re-hash scan → entries 683, **stale 0**, missing 0
+- Focused gates `node --test tests/source-map.test.mjs
+  tests/postgresql-product-dispatch.test.mjs tests/postgresql-c1-certification.test.mjs
+  tests/postgresql-adapter.test.mjs` → **40/40 pass**, fail 0
+- Content-sensitive gate `node --test tests/legacy-technical-identity-plan.test.mjs
+  tests/source-map.test.mjs tests/postgresql-product-dispatch.test.mjs` → **32/32 pass**,
+  fail 0
+- `npm run build` → "consumer-support-manifest build gate: VERIFIED" (exit 0)
+- `git diff --check` → clean
+
+**Post-commit verification (at the committed bytes):**
+
+- Ancestry (`git merge-base --is-ancestor`): input candidate
+  `c5427e8c093092c9de93097ef72349d488fe20fb` → YES; retained Main
+  `0727e734a73a709215167e288caa75dbd5b28682` → YES; LAUNCH_BASE
+  `a4f874ac06894bc7a90a4d7b810c13b81d1a3632` → YES
+- Only two files changed (the runner and `SOURCE-MAP.json`, plus this record); no test,
+  registration, manifest, certificate, or audit bytes changed; `package.json` unchanged
+
+File digests (sha256) of the corrected files at this working-tree state:
+```
+c22e464f7c4892bb8cbd7750fb040dfbbbd387abfc166efd35afdc2573834723  scripts/run-postgresql-c1-live-matrix.mjs
+9fa8094d276c3c3717e0a026d1688968824868a9f57cc53848e31ac444b2a80c  SOURCE-MAP.json
+```
+
+The live matrix prerequisite below is unchanged by this correction as well: still
+parent-owned, still not executed, and still never marked PASS.
+
 ## Unresolved prerequisite (parent-owned) — NOT executed, NOT PASS
 
 The **live** C1 execution is not performed by this credential-free worker and has not been

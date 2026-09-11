@@ -299,7 +299,7 @@
     "scripts/run-native-superset-browser-evidence.mjs": "8d8fdbb0e5451c8ad4fac9f141c0aad7900cc889dbd71f8d418f17b71b43dfcf",
     "scripts/run-pansphaira-analytics-service-clean-room.mjs": "08a5e65e61d93124a608010f16e2367963f0cd83752518aa79501491b2cbcd04",
     "scripts/run-postgresql-c1-clean-room.mjs": "29e55970d67dda4ed5dda065e1a1f02269009e0a535d727d4f0b206367097704",
-    "scripts/run-postgresql-c1-live-matrix.mjs": "5563b37b41a20f7f8ee29eac5b7c86775f29a9ac646503fc32d9a6e4fa511f3c",
+    "scripts/run-postgresql-c1-live-matrix.mjs": "c22e464f7c4892bb8cbd7750fb040dfbbbd387abfc166efd35afdc2573834723",
     "scripts/run-postgresql-c1-live-matrix.sh": "c88a2e9b2ca68097e43c51e578aaf45c421d62b5ef16ac9c72db2b554faa865b",
     "scripts/run-postgresql-e2e.mjs": "1153368f245f357f0018b895b244471b0744343c1ef423531cd8264f83b73211",
     "scripts/run-postgresql-e2e.sh": "5a55019a4995528a584fb0f988d25b21c46ac9f9c90d45b7ba0ed662c1aaa37b",

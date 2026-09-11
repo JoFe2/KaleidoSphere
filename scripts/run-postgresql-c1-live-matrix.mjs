@@ -83,7 +83,15 @@ import {
 const repositoryRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
 const controlRoot = path.join(repositoryRoot, 'services', 'bi-control');
 const requireFromControl = createRequire(path.join(controlRoot, 'package.json'));
-const {Client} = requireFromControl('pg');
+
+// `pg` is a dependency of the services/bi-control sub-package (not the root), and the
+// committed CI runs `npm test` with no dependency-install step, so a fresh checkout has
+// no node_modules and a top-level `require('pg')` throws MODULE_NOT_FOUND before main()
+// can run. Require the driver lazily — only when a PostgreSQL client is about to be
+// constructed (the parent live run installs it via npm ci) — so the runner's module load
+// and its node:net-only unreachable-server preflight below succeed in that environment.
+let pgClientClass;
+const pgClient = () => (pgClientClass ??= requireFromControl('pg').Client);
 
 const LIVE_EVIDENCE_SCHEMA_VERSION = 'kaleidosphere.db/postgresql-c1-live-matrix/v1';
 const DATABASE = 'ks149_c1';
@@ -149,7 +157,7 @@ async function disposableClient({profile, password, readOnlySession = true}) {
     delete options.options;
     options.application_name = 'kaleidosphere-ks149-probe';
   }
-  const client = new Client(options);
+  const client = new (pgClient())(options);
   await client.connect();
   return client;
 }
@@ -176,7 +184,7 @@ async function liveWriteProbe({profile, password, readOnlySession, statement}) {
 
 // A connect attempt whose failure SQLSTATE is the observed truth.
 async function connectFailureCode({host, port, user, password, database}) {
-  const client = new Client({
+  const client = new (pgClient())({
     host, port, user, password, database, ssl: false,
     application_name: 'kaleidosphere-ks149-connect-probe',
   });
@@ -341,6 +349,23 @@ async function main() {
   await assertSecretFile(ownerPasswordFile);
   const ownerPassword = safePassword((await readFile(ownerPasswordFile, 'utf8')).trim());
 
+  // Fail fast at the transport layer before the pg driver is required: if the target
+  // host:port cannot be reached at the TCP level, the OS returns the truthful connection
+  // error (ECONNREFUSED for a dead loopback port) and the runner exits non-zero without
+  // writing evidence. This uses only node:net, so it succeeds in a node_modules-free
+  // fresh checkout — the exact environment of the committed CI test — where the deferred
+  // pg require has not yet loaded the driver.
+  await new Promise((resolveReachable, rejectReachable) => {
+    const socket = net.createConnection({host, port});
+    socket.once('connect', () => { socket.destroy(); resolveReachable(); });
+    socket.once('error', (error) => { socket.destroy(); rejectReachable(error); });
+    const timer = setTimeout(() => {
+      socket.destroy();
+      rejectReachable(Object.assign(new Error('KS149_CONNECT_TIMEOUT'), {code: 'ETIMEDOUT'}));
+    }, 5000);
+    timer.unref();
+  });
+
   const runtimeDirectory = await mkdtemp(path.join(repositoryRoot, '.runtime', 'ks149-live-matrix-'));
   try {
     const scanPassword1 = canary('KS149_SCAN1_');
@@ -352,7 +377,7 @@ async function main() {
     // Every owner operation runs inside a session that connected before use and is
     // closed on every path; an unconnected client would never settle query().
     const ownerSession = async (database, work) => {
-      const client = new Client({
+      const client = new (pgClient())({
         host, port, user: ownerUser, password: ownerPassword, database, ssl: false,
         application_name: 'kaleidosphere-ks149-provisioner',
       });
