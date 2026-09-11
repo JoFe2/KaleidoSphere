@@ -18,7 +18,7 @@ import { collectSupersetFingerprint, evaluateSupersetPlanningGate } from './supe
 const port = Number(process.env.PORT ?? 18089);
 const receiptDir = process.env.RECEIPT_DIR ?? '/var/lib/chimpmaera-bi/receipts';
 const projectionDb = process.env.PROJECTION_DB ?? '/var/lib/chimpmaera-bi/projection/analytics.db';
-const repositoryRoot = '/app';
+const repositoryRoot = process.env.REPOSITORY_ROOT ?? '/app';
 const supersetFingerprintFixture = '/app/fixtures/superset-fingerprint-runtime-v1.json';
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 const engine = selectedEngine();

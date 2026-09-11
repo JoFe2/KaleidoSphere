@@ -1016,7 +1016,7 @@ function normalizeQueryResult(query, result) {
   if (!hasVisibleRows && Array.isArray(result.rows) && result.rows.length > 0) fail('DB_QUERY_FAILED_STATE_ROWS_DENIED');
   if (result.state === 'SUCCEEDED' && ![undefined, null].includes(result.reasonCode)) fail('DB_QUERY_RESULT_REASON_INVALID');
   if (result.state !== 'SUCCEEDED'
-    && (typeof result.reasonCode !== 'string' || !/^[A-Z][A-Z0-9_]{2,127}$/.test(result.reasonCode))) {
+    && (typeof result.reasonCode !== 'string' || !/^[A-Z0-9][A-Z0-9_]{2,127}$/.test(result.reasonCode))) {
     fail('DB_QUERY_RESULT_REASON_INVALID');
   }
   const rows = hasVisibleRows ? normalizeRows(query, result.rows) : [];

@@ -220,6 +220,16 @@
     {
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "scripts/run-postgresql-c1-live-matrix.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "scripts/run-postgresql-c1-live-matrix.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
       "path": "services/bi-control/src/runtime-config.mjs"
     },
     {
@@ -4699,6 +4709,11 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/coverage-ledger/v1",
       "path": "docs/ARCHITECTURE.md"
     },
@@ -5061,6 +5076,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/runtime-query-results/v1",
       "path": "tests/oracle-runtime.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/runtime-query-results/v1",
+      "path": "tests/postgresql-product-dispatch.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",

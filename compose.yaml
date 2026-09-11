@@ -84,6 +84,16 @@ services:
       ORACLE_CONNECT_TIMEOUT_MS: ${ORACLE_CONNECT_TIMEOUT_MS:-10000}
       ORACLE_QUERY_TIMEOUT_MS: ${ORACLE_QUERY_TIMEOUT_MS:-10000}
       ORACLE_PASSWORD_FILE: /run/secrets/oracle_password
+      POSTGRESQL_HOST: ${POSTGRESQL_HOST:-host.docker.internal}
+      POSTGRESQL_PORT: ${POSTGRESQL_PORT:-5432}
+      POSTGRESQL_DATABASE: ${POSTGRESQL_DATABASE:-KS_BI_FIXTURE}
+      POSTGRESQL_USER: ${POSTGRESQL_USER:-bi_readonly}
+      POSTGRESQL_SCHEMAS: ${POSTGRESQL_SCHEMAS:-public}
+      POSTGRESQL_SSL: ${POSTGRESQL_SSL:-true}
+      POSTGRESQL_CONNECT_TIMEOUT_MS: ${POSTGRESQL_CONNECT_TIMEOUT_MS:-10000}
+      POSTGRESQL_QUERY_TIMEOUT_MS: ${POSTGRESQL_QUERY_TIMEOUT_MS:-10000}
+      POSTGRESQL_STRUCTURE_QUERY_PACK: ${POSTGRESQL_STRUCTURE_QUERY_PACK:-v2}
+      POSTGRESQL_PASSWORD_FILE: /run/secrets/postgresql_password
       CONTROL_TOKEN_FILE: /run/secrets/control_token
       SUPERSET_MATERIALIZER_URL: http://superset:8090/internal/materialize
       SUPERSET_FINGERPRINT_INTERNAL_URL: http://superset:8090/internal/fingerprint
@@ -91,7 +101,7 @@ services:
       RECEIPT_DIR: /var/lib/chimpmaera-bi/receipts
       PROJECTION_DB: /var/lib/chimpmaera-bi/projection/analytics.db
     extra_hosts: ["host.docker.internal:host-gateway"]
-    secrets: [mssql_password, oracle_password, control_token]
+    secrets: [mssql_password, oracle_password, postgresql_password, control_token]
     volumes:
       - ./.runtime/receipts:/var/lib/chimpmaera-bi/receipts
       - ./.runtime/projection:/var/lib/chimpmaera-bi/projection
@@ -153,6 +163,7 @@ secrets:
   control_token: {file: .runtime/secrets/control_token}
   mssql_password: {file: .secrets/mssql_password}
   oracle_password: {file: .secrets/oracle_password}
+  postgresql_password: {file: .secrets/postgresql_password}
   llm_api_key: {file: .secrets/llm_api_key}
 
 networks:
