@@ -4699,6 +4699,11 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/catalog-scan-policy/v1",
+      "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/coverage-ledger/v1",
       "path": "docs/ARCHITECTURE.md"
     },

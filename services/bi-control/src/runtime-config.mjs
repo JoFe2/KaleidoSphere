@@ -35,6 +35,42 @@ export function buildOracleConnectString(adapter) {
   return `(DESCRIPTION=(CONNECT_TIMEOUT=${timeoutSeconds})(TRANSPORT_CONNECT_TIMEOUT=${timeoutSeconds})(ADDRESS=(PROTOCOL=${adapter.protocol.toUpperCase()})(HOST=${adapter.host})(PORT=${adapter.port}))(CONNECT_DATA=(SERVICE_NAME=${adapter.serviceName}))${serverDn})`;
 }
 
+// Optional PostgreSQL structure query-pack selector. Absent or exact 'v1' preserves the
+// historical v1 structure scan; exact 'v2' selects the existing v2 index querypack and its
+// existing bounded catalog policy (the committed v2 structure fixture's catalogScan block);
+// any other supplied value fails closed. A Map keeps prototype-polluted spellings
+// ('constructor', '__proto__') out of the lookup.
+const POSTGRESQL_STRUCTURE_QUERY_PACKS = Object.freeze(new Map([
+  ['v1', Object.freeze({version: 'v1'})],
+  ['v2', Object.freeze({
+    version: 'v2',
+    catalogScan: Object.freeze({
+      schemaVersion: 'chimpmaera.db/catalog-scan-policy/v1',
+      allowedQueryIds: Object.freeze([
+        'postgresql.preflight.identity',
+        'postgresql.structure.schemas',
+        'postgresql.structure.relations',
+        'postgresql.structure.columns',
+        'postgresql.structure.constraints',
+        'postgresql.structure.dependencies',
+        'postgresql.structure.indexes',
+      ]),
+      maxQueries: 7,
+      maxRowsPerQuery: 64,
+      maxTotalRows: 256,
+    }),
+  })],
+]));
+
+function postgresqlStructureQueryPack(env) {
+  const raw = env.POSTGRESQL_STRUCTURE_QUERY_PACK;
+  if (raw === undefined) return POSTGRESQL_STRUCTURE_QUERY_PACKS.get('v1');
+  if (typeof raw !== 'string' || !POSTGRESQL_STRUCTURE_QUERY_PACKS.has(raw)) {
+    throw coded('CONFIG_POSTGRESQL_STRUCTURE_QUERY_PACK_INVALID');
+  }
+  return POSTGRESQL_STRUCTURE_QUERY_PACKS.get(raw);
+}
+
 export function buildLiveProfile(env = process.env, passwordEnv) {
   const engine = selectedEngine(env);
   if (typeof passwordEnv !== 'string' || !/^[A-Z][A-Z0-9_]*$/.test(passwordEnv)) throw coded('DB_ANALYZE_CONFIG_INVALID');
@@ -64,14 +100,17 @@ export function buildLiveProfile(env = process.env, passwordEnv) {
     const queryTimeoutMs = integer(env, 'POSTGRESQL_QUERY_TIMEOUT_MS', 10000, 1000, 120000);
     const ssl = bool(env, 'POSTGRESQL_SSL', true);
     const schemas = parseSchemas(env.POSTGRESQL_SCHEMAS);
+    const queryPack = postgresqlStructureQueryPack(env);
     if (!hostname(host) || !postgresqlIdentifier(database) || !postgresqlIdentifier(user)
       || schemas.some((schema) => !postgresqlIdentifier(schema))) throw coded('DB_ANALYZE_CONFIG_INVALID');
     return {
       schemaVersion: 'chimpmaera.db/analyze-profile/v1',
       profileId: `chimpmaera-bi-postgresql-${sha256(`${host}:${port}/${database}/${user}`).slice(0, 16)}`,
-      engine, mode: 'RUNTIME', queryPack: {version: 'v1'},
+      engine, mode: 'RUNTIME', queryPack: {version: queryPack.version},
       scope: {database, container: null, schemas},
-      policy: {access: 'READ_ONLY', allowRowSamples: false, maxQueryTimeoutMs: queryTimeoutMs},
+      policy: queryPack.catalogScan === undefined
+        ? {access: 'READ_ONLY', allowRowSamples: false, maxQueryTimeoutMs: queryTimeoutMs}
+        : {access: 'READ_ONLY', allowRowSamples: false, maxQueryTimeoutMs: queryTimeoutMs, catalogScan: queryPack.catalogScan},
       adapter: {kind: engine, host, port, user, passwordEnv, ssl, connectTimeoutMs},
     };
   }
