@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -315,8 +316,24 @@ test('the live-matrix runner fails closed against an unreachable server without 
       });
     });
     const evidenceFile = 'verification/postgresql/postgresql-c1-live-matrix-v1.json';
-    const evidenceExists = () => stat(evidenceFile).then(() => true, () => false);
-    assert.equal(await evidenceExists(), false, 'no live evidence exists before the run');
+    // The fail-closed property is that a failed run writes no evidence and rewrites no
+    // byte. Before the KS228 correction the pre-run state was ABSENT; since the
+    // historical live-matrix evidence is published in-tree it may also be the recorded
+    // original. Either way the pre-run state must be byte-identical after the failed
+    // run: a failed run must not mint, rewrite, or re-mint evidence.
+    const LIVE_MATRIX_ORIGINAL_SHA256 = '90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab';
+    const evidenceState = async () => {
+      try {
+        return createHash('sha256').update(await readFile(evidenceFile)).digest('hex');
+      } catch {
+        return 'ABSENT';
+      }
+    };
+    const stateBefore = await evidenceState();
+    assert.ok(
+      stateBefore === 'ABSENT' || stateBefore === LIVE_MATRIX_ORIGINAL_SHA256,
+      'pre-run evidence is absent or the recorded historical original',
+    );
     const child = spawn(process.execPath, ['scripts/run-postgresql-c1-live-matrix.mjs'], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -335,7 +352,7 @@ test('the live-matrix runner fails closed against an unreachable server without 
     assert.match(output.stderr, /ECONNREFUSED/, 'the failure is the truthful connection error');
     assert.ok(!output.stdout.includes('cleanRoomVerifiedAbsent'), 'no verified-absence claim on failure');
     assert.ok(!output.stdout.includes('VERIFIED'), 'no success claim on failure');
-    assert.equal(await evidenceExists(), false, 'no evidence is written on failure');
+    assert.equal(await evidenceState(), stateBefore, 'no evidence is written or rewritten on failure');
   } finally {
     await rm(directory, {recursive: true, force: true});
   }

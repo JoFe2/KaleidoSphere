@@ -436,6 +436,142 @@ c22e464f7c4892bb8cbd7750fb040dfbbbd387abfc166efd35afdc2573834723  scripts/run-po
 The live matrix prerequisite below is unchanged by this correction as well: still
 parent-owned, still not executed, and still never marked PASS.
 
+## Correction — publish the retained KS149 live evidence (JoFe2/KaleidoSphere#228, this correction session)
+
+Issue #228 requires additively completing the missing KS149 public-evidence delivery on
+current Main (HEAD `648e0dcc062df8a5bcd149d23c73389370e0d298`, release 0.26.0, manifest
+`5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310`), without weakening any
+AC.
+
+**RED (missing behavior demonstrated on fresh current main).** At session start both
+evidence files were absent from the source tree, absent from `SOURCE-MAP.json`, unreferenced
+by the certification suite, and the committed source-local certificate still records
+`realDisprovablePostgresql.state = "BLOCKED_EXTERNAL"`. This is not SOURCE_ALREADY_PRESENT.
+First RED run after adding the new gate tests:
+`node --test tests/postgresql-c1-certification.test.mjs tests/source-map.test.mjs` → 6 failing
+tests (3 new provenance tests: ENOENT on the missing provenance record; the source-map global
+re-hash and C1 family tests: changed test file not yet re-registered; the new live-matrix
+family test: unregistered map entries) while all pre-existing tests passed.
+
+**AC01 — byte-for-byte recovery, verified.** The two artifacts were recovered from the qwen-test
+VM's retained clone `/root/ks149-git` (HEAD at the tested head
+`f60ba0f227c87bac01a0b57edf27edfca862fdc5`, parent `2b3025a19da387e8e1cda86bfe7ef0e8bf753bc1`,
+author `Fresh Qwen <fresh-qwen@localhost>`, dated 2026-09-11T14:29:49+00:00; tracked tree
+clean, only the two evidence paths untracked) by byte-for-byte tar streaming:
+
+```
+qwen-test 'tar -C /root/ks149-git -cf - verification/postgresql/postgresql-c1-live-matrix-v1.json docs/evidence/postgresql-c1-live-matrix/README.md' > /tmp/ks228/ks149-evidence.tar
+```
+
+- transport receipts: complete-history bundle sha256
+  `426385843a8c9ebaa7e5efd2f1351a7f9bbc74efa633df74b7835be56d2ead55`
+  (verified, `refs/heads/main` at the tested head); evidence tar sha256
+  `26fece297a702245fc92dd290d338b8f8a4fcd5fe64caf8b8a4c60c1dccec378`
+- post-recovery verification (actual output):
+  `90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab  verification/postgresql/postgresql-c1-live-matrix-v1.json`
+  `9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f  docs/evidence/postgresql-c1-live-matrix/README.md`
+  — both equal the recorded originals. The historical bytes were not rewritten, relabelled, or
+  re-minted.
+
+**AC02 — truthful provenance/verification record.** New record
+`verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json`
+(`kaleidosphere.db/postgresql-c1-live-matrix-provenance/v1`, self-digest
+`provenanceSha256 = 05014aaf1ec4100aa9b770fc55ab1ca1ed80ce5ca4d1d4ba5f3b9bc5f18da406` via the
+repository canonical `identitySha256` in `services/bi-control/src/db-analyzer/core.mjs`) binds:
+
+- the two artifacts to their recorded original digests and the recovery receipts;
+- the tested source identity `f60ba0f2…` (tree `28b006532f2f41fb37f2382c70087362e7fcf289`)
+  to the delivered Main `648e0dcc…` — whose tree is the identical object
+  (`git rev-parse f60ba0f2^{tree}` == `git rev-parse 648e0dc^{tree}` ==
+  `28b006532f2f41fb37f2382c70087362e7fcf289`): **nothing changed since the tested head**
+  (`changedFilesSinceTestedHead: []`, `treeIdentity: IDENTICAL`);
+- the tested inputs (descriptor route, C1 profile
+  `3faea403…`, source-local bindings `bda7372a…`/`41c91552…`/`5df202ba…`, live-run v2 query pack
+  `38a45f57b7dcf7fbc6efea52be635f38ae8407458641d66684395ac313097516`) and the release
+  (0.26.0 / `5f8eac55…`);
+- the frozen certificate as UNCHANGED (sha256 `859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6`,
+  still `BLOCKED_EXTERNAL` in its own bytes);
+- `newRunLabeling.newLiveRunPerformed: false` — this correction performs **no new live run**;
+  the artifacts are the preserved 2026-09-11 historical observation, and any future live
+  evidence must be labelled as a new real run;
+- non-claims: no general PostgreSQL/production/HA/scale/performance/all-versions claim, C2 out
+  of scope, loopback-only major-16 scope fence, controller-owned readback not claimed.
+
+**AC03 — content-addressed registration and fail-closed gate tests.**
+- `SOURCE-MAP.json`: 4 new `files` entries (both artifacts, the provenance record, the
+  updater) plus re-bound hashes for the changed test files, the regenerated inventory, and
+  `SOURCE-MAP.md` — 687 entries total — written by the delivery-specific, self-content-addressing
+  updater `scripts/update-ks228-ks149-live-matrix-source-map.mjs` (convention mirrors
+  `scripts/update-ks149-pg-c1-live-matrix-source-map.mjs`; atomic unique-temp + rename).
+- `tests/postgresql-c1-certification.test.mjs`: 4 new tests (all pre-existing tests unchanged) —
+  exact historical bytes at the recorded originals (with substitution negatives); provenance
+  binding to tested source/delivered release/exact originals plus the self-digest and
+  cross-file bindings; fail-closed negatives for wrong tested-source or release bindings and
+  substituted evidence digests; scope fence and non-claim preservation (with transport/
+  major-version widening negatives).
+- `tests/source-map.test.mjs`: new live-matrix family test — content-addressing of the four
+  family paths, pinning of the two historical originals (digest substitution or re-mint fails),
+  and the frozen-certificate invariants at gate level.
+- `docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json`: regenerated
+  **additively only** after `git add` (verified 0 removed): 1036 → 1040 occurrences; the 4 added
+  are the two environment-variable-name references and one package-container reference in the
+  live-matrix JSON plus the one environment-variable-name reference in the provenance
+  record. Frozen `schemaVersion` and `baseCommit` preserved.
+- Truthful adaptation (not a weakening) of the pre-existing negative probe
+  `tests/postgresql-product-dispatch.test.mjs` ("the live-matrix runner fails closed against an
+  unreachable server without writing evidence"): its pre-run precondition
+  "no live evidence exists before the run" encoded the pre-publication world state. The guarded
+  property — a failed run writes no evidence — is now asserted as pre/post state byte-identity
+  (ABSENT stays ABSENT; the published historical original must not be rewritten or re-minted),
+  which is strictly stronger in the published world and identical in the absent world. The
+  fail-closed runner behavior itself (non-zero exit, truthful `ECONNREFUSED`, no
+  verified-absence or success claim on failure) is unchanged and still asserted.
+- `SOURCE-MAP.md`: appended the correction's provenance paragraph (no new legacy-identity
+  tokens).
+- No `package.json` change (frozen, byte-bound to the certificate); no new canonical test-suite
+  registration (frozen scripts); the frozen v1 certificate/profile untouched.
+
+**GREEN (actual commands and results).**
+
+```
+node scripts/update-ks228-ks149-live-matrix-source-map.mjs
+  → KS228 KS149 source map updated: 9 authored files, 687 total entries
+npm test
+  → tests 1228, pass 1228, fail 0 (exit 0)
+npm run build
+  → consumer-support-manifest build gate: VERIFIED
+npm run test:source
+  → tests 17, pass 17, fail 0
+npm run test:legacy-identity-plan
+  → tests 4, pass 4, fail 0
+```
+
+File digests (sha256) of this correction's files at the committed state:
+```
+90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab  verification/postgresql/postgresql-c1-live-matrix-v1.json
+9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f  docs/evidence/postgresql-c1-live-matrix/README.md
+40b6d1ae6a249b51d0deb964c37ecbf0fb1e8b16a1703a03ab416b699060c529  verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json
+ae783852cfd7a3c422fb8fe783a028f587b3619bfa47949b7be75d8b96b01ff2  scripts/update-ks228-ks149-live-matrix-source-map.mjs
+0d30640e74b38af03281c9d925ac6a0597aa915ebc4c590a81ede7d1798dfcb4  tests/postgresql-c1-certification.test.mjs
+a8101d63c4cb442fde551c2e4a6799f8c8c44d2ce07df7e6ef45df258e7a8761  tests/postgresql-product-dispatch.test.mjs
+2f1e19d4e9e205bcb3a459b5d4ecc28d8aa38e3c0c8d522445f286d465659863  tests/source-map.test.mjs
+57505bd4109ca01db23f16aa3c4d1308a054277196663ef53218a1bb4aab3771  docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json
+f3d1dc585224dc642648df68dfbb8ed8f99774fc3a64260bfbdd16123df86975  SOURCE-MAP.md
+8dbffdac94576266b864bc280d2aa4cf7ab11e8a6c7d975df4a44971b6abc7ea  SOURCE-MAP.json
+859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6  verification/postgresql/postgresql-c1-evidence-v1.json (unchanged)
+5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310  package.json (unchanged)
+```
+
+**Unresolved gates (AC04, controller-owned — not performed and not claimed here).** The
+independent exact-head review, exact PR/Main CI, release, and anonymous readback receipts are
+performed by the delivery job controller. No push, no public mutation, no issue closure, and no
+delivery claim in this record.
+
+The live-matrix prerequisite state is now: **executed by the parent on 2026-09-11 against the
+tested head; evidence retained in the VM; published byte-for-byte by this correction with the
+provenance binding above.** The source-local certificate remains `BLOCKED_EXTERNAL` in its own
+bytes and is not relabelled by this correction.
+
 ## Unresolved prerequisite (parent-owned) — NOT executed, NOT PASS
 
 The **live** C1 execution is not performed by this credential-free worker and has not been

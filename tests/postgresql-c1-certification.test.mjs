@@ -205,3 +205,197 @@ test('the clean-room is source-local: no process, network, or live-database rout
   const committed = JSON.parse(await readFile(committedEvidencePath, 'utf8'));
   assert.equal(committed.realDisprovablePostgresql.state, 'BLOCKED_EXTERNAL');
 });
+
+// --- KS149 public-evidence delivery correction (JoFe2/KaleidoSphere#228) ---
+//
+// The two parent-executed live-matrix artifacts below were produced on 2026-09-11
+// against the source at the tested head f60ba0f227c87bac01a0b57edf27edfca862fdc5 and
+// were retained untracked in the test VM while the 0.26.0 release and the issue
+// closure moved ahead. This correction publishes those historical bytes unchanged,
+// binds them to the delivered Main/release through a separate provenance record, and
+// content-addresses the family here. These tests fail on:
+//   * referenced live-matrix evidence or the provenance record missing,
+//   * substitution of the recovered historical evidence bytes (digest mismatch
+//     against the recorded originals),
+//   * wrong tested-source or release binding (mutated provenance record or
+//     cross-file digest drift),
+//   * unsupported scope claims (transport/major-version drift, non-claim erasure).
+// Nothing here relabels the frozen source-local C1 certificate; its tests above are
+// unchanged.
+
+const liveMatrixJsonRel = Object.freeze('verification/postgresql/postgresql-c1-live-matrix-v1.json');
+const liveMatrixReadmeRel = Object.freeze('docs/evidence/postgresql-c1-live-matrix/README.md');
+const liveProvenanceRel = Object.freeze('verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json');
+const v2QueryPackManifestRel = Object.freeze('services/bi-control/query-packs/db-analyzer/v2/postgresql/manifest.json');
+
+// The recorded originals of the Qwen live run (issue #228): historical bytes that are
+// never rewritten, relabelled, or re-minted.
+const LIVE_MATRIX_JSON_SHA256 = Object.freeze('90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab');
+const LIVE_MATRIX_README_SHA256 = Object.freeze('9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f');
+const LIVE_EVIDENCE_SCHEMA_VERSION = Object.freeze('kaleidosphere.db/postgresql-c1-live-matrix/v1');
+const LIVE_PROVENANCE_SCHEMA_VERSION = Object.freeze('kaleidosphere.db/postgresql-c1-live-matrix-provenance/v1');
+
+// The tested-source / delivered-release identity (issue #228). The tested head is a
+// retained VM-local commit whose git tree is byte-identical to the tree of the
+// delivered Main commit.
+const TESTED_SOURCE_COMMIT = Object.freeze('f60ba0f227c87bac01a0b57edf27edfca862fdc5');
+const TESTED_SOURCE_TREE = Object.freeze('28b006532f2f41fb37f2382c70087362e7fcf289');
+const DELIVERED_RELEASE_COMMIT = Object.freeze('648e0dcc062df8a5bcd149d23c73389370e0d298');
+const RELEASE_MANIFEST_SHA256 = Object.freeze('5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310');
+const V2_QUERY_PACK_MANIFEST_SHA256 = Object.freeze('38a45f57b7dcf7fbc6efea52be635f38ae8407458641d66684395ac313097516');
+
+// Fail-closed check: the recovered bytes must match the recorded originals exactly. A
+// digest mismatch means the historical bytes were substituted; the evidence must not
+// be claimed.
+const assertExactHistoricalBytes = (bytes, expectedSha256, label) => {
+  assert.equal(fileSha256(bytes), expectedSha256, `${label} bytes are the recorded original`);
+};
+
+// Fail-closed check on the provenance binding: the record must bind the tested source
+// commit/tree to the delivered release commit/tree/manifest, re-bind the exact original
+// digests of the two evidence artifacts, and keep the scope fence (loopback-only,
+// major-16) intact.
+const assertLiveProvenanceBinding = (record) => {
+  assert.equal(record.schemaVersion, LIVE_PROVENANCE_SCHEMA_VERSION, 'provenance schema version');
+  assert.equal(record.recordKind, 'PROVENANCE_VERIFICATION', 'record kind');
+  const tested = record.historicalObservation.testedSource;
+  assert.equal(tested.commit, TESTED_SOURCE_COMMIT, 'tested source commit binding');
+  assert.equal(tested.tree, TESTED_SOURCE_TREE, 'tested source tree binding');
+  const { treeIdentity, changedFilesSinceTestedHead } = record.testedSourceVersusDeliveredRelease;
+  assert.equal(treeIdentity, 'IDENTICAL', 'tested source and delivered release trees are identical');
+  assert.deepEqual(changedFilesSinceTestedHead, [], 'no file changed since the tested head');
+  const released = record.deliveredRelease;
+  assert.equal(released.commit, DELIVERED_RELEASE_COMMIT, 'delivered release commit binding');
+  assert.equal(released.tree, TESTED_SOURCE_TREE, 'delivered release tree binding');
+  assert.equal(released.manifestSha256, RELEASE_MANIFEST_SHA256, 'release manifest binding');
+  const scope = record.historicalObservation.deployment;
+  assert.equal(scope.transport, 'loopback-only', 'scope fence: loopback-only transport');
+  assert.equal(scope.majorVersion, '16', 'scope fence: major-16 engine');
+  const byPath = Object.fromEntries(record.evidence.artifacts.map((artifact) => [artifact.path, artifact]));
+  assert.equal(byPath[liveMatrixJsonRel]?.sha256, LIVE_MATRIX_JSON_SHA256, 'matrix evidence digest binding');
+  assert.equal(byPath[liveMatrixReadmeRel]?.sha256, LIVE_MATRIX_README_SHA256, 'readback digest binding');
+};
+
+test('the recovered live-matrix evidence is the exact historical bytes at the recorded originals', async () => {
+  // Missing referenced evidence fails: both artifacts the provenance family references
+  // must exist on disk, and every byte must be the recorded original.
+  const jsonBytes = await readFile(path.join(root, liveMatrixJsonRel));
+  const readmeBytes = await readFile(path.join(root, liveMatrixReadmeRel));
+  assertExactHistoricalBytes(jsonBytes, LIVE_MATRIX_JSON_SHA256, 'live-matrix JSON');
+  assertExactHistoricalBytes(readmeBytes, LIVE_MATRIX_README_SHA256, 'live-matrix readback');
+  // A substituted historical byte set fails: the recorded originals are the binding.
+  throws(() => assertExactHistoricalBytes(Buffer.from(JSON.stringify({ substituted: true })), LIVE_MATRIX_JSON_SHA256, 'substituted JSON'));
+  throws(() => assertExactHistoricalBytes(Buffer.from('# substituted readback\n'), LIVE_MATRIX_README_SHA256, 'substituted readback'));
+  // The machine evidence is the live-matrix schema carrying the verified live results.
+  const live = JSON.parse(jsonBytes.toString('utf8'));
+  assert.equal(live.schemaVersion, LIVE_EVIDENCE_SCHEMA_VERSION);
+  assert.equal(live.issue, 'PG-KS-02');
+  assert.equal(live.ac01.state, 'VERIFIED');
+  assert.equal(live.ac02.state, 'VERIFIED');
+  assert.equal(live.ac02.mode, 'RUNTIME');
+  assert.equal(live.ac02.dispatch, 'REGULAR');
+  assert.equal(live.ac02.engine, 'postgresql');
+  assert.equal(live.ac02.runtimeValidation, 'RUNTIME_VALIDATED');
+  assert.equal(live.ac03.state, 'VERIFIED');
+  assert.equal(live.ac03.wrongSecret.sqlState, '28P01');
+  assert.equal(live.ac03.deniedMetadata.regularPath.executorDispatch, '42501');
+  assert.equal(live.ac03.deniedMetadata.regularPath.sessionProofGate, '42501');
+  assert.equal(live.ac03.timeout.sqlState, '57014');
+  assert.equal(live.ac03.cancel.sqlState, '57014');
+  assert.equal(live.cleanRoom.verifiedAbsent, true);
+  assert.equal(live.privacy.secretsDisclosed, false);
+  assert.equal(live.privacy.secretCanaryMatches, 0);
+  assert.equal(live.privacy.dsnMatches, 0);
+  assert.equal(live.scope.container, null);
+});
+
+test('the live provenance record binds the tested source, the delivered release, and the exact originals', async () => {
+  const record = JSON.parse(await readFile(path.join(root, liveProvenanceRel), 'utf8'));
+  assertLiveProvenanceBinding(record);
+  // The record is self-digesting: provenanceSha256 is the identity hash of the body
+  // without the digest field, per the repository digest convention.
+  const { provenanceSha256, ...body } = record;
+  assert.match(provenanceSha256, HEX);
+  assert.equal(identitySha256(body), provenanceSha256, 'provenanceSha256 is the identity hash of the body');
+  // Cross-file binding: the recorded release manifest is the actual package.json, the
+  // live evidence release/product fields match the real release manifest, descriptor,
+  // and v2 query pack, so a wrong release or a substituted evidence set cannot pass.
+  const pkgBytes = await readFile(packagePath);
+  assert.equal(JSON.parse(pkgBytes.toString('utf8')).version, record.deliveredRelease.version);
+  assert.equal(fileSha256(pkgBytes), RELEASE_MANIFEST_SHA256, 'package.json is the release manifest');
+  const live = JSON.parse((await readFile(path.join(root, liveMatrixJsonRel))).toString('utf8'));
+  assert.equal(live.product.releaseVersion, record.deliveredRelease.version);
+  assert.equal(live.product.manifestSha256, fileSha256(pkgBytes));
+  assert.equal(live.product.queryPack.manifestSha256, fileSha256(await readFile(path.join(root, v2QueryPackManifestRel))), 'v2 query pack binding');
+  assert.equal(live.product.queryPack.manifestSha256, V2_QUERY_PACK_MANIFEST_SHA256, 'recorded v2 pack original');
+  const descriptor = selectProductDescriptor('postgresql');
+  assert.equal(live.product.productDescriptor.executor, descriptor.components.executor);
+  assert.equal(live.product.productDescriptor.capability, descriptor.components.capability);
+  assert.equal(live.product.productDescriptor.evidence, descriptor.components.evidence);
+  assert.equal(live.product.productDescriptor.secretEnv, descriptor.secret.env);
+  assert.equal(live.product.productDescriptor.secretFileVariable, descriptor.secret.fileVariable);
+  // Every artifact the provenance record references exists on disk with its recorded
+  // original bytes (missing referenced evidence fails here).
+  for (const artifact of record.evidence.artifacts) {
+    assertExactHistoricalBytes(await readFile(path.join(root, artifact.path)), artifact.sha256, artifact.path);
+  }
+  // The frozen certificate is untouched and still BLOCKED_EXTERNAL in its own bytes.
+  const frozen = JSON.parse(await readFile(committedEvidencePath, 'utf8'));
+  assert.equal(frozen.realDisprovablePostgresql.state, 'BLOCKED_EXTERNAL');
+  assert.equal(record.frozenCertificate.state, 'UNCHANGED');
+  assert.equal(record.newRunLabeling.newLiveRunPerformed, false);
+});
+
+test('the live provenance record rejects wrong tested-source or release bindings and substituted evidence', async () => {
+  const record = JSON.parse(await readFile(path.join(root, liveProvenanceRel), 'utf8'));
+  const mutated = (fn) => {
+    const copy = JSON.parse(JSON.stringify(record));
+    fn(copy);
+    return copy;
+  };
+  // Wrong tested-source identity.
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.historicalObservation.testedSource.commit = '0'.repeat(40); })));
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.historicalObservation.testedSource.tree = 'f'.repeat(40); })));
+  // Wrong delivered-release identity or manifest.
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.deliveredRelease.commit = '0'.repeat(40); })));
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.deliveredRelease.tree = '1'.repeat(40); })));
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.deliveredRelease.manifestSha256 = '0'.repeat(64); })));
+  // A claim that anything changed since the tested head breaks the exact binding.
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.testedSourceVersusDeliveredRelease.treeIdentity = 'SUPERSET'; })));
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.testedSourceVersusDeliveredRelease.changedFilesSinceTestedHead.push('package.json'); })));
+  // Substituted evidence digests fail the re-binding.
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.evidence.artifacts[0].sha256 = '0'.repeat(64); })));
+  throws(() => assertLiveProvenanceBinding(mutated((r) => { r.evidence.artifacts[1].sha256 = '0'.repeat(64); })));
+});
+
+test('the recovered live evidence and the provenance record preserve the scope fence and over-claim nothing', async () => {
+  const live = JSON.parse((await readFile(path.join(root, liveMatrixJsonRel))).toString('utf8'));
+  // Scope fence: the exact parent-isolated loopback-only deployment, major 16, no
+  // multi-database container.
+  assert.equal(live.deployment.transport, 'loopback-only');
+  assert.equal(live.deployment.majorVersion, '16');
+  assert.equal(live.deployment.host, '127.0.0.1');
+  assert.equal(live.deployment.deploymentClass, 'parent-isolated-loopback-clean-room');
+  assert.equal(live.scope.container, null);
+  const liveJoined = live.nonClaims.join('\n').toLowerCase();
+  for (const phrase of ['production', 'ha', 'scale', 'performance', 'all-postgresql-versions', 'c2 is out of scope']) {
+    assert.ok(liveJoined.includes(phrase), `live non-claims must cover: ${phrase}`);
+  }
+  const record = JSON.parse(await readFile(path.join(root, liveProvenanceRel), 'utf8'));
+  assert.equal(record.historicalObservation.deployment.transport, 'loopback-only');
+  assert.equal(record.historicalObservation.deployment.majorVersion, '16');
+  assert.equal(record.historicalObservation.deployment.host, '127.0.0.1');
+  assert.equal(record.newRunLabeling.newLiveRunPerformed, false);
+  const recordJoined = record.nonClaims.join('\n').toLowerCase();
+  for (const phrase of ['production', 'ha', 'scale', 'performance', 'all-postgresql-versions', 'c2 is out of scope']) {
+    assert.ok(recordJoined.includes(phrase), `provenance non-claims must cover: ${phrase}`);
+  }
+  // An unsupported scope claim fails the binding: widening the transport or the engine
+  // major version is not the tested scope.
+  const widened = JSON.parse(JSON.stringify(record));
+  widened.historicalObservation.deployment.transport = 'public-internet';
+  throws(() => assertLiveProvenanceBinding(widened));
+  const widenedEngine = JSON.parse(JSON.stringify(record));
+  widenedEngine.historicalObservation.deployment.majorVersion = '17';
+  throws(() => assertLiveProvenanceBinding(widenedEngine));
+});

@@ -209,3 +209,27 @@ against its public source fixtures (baseline sha-pinned to
 source fixtures never enter the consumer. The source adapter, readback renderer, focused
 test, and the two local-synthetic fixture packs are ordinary repository-authored hashes
 under `files`, not derived files.
+
+JoFe2/KaleidoSphere#228 (KS149 public-evidence delivery correction) publishes,
+byte-for-byte, the two parent-executed live-matrix evidence artifacts of the
+2026-09-11 Qwen live run against the tested head
+`f60ba0f227c87bac01a0b57edf27edfca862fdc5`, which were retained untracked in the
+test VM while release 0.26.0 and the issue closure moved ahead. The machine
+evidence (`verification/postgresql/postgresql-c1-live-matrix-v1.json`, recorded
+original `90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab`) and
+the human readback
+(`docs/evidence/postgresql-c1-live-matrix/README.md`, recorded original
+`9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f`) were recovered
+byte-for-byte from the retained clone and are never rewritten, relabelled, or
+re-minted. A separate provenance/verification record
+(`verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json`) binds the
+original tested inputs and the evidence to the delivered Main commit
+`648e0dcc062df8a5bcd149d23c73389370e0d298` (release 0.26.0, manifest
+`5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310`) and verifies
+that the tested head and the delivered Main share the identical git tree
+`28b006532f2f41fb37f2382c70087362e7fcf289` — nothing changed since the tested
+head. No new live run is claimed, and the frozen source-local C1 certificate
+remains byte-identical. The evidence artifacts, the provenance record, the
+extended gate tests, the re-registered legacy-identity inventory, and the
+content-addressing updater are ordinary repository-authored hashes under
+`files`, not derived files.

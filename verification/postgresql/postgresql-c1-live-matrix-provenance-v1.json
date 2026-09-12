@@ -1,0 +1,122 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-c1-live-matrix-provenance/v1",
+  "issue": "PG-KS-02",
+  "correctionIssue": "JoFe2/KaleidoSphere#228",
+  "recordKind": "PROVENANCE_VERIFICATION",
+  "historicalObservation": {
+    "kind": "PARENT_EXECUTED_LIVE_RUN",
+    "observedAtUtc": "2026-09-11T18:13:09Z",
+    "observedAtBasis": "second-resolution mtime of both artifacts in the retained clone",
+    "observedBy": "parent live operator on the Qwen dedicated test VM (qwen-test)",
+    "testedSource": {
+      "commit": "f60ba0f227c87bac01a0b57edf27edfca862fdc5",
+      "parentCommit": "2b3025a19da387e8e1cda86bfe7ef0e8bf753bc1",
+      "commitDate": "2026-09-11T14:29:49+00:00",
+      "author": "Fresh Qwen <fresh-qwen@localhost>",
+      "commitSubject": "Record merge-tree re-run and at-HEAD CI gate in WORK_RESULT (KS149 / PG-KS-02)",
+      "tree": "28b006532f2f41fb37f2382c70087362e7fcf289",
+      "retainedClone": "/root/ks149-git (qwen-test VM clone; HEAD at the tested head; tracked tree clean; only the two live evidence paths untracked)"
+    },
+    "artifactMtimesUtc": {
+      "verification/postgresql/postgresql-c1-live-matrix-v1.json": "2026-09-11T18:13:09Z",
+      "docs/evidence/postgresql-c1-live-matrix/README.md": "2026-09-11T18:13:09Z"
+    },
+    "deployment": {
+      "deploymentClass": "parent-isolated-loopback-clean-room",
+      "host": "127.0.0.1",
+      "port": 15432,
+      "transport": "loopback-only",
+      "ssl": false,
+      "authMechanism": "scram-sha-256",
+      "engineVersion": "16.15 (Debian 16.15-1.pgdg13+2)",
+      "majorVersion": "16"
+    }
+  },
+  "evidence": {
+    "recovery": {
+      "method": "byte-for-byte tar-streamed copy from the retained clone at the tested head; the historical bytes were not rewritten, relabelled, or re-minted",
+      "recordedOriginalsVerified": true,
+      "transports": {
+        "historyBundleSha256": "426385843a8c9ebaa7e5efd2f1351a7f9bbc74efa633df74b7835be56d2ead55",
+        "historyBundleRef": "complete-history bundle verified with refs/heads/main at the tested head",
+        "evidenceTarSha256": "26fece297a702245fc92dd290d338b8f8a4fcd5fe64caf8b8a4c60c1dccec378"
+      }
+    },
+    "artifacts": [
+      {
+        "path": "verification/postgresql/postgresql-c1-live-matrix-v1.json",
+        "kind": "machine-evidence",
+        "schemaVersion": "kaleidosphere.db/postgresql-c1-live-matrix/v1",
+        "sha256": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab"
+      },
+      {
+        "path": "docs/evidence/postgresql-c1-live-matrix/README.md",
+        "kind": "human-readback",
+        "sha256": "9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f"
+      }
+    ]
+  },
+  "deliveredRelease": {
+    "commit": "648e0dcc062df8a5bcd149d23c73389370e0d298",
+    "commitSubject": "PostgreSQL C1 regular-path v2 query-pack selector and live-matrix runner",
+    "parentCommit": "a4f874ac06894bc7a90a4d7b810c13b81d1a3632",
+    "tree": "28b006532f2f41fb37f2382c70087362e7fcf289",
+    "version": "0.26.0",
+    "manifestPath": "package.json",
+    "manifestSha256": "5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310"
+  },
+  "testedSourceVersusDeliveredRelease": {
+    "treeIdentity": "IDENTICAL",
+    "verifiedBy": "git tree objects: f60ba0f2^{tree} == 648e0dcc^{tree} == 28b006532f2f41fb37f2382c70087362e7fcf289",
+    "changedFilesSinceTestedHead": [],
+    "note": "The tested head is a retained VM-local commit (parent 2b3025a19da387e8e1cda86bfe7ef0e8bf753bc1, the last #149 correction); the delivered Main carries the byte-identical tree as the squash of the #149 delivery. No product, config, fixture, profile, test, or certificate byte changed between the tested source and the delivered release. The two live evidence artifacts are untracked at both heads and are published for the first time by this correction."
+  },
+  "testedInputs": {
+    "productDescriptor": {
+      "engine": "postgresql",
+      "version": "v1",
+      "executor": "postgresql.run-queries",
+      "capability": "postgresql.read-only-session",
+      "evidence": "preflight.coverage-ledger",
+      "secretEnv": "CM_POSTGRESQL_PASSWORD",
+      "secretFileVariable": "POSTGRESQL_PASSWORD_FILE"
+    },
+    "c1Profile": {
+      "path": "contracts/connectors/postgresql/c1-profile-v1.json",
+      "sha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1"
+    },
+    "sourceLocalBindings": {
+      "analyzeProfileSha256": "bda7372a6f04d9d588fb07443bf5aaf75495bbabdd37f36d5c27b6eaedd7f0c4",
+      "v1QueryPackManifestSha256": "41c91552bc9e830113ba7f029cb333a4b85597afa392027b8c481c601bd3796e",
+      "syntheticFixtureSha256": "5df202bae748aa1742e1e7cac691eeb1a1581d6c229e05b76292a206b6be1a1b"
+    },
+    "liveRunQueryPack": {
+      "path": "services/bi-control/query-packs/db-analyzer/v2/postgresql/manifest.json",
+      "version": "v2",
+      "packVersion": "2.0.0",
+      "manifestSha256": "38a45f57b7dcf7fbc6efea52be635f38ae8407458641d66684395ac313097516"
+    }
+  },
+  "frozenCertificate": {
+    "path": "verification/postgresql/postgresql-c1-evidence-v1.json",
+    "sha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "certificateSha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "state": "UNCHANGED",
+    "note": "The frozen source-local C1 certificate is not modified by this correction and still records realDisprovablePostgresql as BLOCKED_EXTERNAL in its own bytes. The recovered live-matrix artifacts are separate parent-executed evidence against the exact tested inputs; nothing here relabels the certificate."
+  },
+  "rechecks": {
+    "policy": "Re-run only checks whose relevant inputs changed. The tested source tree and the delivered release tree are byte-identical (a single git tree object), so no product input changed and no historical evidence was re-minted. The newly tracked bytes are the two recovered evidence artifacts, this record, and the gate tests and updater that bind them; the canonical source-local suites re-run at the delivered head as the delivery gate.",
+    "canonicalSuitesRerun": true
+  },
+  "newRunLabeling": {
+    "newLiveRunPerformed": false,
+    "note": "This correction performs no new live run. The two artifacts are the preserved historical observation of the 2026-09-11 parent live run, recovered byte-for-byte and never re-minted. Any future live evidence must be labelled as a new real run."
+  },
+  "nonClaims": [
+    "No general PostgreSQL, production, customer-data, HA, scale, performance, extension, or all-PostgreSQL-versions/auth-modes claim; C2 is out of scope.",
+    "The live matrix is bound only to the exact parent-isolated loopback-only deployment and the observed engine version 16.15 (Debian 16.15-1.pgdg13+2) named in the recovered evidence.",
+    "This record is a provenance/verification binding of the preserved historical observation to the delivered release; it changes no frozen profile, certificate, or historical evidence byte.",
+    "Public anonymous readback of the published bytes through the release transport is a controller-owned gate and is not claimed by this record."
+  ],
+  "provenanceSha256": "05014aaf1ec4100aa9b770fc55ab1ca1ed80ce5ca4d1d4ba5f3b9bc5f18da406"
+}
