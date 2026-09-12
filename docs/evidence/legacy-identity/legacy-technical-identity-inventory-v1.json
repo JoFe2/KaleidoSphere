@@ -343,6 +343,21 @@
       "path": "verification/postgresql/postgresql-c1-evidence-v1.json"
     },
     {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "verification/postgresql/postgresql-c1-live-matrix-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "verification/postgresql/postgresql-c1-live-matrix-v1.json"
+    },
+    {
       "identityClass": "packageContainer",
       "value": "chimpmaera-bi",
       "path": "package.json"
@@ -506,6 +521,11 @@
       "identityClass": "packageContainer",
       "value": "chimpmaera-bi-postgresql",
       "path": "services/bi-control/src/runtime-config.mjs"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-postgresql-895e61223e5292f4",
+      "path": "verification/postgresql/postgresql-c1-live-matrix-v1.json"
     },
     {
       "identityClass": "packageContainer",

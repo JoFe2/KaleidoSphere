@@ -101,6 +101,28 @@ const predecessorEvidenceSha256 = Object.freeze({
     '9a962e48ea2d4252d208a03900a92bb4e0d337b9ae30fc2819b7dcce4ba445e7',
 });
 
+// The KS149 public-evidence delivery correction (KaleidoSphere issue #228): the two
+// recovered parent-executed live-matrix evidence artifacts, the provenance record that
+// binds them to the tested source and the delivered release, and the updater that
+// content-addresses them. Bound in the content-addressed source map so missing or
+// substituted bytes fail this regression.
+const postgresqlC1LiveMatrixFamily = Object.freeze({
+  liveMatrixEvidence: 'verification/postgresql/postgresql-c1-live-matrix-v1.json',
+  liveMatrixReadback: 'docs/evidence/postgresql-c1-live-matrix/README.md',
+  liveMatrixProvenance: 'verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json',
+  updater: 'scripts/update-ks228-ks149-live-matrix-source-map.mjs',
+});
+
+// The recorded originals of the Qwen live run (issue #228). The two historical
+// artifacts are pinned to these digests: a re-mint or a substitution changes the bytes
+// and fails this regression.
+const liveMatrixOriginalSha256 = Object.freeze({
+  'verification/postgresql/postgresql-c1-live-matrix-v1.json':
+    '90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab',
+  'docs/evidence/postgresql-c1-live-matrix/README.md':
+    '9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f',
+});
+
 const integrationAuditPath =
   'closure-audits/PORTFOLIO-KS147-ROOT-QS/exact-head-local-gate-receipt.json';
 const parentIntegrationAuditPath =
@@ -266,4 +288,25 @@ test('the PostgreSQL and K4c source-local CI families are content-addressed and 
     k4cCodexCleanBoundarySuccessor,
     'successor must be the codepoint-sorted terminal evidence classifier suite',
   );
+});
+
+test('the KS149 live-matrix evidence family is content-addressed and the historical originals stay exact', async () => {
+  const sourceMap = JSON.parse(await readFile('SOURCE-MAP.json', 'utf8'));
+  for (const file of Object.values(postgresqlC1LiveMatrixFamily)) {
+    assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
+    assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
+  }
+  // The two historical artifacts are pinned to the recorded originals: a re-mint or a
+  // substitution changes the bytes and fails here, and a missing referenced artifact is
+  // a missing or wrong entry in the map.
+  for (const [file, expected] of Object.entries(liveMatrixOriginalSha256)) {
+    assert.equal(sourceMap.files[file], expected, `${file} is bound to the recorded original`);
+    assert.equal(sha256(await readFile(file)), expected, `${file} bytes are the recorded original`);
+  }
+  // The frozen source-local C1 certificate stays untouched by this correction: it is
+  // content-addressed unchanged and still carries its own certificate digest and
+  // BLOCKED_EXTERNAL real-PostgreSQL state.
+  const frozen = JSON.parse(await readFile(postgresqlC1Family.evidence, 'utf8'));
+  assert.equal(frozen.realDisprovablePostgresql.state, 'BLOCKED_EXTERNAL');
+  assert.equal(frozen.certificateSha256, '31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868');
 });

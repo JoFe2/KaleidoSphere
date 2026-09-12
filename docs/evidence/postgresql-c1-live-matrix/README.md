@@ -1,0 +1,11 @@
+# PostgreSQL C1 live matrix readback (PG-KS-02)
+
+Executed by the parent live operator against the isolated loopback PostgreSQL 16.15 (Debian 16.15-1.pgdg13+2) deployment. Disposable clean room: databases `ks149_c1` and `ks149_c1_denied`, least-privilege roles `ks149_scan` / `ks149_denied`; all dropped and verified absent after the run.
+
+AC01: role readback matched the declared least-privilege read-only principal (admin capabilities false, read-only session settings on); the deployment's authentication method was verified as SCRAM-SHA-256 (stored verifier prefix `SCRAM-SHA-256$` and first matching hba rule `scram-sha-256`); the real write probe failed closed (`25006` under the read-only session, `42501` on the bare connection).
+
+AC02: the exact-profile v2 regular Analyze-to-Readback path through the control HTTP surface (POST /v1/analyze with the bearer token, then POST /v1/readback; credential resolved through the file-secret route) returned identity, 1 schema, 2 relations, 8 columns, 3 catalog constraints (2 primary keys, 1 foreign key), 0 view dependencies and 5 bounded index rows (2 primary, 3 unique, 1 partial with predicate content omitted by the declared blind spot). After the credential rotation (file secret rewritten) the same path was byte-identical at SHA-256 `bcada2440a953117b6500f9ab8c4beba1e411013f3638d822d9d9345a2a8a4e6`; the product receipt artifact was re-read from disk, the readback projection and the catalog snapshot agreed with the receipt, and the output pipeline revalidated the same source snapshot digest.
+
+AC03: wrong secret `28P01`; denied metadata driven through the product's own live gates — the session-proof capability gate and the regular executor dispatch both failed closed with the truthful `42501`, never coerced to an empty success (INVISIBLE / NOT_CLAIMED); timeout `57014` at 1010 ms and cancellation `57014` at 114 ms, both with post-probe health and zero active followers; stale descriptor, scope substitution and cross-engine secret substitution returned the truthful codes (DB_ANALYZE_DESCRIPTOR_STALE, DB_ANALYZE_SCOPE_OVERRIDE_DENIED, DB_ANALYZE_SECRET_BINDING_MISMATCH) and no dispatch was broadened.
+
+No credentials, connection strings, raw row values or raw index definitions are reproduced here.
