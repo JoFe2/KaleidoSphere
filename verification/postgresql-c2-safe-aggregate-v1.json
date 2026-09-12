@@ -1,0 +1,116 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-c2-evidence/v1",
+  "issue": "PG-KS-03",
+  "publicIssue": "JoFe2/KaleidoSphere#150",
+  "profileId": "kaleidosphere-postgresql-c2-v1",
+  "boundTo": {
+    "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "c1FrozenState": "BLOCKED_EXTERNAL",
+    "c1DeclaresC2NonCapability": true
+  },
+  "productDescriptor": {
+    "engine": "postgresql",
+    "version": "v1",
+    "executor": "postgresql.run-queries",
+    "capability": "postgresql.read-only-session",
+    "evidence": "preflight.coverage-ledger",
+    "secretEnv": "CM_POSTGRESQL_PASSWORD",
+    "secretFileVariable": "POSTGRESQL_PASSWORD_FILE"
+  },
+  "contract": {
+    "path": "contracts/connectors/postgresql/c2-safe-aggregate-v1.json",
+    "schemaVersion": "kaleidosphere.db/postgresql-c2-safe-aggregate/v1",
+    "closedSet": true,
+    "supportedOperation": "bi-ks-01-net-revenue/v1",
+    "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee",
+    "manifestRuntimeParity": true
+  },
+  "bindings": {
+    "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+    "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+    "holdoutSerializerReproducesAdmittedHoldout": true
+  },
+  "productPath": {
+    "mode": "SYNTHETIC",
+    "dispatch": "REGULAR",
+    "engine": "postgresql",
+    "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+    "executorBinding": "postgresql.run-queries",
+    "capability": "postgresql.read-only-session",
+    "productSecretBindingEnforced": true
+  },
+  "typedPlan": {
+    "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
+    "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee",
+    "bounds": {
+      "inputRowBudget": 17,
+      "inputByteBudget": 4096,
+      "outputRowBudget": 1,
+      "timeoutMs": 100
+    },
+    "authority": {
+      "arbitrarySql": false,
+      "sourceWrites": false,
+      "mutationAuthority": false,
+      "secondMetric": false,
+      "groupingWidening": false,
+      "realSourceClaim": false
+    }
+  },
+  "execution": {
+    "state": "COMPLETE",
+    "reasonCode": null,
+    "readOnlyEvidence": "VERIFIED",
+    "bounded": true,
+    "timeoutAware": true,
+    "cancelAware": true,
+    "rowsRead": 17,
+    "oracleEquality": "EXACT",
+    "resultSha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc",
+    "outputSha256": "6e92091e32b348c3db91ae18fe43e485c653f696a21938c0a77379e55ada6ae2",
+    "receiptSha256": "8052a8c7b1d86fbb5fdbbea657d63e4c08cf85f02d4f955e67e4f0303fdaec1c"
+  },
+  "failClosed": {
+    "badSecret": "DB_ANALYZE_CREDENTIAL_MISSING",
+    "scopeSubstitution": "BUSINESS_BI_OPERATION_DENIED",
+    "crossEngineSecretSubstitution": "DB_ANALYZE_SECRET_BINDING_MISMATCH",
+    "staleDescriptor": "DB_ANALYZE_DESCRIPTOR_STALE",
+    "rawRowSource": "BUSINESS_BI_SOURCE_SCOPE_DENIED",
+    "mutationStatement": "BUSINESS_BI_READ_ONLY_EVIDENCE_DENIED",
+    "readOnlySessionViolation": "DB_ANALYZE_PRINCIPAL_NOT_READ_ONLY"
+  },
+  "c1Lifecycle": {
+    "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "c1LiveMatrixSha256": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
+    "c1LiveMatrixProvenanceRawSha256": "40b6d1ae6a249b51d0deb964c37ecbf0fb1e8b16a1703a03ab416b699060c529",
+    "c1LiveMatrixProvenanceIdentitySha256": "05014aaf1ec4100aa9b770fc55ab1ca1ed80ce5ca4d1d4ba5f3b9bc5f18da406",
+    "c1LiveMatrixReadbackSha256": "9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f",
+    "c1FrozenBytesUnchanged": true
+  },
+  "realDisprovablePostgresql": {
+    "state": "BLOCKED_EXTERNAL",
+    "reason": "NO_REAL_DISPOSABLE_POSTGRESQL",
+    "ac01VerifiedLeastPrivilegePrincipal": "BLOCKED_EXTERNAL",
+    "ac02RealSourcePositiveRun": "BLOCKED_EXTERNAL",
+    "ac03RealNegativeMatrix": "BLOCKED_EXTERNAL"
+  },
+  "release": {
+    "version": "0.26.0"
+  },
+  "nonClaims": [
+    "No arbitrary SQL: this surface compiles one typed operation and exposes no SQL input.",
+    "No second metric: only the admitted versioned synthetic net-revenue operation is in scope.",
+    "No real-source or production claim: execution is bound to the admitted synthetic non-customer holdout bytes.",
+    "No Superset, chart, dashboard, publish, release, or mutation authority is provided.",
+    "C2 is a separately-versioned capability layered on the certified C1 profile; it is not a C1 scope widening and C1 structural certification does not imply C2 safe-aggregate capability.",
+    "The source-local C2 certificate records the real-disposable-PostgreSQL clean-room as BLOCKED_EXTERNAL; the real positive/negative clean-room (loopback-only, SCRAM, least-privilege, zero-residue) is separate parent-executed evidence.",
+    "No arbitrary SQL, no second metric, no grouping widening, and no production/customer/HA/scale/all-versions claim; synthetic_bi.orders is synthetic non-customer data only.",
+    "C2 issuance/revocation never modifies or rewrites the frozen C1 bytes (profile 3faea403..., certificate 859970ca..., live matrix 90866c86..., provenance 05014aaf...): the C1 lifecycle regression pins all of them byte-identical."
+  ],
+  "certificateSha256": "959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496"
+}

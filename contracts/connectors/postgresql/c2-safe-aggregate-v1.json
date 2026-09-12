@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-c2-safe-aggregate/v1",
+  "engine": "postgresql",
+  "capability": "postgresql.read-only-session",
+  "executor": "postgresql.run-queries",
+  "issue": "PG-KS-03",
+  "publicIssue": "JoFe2/KaleidoSphere#150",
+  "closedSet": true,
+  "boundTo": {
+    "c1Profile": {
+      "path": "contracts/connectors/postgresql/c1-profile-v1.json",
+      "sha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1"
+    },
+    "frozenC1Certificate": {
+      "path": "verification/postgresql/postgresql-c1-evidence-v1.json",
+      "sha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+      "certificateSha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868"
+    }
+  },
+  "bindings": {
+    "metricContract": {
+      "path": "contracts/business-bi/v1/net-revenue.metric.json",
+      "sha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
+    },
+    "holdout": {
+      "path": "tests/fixtures/business-bi/net-revenue-holdout-v1.json",
+      "sha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d"
+    },
+    "oracle": {
+      "path": "tests/fixtures/business-bi/net-revenue-oracle-v1.json",
+      "sha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164"
+    }
+  },
+  "operations": {
+    "bi-ks-01-net-revenue/v1": {
+      "status": "SUPPORTED",
+      "operation": {
+        "schemaVersion": "kaleidosphere.business-bi/net-revenue-operation-request/v1",
+        "operationId": "bi-ks-01-net-revenue/v1",
+        "metric": {
+          "id": "bi-ks-01-net-revenue",
+          "schemaVersion": "kaleidosphere.business-bi/net-revenue-metric/v1"
+        },
+        "source": {
+          "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+          "relation": "synthetic_bi.orders",
+          "relationKind": "SYNTHETIC_TABLE",
+          "dateRole": {
+            "role": "ORDER_DATE",
+            "column": "order_date"
+          },
+          "currency": {
+            "code": "EUR",
+            "amountColumn": "amount_minor_units",
+            "minorUnitsPerMajorUnit": 100
+          },
+          "periods": [
+            {
+              "key": "current",
+              "label": "2026-07",
+              "start": "2026-07-01",
+              "end": "2026-07-31",
+              "boundary": "inclusive-both-ends"
+            },
+            {
+              "key": "comparison",
+              "label": "2026-06",
+              "start": "2026-06-01",
+              "end": "2026-06-30",
+              "boundary": "inclusive-both-ends"
+            }
+          ]
+        },
+        "aggregate": {
+          "kind": "NET_REVENUE",
+          "recordKindColumn": "record_kind",
+          "groupingColumns": [],
+          "inputRowBudget": 17,
+          "inputByteBudget": 4096,
+          "outputRowBudget": 1,
+          "outputColumns": [
+            "current_net_minor_units",
+            "current_sale_minor_units",
+            "current_credit_minor_units",
+            "current_cancel_count",
+            "current_unknown_count",
+            "current_unknown_quantified_amount_minor_units",
+            "current_unknown_unquantified_count",
+            "current_row_count",
+            "comparison_net_minor_units",
+            "comparison_sale_minor_units",
+            "comparison_credit_minor_units",
+            "comparison_cancel_count",
+            "comparison_unknown_count",
+            "comparison_unknown_quantified_amount_minor_units",
+            "comparison_unknown_unquantified_count",
+            "comparison_row_count",
+            "delta_minor_units",
+            "unknown_count",
+            "unknown_quantified_amount_minor_units",
+            "unknown_unquantified_count",
+            "unknown_unassigned_count",
+            "unknown_unassigned_quantified_amount_minor_units",
+            "unknown_unassigned_unquantified_count",
+            "excluded_out_of_scope_count"
+          ]
+        },
+        "controls": {
+          "accessMode": "READ_ONLY",
+          "timeoutMs": 100,
+          "timeoutAware": true,
+          "cancelAware": true,
+          "mutationAuthority": false
+        }
+      }
+    }
+  },
+  "unsupportedOperations": [
+    { "id": "bi-ks-01-gross-revenue/v1", "status": "UNSUPPORTED" },
+    { "id": "bi-ks-01-order-count/v1", "status": "UNSUPPORTED" },
+    { "id": "bi-ks-01-average-order-value/v1", "status": "UNSUPPORTED" },
+    { "id": "bi-ks-01-cancellation-rate/v1", "status": "UNSUPPORTED" },
+    { "id": "bi-ks-01-row-count/v1", "status": "UNSUPPORTED" },
+    { "id": "bi-ks-01-free-sql/v1", "status": "UNSUPPORTED" }
+  ],
+  "nonClaims": [
+    "C2 is a separately-versioned capability layered on the certified C1 profile; C1's frozen bytes (profile 3faea403..., certificate 859970ca...) are not modified and C1's nonCapabilities include c2.",
+    "No arbitrary SQL: the C2 surface compiles exactly one typed operation and exposes no SQL input.",
+    "No second metric: only the admitted versioned synthetic net-revenue operation bi-ks-01-net-revenue/v1 is supported; every other method is UNSUPPORTED (closed set).",
+    "No inference that C1 structural certification implies C2 safe-aggregate capability; C2 is proven by its own clean-room.",
+    "No production, customer-data, HA, scale, performance, extension, or all-PostgreSQL-versions/auth-modes claim; synthetic_bi.orders is synthetic non-customer data only.",
+    "No Superset, chart, dashboard, publish, release, or mutation authority is provided."
+  ]
+}
