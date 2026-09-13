@@ -1,5 +1,90 @@
 # WORK_RESULT — KS150 / PG-KS-03: Deliver the missing PostgreSQL C2 safe-aggregate bytes
 
+## NATIVE POSTMERGE FIX-FORWARD (retained Main failure `bd39872a645605d5`)
+
+This section is the record of the bounded postmerge fix-forward for the retained Main test failure.
+It is additive: the original C2 delivery record (below) and every historical identity it carries are
+preserved byte-for-byte in git history and are not rewritten.
+
+### Diagnosis of the exact retained failed log
+
+- Retained failure: `JoFe2-KaleidoSphere-150-postmerge-bd39872a645605d5`, stage `MAIN_TEST`,
+  observed Main `33beed8f387216a73621e1ff1cb0354612fad0e1`, merge PR #231, reviewed head
+  `4efa0f141590cf2e53c1e2a4771c15af79fbccde`, merge tree `fc545b02461fab5b4e251268755a4f7bdbf136ca`.
+- Retained log (untrusted evidence, `/postmerge-evidence/7068a763...`): exactly one failing test —
+  `tests/postgresql-c2-safe-aggregate.test.mjs:530` —
+  `Error: Command failed: git merge-base --is-ancestor 28b50870d2ab360ebce76d524ab2636254382c22 HEAD`.
+  The other 1240 tests passed; only this historical-ancestry assertion failed.
+- Root cause (independently reproduced in this fresh clone): `28b50870...` is the **PR #231 head**
+  commit. The repository permits squash merges only, so PR #231 was integrated as the single squash
+  commit `33beed8` on Main. The tested head commit object was therefore discarded and does not exist
+  in the clone (`git cat-file -t 28b50870...` -> `fatal: could not get object info`). The test's
+  `--is-ancestor` assertion is **unsatisfiable under the repository's own squash-only merge policy**.
+  The `fetch-depth: 0` CI "fix" in the same commit could not help: full-history checkout still cannot
+  resolve an object GitHub never retained.
+- This is a genuine **provenance-contract defect**, not a product defect: all C2 product bytes and
+  all other C2/C1 AC gates were already green. The correct correction is to replace the unverifiable
+  ancestor claim with independently checkable equivalent provenance, and to add positive/negative
+  topology/tamper tests — never to delete, skip, or weaken the test, and never to change the merge
+  policy or promise an ancestor-preserving merge.
+
+### Correction (bounded, additive, no AC weakened)
+
+- `verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json`: adds an explicit
+  `integration` block (`recordKind: SQUASH_INTEGRATION_EQUIVALENCE`, `repositoryMergePolicy:
+  SQUASH_ONLY`, `mergeMode: SQUASH`, `ancestryDisposition: REPLACED_BY_SQUASH`, the integrated
+  commit `33beed8`, its parent `e5edb16`, the tested-head identities, and the equivalence/non-claim
+  statement). The tested head `28b50870`, its tree `6f995105`, its parent, and its subject are
+  preserved as recorded historical identities. The self-digest is recomputed
+  (`1a25dc56d387e074d3c2e84611d8717cc59063fa529ac0b9adc6ee004f1e14eb`). `testedSourceVersusCandidate`
+  now states the content-equivalence basis instead of an ancestor claim.
+- `tests/postgresql-c2-safe-aggregate.test.mjs`: replaces the unsatisfiable `--is-ancestor` assertion
+  with three independent checks that ARE resolvable on Main: (1) the integrated squash commit's parent
+  is exactly the recorded tested-head parent; (2) the tested head is genuinely absent (ancestry was
+  replaced) — asserted as a falsifiable expectation; (3) content equivalence — the C2 binding bytes are
+  delivered by the squash integration, every pre-existing C1/fixture byte is untouched by it, nothing
+  after the integration changes a bound byte outside the registration allowlist, and the delivered
+  bytes carry exactly the digests the tested run bound. Adds three new tests: a positive squash
+  topology proof, a negative forged-ancestor/tamper fail-closed test, and a readback/provenance
+  disposition test. The C2 certificate (`630096d4...`), the frozen C1 bytes, and `package.json` are
+  never touched.
+- `docs/evidence/postgresql-c2-real-cleanroom/README.md`: records the squash ancestry disposition and
+  the merge policy; its former "is an ancestor of the correction head" sentence is replaced (sha pin
+  updated to `b9f5138f34201f61580f39f129d5feb14f7a882796c5a1c38053844bfac0a06e`).
+- `.github/workflows/ci.yml`: comment corrected to state the true reason full history is needed; the
+  `fetch-depth: 0` setting is retained. Content address updated in `SOURCE-MAP.json`.
+- `SOURCE-MAP.md` / `SOURCE-MAP.json`: narrative and content addresses updated for the changed bytes.
+
+### Commands and actual results
+
+- RED reproduced locally: `node --test tests/postgresql-c2-safe-aggregate.test.mjs` -> 14 pass, 1 fail
+  (`git merge-base --is-ancestor 28b50870... HEAD`).
+- GREEN focused, local: `node --test tests/postgresql-c2-safe-aggregate.test.mjs` -> **18 pass, 0 fail**.
+- GREEN focused regression set, local:
+  `node --test tests/source-map.test.mjs tests/canonical-test-topology.test.mjs tests/legacy-technical-identity-plan.test.mjs tests/postgresql-c2-safe-aggregate.test.mjs tests/postgresql-c1-certification.test.mjs`
+  -> **130 pass, 0 fail**.
+- GREEN full canonical suite in the dedicated qwen-test VM (python3 + Docker present, real `.git`
+  streamed verbatim): the exact `package.json#scripts.test` command -> **1246 pass, 0 fail**.
+- Local sandbox note: two failures remain locally that are **environment-only and pre-existing**
+  (`tests/security.test.mjs` needs `python3`; `tests/release/validate-k4c-codex-plugin.test.mjs` needs
+  an unavailable infrastructure fixture). Both were confirmed failing on unmodified `33beed8` by
+  stashing this change, and both pass in the qwen-test VM (13/13 in that pair; and the full 1246/1246
+  above). They are not product defects and are not caused by this change.
+- Frozen-byte non-regression: C1 profile `3faea403...`, C1 certificate `859970ca...`, C1 live matrix
+  `90866c86...`, C1 live-matrix provenance identity `05014aaf...`, and the C2 certificate
+  `630096d4...` all re-verified byte-identical; `git diff` on every frozen C1/C2 path is empty.
+
+### Unresolved gates (owner/controller-owned — NOT PASS)
+
+The retained failure is fixed and the canonical suite is green in the real test VM, but the full
+delivery chain remains **NOT DELIVERED** and is owned by the controller/fresh reviewer:
+live revalidation, exactly one independent exact-head review and one final owner, current-Main
+integration and Root-QS, exact PR-head CI, SHA-bound squash merge, exact Main CI, release/no-release
+receipt, controller-owned anonymous readback, public issue close, and Queue DONE. No public write,
+push, credential use, or issue closure was performed by this worker, and no public receipt is claimed.
+
+---
+
 This file is the delivery record for the worker attempt on JoFe2/KaleidoSphere issue #150 (PG-KS-03):
 deliver the missing PostgreSQL C2 safe-aggregate capability on current Main, within the recorded
 KS150 scope, without weakening any original PG-KS-03 acceptance criterion. It supersedes the prior

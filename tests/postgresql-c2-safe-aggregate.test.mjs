@@ -495,21 +495,49 @@ const C2_TESTED_HEAD = '28b50870d2ab360ebce76d524ab2636254382c22';
 const C2_TESTED_HEAD_PARENT = 'e5edb163319598397ba7b7b223d2cd33d5b6b307';
 const C2_TESTED_HEAD_TREE = '6f995105138bab7c633a24c56a5cfd2bb21d849d';
 const C2_TESTED_HEAD_SUBJECT = 'PostgreSQL C2 safe-aggregate contract, typed-plan execution, and certificate (#150)';
+// The repository permits squash merges only, so the tested head was integrated as a
+// single squash commit and its commit object no longer exists on Main. Equivalence is
+// established by independently checkable content-level provenance (the squash commit's
+// parent is exactly the recorded tested-head parent, and every byte the real run bound
+// is byte-identical on Main), never by an unverifiable ancestor claim.
+const C2_INTEGRATED_COMMIT = '33beed8f387216a73621e1ff1cb0354612fad0e1';
+const C2_INTEGRATED_PARENT = 'e5edb163319598397ba7b7b223d2cd33d5b6b307';
+const C2_INTEGRATED_MERGE_MODE = 'SQUASH';
+const C2_ANCESTRY_DISPOSITION = 'REPLACED_BY_SQUASH';
+// Every product/config/fixture/contract/certificate byte the tested run bound. The C2
+// bytes are delivered by the C2 squash integration; the C1 substrate and admitted BI
+// fixtures pre-exist it and must be byte-unchanged. None of these may appear in any
+// post-integration bounded correction.
+const C2_DELIVERED_BINDING_PATHS = [
+  'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs',
+  'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
+  'verification/postgresql-c2-safe-aggregate-v1.json',
+  'scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs',
+];
+const C2_PREEXISTING_BINDING_PATHS = [
+  'contracts/connectors/postgresql/c1-profile-v1.json',
+  'verification/postgresql/postgresql-c1-evidence-v1.json',
+  'tests/fixtures/business-bi/net-revenue-holdout-v1.json',
+  'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
+  'contracts/business-bi/v1/net-revenue.metric.json',
+];
+const C2_TESTED_BINDING_PATHS = [...C2_DELIVERED_BINDING_PATHS, ...C2_PREEXISTING_BINDING_PATHS];
 const C2_RAW_EVIDENCE_PRIMARY_PATH = '.ks150-c2-real-cleanroom-primary-evidence.json';
 const C2_RAW_EVIDENCE_POST_RESTORE_PATH = '.ks150-c2-real-cleanroom-post-restore-evidence.json';
 const C2_RAW_EVIDENCE_SHA256 = 'b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382';
 const C2_REAL_CLEANROOM_PROVENANCE_PATH = 'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json';
-const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '4686d5e91a2dff5fd1e94efb137d4691cdba10eff0be61a5c2c5e0f3e56686c0';
+const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '1a25dc56d387e074d3c2e84611d8717cc59063fa529ac0b9adc6ee004f1e14eb';
 const C2_REAL_CLEANROOM_READBACK_PATH = 'docs/evidence/postgresql-c2-real-cleanroom/README.md';
-const C2_REAL_CLEANROOM_READBACK_SHA256 = '43d1f7e774bd0fa3acd991ab1cae7c0129bf4cb82aaa37c125958d15b6bf7dd6';
+const C2_REAL_CLEANROOM_READBACK_SHA256 = 'b9f5138f34201f61580f39f129d5feb14f7a882796c5a1c38053844bfac0a06e';
 const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b';
 const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = '959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496';
 // Correction-only paths: if a product/config/fixture/test byte changed after the
-// tested head outside this bounded correction, the registration does not hold.
+// squash integration outside this bounded correction, the registration does not hold.
 const ALLOWED_SINCE_TESTED_HEAD = new Set([
-  // Bounded CI-infrastructure correction: the workflow must check out full
-  // history so this historical-statute test can resolve the retained tested
-  // head itself; its changed bytes are exactly bound to one identity hash.
+  // Bounded integration-infrastructure correction: the workflow must check out full
+  // history so this integration-provenance test can resolve the recorded tested-head
+  // base and the squash-integration commit and diff their trees; its changed bytes are
+  // exactly bound to one identity hash.
   '.github/workflows/ci.yml',
   '.ks150-c2-real-cleanroom-post-restore-evidence.json',
   '.ks150-c2-real-cleanroom-primary-evidence.json',
@@ -546,35 +574,86 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   const postRestore = await readFile(path.join(root, C2_RAW_EVIDENCE_POST_RESTORE_PATH));
   assert.equal(primary.equals(postRestore), true, 'both retained files are the byte-identical record of the byte-reproducible real run');
   assert.equal(fileSha256(primary), C2_RAW_EVIDENCE_SHA256);
-  // The tested head is the exact retained commit and is an ancestor of HEAD.
-  assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^{commit}`), C2_TESTED_HEAD);
-  assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^{tree}`), C2_TESTED_HEAD_TREE);
-  assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^`), C2_TESTED_HEAD_PARENT);
-  assert.equal(git('log', '-1', '--format=%s', C2_TESTED_HEAD), C2_TESTED_HEAD_SUBJECT);
-  git('merge-base', '--is-ancestor', C2_TESTED_HEAD, 'HEAD');
-  // No product/config/fixture/certificate byte changed after the tested head.
-  const changed = git('diff', '--name-only', C2_TESTED_HEAD, 'HEAD').split('\n').filter(Boolean);
+  // Squash-integration equivalence (the repository permits squash merges only, so the
+  // tested head's ancestry was REPLACED, not preserved). The check is content-level and
+  // independently verifiable from tracked source alone; it never asserts an ancestor
+  // relation the merge policy cannot satisfy.
+  assert.equal(provBody.integration.recordKind, 'SQUASH_INTEGRATION_EQUIVALENCE');
+  assert.equal(provBody.integration.repositoryMergePolicy, 'SQUASH_ONLY');
+  assert.equal(provBody.integration.mergeMode, C2_INTEGRATED_MERGE_MODE);
+  assert.equal(provBody.integration.ancestryDisposition, C2_ANCESTRY_DISPOSITION);
+  assert.equal(provBody.integration.testedHead, C2_TESTED_HEAD);
+  assert.equal(provBody.integration.testedHeadParent, C2_TESTED_HEAD_PARENT);
+  assert.equal(provBody.integration.testedHeadTree, C2_TESTED_HEAD_TREE);
+  assert.equal(provBody.integration.testedHeadSubject, C2_TESTED_HEAD_SUBJECT);
+  assert.equal(provBody.integration.integratedCommit, C2_INTEGRATED_COMMIT);
+  assert.equal(provBody.integration.integratedCommitParent, C2_INTEGRATED_PARENT);
+  // Independent check 1 — the integrated squash commit is the exact recorded commit and
+  // its parent is exactly the recorded tested-head parent (the base the tested head was
+  // built on). This is a real, resolvable git fact, not a self-attested hash.
+  assert.equal(git('rev-parse', `${C2_INTEGRATED_COMMIT}^{commit}`), C2_INTEGRATED_COMMIT);
+  assert.equal(git('rev-parse', `${C2_INTEGRATED_COMMIT}^`), C2_TESTED_HEAD_PARENT);
+  assert.equal(git('rev-parse', `${C2_INTEGRATED_COMMIT}^{tree}`), provBody.integration.integratedCommitTree);
+  // Independent check 2 — the tested head commit object is genuinely absent (squash
+  // replaced it): resolving it must fail. If a future policy change restored ancestry,
+  // this expectation is what would need deliberate, reviewed updating.
+  let testedHeadResolvable = true;
+  try {
+    git('rev-parse', `${C2_TESTED_HEAD}^{commit}`);
+  } catch {
+    testedHeadResolvable = false;
+  }
+  assert.equal(testedHeadResolvable, false, 'the tested head is not resolvable on Main: ancestry was replaced by squash');
+  // Independent check 3 — content equivalence, measured against the two git facts that
+  // actually exist on Main (the recorded tested-head base and the squash integration),
+  // never against the unresolvable tested head.
+  //
+  // (3a) Every byte the tested run bound is delivered by the squash integration itself:
+  // each binding path differs from the recorded base because the integration introduced
+  // it. This proves the binding bytes are the delivered C2 source, not pre-existing or
+  // absent bytes.
+  const deliveredByIntegration = git('diff', '--name-only', C2_TESTED_HEAD_PARENT, C2_INTEGRATED_COMMIT).split('\n').filter(Boolean);
+  for (const bound of C2_DELIVERED_BINDING_PATHS) {
+    assert.ok(
+      deliveredByIntegration.includes(bound),
+      `${bound} is delivered by the C2 squash integration`,
+    );
+  }
+  // (3a') Every pre-existing bound byte (the frozen C1 substrate and the admitted BI
+  // fixtures) is NOT touched by the C2 integration: the C2 work layers on them additively.
+  for (const bound of C2_PREEXISTING_BINDING_PATHS) {
+    assert.ok(
+      !deliveredByIntegration.includes(bound),
+      `${bound} pre-exists the C2 integration and is not modified by it`,
+    );
+  }
+  // (3b) Nothing after the integration may change a bound product byte: the diff from
+  // the integrated squash commit to HEAD is confined to the registration allowlist.
+  const changed = git('diff', '--name-only', C2_INTEGRATED_COMMIT, 'HEAD').split('\n').filter(Boolean);
   assert.ok(
     changed.every((file) => ALLOWED_SINCE_TESTED_HEAD.has(file)),
     `changed files outside the bounded correction: ${changed.join(', ')}`,
   );
+  for (const bound of C2_TESTED_BINDING_PATHS) {
+    assert.ok(
+      !changed.includes(bound),
+      `${bound} is byte-identical since the squash integration`,
+    );
+  }
   // The workflow byte stays exactly bound: it may only carry the checkout
   // full-history correction, never any scope relaxation.
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
-    'b784ef6df2848b36e8ace60a8a75bf0eb8c3416bc186cbdd91f127f260900c86',
+    '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
-  for (const bounded of [
-    'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs',
-    'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
-    'verification/postgresql-c2-safe-aggregate-v1.json',
-    'scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs',
-    'package.json',
-    'contracts/connectors/postgresql/c1-profile-v1.json',
-    'verification/postgresql/postgresql-c1-evidence-v1.json',
-  ]) {
-    assert.ok(!changed.includes(bounded), `${bounded} is byte-identical since the tested head`);
-  }
+  // The bounded correction may not touch the frozen package manifest either.
+  assert.ok(!changed.includes('package.json'), 'package.json is byte-identical since the squash integration');
+  // (3c) The delivered product bytes carry exactly the digests the tested run bound.
+  assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);
+  assert.equal(fileSha256(await readFile(c1CertPath)), C1_CERTIFICATE_SHA256);
+  assert.equal(fileSha256(await readFile(metricPath)), ADMITTED_METRIC_CONTRACT_SHA256);
+  assert.equal(fileSha256(await readFile(holdoutPath)), ADMITTED_HOLDOUT_SHA256);
+  assert.equal(fileSha256(await readFile(oraclePath)), ADMITTED_ORACLE_SHA256);
   // The provenance binds the committed deterministic C2 certificate and the real
   // execution record to the same certified C1 substrate and admitted inputs.
   assert.equal(provBody.certificate.path, 'verification/postgresql-c2-safe-aggregate-v1.json');
@@ -621,5 +700,82 @@ test('C2 real clean-room registration never rewrites the committed certificate o
     JSON.parse(committed).realDisprovablePostgresql.state,
     'BLOCKED_EXTERNAL',
     "the certificate's own recorded real-PG state is not relabelled by the registration",
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Squash-integration topology and tamper tests (native postmerge fix-forward).
+//
+// The repository permits squash merges only, so the exact-head-reviewed candidate was
+// integrated as one squash commit and the tested head's ancestry was REPLACED. These
+// tests supply independently checkable equivalent provenance and prove, positively and
+// negatively, that a forged ancestor/topology/tamper claim cannot pass.
+// ---------------------------------------------------------------------------
+
+test('the squash integration topology is positively proven from tracked git facts', async () => {
+  const provenanceBytes = await readFile(path.join(root, C2_REAL_CLEANROOM_PROVENANCE_PATH), 'utf8');
+  const provenance = JSON.parse(provenanceBytes);
+  const {provenanceSha256: _self, ...provBody} = provenance;
+  // The integrated squash commit's parent is exactly the recorded tested-head parent.
+  assert.equal(git('rev-parse', `${provBody.integration.integratedCommit}^`), provBody.integration.testedHeadParent);
+  // The recorded parent is a genuine ancestor of the integrated commit and of HEAD.
+  // (merge-base --is-ancestor exits 0 and yields empty stdout when the relation holds.)
+  assert.equal(git('merge-base', '--is-ancestor', provBody.integration.testedHeadParent, 'HEAD'), '');
+  // Every bound byte path is tracked at the integrated commit (it is real delivered source).
+  for (const bound of C2_TESTED_BINDING_PATHS) {
+    const tracked = git('ls-files', '--error-unmatch', bound);
+    assert.equal(tracked, bound, `${bound} is tracked on Main`);
+  }
+  // The integrated commit has exactly one parent (a squash, not a merge commit).
+  assert.equal(git('rev-list', '--parents', '-n', '1', provBody.integration.integratedCommit).split(' ').length, 2);
+});
+
+test('a forged ancestor-preserving or tampered topology claim fails closed', async () => {
+  const provenancePathAbs = path.join(root, C2_REAL_CLEANROOM_PROVENANCE_PATH);
+  const original = await readFile(provenancePathAbs, 'utf8');
+  const parse = () => JSON.parse(original);
+  // A tampered provenance body no longer re-derives its pinned self-digest.
+  const tamperedBody = parse();
+  tamperedBody.integration.testedHeadParent = '0'.repeat(40);
+  const {provenanceSha256: _drop, ...tamperedRest} = tamperedBody;
+  assert.notEqual(
+    identitySha256(tamperedRest),
+    tamperedBody.provenanceSha256,
+    'a substituted tested-head parent breaks the provenance self-digest',
+  );
+  // A forged "ancestor-preserving" claim is refused: the recorded policy is squash-only
+  // and the tested head genuinely does not resolve, so the ancestor assertion cannot hold.
+  const forged = parse();
+  forged.integration.mergeMode = 'MERGE_COMMIT';
+  forged.integration.ancestryDisposition = 'PRESERVED';
+  assert.notEqual(forged.integration.mergeMode, C2_INTEGRATED_MERGE_MODE, 'merge mode is squash, not a merge commit');
+  assert.notEqual(forged.integration.ancestryDisposition, C2_ANCESTRY_DISPOSITION, 'ancestry was replaced, not preserved');
+  let forgedAncestorHolds = false;
+  try {
+    git('merge-base', '--is-ancestor', C2_TESTED_HEAD, 'HEAD');
+    forgedAncestorHolds = true;
+  } catch {
+    forgedAncestorHolds = false;
+  }
+  assert.equal(forgedAncestorHolds, false, 'an ancestor-preserving claim is falsified by the real repository state');
+  // A substituted squash commit identity fails closed against the recorded commit.
+  const wrongCommit = parse();
+  wrongCommit.integration.integratedCommit = 'f'.repeat(40);
+  assert.notEqual(wrongCommit.integration.integratedCommit, C2_INTEGRATED_COMMIT);
+  throws(() => git('rev-parse', `${wrongCommit.integration.integratedCommit}^{commit}`));
+  // The working-tree provenance is unchanged by these in-memory tamper probes.
+  assert.equal(await readFile(provenancePathAbs, 'utf8'), original, 'tamper probes never rewrite tracked bytes');
+});
+
+test('the readback evidence and provenance both record the squash ancestry disposition', async () => {
+  const provenance = JSON.parse(await readFile(path.join(root, C2_REAL_CLEANROOM_PROVENANCE_PATH), 'utf8'));
+  const readback = await readFile(path.join(root, C2_REAL_CLEANROOM_READBACK_PATH), 'utf8');
+  assert.equal(provenance.integration.ancestryDisposition, 'REPLACED_BY_SQUASH');
+  assert.equal(provenance.integration.mergeMode, 'SQUASH');
+  assert.ok(readback.includes('REPLACED_BY_SQUASH'), 'the human readback records the squash ancestry disposition');
+  assert.ok(readback.includes('SQUASH_ONLY'), 'the human readback names the repository merge policy');
+  assert.ok(
+    !/is an ancestor of the correction head/.test(readback),
+    'the readback no longer asserts an unverifiable ancestor relation',
   );
 });
