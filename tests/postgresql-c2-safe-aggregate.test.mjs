@@ -638,6 +638,12 @@ const ALLOWED_SINCE_TESTED_HEAD = new Set([
   'tests/postgresql-c1-certification.test.mjs',
   'tests/postgresql-c2-safe-aggregate.test.mjs',
   'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json',
+  // AC03 falsifier correction (generation 3): this product module gains the closed
+  // compute fault seam so a wrong-but-well-formed COMPLETE result is submitted to the
+  // real oracle/substitution gates. The change is additive and preserves every digest
+  // the real VM clean room bound (the certificate and the plan/operation digests are
+  // byte-identical), which the accompanying assertions below verify rather than assume.
+  'services/bi-control/src/business-bi/net-revenue-plan.mjs',
 ]);
 
 const git = (...args) => execFileSync('git', [...args], {cwd: root, encoding: 'utf8'}).trim();
@@ -772,10 +778,22 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   assert.equal(fileSha256(await readFile(metricPath)), ADMITTED_METRIC_CONTRACT_SHA256);
   assert.equal(fileSha256(await readFile(holdoutPath)), ADMITTED_HOLDOUT_SHA256);
   assert.equal(fileSha256(await readFile(oraclePath)), ADMITTED_ORACLE_SHA256);
+  // The generation-3 AC03 correction touches the net-revenue plan MODULE's source, so its
+  // justification must be checked, not assumed: the real VM run bound the plan and
+  // operation DIGESTS, and those are re-derived here from the corrected module. If the
+  // correction had changed any bound product behavior, these digests would move and the
+  // real-run evidence would no longer describe this source.
+  const {compileNetRevenuePlan, createNetRevenueOperationRequest} = await import('../services/bi-control/src/business-bi/net-revenue-plan.mjs');
+  const rederivedPlan = compileNetRevenuePlan({
+    request: createNetRevenueOperationRequest(),
+    metricContractBytes: await readFile(metricPath),
+    oracleBytes: await readFile(oraclePath),
+  });
+  assert.equal(rederivedPlan.planSha256, provBody.bindings.planSha256, 'the corrected module still derives the plan digest the real run bound');
+  assert.equal(rederivedPlan.bindings.operationSha256, provBody.bindings.operationSha256, 'the corrected module still derives the operation digest the real run bound');
   // The provenance binds the committed deterministic C2 certificate and the real
   // execution record to the same certified C1 substrate and admitted inputs.
-  assert.equal(provBody.certificate.path, 'verification/postgresql-c2-safe-aggregate-v1.json');
-  assert.equal(provBody.certificate.sha256, C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA);
+  assert.equal(provBody.certificate.path, 'verification/postgresql-c2-safe-aggregate-v1.json');  assert.equal(provBody.certificate.sha256, C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA);
   assert.equal(provBody.certificate.certificateSha256, C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA);
   assert.equal(fileSha256(await readFile(committedPath)), C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA);
   assert.equal(provBody.bindings.c1ProfileSha256, C1_PROFILE_SHA256);

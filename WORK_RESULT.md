@@ -63,6 +63,16 @@ reproduced unchanged on the pristine stashed tree: `tests/security.test.mjs` nee
 (absent), and `tests/release/validate-k4c-codex-plugin.test.mjs` needs an external plugin-creator
 validator binary (absent → `ENOENT`). Neither is touched by, nor related to, this correction.
 
+### Registration integration of this correction
+
+Changing the product module changes the `C2_INTEGRATED_COMMIT → HEAD` diff that the AC02/AC03
+registration test polices, so `services/bi-control/src/business-bi/net-revenue-plan.mjs` is added to
+the bounded-correction allowlist. The justification is **checked, not assumed**: the real VM clean
+room bound the plan and operation *digests* (`90bca7ef…` / `1a538833…`), and the registration test
+now re-derives both from the corrected module and asserts equality. The committed C2 certificate
+stays byte-identical, so the corrected source still produces exactly the behavior the real run
+described; had the correction moved any bound product behavior, those digests would fail the gate.
+
 
 ## NATIVE POSTMERGE FIX-FORWARD, GENERATION 2 (fresh PR-CI failure at `880d250b`)
 
