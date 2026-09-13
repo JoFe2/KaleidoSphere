@@ -13,9 +13,14 @@
 //          dispatch / auth / scope / policy / typed-plan probes return the truthful codes.
 //   AC03 — exact equality with the independent BI oracle plus a sabotage RED/GREEN
 //          matrix: row substitution is rejected by the holdout digest gate, a semantic
-//          mutation of the ground truth is rejected by the oracle digest gate, and an
-//          UNKNOWN-to-zero or sign-flipping compute can never satisfy the oracle-equality
-//          gate (the correct result is the only one that equals the oracle).
+//          mutation of the ground truth is rejected by the oracle digest gate, and each
+//          compute sabotage (UNKNOWN-to-zero, sign-flipping, double-count) is SUBMITTED
+//          to the real executor and rejected by the real BUSINESS_BI_ORACLE_MISMATCH
+//          gate, while a fully re-digested wrong result is rejected by the real
+//          BUSINESS_BI_RESULT_SUBSTITUTION_DENIED gate. The compute arms are driven
+//          through the product's closed fault seam (NET_REVENUE_COMPUTE_FAULTS), not by
+//          comparing un-submitted in-memory clones, so deleting the product gate turns
+//          the matrix RED.
 //   AC04 — the separately-versioned certificate binds the tested product / release /
 //          contract / fixtures and records BLOCKED_EXTERNAL real-PG non-claims; the
 //          certificate-lifecycle regression pins the frozen C1 bytes (profile,
@@ -40,10 +45,12 @@ import {
   ADMITTED_HOLDOUT_SHA256,
   ADMITTED_METRIC_CONTRACT_SHA256,
   ADMITTED_ORACLE_SHA256,
+  NET_REVENUE_COMPUTE_FAULTS,
   NET_REVENUE_OPERATION_ID,
   compileNetRevenuePlan,
   createNetRevenueOperationRequest,
   executeNetRevenuePlan,
+  verifyNetRevenueExecutionReceipt,
 } from '../services/bi-control/src/business-bi/net-revenue-plan.mjs';
 import {
   C1_CERTIFICATE_IDENTITY_SHA256,
@@ -111,6 +118,16 @@ const throws = (fn) => {
   assert.ok(threw, 'expected fail-closed');
 };
 const cloneJson = (value) => JSON.parse(JSON.stringify(value));
+// Fully re-digest a receipt so its own integrity hashes are recomputed: this is the
+// "digest integrity holds but the business result is wrong" shape the AC03 falsifier
+// must reject. The re-digested receipt is still refused by the real oracle gate.
+const readdressReceipt = (receipt) => {
+  receipt.resultSha256 = fileSha256(Buffer.from(canonicalJson(receipt.result)));
+  receipt.outputSha256 = fileSha256(Buffer.from(canonicalJson(receipt.output)));
+  const {receiptSha256: _discarded, ...body} = receipt;
+  receipt.receiptSha256 = identitySha256(body);
+  return receipt;
+};
 
 // Load the committed inputs once (the regular product path and the fail-closed probes
 // share the same bound fixtures and frozen C1 substrate).
@@ -396,24 +413,93 @@ test('AC03: the product path is oracle-exact and the sabotage matrix fails close
   }
   assert.equal(semanticCompileCode, 'BUSINESS_BI_ORACLE_DIGEST_DENIED', 'semantic mutation of the ground truth fails closed at the oracle digest gate');
 
-  // RED (compute tampering): an UNKNOWN-to-zero or sign-flipping compute could never
-  // satisfy the oracle-equality gate (canonicalJson(result) !== canonicalJson(oracle.expected))
-  // that runs on every COMPLETE execution; the correct result is the only one that matches.
-  const unknownToZero = cloneJson(correct);
-  unknownToZero.unknown = {count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0, unassigned: {count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0}};
-  unknownToZero.periods.current.unknown = {count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0};
-  unknownToZero.periods.comparison.unknown = {count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0};
-  assert.notEqual(canonicalJson(unknownToZero), canonicalJson(oracle.expected), 'UNKNOWN-to-zero deviates from the oracle (oracle-equality gate would reject)');
-
-  const semanticMutated = cloneJson(correct);
-  for (const key of ['current', 'comparison']) {
-    semanticMutated.periods[key].netMinorUnits = semanticMutated.periods[key].saleMinorUnits + semanticMutated.periods[key].creditMinorUnits;
+  // RED (compute tampering, driven through the REAL product gate): each sabotage is
+  // submitted to the actual executor and must fail closed with the real
+  // BUSINESS_BI_ORACLE_MISMATCH code. Comparing in-memory clones was vacuous — a clone
+  // never submitted to the executor is trivially unequal to the oracle and would keep
+  // passing even if the runtime oracle-equality gate were deleted. The seam therefore
+  // corrupts the COMPUTED result inside executeNetRevenuePlan and the failure must come
+  // from the product's own gate.
+  const sabotageCodes = [];
+  for (const fault of NET_REVENUE_COMPUTE_FAULTS) {
+    let drivenCode = null;
+    let thrown = null;
+    try {
+      await executeNetRevenuePlan({
+        plan: probePlan,
+        metricContractBytes,
+        oracleBytes,
+        read: syntheticRead(holdoutBytes),
+        computeFault: fault,
+      });
+    } catch (error) {
+      thrown = error;
+      drivenCode = error.code ?? error.message;
+    }
+    assert.ok(thrown, `${fault} is rejected by the real executor, never accepted`);
+    assert.equal(drivenCode, 'BUSINESS_BI_ORACLE_MISMATCH', `${fault} fails closed at the real runtime oracle-equality gate`);
+    sabotageCodes.push(drivenCode);
   }
-  semanticMutated.deltaMinorUnits = semanticMutated.periods.current.netMinorUnits - semanticMutated.periods.comparison.netMinorUnits;
-  assert.notEqual(canonicalJson(semanticMutated), canonicalJson(oracle.expected), 'sign-flipping compute deviates from the oracle (oracle-equality gate would reject)');
-  // Both sabotages also deviate from the CORRECT result (the gate discriminates).
-  assert.notEqual(canonicalJson(unknownToZero), canonicalJson(correct));
-  assert.notEqual(canonicalJson(semanticMutated), canonicalJson(correct));
+  // The matrix is genuinely RED and non-vacuous: an un-faulted execution of the exact
+  // same seam-free call SUCCEEDS (GREEN), so the denial is caused by the injected wrong
+  // business result and not by the probe shape.
+  const greenProbe = await executeNetRevenuePlan({
+    plan: probePlan,
+    metricContractBytes,
+    oracleBytes,
+    read: syntheticRead(holdoutBytes),
+  });
+  assert.equal(greenProbe.execution.state, 'COMPLETE', 'GREEN control: the un-faulted execution completes');
+  assert.equal(greenProbe.oracleEquality, 'EXACT', 'GREEN control: the un-faulted execution is oracle-exact');
+  assert.equal(sabotageCodes.length, NET_REVENUE_COMPUTE_FAULTS.length);
+  // The faults are a closed, enumerated registry: nothing outside it can be injected, and
+  // an unknown fault is refused before any execution.
+  let unknownFaultCode = null;
+  try {
+    await executeNetRevenuePlan({
+      plan: probePlan,
+      metricContractBytes,
+      oracleBytes,
+      read: syntheticRead(holdoutBytes),
+      computeFault: 'NOT_A_REGISTERED_FAULT',
+    });
+  } catch (error) {
+    unknownFaultCode = error.code ?? error.message;
+  }
+  assert.equal(unknownFaultCode, 'BUSINESS_BI_EXECUTION_INPUT_DENIED', 'the fault seam is closed: an unregistered fault is refused');
+
+  // RED (result substitution at the receipt gate): a wrong-but-well-formed COMPLETE
+  // receipt whose own digests are fully recomputed is still rejected by the real
+  // BUSINESS_BI_RESULT_SUBSTITUTION_DENIED gate. Digest integrity therefore does NOT
+  // rescue a wrong business result.
+  const forgedReceipt = cloneJson(greenProbe);
+  forgedReceipt.result.periods.current.netMinorUnits += 1;
+  forgedReceipt.result.deltaMinorUnits += 1;
+  forgedReceipt.output.rows[0].current_net_minor_units += 1;
+  forgedReceipt.output.rows[0].delta_minor_units += 1;
+  readdressReceipt(forgedReceipt);
+  assert.notEqual(canonicalJson(forgedReceipt), canonicalJson(greenProbe), 'the forged receipt is genuinely different');
+  assert.equal(forgedReceipt.resultSha256, fileSha256(Buffer.from(canonicalJson(forgedReceipt.result))), 'the forged result digest is fully recomputed (digest integrity holds)');
+  assert.equal(forgedReceipt.receiptSha256, identitySha256((() => { const {receiptSha256: _r, ...rest} = forgedReceipt; return rest; })()), 'the forged receipt self-digest is fully recomputed');
+  let substitutionCode = null;
+  try {
+    verifyNetRevenueExecutionReceipt({
+      plan: probePlan,
+      receipt: forgedReceipt,
+      metricContractBytes,
+      oracleBytes,
+    });
+  } catch (error) {
+    substitutionCode = error.code ?? error.message;
+  }
+  assert.equal(substitutionCode, 'BUSINESS_BI_RESULT_SUBSTITUTION_DENIED', 'a re-digested wrong result is rejected by the real receipt-substitution gate');
+  // The GREEN receipt still verifies, so the substitution gate specifically discriminates.
+  verifyNetRevenueExecutionReceipt({
+    plan: probePlan,
+    receipt: greenProbe,
+    metricContractBytes,
+    oracleBytes,
+  });
 });
 
 test('the certificate preserves BLOCKED_EXTERNAL real-PG non-claims and does not over-claim', async () => {

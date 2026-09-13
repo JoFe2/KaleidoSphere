@@ -755,16 +755,93 @@ function sourceEnvelopeError(response, plan) {
   return null;
 }
 
+// ---- Compute fault injection (AC03 falsifier seam) --------------------------------
+//
+// AC03's falsifier is "digest integrity passes while a wrong business result is
+// accepted". Proving that requires driving a WRONG BUT WELL-FORMED COMPLETE result
+// through the real product gate, not comparing two in-memory clones: a clone that is
+// never submitted to the executor is trivially unequal to the oracle and would keep
+// "passing" even if the runtime oracle-equality gate were deleted.
+//
+// This is the closed, explicitly-named seam that makes that falsifier executable. It is
+// an enumerated registry of deterministic corruptions of the COMPUTED result — never a
+// caller-supplied function, never a bypass of the source/digest/scope/receipt gates, and
+// never reachable from product configuration, the descriptor, the certificate, or the
+// real read path. The corrupted result still flows through the SAME
+// BUSINESS_BI_ORACLE_MISMATCH gate (and, if it ever reached a receipt, the same
+// BUSINESS_BI_RESULT_SUBSTITUTION_DENIED gate), so RED is caused by product behavior.
+export const NET_REVENUE_COMPUTE_FAULTS = Object.freeze([
+  // UNKNOWN-to-zero: the unknown channel is reported as an ordinary zero instead of a
+  // distinctly quantified/UNKNOWN count. Would pass a digest-only integrity check.
+  'UNKNOWN_TO_ZERO',
+  // Sign-flipping compute: net is recomputed as sale + credit instead of sale - credit.
+  'SEMANTIC_SIGN_FLIP',
+  // Row substitution: one admitted row's amount is folded in twice.
+  'ROW_SUBSTITUTION_DOUBLE_COUNT',
+]);
+const COMPUTE_FAULT_SET = new Set(NET_REVENUE_COMPUTE_FAULTS);
+
+const isComputeFault = (value) => value === undefined
+  || (typeof value === 'string' && COMPUTE_FAULT_SET.has(value));
+
+const zeroUnknownChannel = () => ({
+  count: 0,
+  quantifiedAmountMinorUnits: 0,
+  unquantifiedCount: 0,
+});
+
+const applyComputeFault = (result, fault) => {
+  const corrupted = cloneJson(result);
+  if (fault === 'UNKNOWN_TO_ZERO') {
+    corrupted.unknown = {
+      ...zeroUnknownChannel(),
+      unassigned: zeroUnknownChannel(),
+    };
+    for (const period of Object.values(corrupted.periods)) {
+      period.unknown = zeroUnknownChannel();
+    }
+    return corrupted;
+  }
+  if (fault === 'SEMANTIC_SIGN_FLIP') {
+    for (const period of Object.values(corrupted.periods)) {
+      period.netMinorUnits = safeAdd(
+        period.saleMinorUnits,
+        period.creditMinorUnits,
+      );
+    }
+    corrupted.deltaMinorUnits = safeAdd(
+      corrupted.periods.current.netMinorUnits,
+      -corrupted.periods.comparison.netMinorUnits,
+    );
+    return corrupted;
+  }
+  // ROW_SUBSTITUTION_DOUBLE_COUNT
+  corrupted.periods.current.netMinorUnits = safeAdd(
+    corrupted.periods.current.netMinorUnits,
+    corrupted.periods.current.netMinorUnits,
+  );
+  corrupted.deltaMinorUnits = safeAdd(
+    corrupted.periods.current.netMinorUnits,
+    -corrupted.periods.comparison.netMinorUnits,
+  );
+  return corrupted;
+};
+
+const applyComputeFaultInjection = (result, input) => (input.computeFault === undefined
+  ? result
+  : applyComputeFault(result, input.computeFault));
+
 export async function executeNetRevenuePlan(input) {
   if (!exactKeys(
     input,
-    ['plan', 'metricContractBytes', 'oracleBytes', 'read', 'signal'],
+    ['plan', 'metricContractBytes', 'oracleBytes', 'read', 'signal', 'computeFault'],
     ['plan', 'metricContractBytes', 'oracleBytes', 'read'],
   ) || typeof input.read !== 'function'
     || (input.signal !== undefined
       && (typeof input.signal?.aborted !== 'boolean'
         || typeof input.signal?.addEventListener !== 'function'
-        || typeof input.signal?.removeEventListener !== 'function'))) {
+        || typeof input.signal?.removeEventListener !== 'function'))
+    || !isComputeFault(input.computeFault)) {
     fail('BUSINESS_BI_EXECUTION_INPUT_DENIED');
   }
 
@@ -865,7 +942,7 @@ export async function executeNetRevenuePlan(input) {
     });
   }
 
-  const result = computeNetRevenue(holdout, plan);
+  const result = applyComputeFaultInjection(computeNetRevenue(holdout, plan), input);
   if (canonicalJson(result) !== canonicalJson(oracle.expected)) {
     fail('BUSINESS_BI_ORACLE_MISMATCH');
   }

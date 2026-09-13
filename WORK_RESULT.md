@@ -1,5 +1,69 @@
 # WORK_RESULT — KS150 / PG-KS-03: Deliver the missing PostgreSQL C2 safe-aggregate bytes
 
+## NATIVE POSTMERGE FIX-FORWARD, GENERATION 3 (AC03 falsifier vacuity at `84b0fb42`)
+
+This section records the third bounded postmerge correction. It is additive and preserves every
+earlier record, the original issue/thread, every hard AC, and all historical raw evidence.
+
+### Diagnosis of the exact retained blocker
+
+The blocker is a **product-AC defect, not a gate/topology defect**: `PG-KS-03-AC03`'s falsifier is
+"digest integrity passes while a wrong business result is accepted", and the committed AC03
+RED/GREEN matrix did not actually exercise it. The two compute-sabotage arms (`unknownToZero`,
+`semanticMutated`) built in-memory clones of the correct result and asserted only that each clone
+`!==` the oracle. A clone that is never submitted to the executor is *trivially* unequal to the
+oracle, so both assertions were tautologies: they would keep passing even if the runtime
+oracle-equality gate were deleted. The only genuinely driven arm was row substitution, which is
+AC02 holdout-digest binding, not the AC03 wrong-business-result falsifier.
+
+The real runtime gate existed (`net-revenue-plan.mjs`, `BUSINESS_BI_ORACLE_MISMATCH`) but was never
+reached by any test: the oracle and holdout byte streams are pinned to `ADMITTED_ORACLE_SHA256` /
+`ADMITTED_HOLDOUT_SHA256` at compile time, so every semantic mutation collapsed into a digest
+denial *before* the oracle-equality gate. Reproduced at the exact candidate: recomputing both clones
+from the committed fixtures yields `notEqual === true` for both regardless of any product code.
+
+### Correction (minimal, product-side, fail-closed)
+
+- **`services/bi-control/src/business-bi/net-revenue-plan.mjs`** — added the closed compute
+  fault-injection seam `NET_REVENUE_COMPUTE_FAULTS` (`UNKNOWN_TO_ZERO`, `SEMANTIC_SIGN_FLIP`,
+  `ROW_SUBSTITUTION_DOUBLE_COUNT`) applied to the **computed** result inside
+  `executeNetRevenuePlan`. It is an enumerated registry of deterministic corruptions — never a
+  caller-supplied function, never a bypass of the source/digest/scope/receipt gates, and never
+  reachable from product configuration, the descriptor, the certificate, or the real read path. An
+  unregistered fault is refused with `BUSINESS_BI_EXECUTION_INPUT_DENIED`. The corrupted result
+  still flows through the **same** `BUSINESS_BI_ORACLE_MISMATCH` gate.
+- **`tests/postgresql-c2-safe-aggregate.test.mjs`** — replaced the tautological clone comparisons
+  with arms that **submit** each registered fault to the real executor and assert the real
+  `BUSINESS_BI_ORACLE_MISMATCH` denial, plus a genuine GREEN control (the same seam-free call
+  completes oracle-exact), plus a fully re-digested wrong receipt rejected by the real
+  `BUSINESS_BI_RESULT_SUBSTITUTION_DENIED` gate. Semantic mutation of the ground truth and row
+  substitution remain bound to their own digest gates.
+- **`scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs`** — re-binds the corrected
+  `net-revenue-plan.mjs` (already a registered entry) and is itself re-content-addressed.
+- **`SOURCE-MAP.json`** — regenerated with the repository updater (697 entries; only the three
+  changed digests move).
+
+### Mutation proof (RED caused by product behavior, not self-comparison)
+
+Disabling the real `BUSINESS_BI_ORACLE_MISMATCH` gate turns the AC03 test RED (20 pass / 1 fail);
+disabling `BUSINESS_BI_RESULT_SUBSTITUTION_DENIED` likewise turns it RED. Restored, the focused C2
+suite is 21/21 pass. This is the property the previous matrix lacked.
+
+### Certificate and frozen bytes
+
+`node scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs --dry-run` remains **byte-identical**
+to the committed `verification/postgresql-c2-safe-aggregate-v1.json` (the seam is not reachable from
+the certificate path). Every frozen C1 byte (`3faea403…`, `859970ca…`, `90866c86…`, `05014aaf…`),
+the frozen `package.json`, and all canonical test registrations are unchanged.
+
+### Gate result at this candidate
+
+`npm test`: 1249 tests, 1247 pass, 2 fail. Both failures are **pre-existing host-tooling gaps**,
+reproduced unchanged on the pristine stashed tree: `tests/security.test.mjs` needs `python3`
+(absent), and `tests/release/validate-k4c-codex-plugin.test.mjs` needs an external plugin-creator
+validator binary (absent → `ENOENT`). Neither is touched by, nor related to, this correction.
+
+
 ## NATIVE POSTMERGE FIX-FORWARD, GENERATION 2 (fresh PR-CI failure at `880d250b`)
 
 This section records the second bounded postmerge correction. The generation-1 fix-forward (below)
