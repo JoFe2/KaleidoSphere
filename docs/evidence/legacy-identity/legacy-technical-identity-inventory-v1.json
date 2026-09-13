@@ -90,6 +90,11 @@
     {
       "identityClass": "environment",
       "value": "CM_MSSQL_PASSWORD",
+      "path": "services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MSSQL_PASSWORD",
       "path": "services/bi-control/src/runtime-config.mjs"
     },
     {
@@ -215,6 +220,16 @@
     {
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
+      "path": ".ks150-c2-real-cleanroom-post-restore-evidence.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": ".ks150-c2-real-cleanroom-primary-evidence.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
       "path": "contracts/connectors/postgresql/c1-profile-v1.json"
     },
     {
@@ -226,6 +241,11 @@
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
       "path": "scripts/run-postgresql-c1-live-matrix.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs"
     },
     {
       "identityClass": "environment",
@@ -265,6 +285,11 @@
     {
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "tests/postgresql-c2-safe-aggregate.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
       "path": "tests/postgresql-product-dispatch.test.mjs"
     },
     {
@@ -331,6 +356,11 @@
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
       "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_POSTGRESQL_PASSWORD",
+      "path": "verification/postgresql-c2-safe-aggregate-v1.json"
     },
     {
       "identityClass": "environment",

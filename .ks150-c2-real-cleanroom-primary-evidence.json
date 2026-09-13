@@ -1,0 +1,205 @@
+KS150_C2_REAL_CLEANROOM_EVIDENCE_JSON_START
+{
+  "inputDigests": {
+    "c1Profile": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+    "c1Certificate": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "metricContract": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+    "oracle": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+    "holdout": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "c1ProfileExpected": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+    "c1CertificateExpected": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "c1ProfileMatchesFrozen": true,
+    "c1CertificateMatchesFrozen": true
+  },
+  "productPath": {
+    "mode": "LIVE",
+    "dispatch": "REGULAR",
+    "engine": "postgresql",
+    "regularPath": {
+      "dispatch": "REGULAR",
+      "executorBinding": "postgresql.run-queries",
+      "capability": "postgresql.read-only-session",
+      "evidence": "preflight.coverage-ledger",
+      "productSecretBindingEnforced": true
+    },
+    "runtimeValidation": "RUNTIME_VALIDATED"
+  },
+  "receipt": {
+    "schemaVersion": "kaleidosphere.business-bi/net-revenue-execution-receipt/v1",
+    "operationId": "bi-ks-01-net-revenue/v1",
+    "bindings": {
+      "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
+      "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee",
+      "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+      "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+      "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164"
+    },
+    "execution": {
+      "state": "COMPLETE",
+      "reasonCode": null,
+      "accessMode": "READ_ONLY",
+      "mutationAuthority": false,
+      "readOnlyEvidence": "VERIFIED",
+      "bounded": true,
+      "timeoutAware": true,
+      "cancelAware": true,
+      "rowsRead": 17,
+      "rowBudget": 17,
+      "byteBudget": 4096,
+      "timeoutMs": 100
+    },
+    "coverage": {
+      "state": "COMPLETE",
+      "resultAvailable": true,
+      "nonSuccessCollapsed": false,
+      "emptyOrZeroSuccessSynthesized": false
+    },
+    "result": {
+      "deltaMinorUnits": 70059,
+      "excludedOutOfScopeCount": 3,
+      "periods": {
+        "comparison": {
+          "cancelCount": 1,
+          "creditMinorUnits": 5500,
+          "netMinorUnits": 30000,
+          "rowCount": 7,
+          "saleMinorUnits": 35500,
+          "unknown": {
+            "count": 2,
+            "quantifiedAmountMinorUnits": 777,
+            "unquantifiedCount": 1
+          }
+        },
+        "current": {
+          "cancelCount": 1,
+          "creditMinorUnits": 41234,
+          "netMinorUnits": 100059,
+          "rowCount": 6,
+          "saleMinorUnits": 141293,
+          "unknown": {
+            "count": 1,
+            "quantifiedAmountMinorUnits": 0,
+            "unquantifiedCount": 1
+          }
+        }
+      },
+      "unknown": {
+        "count": 4,
+        "quantifiedAmountMinorUnits": 1977,
+        "unassigned": {
+          "count": 1,
+          "quantifiedAmountMinorUnits": 1200,
+          "unquantifiedCount": 0
+        },
+        "unquantifiedCount": 2
+      }
+    },
+    "resultSha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc",
+    "output": {
+      "columns": [
+        "current_net_minor_units",
+        "current_sale_minor_units",
+        "current_credit_minor_units",
+        "current_cancel_count",
+        "current_unknown_count",
+        "current_unknown_quantified_amount_minor_units",
+        "current_unknown_unquantified_count",
+        "current_row_count",
+        "comparison_net_minor_units",
+        "comparison_sale_minor_units",
+        "comparison_credit_minor_units",
+        "comparison_cancel_count",
+        "comparison_unknown_count",
+        "comparison_unknown_quantified_amount_minor_units",
+        "comparison_unknown_unquantified_count",
+        "comparison_row_count",
+        "delta_minor_units",
+        "unknown_count",
+        "unknown_quantified_amount_minor_units",
+        "unknown_unquantified_count",
+        "unknown_unassigned_count",
+        "unknown_unassigned_quantified_amount_minor_units",
+        "unknown_unassigned_unquantified_count",
+        "excluded_out_of_scope_count"
+      ],
+      "rows": [
+        {
+          "current_net_minor_units": 100059,
+          "current_sale_minor_units": 141293,
+          "current_credit_minor_units": 41234,
+          "current_cancel_count": 1,
+          "current_unknown_count": 1,
+          "current_unknown_quantified_amount_minor_units": 0,
+          "current_unknown_unquantified_count": 1,
+          "current_row_count": 6,
+          "comparison_net_minor_units": 30000,
+          "comparison_sale_minor_units": 35500,
+          "comparison_credit_minor_units": 5500,
+          "comparison_cancel_count": 1,
+          "comparison_unknown_count": 2,
+          "comparison_unknown_quantified_amount_minor_units": 777,
+          "comparison_unknown_unquantified_count": 1,
+          "comparison_row_count": 7,
+          "delta_minor_units": 70059,
+          "unknown_count": 4,
+          "unknown_quantified_amount_minor_units": 1977,
+          "unknown_unquantified_count": 2,
+          "unknown_unassigned_count": 1,
+          "unknown_unassigned_quantified_amount_minor_units": 1200,
+          "unknown_unassigned_unquantified_count": 0,
+          "excluded_out_of_scope_count": 3
+        }
+      ]
+    },
+    "outputSha256": "6e92091e32b348c3db91ae18fe43e485c653f696a21938c0a77379e55ada6ae2",
+    "oracleEquality": "EXACT",
+    "nonclaims": [
+      "No arbitrary SQL: this surface compiles one typed operation and exposes no SQL input.",
+      "No second metric: only the admitted versioned synthetic net-revenue operation is in scope.",
+      "No real-source or production claim: execution is bound to the admitted synthetic non-customer holdout bytes.",
+      "No Superset, chart, dashboard, publish, release, or mutation authority is provided."
+    ],
+    "receiptSha256": "8052a8c7b1d86fbb5fdbbea657d63e4c08cf85f02d4f955e67e4f0303fdaec1c"
+  },
+  "descriptor": {
+    "engine": "postgresql",
+    "executor": "postgresql.run-queries",
+    "capability": "postgresql.read-only-session",
+    "evidence": "preflight.coverage-ledger",
+    "secretEnv": "CM_POSTGRESQL_PASSWORD",
+    "secretFileVariable": "POSTGRESQL_PASSWORD_FILE"
+  },
+  "profileBinding": {
+    "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "c1FrozenState": "BLOCKED_EXTERNAL",
+    "c1DeclaresC2NonCapability": true
+  },
+  "receiptSummary": {
+    "state": "COMPLETE",
+    "reasonCode": null,
+    "operationId": "bi-ks-01-net-revenue/v1",
+    "rowsRead": 17,
+    "realReadBytesSha256": null,
+    "admittedHoldoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "realReadMatchesAdmittedHoldout": false,
+    "resultEqualsOracle": null,
+    "netMinorUnits": null
+  },
+  "sessionProof": {
+    "transactionReadOnly": "on",
+    "defaultTransactionReadOnly": "on",
+    "adminCapabilities": false
+  },
+  "failClosed": {
+    "badSecret": "DB_ANALYZE_CREDENTIAL_MISSING",
+    "scopeSubstitution": "BUSINESS_BI_OPERATION_DENIED",
+    "crossEngineSecretSubstitution": "DB_ANALYZE_SECRET_BINDING_MISMATCH",
+    "staleDescriptor": "DB_ANALYZE_DESCRIPTOR_STALE",
+    "rawRowSource": "BUSINESS_BI_SOURCE_SCOPE_DENIED",
+    "mutationStatement": "BUSINESS_BI_READ_ONLY_EVIDENCE_DENIED",
+    "readOnlySessionViolation": "DB_ANALYZE_PRINCIPAL_NOT_READ_ONLY"
+  }
+}
+KS150_C2_REAL_CLEANROOM_EVIDENCE_JSON_END
