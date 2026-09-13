@@ -10,6 +10,14 @@
 // hashes the raw bytes of every authored file present on disk, re-sorts the files table
 // by localeCompare, and writes atomically (unique temp + rename). It content-addresses
 // itself. Convention mirrors scripts/update-ks228-ks149-live-matrix-source-map.mjs.
+//
+// KS150 real-clean-room registration correction: also content-addresses the committed
+// C2 test suite, the two byte-for-byte retained real clean-room evidence files, the
+// real-run provenance record, the human readback evidence path, and SOURCE-MAP.md. It
+// hashes what is on disk at run time and never rewrites those historical bytes.
+// KS150 canonical-route correction: the two gate suites that carry/extend the canonical
+// route set (the C1/C2 lifecycle parent gate and the CI-TOPOLOGY gate) are also
+// content-addressed here, so the registration of this correction stays complete.
 import { createHash } from 'node:crypto';
 import { access, readFile, rename, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -17,12 +25,20 @@ import { resolve } from 'node:path';
 const root = resolve(process.cwd());
 const sourceMapPath = resolve(root, 'SOURCE-MAP.json');
 const authoredFiles = [
+  '.ks150-c2-real-cleanroom-post-restore-evidence.json',
+  '.ks150-c2-real-cleanroom-primary-evidence.json',
   'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
   'docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json',
+  'docs/evidence/postgresql-c2-real-cleanroom/README.md',
   'scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs',
   'scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs',
   'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs',
+  'tests/canonical-test-topology.test.mjs',
+  'tests/postgresql-c1-certification.test.mjs',
+  'tests/postgresql-c2-safe-aggregate.test.mjs',
   'verification/postgresql-c2-safe-aggregate-v1.json',
+  'SOURCE-MAP.md',
+  'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json',
 ];
 
 const sourceMap = JSON.parse(await readFile(sourceMapPath, 'utf8'));

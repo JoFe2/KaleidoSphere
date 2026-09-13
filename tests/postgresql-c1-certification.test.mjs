@@ -6,6 +6,13 @@ import path from 'node:path';
 import {spawnSync} from 'node:child_process';
 import test from 'node:test';
 
+// KS150 canonical route: the committed C2 safe-aggregate suite is the certified
+// C1/C2 lifecycle sibling of this gate. It enters the canonical npm test graph
+// through exactly this one static import route (route integrity is enforced by
+// the CI-TOPOLOGY gate), not through the frozen canonical command, which
+// byte-binds the released manifest digest.
+import './postgresql-c2-safe-aggregate.test.mjs';
+
 import {
   C1_EVIDENCE_SCHEMA_VERSION,
   runPostgresqlC1ProductPath,

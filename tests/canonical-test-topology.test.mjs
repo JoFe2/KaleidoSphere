@@ -2,9 +2,10 @@
 //
 //   AC01 — Enumerates the git-tracked tests/**/*.test.mjs set from tracked source and
 //          proves every suite has exactly one route from the canonical npm test roots,
-//          including the one intentional imported-parent route
-//          (tests/source-map.test.mjs -> tests/business-bi-epic-closure.test.mjs).
-//          Exact-Main baseline: 129 tracked suites, 128 direct roots, one imported
+//          including the intentional imported-parent routes
+//          (tests/source-map.test.mjs -> tests/business-bi-epic-closure.test.mjs and
+//          tests/postgresql-c1-certification.test.mjs -> tests/postgresql-c2-safe-aggregate.test.mjs).
+//          Exact-Main baseline: 130 tracked suites, 128 direct roots, two imported
 //          suite; this suite's own canonical registration shifts that baseline by +1.
 //   AC02 — Focused fail-closed negative regressions for an omitted suite, a duplicate
 //          direct root, an orphan tracked suite, and a suite reachable through multiple
@@ -50,7 +51,7 @@
 //   untracked target yield no edge; re-export-looking bytes inside comments, strings,
 //   template literals, or regex literals yield no edge; and a malformed or ambiguous
 //   re-export construct targeting a tracked suite fails closed naming the importer and
-//   reason. The intentional source-map -> business-bi-epic-closure route and every
+//   reason. The intentional imported-parent routes and every
 //   #179/#181/#184/#186/#188 invariant are preserved.
 //
 // CI-TOPOLOGY-07 (KaleidoSphere issue #192) — executable routes across comment trivia:
@@ -103,6 +104,18 @@ import {
 const SUITE = /^tests\/.+\.(test\.mjs)$/;
 const INTENTIONAL_IMPORTED_SUITE = Object.freeze('tests/business-bi-epic-closure.test.mjs');
 const INTENTIONAL_IMPORTED_PARENT = Object.freeze('tests/source-map.test.mjs');
+// KS150 (JoFe2/KaleidoSphere#150): the committed C2 safe-aggregate suite is
+// canonical through exactly one imported-parent route — its certified C1/C2
+// lifecycle sibling gate. The canonical command itself is byte-bound to the
+// released manifest digest (postgresql-c1-certification AC04), so the C2
+// suite cannot be registered in it; the topology invariant instead requires
+// exactly this one static import route.
+const INTENTIONAL_C2_IMPORTED_SUITE = Object.freeze('tests/postgresql-c2-safe-aggregate.test.mjs');
+const INTENTIONAL_C2_IMPORTED_PARENT = Object.freeze('tests/postgresql-c1-certification.test.mjs');
+const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
+  { parent: INTENTIONAL_C2_IMPORTED_PARENT, suite: INTENTIONAL_C2_IMPORTED_SUITE },
+  { parent: INTENTIONAL_IMPORTED_PARENT, suite: INTENTIONAL_IMPORTED_SUITE },
+]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
   'tests/canonical-test-topology.test.mjs',
@@ -243,18 +256,18 @@ test('every tracked test suite has exactly one route from the canonical npm test
   for (const suite of tracked) {
     assert.equal(topology.routes.get(suite).total, 1, suite);
   }
-  // Exactly the current baseline shape: every suite is a direct root except the one
-  // intentional imported suite, and that suite's single route is the intentional
-  // parent. Named pins, not hand-maintained counts, so the invariant stays
-  // self-policing as the suite set grows.
-  const imported = tracked.filter((suite) => topology.routes.get(suite).direct === 0);
-  assert.deepStrictEqual(imported, [INTENTIONAL_IMPORTED_SUITE]);
-  assert.deepStrictEqual(
-    topology.routes.get(INTENTIONAL_IMPORTED_SUITE).via,
-    [INTENTIONAL_IMPORTED_PARENT],
-  );
+  // Exactly the current baseline shape: every suite is a direct root except the
+  // intentional imported suites, and each imported suite's single route is its
+  // intentional parent. Named pins, not hand-maintained counts, so the invariant
+  // stays self-policing as the suite set grows.
+  const imported = tracked
+    .filter((suite) => topology.routes.get(suite).direct === 0);
+  assert.deepStrictEqual(imported, [...INTENTIONAL_IMPORTED_ROUTES.map((r) => r.suite)].sort());
+  for (const route of INTENTIONAL_IMPORTED_ROUTES) {
+    assert.deepStrictEqual(topology.routes.get(route.suite).via, [route.parent]);
+  }
   const direct = tracked.filter((suite) => topology.routes.get(suite).direct === 1);
-  assert.equal(direct.length, tracked.length - 1);
+  assert.equal(direct.length, tracked.length - INTENTIONAL_IMPORTED_ROUTES.length);
   // The canonical command itself is well-formed: no direct root registered twice.
   assert.equal(
     new Set(directRoots).size,
@@ -312,13 +325,15 @@ test('the live canonical npm test command is exactly one unwrapped node --test i
   // Exactly one invocation: every token after `node --test` is itself a suite root, so
   // the validator's roots are the whole tail — nothing is hidden between the roots.
   assert.deepStrictEqual(command.roots, tokens.slice(2));
-  // And the roots cover exactly the git-tracked suite set minus the one intentional
-  // imported suite, each direct root once: the 129-suite canonical route (128 direct
-  // roots + one imported-parent route) is preserved in registration terms.
+  // And the roots cover exactly the git-tracked suite set minus the intentional
+  // imported suites, each direct root once: the 130-suite canonical route (128 direct
+  // roots + two imported-parent routes) is preserved in registration terms.
   const tracked = trackedTestSuites();
   assert.deepStrictEqual(
     [...command.roots].sort(),
-    tracked.filter((suite) => suite !== INTENTIONAL_IMPORTED_SUITE),
+    tracked.filter(
+      (suite) => !INTENTIONAL_IMPORTED_ROUTES.some((route) => route.suite === suite),
+    ),
   );
   assert.equal(new Set(command.roots).size, command.roots.length);
 });
@@ -1235,16 +1250,17 @@ test('a malformed or ambiguous declaration with comment trivia is never promoted
   }
 });
 
-test('the live derived test-to-test edge set is exactly the intentional source-map -> business-bi-epic-closure route', async () => {
+test('the live derived test-to-test edge set is exactly the intentional imported-parent routes', async () => {
   const { importEdges, importRouteViolations } = await realTopology();
   assert.deepStrictEqual(
     importRouteViolations,
     [],
     `static import-route violations: ${formatImportRouteViolations(importRouteViolations)}`,
   );
-  assert.deepStrictEqual(importEdges, [
-    { from: INTENTIONAL_IMPORTED_PARENT, to: INTENTIONAL_IMPORTED_SUITE },
-  ]);
+  assert.deepStrictEqual(
+    importEdges,
+    INTENTIONAL_IMPORTED_ROUTES.map((route) => ({ from: route.parent, to: route.suite })),
+  );
 });
 
 test('formatImportRouteViolations renders importer-and-reason diagnostics', () => {

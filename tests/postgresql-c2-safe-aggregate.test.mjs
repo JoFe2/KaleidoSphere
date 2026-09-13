@@ -32,7 +32,7 @@ import {createHash} from 'node:crypto';
 import {mkdtemp, readFile, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
-import {spawnSync} from 'node:child_process';
+import {execFileSync, spawnSync} from 'node:child_process';
 import test from 'node:test';
 
 import {
@@ -480,4 +480,134 @@ test('the C2 substrate binding refuses a substituted frozen C1 profile or certif
   assert.notEqual(fileSha256(tamperedCert), C1_CERTIFICATE_SHA256, 'certificate substitution diverges from the frozen digest');
   throws(() => bindToC1Profile({profileBytes: tamperedProfile, certBytes}));
   throws(() => bindToC1Profile({profileBytes, certBytes: tamperedCert}));
+});
+
+// ---------------------------------------------------------------------------
+// Real clean-room registration (this correction). The 2026-09-12 dedicated-VM
+// execution at the tested head is registered byte-for-byte as tracked evidence
+// and bound to the tested source, the certified C1 substrate, and the committed
+// deterministic C2 certificate. The registration never rewrites the committed
+// certificate or the frozen C1 bytes; the later real-run provenance is kept
+// separate from the source-local certificate mint.
+// ---------------------------------------------------------------------------
+
+const C2_TESTED_HEAD = '28b50870d2ab360ebce76d524ab2636254382c22';
+const C2_TESTED_HEAD_PARENT = 'e5edb163319598397ba7b7b223d2cd33d5b6b307';
+const C2_TESTED_HEAD_TREE = '6f995105138bab7c633a24c56a5cfd2bb21d849d';
+const C2_TESTED_HEAD_SUBJECT = 'PostgreSQL C2 safe-aggregate contract, typed-plan execution, and certificate (#150)';
+const C2_RAW_EVIDENCE_PRIMARY_PATH = '.ks150-c2-real-cleanroom-primary-evidence.json';
+const C2_RAW_EVIDENCE_POST_RESTORE_PATH = '.ks150-c2-real-cleanroom-post-restore-evidence.json';
+const C2_RAW_EVIDENCE_SHA256 = 'b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382';
+const C2_REAL_CLEANROOM_PROVENANCE_PATH = 'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json';
+const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '4686d5e91a2dff5fd1e94efb137d4691cdba10eff0be61a5c2c5e0f3e56686c0';
+const C2_REAL_CLEANROOM_READBACK_PATH = 'docs/evidence/postgresql-c2-real-cleanroom/README.md';
+const C2_REAL_CLEANROOM_READBACK_SHA256 = '43d1f7e774bd0fa3acd991ab1cae7c0129bf4cb82aaa37c125958d15b6bf7dd6';
+const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b';
+const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = '959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496';
+// Correction-only paths: if a product/config/fixture/test byte changed after the
+// tested head outside this bounded correction, the registration does not hold.
+const ALLOWED_SINCE_TESTED_HEAD = new Set([
+  '.ks150-c2-real-cleanroom-post-restore-evidence.json',
+  '.ks150-c2-real-cleanroom-primary-evidence.json',
+  'SOURCE-MAP.json',
+  'SOURCE-MAP.md',
+  'WORK_RESULT.md',
+  'docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json',
+  'docs/evidence/postgresql-c2-real-cleanroom/README.md',
+  'scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs',
+  'tests/postgresql-c2-safe-aggregate.test.mjs',
+  'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json',
+]);
+
+const git = (...args) => execFileSync('git', [...args], {cwd: root, encoding: 'utf8'}).trim();
+
+test('the real clean-room evidence is registered byte-for-byte and bound to the tested head (AC02/AC03 registration)', async () => {
+  const provenanceBytes = await readFile(path.join(root, C2_REAL_CLEANROOM_PROVENANCE_PATH), 'utf8');
+  const provenance = JSON.parse(provenanceBytes);
+  assert.equal(provenance.schemaVersion, 'kaleidosphere.db/postgresql-c2-real-cleanroom-provenance/v1');
+  assert.equal(provenance.issue, 'PG-KS-03');
+  assert.equal(provenance.publicIssue, 'JoFe2/KaleidoSphere#150');
+  // The provenance self-digest is the identity hash of its own body.
+  const {provenanceSha256: _self, ...provBody} = provenance;
+  assert.equal(provenance.provenanceSha256, C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256);
+  assert.equal(identitySha256(provBody), C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256);
+  // The registered raw evidence bytes exist at their recorded paths and digests.
+  for (const artifact of provBody.artifacts) {
+    const raw = await readFile(path.join(root, artifact.path));
+    assert.equal(fileSha256(raw), artifact.sha256, `${artifact.path} matches its recorded digest`);
+  }
+  const primary = await readFile(path.join(root, C2_RAW_EVIDENCE_PRIMARY_PATH));
+  const postRestore = await readFile(path.join(root, C2_RAW_EVIDENCE_POST_RESTORE_PATH));
+  assert.equal(primary.equals(postRestore), true, 'both retained files are the byte-identical record of the byte-reproducible real run');
+  assert.equal(fileSha256(primary), C2_RAW_EVIDENCE_SHA256);
+  // The tested head is the exact retained commit and is an ancestor of HEAD.
+  assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^{commit}`), C2_TESTED_HEAD);
+  assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^{tree}`), C2_TESTED_HEAD_TREE);
+  assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^`), C2_TESTED_HEAD_PARENT);
+  assert.equal(git('log', '-1', '--format=%s', C2_TESTED_HEAD), C2_TESTED_HEAD_SUBJECT);
+  git('merge-base', '--is-ancestor', C2_TESTED_HEAD, 'HEAD');
+  // No product/config/fixture/certificate byte changed after the tested head.
+  const changed = git('diff', '--name-only', C2_TESTED_HEAD, 'HEAD').split('\n').filter(Boolean);
+  assert.ok(
+    changed.every((file) => ALLOWED_SINCE_TESTED_HEAD.has(file)),
+    `changed files outside the bounded correction: ${changed.join(', ')}`,
+  );
+  for (const bounded of [
+    'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs',
+    'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
+    'verification/postgresql-c2-safe-aggregate-v1.json',
+    'scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs',
+    'package.json',
+    'contracts/connectors/postgresql/c1-profile-v1.json',
+    'verification/postgresql/postgresql-c1-evidence-v1.json',
+  ]) {
+    assert.ok(!changed.includes(bounded), `${bounded} is byte-identical since the tested head`);
+  }
+  // The provenance binds the committed deterministic C2 certificate and the real
+  // execution record to the same certified C1 substrate and admitted inputs.
+  assert.equal(provBody.certificate.path, 'verification/postgresql-c2-safe-aggregate-v1.json');
+  assert.equal(provBody.certificate.sha256, C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA);
+  assert.equal(provBody.certificate.certificateSha256, C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA);
+  assert.equal(fileSha256(await readFile(committedPath)), C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA);
+  assert.equal(provBody.bindings.c1ProfileSha256, C1_PROFILE_SHA256);
+  assert.equal(provBody.bindings.c1CertificateSha256, C1_CERTIFICATE_SHA256);
+  assert.equal(provBody.bindings.metricContractSha256, ADMITTED_METRIC_CONTRACT_SHA256);
+  assert.equal(provBody.bindings.holdoutSha256, ADMITTED_HOLDOUT_SHA256);
+  assert.equal(provBody.bindings.oracleSha256, ADMITTED_ORACLE_SHA256);
+  assert.equal(provBody.execution.state, 'COMPLETE');
+  assert.equal(provBody.execution.oracleEquality, 'EXACT');
+  assert.deepEqual(provBody.execution.failClosed, C2_FAIL_CLOSED);
+  assert.equal(provBody.execution.sessionProof.transactionReadOnly, 'on');
+  assert.equal(provBody.execution.sessionProof.defaultTransactionReadOnly, 'on');
+  assert.equal(provBody.execution.sessionProof.adminCapabilities, false);
+});
+
+test('the real clean-room readback evidence path is readable and binds the same bytes', async () => {
+  const readback = await readFile(path.join(root, C2_REAL_CLEANROOM_READBACK_PATH), 'utf8');
+  assert.equal(fileSha256(Buffer.from(readback, 'utf8')), C2_REAL_CLEANROOM_READBACK_SHA256);
+  for (const needle of [
+    C2_RAW_EVIDENCE_PRIMARY_PATH,
+    C2_RAW_EVIDENCE_POST_RESTORE_PATH,
+    C2_RAW_EVIDENCE_SHA256,
+    C2_TESTED_HEAD,
+    'bi-ks-01-net-revenue/v1',
+    'DB_ANALYZE_CREDENTIAL_MISSING',
+    'BUSINESS_BI_READ_ONLY_EVIDENCE_DENIED',
+    'DB_ANALYZE_PRINCIPAL_NOT_READ_ONLY',
+  ]) {
+    assert.ok(readback.includes(needle), `readback names ${needle}`);
+  }
+  assert.ok(!readback.includes('CM_POSTGRESQL_PASSWORD'), 'readback does not reproduce credential material');
+});
+
+test('C2 real clean-room registration never rewrites the committed certificate or the frozen C1 bytes', async () => {
+  // The committed certificate stays the exact deterministic source-local mint.
+  const first = runScript(['--dry-run'], {env: {...process.env, PATH: ''}});
+  const committed = await readFile(committedPath, 'utf8');
+  assert.equal(committed, first.stdout, 'the C2 certificate is unchanged and byte-stable');
+  assert.equal(
+    JSON.parse(committed).realDisprovablePostgresql.state,
+    'BLOCKED_EXTERNAL',
+    "the certificate's own recorded real-PG state is not relabelled by the registration",
+  );
 });
