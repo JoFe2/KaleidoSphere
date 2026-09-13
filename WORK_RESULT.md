@@ -533,3 +533,88 @@ the run's exact-digest image (`94f23d40…`) and data volume (`8619b8bc…`) rem
   clean-room evidence is real and reproducible (captured sha `b3c10b11…`), not a relabel.
 - Nonclaims preserved: no general analytics suite, no free SQL, no inference that C1 implies C2,
   no other PostgreSQL profile, no production/customer/HA/scale/all-versions claim.
+
+---
+
+## INDEPENDENT VERIFICATION PASS — SOURCE_ALREADY_PRESENT (worker, read-only re-verification)
+
+Task directive: "First inspect current source and demonstrate the missing behavior RED. If already
+implemented, do not rebuild: report SOURCE_ALREADY_PRESENT with exact paths/tests."
+
+Result: **SOURCE_ALREADY_PRESENT**. All four required PG-KS-03 writable paths exist, are committed,
+are SOURCE-MAP-registered, and pass their gates. No rebuild was performed. No file was modified;
+the working tree is clean (`git status --porcelain` empty). No new commit was created, because the
+required behavior is already present and committed — creating an empty or redundant commit would
+not be additive value.
+
+### Re-verified facts (commands actually run, exact results)
+
+| Check | Command | Result |
+|---|---|---|
+| Base ancestry | `git log --oneline e5edb16..HEAD` | 2 commits: `33beed8`, `4bf5575` (C2 work is committed) |
+| AC01 contract | file read + registry dump | `contracts/connectors/postgresql/c2-safe-aggregate-v1.json` — exactly one SUPPORTED op `bi-ks-01-net-revenue/v1`; 6 other methods `UNSUPPORTED`; closedSet true; EUR/minor-units; inclusive-both-ends date semantics |
+| AC02 executor | `grep` + suite | `services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs` — `dispatch: 'REGULAR'`, executor `postgresql.run-queries`, capability `postgresql.read-only-session`, `BEGIN READ ONLY`, budget/timeout/cancel, typed-plan digest binding |
+| AC03 tests | `node --test tests/postgresql-c2-safe-aggregate.test.mjs` | **21 tests / 21 pass / 0 fail** |
+| AC04 certificate | independent `identitySha256` recompute | declared `95987472…` == recomputed `95987472…` — **VERIFIED** |
+| C1 non-revocation | `git show e5edb16:<f>` vs `HEAD:<f>` | profile `3faea403…`, cert `859970ca…`, live matrix `90866c86…` — **IDENTICAL** (no C1 evidence byte revoked/rewritten) |
+| SOURCE-MAP integrity | recompute vs `SOURCE-MAP.json.files` | contract/executor-test/certificate/evidence hashes all **OK** |
+| Clean-room reproducibility | run script, hash cert before/after | byte-identical `630096d4…` — deterministic, **C1 bytes untouched by C2 issuance** |
+| Retained VM evidence | `sha256sum` vs provenance | `b3c10b11…` matches provenance + SOURCE-MAP byte-for-byte |
+| Full canonical suite | `npm test` | 1249 tests / 1247 pass / **2 fail** — both pre-existing `python3 ENOENT` env failures, reproduced at base `e5edb16` |
+| Governance gates | `node --test tests/canonical-test-topology.test.mjs tests/source-map.test.mjs` | **78 / 78 pass** |
+| C1 gate (frozen) | `node --test tests/postgresql-c1-certification.test.mjs` | **33 / 33 pass** |
+
+### Genuine RED demonstration (non-vacuity proof)
+
+An early sabotage probe that edited a non-existent SQL token produced 0 replacements and proved
+nothing; a second probe that mutated the live SQL projection (`amount_minor_units + 1`) still
+passed 21/21, because the committed suite is deliberately **source-local** (it injects a synthetic
+`read:` seam and asserts no process/network/live-DB route — real-PG execution belongs to the VM
+clean-room, not the unit suite). That is by design, not a hole.
+
+The decisive probe was therefore run at the **runtime oracle-equality gate** actually exercised:
+
+```
+sed -i "947s|fail('BUSINESS_BI_ORACLE_MISMATCH');|/*GATE_DISABLED_RED_PROBE*/|" \
+  services/bi-control/src/business-bi/net-revenue-plan.mjs
+node --test tests/postgresql-c2-safe-aggregate.test.mjs
+=> tests 21 / pass 20 / fail 1
+   ✖ AC03: the product path is oracle-exact and the sabotage matrix fails closed
+```
+
+Removing the gate turns the suite **RED**, proving AC03's fail-closed assertions are genuine and
+would catch a bypass. The file was restored immediately; tree verified clean afterward.
+
+The AC03 matrix is closed and registered at
+`services/bi-control/src/business-bi/net-revenue-plan.mjs` → `NET_REVENUE_COMPUTE_FAULTS`:
+`UNKNOWN_TO_ZERO`, `SEMANTIC_SIGN_FLIP` (semantic mutation), `ROW_SUBSTITUTION_DOUBLE_COUNT`
+(row substitution) — exactly the three sabotage classes the task requires. It also includes a GREEN
+control (un-faulted execution COMPLETE/EXACT), an unregistered-fault refusal
+(`BUSINESS_BI_EXECUTION_INPUT_DENIED`), and receipt-substitution denial.
+
+### Boundaries honored
+
+- No push, no public mutation, no issue closure, no credential use, no external system contacted.
+- No original AC, nonclaim, frozen C1 evidence byte, or publication fence weakened.
+- No C2 inference from C1; no second method; no customer/production access; released task history
+  unrewritten. All probes were reverted; final tree clean.
+- Optional hints left optional. No test or governance change made by this pass.
+
+### Unresolved gates (NOT claimed as delivered)
+
+1. **AC05 real-PostgreSQL disposition.** The source-local C2 certificate records
+   `realDisprovablePostgresql.state = BLOCKED_EXTERNAL` / `NO_REAL_DISPOSABLE_POSTGRESQL`. The
+   retained VM clean-room evidence (`b3c10b11…`) exists, is hash-bound and registered, but was
+   executed in a prior session on the dedicated VM; this pass did **not** re-execute a real
+   PostgreSQL clean-room (no live PG boundary was available in this environment).
+2. **AC05/AC06 delivery chain — controller-owned, never authored here.** Live revalidation, the
+   single independent review, current-Main integration and Root-QS, exact PR-head CI and SHA-bound
+   merge, Main CI and release/readback receipt, controller-serialized anonymous readback, public
+   issue #150 close, Queue DONE, and parent #144 per-child terminal reporting with close-after-
+   exact-readback. Not performed and **not claimed** by this worker.
+3. **Environment gap (pre-existing, not a product defect):** `python3` is absent from this image,
+   failing `tests/security.test.mjs` and one validator test. Reproduced identically at base
+   `e5edb16`, so it is not caused by and does not block the C2 work. Owner: environment/toolchain.
+   Resume trigger: a toolchain image providing `python3`.
+
+**This worker does not claim delivery.** `PACKAGE_DONE` is not public Issue closure.
