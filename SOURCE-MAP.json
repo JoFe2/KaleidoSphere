@@ -649,7 +649,7 @@
     "tests/portable-companion-template-validator.test.mjs": "864870da07dbf7d6d1ab54e3aad3987fce849e436d6b073e716d1eded3299216",
     "tests/postgresql-adapter.test.mjs": "8c129dfc5433e10f8bc7a85c6bba7782a2b42d6643603941d4375b83c63a465c",
     "tests/postgresql-c1-certification.test.mjs": "86d2fbabbda4df624cc68d4803dd2c9a503b1278a29d65c9a787976bf0b5288a",
-    "tests/postgresql-c2-safe-aggregate.test.mjs": "04bc5a4099499e142b5a44b25655ab858d6882d7f9e99898ba125babc62e6f32",
+    "tests/postgresql-c2-safe-aggregate.test.mjs": "0909dc3668a63772d0e5f8c60f498b4f6ecd8b9b2c572aa583beee37ae2147ff",
     "tests/postgresql-e2e.test.mjs": "9fb62380ed6c22945bc2ccde27bf7f3e566de7875069cbcb2152cf6f60ec6001",
     "tests/postgresql-product-dispatch.test.mjs": "a8101d63c4cb442fde551c2e4a6799f8c8c44d2ce07df7e6ef45df258e7a8761",
     "tests/postgresql-structure-scan.test.mjs": "3b5d830134bca1ddc4a8791bfc3643a4c50f306a5deb10c3d6295f5a38dd33d7",

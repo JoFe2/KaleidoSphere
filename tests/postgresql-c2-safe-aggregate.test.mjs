@@ -515,6 +515,8 @@ const ALLOWED_SINCE_TESTED_HEAD = new Set([
   'docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json',
   'docs/evidence/postgresql-c2-real-cleanroom/README.md',
   'scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs',
+  'tests/canonical-test-topology.test.mjs',
+  'tests/postgresql-c1-certification.test.mjs',
   'tests/postgresql-c2-safe-aggregate.test.mjs',
   'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json',
 ]);
