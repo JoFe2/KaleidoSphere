@@ -18,6 +18,10 @@
 // KS150 canonical-route correction: the two gate suites that carry/extend the canonical
 // route set (the C1/C2 lifecycle parent gate and the CI-TOPOLOGY gate) are also
 // content-addressed here, so the registration of this correction stays complete.
+// KS150 AC03 falsifier correction: the net-revenue typed-plan module is the product byte
+// that carries the closed compute fault seam and the real oracle/substitution gates the
+// AC03 RED/GREEN matrix now drives, so it is content-addressed here too (it was already
+// registered; this re-binds its digest to the corrected bytes).
 import { createHash } from 'node:crypto';
 import { access, readFile, rename, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
@@ -33,6 +37,7 @@ const authoredFiles = [
   'scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs',
   'scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs',
   'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs',
+  'services/bi-control/src/business-bi/net-revenue-plan.mjs',
   'tests/canonical-test-topology.test.mjs',
   'tests/postgresql-c1-certification.test.mjs',
   'tests/postgresql-c2-safe-aggregate.test.mjs',

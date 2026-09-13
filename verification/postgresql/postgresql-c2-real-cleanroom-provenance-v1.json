@@ -147,8 +147,28 @@
     "state": "UNCHANGED",
     "note": "The committed C2 certificate remains the byte-deterministic output of the source-local clean-room (scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs) and is not re-minted by this registration. The real-run evidence is registered as separate, later provenance bound to the same certified C1 substrate and fixture digests; nothing here relabels the certificate or the frozen C1 bytes."
   },
+  "integration": {
+    "recordKind": "SQUASH_INTEGRATION_EQUIVALENCE",
+    "repositoryMergePolicy": "SQUASH_ONLY",
+    "mergeMode": "SQUASH",
+    "publicPullRequest": "JoFe2/KaleidoSphere#231",
+    "integratedCommit": "33beed8f387216a73621e1ff1cb0354612fad0e1",
+    "integratedCommitTree": "fc545b02461fab5b4e251268755a4f7bdbf136ca",
+    "integratedCommitParent": "e5edb163319598397ba7b7b223d2cd33d5b6b307",
+    "testedHead": "28b50870d2ab360ebce76d524ab2636254382c22",
+    "testedHeadParent": "e5edb163319598397ba7b7b223d2cd33d5b6b307",
+    "testedHeadTree": "6f995105138bab7c633a24c56a5cfd2bb21d849d",
+    "testedHeadSubject": "PostgreSQL C2 safe-aggregate contract, typed-plan execution, and certificate (#150)",
+    "ancestryDisposition": "REPLACED_BY_SQUASH",
+    "ancestryNote": "The repository permits squash merges only. The exact-head-reviewed candidate was integrated as the single squash commit above, so historical ancestry is replaced, not preserved: the tested head is not an ancestor of Main. Whether the tested head commit OBJECT is still retrievable on a given host is incidental and MUST NOT be asserted either way - GitHub's pull-request checkout (actions/checkout@v4, fetch-depth: 0) fetches the PR head ref and retains that object, while a clone that never fetched the ref does not have it. A prior correction asserted the tested head must not resolve and therefore failed on CI while passing locally; the corrected gate verifies the recorded identities WHEN the object is present and asserts only the host-independent facts (the integrated squash commit's parent is exactly the recorded tested-head parent, the tested head is not an ancestor of HEAD, and the delivered bytes are content-equivalent to the tested bindings).",
+    "equivalenceClaims": {
+      "baseRelation": "The integrated squash commit's parent is exactly the recorded tested-head parent, so the squash was applied onto precisely the base the tested head was built on.",
+      "contentRelation": "Every byte the real run bound (C1 profile/certificate, metric contract, holdout, oracle, typed plan, committed C2 certificate, retained raw evidence) is byte-identical on Main to the tested-run bindings; the product/config/fixture/contract/certificate/profile/C1 bytes are the same objects and were never changed after the tested head except by the bounded real-evidence registration recorded here.",
+      "nonClaim": "This is content-level equivalence under the repository's squash-only policy. It does not assert, and no test may assert, that the tested head commit is an ancestor of Main."
+    }
+  },
   "testedSourceVersusCandidate": {
-    "checkedBy": "git diff --name-only 28b50870d2ab360ebce76d524ab2636254382c22 HEAD, asserted by the registered gate test",
+    "checkedBy": "content-equivalence: every path bound by the tested run is byte-identical to its committed bytes on Main; the integrated squash commit's parent is asserted equal to the recorded tested-head parent",
     "changedFilesSinceTestedHead": [
       ".ks150-c2-real-cleanroom-post-restore-evidence.json",
       ".ks150-c2-real-cleanroom-primary-evidence.json",
@@ -161,7 +181,7 @@
       "tests/postgresql-c2-safe-aggregate.test.mjs",
       "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json"
     ],
-    "note": "Every changed path is within the bounded real-evidence registration correction (newly tracked retained bytes, the provenance/readback records that bind them, the source-map updater and its content-addressed outputs, the legacy-identity inventory re-freeze, and the delivery record). No product, config, fixture, contract, certificate, profile, or C1 byte changed after the tested head; the tested head is an ancestor of the correction head."
+    "note": "Every changed path is within the bounded real-evidence registration correction (newly tracked retained bytes, the provenance/readback records that bind them, the source-map updater and its content-addressed outputs, the legacy-identity inventory re-freeze, and the delivery record). No product, config, fixture, contract, certificate, profile, or C1 byte changed after the tested head. The tested head's historical ancestry was replaced by the repository's squash-only merge policy; equivalence is established by the content-level bindings above, never by an unverifiable ancestor claim."
   },
   "rechecks": {
     "policy": "Re-run only checks whose relevant inputs changed. No product input changed after the tested head, so no historical evidence was re-minted. The focused source-local suites (C2 safe-aggregate, C1 certification, legacy-technical-identity plan, source map) and the canonical npm suite were re-run at the correction head as this correction gate; the actual outputs are recorded in WORK_RESULT.md.",
@@ -174,5 +194,5 @@
     "No credential, connection string, or raw row value is reproduced here; the secret stays on the file-secret route.",
     "If authentic evidence is insufficient for any gate, that gate stays open with its own verifiable resume trigger; nothing is claimed delivered."
   ],
-  "provenanceSha256": "4686d5e91a2dff5fd1e94efb137d4691cdba10eff0be61a5c2c5e0f3e56686c0"
+  "provenanceSha256": "2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5"
 }

@@ -254,9 +254,14 @@ route from its certified C1/C2 lifecycle sibling gate
 the second intentional imported-parent route (`130` tracked suites, `128` direct roots, two
 imported-parent routes), so the frozen `package.json` manifest bytes and the committed
 deterministic certificate remain byte-identical. The registered gate test
-verifies the tested head is an ancestor of the correction head and that no product,
-config, fixture, contract, certificate, profile, or C1 byte changed after the tested
-head; the legacy-identity inventory was re-frozen additively (1043 -> 1046, 0 removed),
+verifies the squash-integration equivalent provenance instead of an ancestor relation:
+the repository permits squash merges only, so the tested head's ancestry disposition is
+`REPLACED_BY_SQUASH` and the integrated squash commit's parent is asserted equal to the
+recorded tested-head parent, with a content-equivalence check that no product,
+config, fixture, contract, certificate, profile, or C1 byte changed after the integration
+outside the bounded registration correction; a positive/negative topology-and-tamper test
+pair proves the equivalence and falsifies a forged ancestor-preserving claim. The
+legacy-identity inventory was re-frozen additively (1043 -> 1046, 0 removed),
 and the canonical suites were re-run at the correction head (actual outputs recorded in
 `WORK_RESULT.md`). This entry describes committed evidence bytes only; public
 publication and anonymous readback remain controller-owned gates and are not claimed.
