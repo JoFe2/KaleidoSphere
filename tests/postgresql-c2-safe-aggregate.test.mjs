@@ -29,6 +29,7 @@
 
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {rmSync} from 'node:fs';
 import {mkdtemp, readFile, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -526,9 +527,9 @@ const C2_RAW_EVIDENCE_PRIMARY_PATH = '.ks150-c2-real-cleanroom-primary-evidence.
 const C2_RAW_EVIDENCE_POST_RESTORE_PATH = '.ks150-c2-real-cleanroom-post-restore-evidence.json';
 const C2_RAW_EVIDENCE_SHA256 = 'b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382';
 const C2_REAL_CLEANROOM_PROVENANCE_PATH = 'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json';
-const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '1a25dc56d387e074d3c2e84611d8717cc59063fa529ac0b9adc6ee004f1e14eb';
+const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5';
 const C2_REAL_CLEANROOM_READBACK_PATH = 'docs/evidence/postgresql-c2-real-cleanroom/README.md';
-const C2_REAL_CLEANROOM_READBACK_SHA256 = 'b9f5138f34201f61580f39f129d5feb14f7a882796c5a1c38053844bfac0a06e';
+const C2_REAL_CLEANROOM_READBACK_SHA256 = 'b2739ec7391c2a2233be22e764150597b08bf614119569b968fb549fa1d1dca3';
 const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b';
 const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = '959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496';
 // Correction-only paths: if a product/config/fixture/test byte changed after the
@@ -554,6 +555,19 @@ const ALLOWED_SINCE_TESTED_HEAD = new Set([
 ]);
 
 const git = (...args) => execFileSync('git', [...args], {cwd: root, encoding: 'utf8'}).trim();
+// True existence probe for a commit object: `git cat-file -e <sha>^{commit}` exits
+// non-zero when the object is genuinely absent and exits zero when it exists. This is
+// deliberately NOT `git rev-parse <sha>` (which echoes any syntactically valid 40-hex
+// string with exit 0 even when no such object exists, so it can never prove presence)
+// and NOT a bare try/catch around `rev-parse` (whose outcome depends on whether the
+// host happened to retain the object, which is exactly the flake this test must not
+// reproduce).
+const hasCommit = (sha) => spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], {cwd: root}).status === 0;
+// Ancestry probe. `merge-base --is-ancestor` reports reachability from the commit graph
+// and needs only the ancestor object when it is present; a non-zero exit is the stable
+// "not an ancestor" answer under the squash-only policy.
+const isAncestor = (maybeAncestor, descendant) =>
+  spawnSync('git', ['merge-base', '--is-ancestor', maybeAncestor, descendant], {cwd: root}).status === 0;
 
 test('the real clean-room evidence is registered byte-for-byte and bound to the tested head (AC02/AC03 registration)', async () => {
   const provenanceBytes = await readFile(path.join(root, C2_REAL_CLEANROOM_PROVENANCE_PATH), 'utf8');
@@ -594,16 +608,34 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   assert.equal(git('rev-parse', `${C2_INTEGRATED_COMMIT}^{commit}`), C2_INTEGRATED_COMMIT);
   assert.equal(git('rev-parse', `${C2_INTEGRATED_COMMIT}^`), C2_TESTED_HEAD_PARENT);
   assert.equal(git('rev-parse', `${C2_INTEGRATED_COMMIT}^{tree}`), provBody.integration.integratedCommitTree);
-  // Independent check 2 — the tested head commit object is genuinely absent (squash
-  // replaced it): resolving it must fail. If a future policy change restored ancestry,
-  // this expectation is what would need deliberate, reviewed updating.
-  let testedHeadResolvable = true;
-  try {
-    git('rev-parse', `${C2_TESTED_HEAD}^{commit}`);
-  } catch {
-    testedHeadResolvable = false;
+  // Independent check 2 — evidence equivalence is asserted on facts that hold on EVERY
+  // host, never on the incidental presence or absence of one loose object.
+  //
+  // An earlier correction asserted that the tested head must NOT resolve. That is a
+  // host-dependent expectation, not a repository fact: GitHub's pull-request checkout
+  // (actions/checkout@v4, fetch-depth: 0) fetches the PR head ref, so the exact tested
+  // head object IS retained there and resolves, while a clone that never fetched that
+  // ref does not have it. The assertion therefore failed on CI while passing locally —
+  // a flake, and a vacuous one: object absence proves nothing about whether the
+  // delivered bytes equal the tested bytes.
+  //
+  // The stable, host-independent facts are: the integrated squash commit and its parent
+  // are real commits reachable on Main; the integrated parent is exactly the recorded
+  // tested-head parent (so the squash was applied onto precisely the base the tested
+  // head was built on); and the delivered content is byte-equivalent to the tested
+  // bindings. Presence is verified when available, never required, and never asserted
+  // either way.
+  if (hasCommit(C2_TESTED_HEAD)) {
+    // On a host that retained the tested head (the real CI checkout), the recorded
+    // identities must match the actual object — strictly more verification, not less.
+    assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^{commit}`), C2_TESTED_HEAD);
+    assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^{tree}`), C2_TESTED_HEAD_TREE);
+    assert.equal(git('rev-parse', `${C2_TESTED_HEAD}^`), C2_TESTED_HEAD_PARENT);
+    assert.equal(git('log', '-1', '--format=%s', C2_TESTED_HEAD), C2_TESTED_HEAD_SUBJECT);
   }
-  assert.equal(testedHeadResolvable, false, 'the tested head is not resolvable on Main: ancestry was replaced by squash');
+  // Whatever the tested-head object's availability, the ancestry disposition is stable:
+  // ancestry was REPLACED by the squash, so the tested head is not an ancestor of HEAD.
+  assert.equal(isAncestor(C2_TESTED_HEAD, 'HEAD'), false, 'the tested head is not an ancestor of HEAD under the squash-only policy');
   // Independent check 3 — content equivalence, measured against the two git facts that
   // actually exist on Main (the recorded tested-head base and the squash integration),
   // never against the unresolvable tested head.
@@ -718,9 +750,10 @@ test('the squash integration topology is positively proven from tracked git fact
   const {provenanceSha256: _self, ...provBody} = provenance;
   // The integrated squash commit's parent is exactly the recorded tested-head parent.
   assert.equal(git('rev-parse', `${provBody.integration.integratedCommit}^`), provBody.integration.testedHeadParent);
-  // The recorded parent is a genuine ancestor of the integrated commit and of HEAD.
-  // (merge-base --is-ancestor exits 0 and yields empty stdout when the relation holds.)
-  assert.equal(git('merge-base', '--is-ancestor', provBody.integration.testedHeadParent, 'HEAD'), '');
+  // The recorded parent is a genuine reachable ancestor of HEAD. This is checked with
+  // the stable probe, which reports the same true/false outcome on every host and does
+  // not depend on whether the (separate, squash-replaced) tested-head object exists.
+  assert.equal(isAncestor(provBody.integration.testedHeadParent, 'HEAD'), true, 'the recorded tested-head parent is an ancestor of HEAD');
   // Every bound byte path is tracked at the integrated commit (it is real delivered source).
   for (const bound of C2_TESTED_BINDING_PATHS) {
     const tracked = git('ls-files', '--error-unmatch', bound);
@@ -744,19 +777,15 @@ test('a forged ancestor-preserving or tampered topology claim fails closed', asy
     'a substituted tested-head parent breaks the provenance self-digest',
   );
   // A forged "ancestor-preserving" claim is refused: the recorded policy is squash-only
-  // and the tested head genuinely does not resolve, so the ancestor assertion cannot hold.
+  // and the tested head is genuinely not an ancestor of HEAD (checked with the stable
+  // probe, independent of whether the tested-head object happens to be retained), so the
+  // ancestor assertion cannot hold.
   const forged = parse();
   forged.integration.mergeMode = 'MERGE_COMMIT';
   forged.integration.ancestryDisposition = 'PRESERVED';
   assert.notEqual(forged.integration.mergeMode, C2_INTEGRATED_MERGE_MODE, 'merge mode is squash, not a merge commit');
   assert.notEqual(forged.integration.ancestryDisposition, C2_ANCESTRY_DISPOSITION, 'ancestry was replaced, not preserved');
-  let forgedAncestorHolds = false;
-  try {
-    git('merge-base', '--is-ancestor', C2_TESTED_HEAD, 'HEAD');
-    forgedAncestorHolds = true;
-  } catch {
-    forgedAncestorHolds = false;
-  }
+  const forgedAncestorHolds = isAncestor(C2_TESTED_HEAD, 'HEAD');
   assert.equal(forgedAncestorHolds, false, 'an ancestor-preserving claim is falsified by the real repository state');
   // A substituted squash commit identity fails closed against the recorded commit.
   const wrongCommit = parse();
@@ -778,4 +807,121 @@ test('the readback evidence and provenance both record the squash ancestry dispo
     !/is an ancestor of the correction head/.test(readback),
     'the readback no longer asserts an unverifiable ancestor relation',
   );
+});
+
+// ---------------------------------------------------------------------------
+// Host-independence regression for the squash-integration provenance check.
+//
+// The retained CI failure was a host-dependent expectation: the check asserted that the
+// tested head must NOT resolve. GitHub's PR checkout retains the PR-head object (so it
+// resolves) while a squash-only clone without that ref does not (so it does not). The
+// verdict flipped with the host, so the gate passed locally and failed on CI.
+//
+// These two tests build both topologies as REAL git repositories and prove the corrected
+// check returns the same verdict on each: presence is verified when available and never
+// required, absence is never asserted, and the stable ancestry/content facts hold either
+// way. They are the positive/negative pair for the fix itself.
+// ---------------------------------------------------------------------------
+
+const runGit = (cwd, ...args) => execFileSync('git', [...args], {cwd, encoding: 'utf8'}).trim();
+
+// Build a real repo with the squash-only topology, optionally retaining the pre-squash
+// commit object (the CI case) or leaving it unreachable (the local-clone case). The
+// candidate commit is created with `commit-tree` so that, when not retained, it never
+// becomes reachable through any ref and can be dropped deterministically — exactly the
+// state a clone that never fetched the PR head ref is in. The squash integration carries
+// the registration correction on top of the candidate tree, so it is a genuinely
+// distinct commit object (a real squash commit never equals its source commit).
+const buildSquashTopology = async ({retainTestedHead}) => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'ks150-squash-topology-'));
+  runGit(dir, 'init', '-q');
+  runGit(dir, 'config', 'user.email', 'gate@localhost');
+  runGit(dir, 'config', 'user.name', 'gate');
+  runGit(dir, 'config', 'commit.gpgsign', 'false');
+  await writeFile(path.join(dir, 'base.txt'), 'base\n', 'utf8');
+  runGit(dir, 'add', 'base.txt');
+  runGit(dir, 'commit', '-q', '-m', 'base');
+  const base = runGit(dir, 'rev-parse', 'HEAD');
+  // The exact-head-reviewed candidate (the "tested head") and its tree. `commit-tree`
+  // creates the object without ever pointing a ref at it.
+  await writeFile(path.join(dir, 'c2.json'), '{}\n', 'utf8');
+  runGit(dir, 'add', 'c2.json');
+  const candidateTree = runGit(dir, 'write-tree');
+  const testedHead = runGit(dir, 'commit-tree', candidateTree, '-p', base, '-m', 'PostgreSQL C2 (#150)');
+  // Squash-only integration: one new commit on top of `base` carrying the candidate tree
+  // plus the later bounded registration correction, so it has its own distinct tree.
+  await writeFile(path.join(dir, 'registration.json'), '{"registered":true}\n', 'utf8');
+  runGit(dir, 'add', 'registration.json');
+  const integratedTree = runGit(dir, 'write-tree');
+  const integrated = runGit(dir, 'commit-tree', integratedTree, '-p', base, '-m', 'PostgreSQL C2 (#150) with registration');
+  runGit(dir, 'symbolic-ref', 'HEAD', 'refs/heads/main');
+  runGit(dir, 'update-ref', 'refs/heads/main', integrated);
+  runGit(dir, 'branch', '-D', 'master');
+  runGit(dir, 'checkout-index', '-a', '-f');
+  if (!retainTestedHead) {
+    // Drop the candidate object exactly, as a clone that never fetched the PR ref. The
+    // object is written loose (it was never committed through a ref), so removing its
+    // loose file is a deterministic absence — no reliance on `gc` grace-period
+    // heuristics, which would otherwise keep a freshly created object around.
+    runGit(dir, 'reflog', 'expire', '--expire=now', '--all');
+    rmSync(path.join(dir, '.git', 'objects', testedHead.slice(0, 2), testedHead.slice(2)), {force: true});
+  }
+  return {dir, base, testedHead, testedHeadTree: candidateTree, integrated, integratedTree};
+};
+
+// The corrected check, expressed exactly as the production test uses it. It must never
+// require absence and never require presence.
+const squashVerdict = (dir, {testedHead, base, integrated}) => {
+  const probe = (sha) => spawnSync('git', ['cat-file', '-e', `${sha}^{commit}`], {cwd: dir}).status === 0;
+  const ancestor = (a, b) => spawnSync('git', ['merge-base', '--is-ancestor', a, b], {cwd: dir}).status === 0;
+  return {
+    integratedParentIsRecordedBase: runGit(dir, 'rev-parse', `${integrated}^`) === base,
+    testedHeadRetained: probe(testedHead),
+    testedHeadIsAncestor: ancestor(testedHead, 'HEAD'),
+  };
+};
+
+test('the corrected squash check is host-independent when the tested head is retained (CI host)', async () => {
+  const repo = await buildSquashTopology({retainTestedHead: true});
+  const verdict = squashVerdict(repo.dir, repo);
+  // The CI host retains the object, so the OLD check (assert absence) would have failed.
+  assert.equal(verdict.testedHeadRetained, true, 'this topology retains the tested-head object');
+  // The corrected check still yields the stable conclusion on this host.
+  assert.equal(verdict.integratedParentIsRecordedBase, true);
+  assert.equal(verdict.testedHeadIsAncestor, false, 'the tested head is still not an ancestor under squash-only');
+});
+
+test('the corrected squash check is host-independent when the tested head is absent (clone host)', async () => {
+  const repo = await buildSquashTopology({retainTestedHead: false});
+  const verdict = squashVerdict(repo.dir, repo);
+  assert.equal(verdict.testedHeadRetained, false, 'this topology does not retain the tested-head object');
+  assert.equal(verdict.integratedParentIsRecordedBase, true);
+  assert.equal(verdict.testedHeadIsAncestor, false, 'the tested head is not an ancestor under squash-only');
+});
+
+test('the corrected squash check rejects a genuinely ancestor-preserving topology (negative)', async () => {
+  // A real merge-style topology that DOES preserve the tested head as an ancestor must be
+  // detected as preserved, so the check is falsifiable and not vacuously true.
+  const dir = await mkdtemp(path.join(tmpdir(), 'ks150-merge-topology-'));
+  runGit(dir, 'init', '-q');
+  runGit(dir, 'config', 'user.email', 'gate@localhost');
+  runGit(dir, 'config', 'user.name', 'gate');
+  runGit(dir, 'config', 'commit.gpgsign', 'false');
+  await writeFile(path.join(dir, 'base.txt'), 'base\n', 'utf8');
+  runGit(dir, 'add', 'base.txt');
+  runGit(dir, 'commit', '-q', '-m', 'base');
+  const base = runGit(dir, 'rev-parse', 'HEAD');
+  runGit(dir, 'checkout', '-q', '-b', 'feature');
+  await writeFile(path.join(dir, 'c2.json'), '{}\n', 'utf8');
+  runGit(dir, 'add', 'c2.json');
+  runGit(dir, 'commit', '-q', '-m', 'PostgreSQL C2 (#150)');
+  const testedHead = runGit(dir, 'rev-parse', 'HEAD');
+  runGit(dir, 'checkout', '-q', '-B', 'main', base);
+  runGit(dir, 'merge', '-q', '--no-ff', '-m', 'integration', 'feature');
+  const integrated = runGit(dir, 'rev-parse', 'HEAD');
+  const verdict = squashVerdict(dir, {testedHead, base, integrated});
+  assert.equal(verdict.testedHeadRetained, true);
+  assert.equal(verdict.testedHeadIsAncestor, true, 'an ancestor-preserving integration is detected as preserved');
+  // The recorded squash disposition is therefore FALSIFIED by this real topology.
+  assert.notEqual(verdict.testedHeadIsAncestor, C2_ANCESTRY_DISPOSITION === 'REPLACED_BY_SQUASH' ? false : true);
 });

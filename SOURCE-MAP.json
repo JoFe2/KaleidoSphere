@@ -170,7 +170,7 @@
     "docs/evidence/m6-05-ambiguous-outcome-reconciliation/terminal-manifest.json": "bc982b140dd6c112188b83f0cda5a92dc5c7aead60f82822d58c40b74dc123b7",
     "docs/evidence/m6-05-ambiguous-outcome-reconciliation/unchanged-safe-to-retry-journal.json": "9287da5567678609abf7b9f7734c104411e639af7cf29017e894eafd4ec573ac",
     "docs/evidence/postgresql-c1-live-matrix/README.md": "9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f",
-    "docs/evidence/postgresql-c2-real-cleanroom/README.md": "b9f5138f34201f61580f39f129d5feb14f7a882796c5a1c38053844bfac0a06e",
+    "docs/evidence/postgresql-c2-real-cleanroom/README.md": "b2739ec7391c2a2233be22e764150597b08bf614119569b968fb549fa1d1dca3",
     "docs/evidence/postgresql-e2e/cleanup.json": "0df86451ccf951a3377a9971453a1f99eb20be38dce970a5eff53c2a140861ab",
     "docs/evidence/postgresql-e2e/readback.json": "84bedc4c2d6144643ffde44b325b214f227d0082fc526598daa6fdc33ba61cf4",
     "docs/evidence/postgresql-e2e/README.md": "1486f5a11f5d390fddd38162c54bc505d17c850f1fb2ab450e3de35f49fdc601",
@@ -649,7 +649,7 @@
     "tests/portable-companion-template-validator.test.mjs": "864870da07dbf7d6d1ab54e3aad3987fce849e436d6b073e716d1eded3299216",
     "tests/postgresql-adapter.test.mjs": "8c129dfc5433e10f8bc7a85c6bba7782a2b42d6643603941d4375b83c63a465c",
     "tests/postgresql-c1-certification.test.mjs": "86d2fbabbda4df624cc68d4803dd2c9a503b1278a29d65c9a787976bf0b5288a",
-    "tests/postgresql-c2-safe-aggregate.test.mjs": "c64b31d929eb15f39d74a7e49b39221763239664c8037bf6b1f8450c266ad10c",
+    "tests/postgresql-c2-safe-aggregate.test.mjs": "f2baaadb1beb4a441ba2daaa6aea1482662c196229ef10d7d9694d4e5d543784",
     "tests/postgresql-e2e.test.mjs": "9fb62380ed6c22945bc2ccde27bf7f3e566de7875069cbcb2152cf6f60ec6001",
     "tests/postgresql-product-dispatch.test.mjs": "a8101d63c4cb442fde551c2e4a6799f8c8c44d2ce07df7e6ef45df258e7a8761",
     "tests/postgresql-structure-scan.test.mjs": "3b5d830134bca1ddc4a8791bfc3643a4c50f306a5deb10c3d6295f5a38dd33d7",
@@ -714,7 +714,7 @@
     "verification/postgresql/postgresql-c1-evidence-v1.json": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
     "verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json": "40b6d1ae6a249b51d0deb964c37ecbf0fb1e8b16a1703a03ab416b699060c529",
     "verification/postgresql/postgresql-c1-live-matrix-v1.json": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
-    "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "508496e767f9ebd238fb50b2a18c04d709a075dc8db0c2b7c4b688e51e791373"
+    "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "1aaa345f1e0468f54ded17d9e8074a12fb3f9ebe00d0854d6d966db4e00a8b25"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {

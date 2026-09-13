@@ -160,7 +160,7 @@
     "testedHeadTree": "6f995105138bab7c633a24c56a5cfd2bb21d849d",
     "testedHeadSubject": "PostgreSQL C2 safe-aggregate contract, typed-plan execution, and certificate (#150)",
     "ancestryDisposition": "REPLACED_BY_SQUASH",
-    "ancestryNote": "The repository permits squash merges only. The exact-head-reviewed candidate was integrated as the single squash commit above, so the tested head commit object no longer exists on Main and cannot be resolved as an ancestor; historical ancestry is replaced, not preserved. This record therefore carries independently checkable equivalent provenance instead of claiming an ancestor-preserving merge.",
+    "ancestryNote": "The repository permits squash merges only. The exact-head-reviewed candidate was integrated as the single squash commit above, so historical ancestry is replaced, not preserved: the tested head is not an ancestor of Main. Whether the tested head commit OBJECT is still retrievable on a given host is incidental and MUST NOT be asserted either way - GitHub's pull-request checkout (actions/checkout@v4, fetch-depth: 0) fetches the PR head ref and retains that object, while a clone that never fetched the ref does not have it. A prior correction asserted the tested head must not resolve and therefore failed on CI while passing locally; the corrected gate verifies the recorded identities WHEN the object is present and asserts only the host-independent facts (the integrated squash commit's parent is exactly the recorded tested-head parent, the tested head is not an ancestor of HEAD, and the delivered bytes are content-equivalent to the tested bindings).",
     "equivalenceClaims": {
       "baseRelation": "The integrated squash commit's parent is exactly the recorded tested-head parent, so the squash was applied onto precisely the base the tested head was built on.",
       "contentRelation": "Every byte the real run bound (C1 profile/certificate, metric contract, holdout, oracle, typed plan, committed C2 certificate, retained raw evidence) is byte-identical on Main to the tested-run bindings; the product/config/fixture/contract/certificate/profile/C1 bytes are the same objects and were never changed after the tested head except by the bounded real-evidence registration recorded here.",
@@ -194,5 +194,5 @@
     "No credential, connection string, or raw row value is reproduced here; the secret stays on the file-secret route.",
     "If authentic evidence is insufficient for any gate, that gate stays open with its own verifiable resume trigger; nothing is claimed delivered."
   ],
-  "provenanceSha256": "1a25dc56d387e074d3c2e84611d8717cc59063fa529ac0b9adc6ee004f1e14eb"
+  "provenanceSha256": "2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5"
 }

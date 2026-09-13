@@ -1,5 +1,75 @@
 # WORK_RESULT — KS150 / PG-KS-03: Deliver the missing PostgreSQL C2 safe-aggregate bytes
 
+## NATIVE POSTMERGE FIX-FORWARD, GENERATION 2 (fresh PR-CI failure at `880d250b`)
+
+This section records the second bounded postmerge correction. The generation-1 fix-forward (below)
+correctly replaced an unsatisfiable ancestor claim, but its replacement check carried a NEW defect
+that only a PR checkout host exposes. This section is additive and preserves every earlier record.
+
+### Diagnosis of the exact fresh failed log
+
+- Fresh failure: PR #232, CI run `34766568769` (job `103748479382`), head
+  `880d250bcc5cd9c7152800b06ee715aa559544b3`, stage PR-CI `npm test`, conclusion `failure`.
+  Retained log `/mnt/data2/ai/minimal-qwen-queue/fresh-state/gate-logs/ci-failure-f1375099433d...`
+  (untrusted evidence): exactly one failing test, `tests/postgresql-c2-safe-aggregate.test.mjs:606` —
+  `AssertionError: the tested head is not resolvable on Main: ancestry was replaced by squash`,
+  `actual: true, expected: false`.
+- That line was generation 1's "independent check 2", which asserted the tested-head commit object
+  must NOT resolve. **Whether an object resolves is a property of the host, not of the repository.**
+  GitHub's PR checkout (`actions/checkout@v4`, `fetch-depth: 0`) fetches the PR head ref and therefore
+  RETAINS `28b50870...`, so `git rev-parse 28b50870...^{commit}` succeeds there; a clone that never
+  fetched that ref does not have the object and the same call throws. The assertion therefore passed
+  in the worker VM and failed on CI — a host-dependent flake.
+- The check was also vacuous in the other direction: object absence proves nothing about whether the
+  delivered bytes equal the tested bytes, so passing locally carried no real assurance.
+- Independently reproduced both ways in this session: a real retained-head topology makes the old
+  assertion fail, and a real dropped-object topology makes it pass, with no other difference.
+
+### Correction (bounded, additive, no AC weakened)
+
+- `tests/postgresql-c2-safe-aggregate.test.mjs`: check 2 is replaced by a host-independent form. A
+  true existence probe (`git cat-file -e <sha>^{commit}`, which exits non-zero only when the object is
+  genuinely absent) decides whether the tested-head object is retrievable. WHEN it is present — the
+  real CI checkout — the recorded tested-head commit, tree, parent, and subject are verified against
+  the actual object (strictly more verification). Whether or not it is present, only host-independent
+  facts are asserted: the integrated squash commit's parent equals the recorded tested-head parent,
+  the tested head is NOT an ancestor of HEAD (stable under the squash-only policy), and the delivered
+  bytes are content-equivalent to the tested bindings. Absence is never asserted and presence is never
+  required. The two other `--is-ancestor`/`merge-base` call sites were switched to the same stable
+  probe so no check depends on the tested-head object existing.
+- New regression tests (the positive/negative pair for this fix): two tests build the squash-only
+  topology as REAL repositories — one retaining the tested-head object (CI host) and one with it
+  deterministically dropped (clone host) — and prove the corrected check yields the same verdict on
+  each. A third negative test builds a genuine ancestor-preserving merge topology and proves the check
+  detects it as preserved, so the disposition is falsifiable rather than vacuously true.
+- `verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json`: `ancestryNote` no longer
+  claims the tested-head object "no longer exists … cannot be resolved". It now states that object
+  retrievability is incidental and must not be asserted either way, and names the host-independent
+  facts the gate actually checks. Self-digest recomputed to
+  `2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5`.
+- `docs/evidence/postgresql-c2-real-cleanroom/README.md`: records the host-independence correction and
+  why the earlier "must not resolve" expectation failed on CI. New sha256
+  `b2739ec7391c2a2233be22e764150597b08bf614119569b968fb549fa1d1dca3`.
+- `SOURCE-MAP.json` regenerated with the repository tool
+  `scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs`.
+- Untouched: the C2 certificate `630096d4...`, every frozen C1 byte (`3faea403...`, `859970ca...`,
+  `90866c86...`, `05014aaf...`), `package.json`, the C2 contract, the typed-plan module, the
+  clean-room runner, and both retained raw evidence files. No test deleted, skipped, or weakened; the
+  squash-only merge policy is unchanged.
+
+### Commands and actual results
+
+- Failing assertion independently reproduced on a retained-head topology; passing on a dropped-object
+  topology (same code, only the host's object availability differs).
+- GREEN focused: `node --test tests/postgresql-c2-safe-aggregate.test.mjs` -> **21 pass, 0 fail**.
+- GREEN focused regression set:
+  `node --test tests/source-map.test.mjs tests/canonical-test-topology.test.mjs tests/legacy-technical-identity-plan.test.mjs tests/postgresql-c1-certification.test.mjs tests/postgresql-c2-safe-aggregate.test.mjs`
+  -> **136 pass, 0 fail**.
+- Full canonical `npm test` in this VM -> **1249 tests, 1247 pass, 2 fail**; both failures are the
+  pre-existing python3-absent environment cases (`tests/security.test.mjs`,
+  `tests/release/validate-k4c-codex-plugin.test.mjs`), reproduced identically on unmodified `33beed8`.
+  The generation-1 ancestry failure is gone.
+
 ## NATIVE POSTMERGE FIX-FORWARD (retained Main failure `bd39872a645605d5`)
 
 This section is the record of the bounded postmerge fix-forward for the retained Main test failure.
