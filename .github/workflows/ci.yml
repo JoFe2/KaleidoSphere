@@ -18,7 +18,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # Full history is required by the retained historical-byte registration
+      # tests (e.g. tests/postgresql-c2-safe-aggregate.test.mjs), which resolve
+      # fixed ancestor commits and their trees.
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'

@@ -233,3 +233,30 @@ remains byte-identical. The evidence artifacts, the provenance record, the
 extended gate tests, the re-registered legacy-identity inventory, and the
 content-addressing updater are ordinary repository-authored hashes under
 `files`, not derived files.
+
+JoFe2/KaleidoSphere#150 (KS150 C2 real-clean-room registration correction) completes
+the retained KS150 work product on the exact candidate: the retained C2 test suite
+(`tests/postgresql-c2-safe-aggregate.test.mjs`) and the two raw dedicated-VM clean-room
+evidence files (`.ks150-c2-real-cleanroom-primary-evidence.json` and
+`.ks150-c2-real-cleanroom-post-restore-evidence.json`, both sha-pinned
+`b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382`) are committed
+byte-for-byte as newly tracked evidence of the 2026-09-12 dedicated-VM run against the
+tested head `28b50870d2ab360ebce76d524ab2636254382c22`, and a real-run provenance record
+(`verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json`) plus a human
+readback (`docs/evidence/postgresql-c2-real-cleanroom/README.md`) bind those original
+bytes to the certified C1 substrate, the admitted fixture digests, and the committed
+deterministic C2 certificate (`630096d44765665b...` /
+`95987472...`), which is never re-minted or relabelled. This correction additionally commits the extended AC03 suite
+(R-read plus three registration regression tests; raw-sha-pinned `04bc5a4099499e14...`) and it
+enters the canonical npm test graph through exactly the one static import
+route from its certified C1/C2 lifecycle sibling gate
+(`tests/postgresql-c1-certification.test.mjs`), recognized additively by the CI-TOPOLOGY gate as
+the second intentional imported-parent route (`130` tracked suites, `128` direct roots, two
+imported-parent routes), so the frozen `package.json` manifest bytes and the committed
+deterministic certificate remain byte-identical. The registered gate test
+verifies the tested head is an ancestor of the correction head and that no product,
+config, fixture, contract, certificate, profile, or C1 byte changed after the tested
+head; the legacy-identity inventory was re-frozen additively (1043 -> 1046, 0 removed),
+and the canonical suites were re-run at the correction head (actual outputs recorded in
+`WORK_RESULT.md`). This entry describes committed evidence bytes only; public
+publication and anonymous readback remain controller-owned gates and are not claimed.

@@ -1,0 +1,178 @@
+{
+  "schemaVersion": "kaleidosphere.db/postgresql-c2-real-cleanroom-provenance/v1",
+  "issue": "PG-KS-03",
+  "publicIssue": "JoFe2/KaleidoSphere#150",
+  "recordKind": "REAL_RUN_PROVENANCE",
+  "authorization": {
+    "grant": "EXECUTION_AUTHORIZED_DEPENDENCIES_REMAIN_BINDING",
+    "recordedAtUtc": "2026-09-12T19:42:10.963372+00:00",
+    "authorityDigest": "f59b61d9ea16ee9bb1423a2c75822a8bf729ea75b70513dd8e81e6dbab6317ed",
+    "scope": "FULL KS150 PostgreSQL C2 task (implementation, real tests, independent review, release) in the Qwen dedicated test VM with synthetic non-customer data; tested product least-privilege behavior and all original C2 acceptance criteria remain mandatory; the controller stays the owner of serialized GitHub publication and readback."
+  },
+  "historicalObservation": {
+    "kind": "WORKER_EXECUTED_REAL_VM_CLEAN_ROOM",
+    "basis": "The 2026-09-12 dedicated-VM execution in the current delivery conversation: the two raw evidence files were captured by that run and are committed byte-for-byte in this correction (first commit bfb06d3 of the candidate).",
+    "executedBy": "worker (Fresh Qwen) on the Qwen dedicated Linux test VM under the recorded issue-backed authorization",
+    "recordWindow": {
+      "sourceCaptureUtc": "2026-09-12T21:08:00Z",
+      "sourceCaptureBasis": "mtime of both retained evidence files in the candidate working tree",
+      "deliveryRecordCommit": "20fd132a6e71ddc96277724d913b6455e035a637",
+      "deliveryRecordCommittedAtUtc": "2026-09-12T21:11:22+00:00"
+    },
+    "testedSource": {
+      "commit": "28b50870d2ab360ebce76d524ab2636254382c22",
+      "parentCommit": "e5edb163319598397ba7b7b223d2cd33d5b6b307",
+      "commitDate": "2026-09-12T20:54:24+00:00",
+      "author": "Fresh Qwen <fresh-qwen@localhost>",
+      "commitSubject": "PostgreSQL C2 safe-aggregate contract, typed-plan execution, and certificate (#150)",
+      "tree": "6f995105138bab7c633a24c56a5cfd2bb21d849d",
+      "transmission": "the tested head tree was streamed to the guest verbatim (tar, no source substitution); the tracked tree at the tested head is clean"
+    },
+    "deployment": {
+      "deploymentClass": "worker-isolated-loopback-clean-room",
+      "host": "127.0.0.1",
+      "port": 5432,
+      "transport": "loopback-only",
+      "database": "ks_fixture",
+      "relation": "synthetic_bi.orders",
+      "principal": "kaleidosphere_read_only_analyzer",
+      "principalCapabilities": "NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; default_transaction_read_only = on; GRANT CONNECT on ks_fixture; GRANT USAGE on synthetic_bi; GRANT SELECT on synthetic_bi.orders only",
+      "authMechanism": "scram-sha-256",
+      "secretRoute": "file-secret (POSTGRESQL_PASSWORD_FILE), substituted from a 0600 file; no credential bytes were committed",
+      "engineMajorVersion": 16,
+      "imageDigestPrefix": "sha256:94f23d40",
+      "dataVolumeDigestPrefix": "sha256:8619b8bc",
+      "fixtureRows": 17,
+      "basis": "substrate facts as recorded in the WORK_RESULT delivery record of the same session; long digests are recorded there as sha256 prefixes only and are not reproduced here"
+    }
+  },
+  "artifacts": [
+    {
+      "path": ".ks150-c2-real-cleanroom-primary-evidence.json",
+      "kind": "machine-evidence",
+      "sha256": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382"
+    },
+    {
+      "path": ".ks150-c2-real-cleanroom-post-restore-evidence.json",
+      "kind": "machine-evidence",
+      "sha256": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382"
+    }
+  ],
+  "artifactEquivalence": {
+    "note": "Both retained files are byte-identical because the post-restore real read is byte-reproducible: the recorded primary and post-restore executions produced identical bytes. The historical bytes are never rewritten, relabelled, or re-minted.",
+    "recordedOriginalsVerified": true
+  },
+  "bindings": {
+    "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+    "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+    "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
+    "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee"
+  },
+  "execution": {
+    "state": "COMPLETE",
+    "oracleEquality": "EXACT",
+    "productPath": {
+      "mode": "LIVE",
+      "dispatch": "REGULAR",
+      "engine": "postgresql",
+      "runtimeValidation": "RUNTIME_VALIDATED",
+      "executorBinding": "postgresql.run-queries",
+      "capability": "postgresql.read-only-session",
+      "evidence": "preflight.coverage-ledger",
+      "productSecretBindingEnforced": true
+    },
+    "receipt": {
+      "operationId": "bi-ks-01-net-revenue/v1",
+      "rowsRead": 17,
+      "rowBudget": 17,
+      "byteBudget": 4096,
+      "timeoutMs": 100,
+      "accessMode": "READ_ONLY",
+      "mutationAuthority": false,
+      "readOnlyEvidence": "VERIFIED",
+      "bounded": true,
+      "timeoutAware": true,
+      "cancelAware": true,
+      "resultSha256": "ab756c46131ab8d1be491b5ef7f082587fc1475a7fff4f20443966e97cbe02fc",
+      "outputSha256": "6e92091e32b348c3db91ae18fe43e485c653f696a21938c0a77379e55ada6ae2",
+      "resultSummary": "current.netMinorUnits 100059; comparison.netMinorUnits 30000; deltaMinorUnits 70059; excludedOutOfScopeCount 3; current.saleMinorUnits 141293; comparison.saleMinorUnits 35500",
+      "verificationBasis": "copied from the committed raw evidence bytes without rewriting; the receipt-level bindings (holdoutSha256, oracleSha256, oracleEquality) are the authoritative fields; the raw file also carries a coarser receiptSummary object whose result fields were left null by the recording script and is not authoritative"
+    },
+    "sessionProof": {
+      "transactionReadOnly": "on",
+      "defaultTransactionReadOnly": "on",
+      "adminCapabilities": false
+    },
+    "substrateDigestChecks": {
+      "c1ProfileMatchesFrozen": true,
+      "c1CertificateMatchesFrozen": true
+    },
+    "failClosed": {
+      "badSecret": "DB_ANALYZE_CREDENTIAL_MISSING",
+      "scopeSubstitution": "BUSINESS_BI_OPERATION_DENIED",
+      "crossEngineSecretSubstitution": "DB_ANALYZE_SECRET_BINDING_MISMATCH",
+      "staleDescriptor": "DB_ANALYZE_DESCRIPTOR_STALE",
+      "rawRowSource": "BUSINESS_BI_SOURCE_SCOPE_DENIED",
+      "mutationStatement": "BUSINESS_BI_READ_ONLY_EVIDENCE_DENIED",
+      "readOnlySessionViolation": "DB_ANALYZE_PRINCIPAL_NOT_READ_ONLY"
+    },
+    "recoveryProof": {
+      "method": "pg_dump --no-owner --no-privileges -t synthetic_bi.orders, then DROP TABLE + re-apply",
+      "backupRows": 17,
+      "backupShaPrefix": "8b7de3b6",
+      "rowIdenticalBeforeAndAfterRestore": true,
+      "postRestoreRerun": "the real read was re-run through the regular product path after restore: state COMPLETE, oracleEquality EXACT, byte-reproducible result",
+      "readOnlyMutationAttempt": "the read-only principal UPDATE was denied in-transaction; row count stayed 17 (no mutation residue)",
+      "basis": "delivery record of the same session; digests recorded there as prefixes only"
+    },
+    "teardown": {
+      "zeroResidue": true,
+      "container": "ks150-c2-pg stopped and removed",
+      "removedImageDigestPrefix": "sha256:94f23d40",
+      "removedVolumeDigestPrefix": "sha256:8619b8bc",
+      "transientArtifacts": "/root password file, seed SQL, live profile, backup, drivers, evidence all removed",
+      "preExistingUntouched": "resident postgres:16 image (sha256 prefix f1c3376c) and pre-existing volume (sha256 prefix e1ee81c7) left untouched",
+      "verified": "docker ps empty; no listener on 127.0.0.1:5432",
+      "basis": "delivery record of the same session"
+    }
+  },
+  "certificate": {
+    "path": "verification/postgresql-c2-safe-aggregate-v1.json",
+    "sha256": "630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b",
+    "certificateSha256": "959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496",
+    "state": "UNCHANGED",
+    "note": "The committed C2 certificate remains the byte-deterministic output of the source-local clean-room (scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs) and is not re-minted by this registration. The real-run evidence is registered as separate, later provenance bound to the same certified C1 substrate and fixture digests; nothing here relabels the certificate or the frozen C1 bytes."
+  },
+  "testedSourceVersusCandidate": {
+    "checkedBy": "git diff --name-only 28b50870d2ab360ebce76d524ab2636254382c22 HEAD, asserted by the registered gate test",
+    "changedFilesSinceTestedHead": [
+      ".ks150-c2-real-cleanroom-post-restore-evidence.json",
+      ".ks150-c2-real-cleanroom-primary-evidence.json",
+      "SOURCE-MAP.json",
+      "SOURCE-MAP.md",
+      "WORK_RESULT.md",
+      "docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json",
+      "docs/evidence/postgresql-c2-real-cleanroom/README.md",
+      "scripts/update-ks150-pg-c2-safe-aggregate-source-map.mjs",
+      "tests/postgresql-c2-safe-aggregate.test.mjs",
+      "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json"
+    ],
+    "note": "Every changed path is within the bounded real-evidence registration correction (newly tracked retained bytes, the provenance/readback records that bind them, the source-map updater and its content-addressed outputs, the legacy-identity inventory re-freeze, and the delivery record). No product, config, fixture, contract, certificate, profile, or C1 byte changed after the tested head; the tested head is an ancestor of the correction head."
+  },
+  "rechecks": {
+    "policy": "Re-run only checks whose relevant inputs changed. No product input changed after the tested head, so no historical evidence was re-minted. The focused source-local suites (C2 safe-aggregate, C1 certification, legacy-technical-identity plan, source map) and the canonical npm suite were re-run at the correction head as this correction gate; the actual outputs are recorded in WORK_RESULT.md.",
+    "historicalEvidenceReMinted": false
+  },
+  "nonClaims": [
+    "No general PostgreSQL, production, customer-data, HA, scale, performance, extension, or all-PostgreSQL-versions/auth-modes claim; only this isolated disposable loopback clean room with synthetic non-customer bytes is described.",
+    "The clean room is bound only to the disposable loopback-only PG 16 deployment named above; the substrate image/volume/back digests are recorded in the delivery record as sha256 prefixes, which is their actual recorded fidelity.",
+    "The certificate itself is issued for the deterministic source-local evidence path; this provenance record is the separate real-run evidence and does not rewrite it.",
+    "No credential, connection string, or raw row value is reproduced here; the secret stays on the file-secret route.",
+    "If authentic evidence is insufficient for any gate, that gate stays open with its own verifiable resume trigger; nothing is claimed delivered."
+  ],
+  "provenanceSha256": "4686d5e91a2dff5fd1e94efb137d4691cdba10eff0be61a5c2c5e0f3e56686c0"
+}
