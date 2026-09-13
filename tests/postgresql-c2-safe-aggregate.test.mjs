@@ -507,6 +507,10 @@ const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = '959874725fd49aebd5d3b72a029f
 // Correction-only paths: if a product/config/fixture/test byte changed after the
 // tested head outside this bounded correction, the registration does not hold.
 const ALLOWED_SINCE_TESTED_HEAD = new Set([
+  // Bounded CI-infrastructure correction: the workflow must check out full
+  // history so this historical-statute test can resolve the retained tested
+  // head itself; its changed bytes are exactly bound to one identity hash.
+  '.github/workflows/ci.yml',
   '.ks150-c2-real-cleanroom-post-restore-evidence.json',
   '.ks150-c2-real-cleanroom-primary-evidence.json',
   'SOURCE-MAP.json',
@@ -553,6 +557,12 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   assert.ok(
     changed.every((file) => ALLOWED_SINCE_TESTED_HEAD.has(file)),
     `changed files outside the bounded correction: ${changed.join(', ')}`,
+  );
+  // The workflow byte stays exactly bound: it may only carry the checkout
+  // full-history correction, never any scope relaxation.
+  assert.equal(
+    fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
+    'b784ef6df2848b36e8ace60a8a75bf0eb8c3416bc186cbdd91f127f260900c86',
   );
   for (const bounded of [
     'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs',
