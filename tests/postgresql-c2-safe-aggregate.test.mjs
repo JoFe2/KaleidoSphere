@@ -618,9 +618,11 @@ const C2_REAL_CLEANROOM_READBACK_PATH = 'docs/evidence/postgresql-c2-real-cleanr
 const C2_REAL_CLEANROOM_READBACK_SHA256 = 'b2739ec7391c2a2233be22e764150597b08bf614119569b968fb549fa1d1dca3';
 const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b';
 const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = '959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496';
-// Correction-only paths: if a product/config/fixture/test byte changed after the
-// squash integration outside this bounded correction, the registration does not hold.
-const ALLOWED_SINCE_TESTED_HEAD = new Set([
+// Independently fixed historical endpoint: 4bf5575 delivered the actual C2 correction;
+// c61d6b6 only appended WORK_RESULT.md. Never derive this endpoint from HEAD or provenance.
+const C2_CORRECTION_COMMIT = '4bf55758904f04369afb74b6d185a511f731c71d';
+// This allowlist governs only integration -> correction, not unrelated future work.
+const ALLOWED_C2_CORRECTION_PATHS = new Set([
   // Bounded integration-infrastructure correction: the workflow must check out full
   // history so this integration-provenance test can resolve the recorded tested-head
   // base and the squash-integration commit and diff their trees; its changed bytes are
@@ -645,6 +647,64 @@ const ALLOWED_SINCE_TESTED_HEAD = new Set([
   // byte-identical), which the accompanying assertions below verify rather than assume.
   'services/bi-control/src/business-bi/net-revenue-plan.mjs',
 ]);
+
+const assertC2CorrectionScope = ({cwd = root, integrated = C2_INTEGRATED_COMMIT,
+  correction = C2_CORRECTION_COMMIT, head = 'HEAD',
+  boundPaths = [...C2_TESTED_BINDING_PATHS, 'package.json']} = {}) => {
+  const ancestor = (a, b) => spawnSync('git', ['merge-base', '--is-ancestor', a, b], {cwd}).status === 0;
+  assert.ok(ancestor(integrated, correction), 'C2 integration must be an ancestor of the correction');
+  assert.ok(ancestor(correction, head), 'C2 correction must be an ancestor of current HEAD');
+  const historicalChanges = runGit(cwd, 'diff', '--name-only', integrated, correction).split('\n').filter(Boolean);
+  assert.ok(historicalChanges.every((file) => ALLOWED_C2_CORRECTION_PATHS.has(file)),
+    `changed files outside the bounded correction: ${historicalChanges.join(', ')}`);
+  // Bound bytes remain protected through current HEAD, not just through the correction.
+  const changed = runGit(cwd, 'diff', '--name-only', integrated, head).split('\n').filter(Boolean);
+  for (const bound of boundPaths) {
+    assert.ok(!changed.includes(bound), `${bound} is byte-identical since the squash integration`);
+  }
+  return changed;
+};
+
+// Synthetic git history only: no fixture contents or historical evidence are copied.
+test('C2 provenance accepts an unrelated descendant after the fixed correction endpoint', async (t) => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'ks150-correction-scope-'));
+  t.after(() => rmSync(dir, {recursive: true, force: true}));
+  runGit(dir, 'init', '-q');
+  runGit(dir, 'config', 'user.email', 'gate@localhost');
+  runGit(dir, 'config', 'user.name', 'gate');
+  runGit(dir, 'config', 'commit.gpgsign', 'false');
+  const commit = async (file, bytes) => {
+    await writeFile(path.join(dir, file), bytes);
+    runGit(dir, 'add', file);
+    runGit(dir, 'commit', '-q', '-m', file);
+    return runGit(dir, 'rev-parse', 'HEAD');
+  };
+  const integrated = await commit('bound-c2.txt', 'frozen synthetic binding\n');
+  const correction = await commit('WORK_RESULT.md', 'synthetic correction\n');
+  await commit('unrelated-feature.txt', 'unrelated descendant\n');
+  const options = {cwd: dir, integrated, correction, boundPaths: ['bound-c2.txt']};
+  assert.doesNotThrow(() => assertC2CorrectionScope(options));
+  await t.test('bound C2 modifications after correction still fail closed', async () => {
+    await commit('bound-c2.txt', 'tampered synthetic binding\n');
+    assert.throws(() => assertC2CorrectionScope(options), /bound-c2\.txt is byte-identical/);
+    await commit('bound-c2.txt', 'frozen synthetic binding\n');
+    assert.doesNotThrow(() => assertC2CorrectionScope(options));
+  });
+  await t.test('historical out-of-scope changes fail even when reverted at HEAD', async () => {
+    const outOfScopeCorrection = runGit(dir, 'rev-parse', 'HEAD');
+    runGit(dir, 'rm', '-q', 'unrelated-feature.txt');
+    runGit(dir, 'commit', '-q', '-m', 'remove unrelated synthetic path');
+    assert.throws(() => assertC2CorrectionScope({...options, correction: outOfScopeCorrection}),
+      /changed files outside the bounded correction:.*unrelated-feature\.txt/);
+    assert.doesNotThrow(() => assertC2CorrectionScope(options));
+  });
+  await t.test('correction ancestry must reach current HEAD', () => {
+    assert.throws(() => assertC2CorrectionScope({...options, head: integrated}),
+      /correction must be an ancestor of current HEAD/);
+    assert.throws(() => assertC2CorrectionScope({...options, integrated: 'HEAD'}),
+      /integration must be an ancestor of the correction/);
+  });
+});
 
 const git = (...args) => execFileSync('git', [...args], {cwd: root, encoding: 'utf8'}).trim();
 // True existence probe for a commit object: `git cat-file -e <sha>^{commit}` exits
@@ -751,27 +811,16 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
       `${bound} pre-exists the C2 integration and is not modified by it`,
     );
   }
-  // (3b) Nothing after the integration may change a bound product byte: the diff from
-  // the integrated squash commit to HEAD is confined to the registration allowlist.
-  const changed = git('diff', '--name-only', C2_INTEGRATED_COMMIT, 'HEAD').split('\n').filter(Boolean);
-  assert.ok(
-    changed.every((file) => ALLOWED_SINCE_TESTED_HEAD.has(file)),
-    `changed files outside the bounded correction: ${changed.join(', ')}`,
-  );
-  for (const bound of C2_TESTED_BINDING_PATHS) {
-    assert.ok(
-      !changed.includes(bound),
-      `${bound} is byte-identical since the squash integration`,
-    );
-  }
+  // (3b) The historical correction alone is allowlisted. Its fixed endpoint must
+  // descend from integration and remain an ancestor of HEAD; every bound path and
+  // package.json must still be byte-identical from integration through current HEAD.
+  assertC2CorrectionScope();
   // The workflow byte stays exactly bound: it may only carry the checkout
   // full-history correction, never any scope relaxation.
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
     '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
-  // The bounded correction may not touch the frozen package manifest either.
-  assert.ok(!changed.includes('package.json'), 'package.json is byte-identical since the squash integration');
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
   assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);
   assert.equal(fileSha256(await readFile(c1CertPath)), C1_CERTIFICATE_SHA256);

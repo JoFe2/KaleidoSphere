@@ -1,0 +1,59 @@
+{
+  "schema": "ks168-real-execution/v1",
+  "observedAt": "2026-09-15T09:58:47.752Z",
+  "classification": "REAL_POSTGRESQL_SYNTHETIC_NON_CUSTOMER_DATA",
+  "version": "PostgreSQL 16.10 (Debian 16.10-1.pgdg12+1) on x86_64-pc-linux-gnu, compiled by gcc (Debian 12.2.0-14+deb12u1) 12.2.0, 64-bit",
+  "session": {
+    "transactionReadOnly": "on",
+    "defaultTransactionReadOnly": "on",
+    "adminCapabilities": false
+  },
+  "mutationDenied": "25006",
+  "rowsLoaded": 17,
+  "productPath": {
+    "mode": "LIVE",
+    "dispatch": "REGULAR",
+    "engine": "postgresql",
+    "regularPath": {
+      "dispatch": "REGULAR",
+      "executorBinding": "postgresql.run-queries",
+      "capability": "postgresql.read-only-session",
+      "evidence": "preflight.coverage-ledger",
+      "productSecretBindingEnforced": true
+    },
+    "runtimeValidation": "RUNTIME_VALIDATED"
+  },
+  "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
+  "receiptSha256": "38b3f4bf7067b7ed3b0ac5c08f1ceb9e7a7ce476f939b6e0183a4bdf40343f89",
+  "outputs": [
+    {
+      "name": "all.json",
+      "sha256": "9d954b8be59af31db86bfeca1c4f7ba60cb52899e2f32d2259ffc4effe4a8a91"
+    },
+    {
+      "name": "all.html",
+      "sha256": "dddadff4cbde5532c3700a437db4e436b21dbdd030acd8361060461d209d6535"
+    },
+    {
+      "name": "current.json",
+      "sha256": "da3d0ad26acdd9920dea14bc6def828b11c7dcba23d11f21b07ad5c6ac8d8e56"
+    },
+    {
+      "name": "current.html",
+      "sha256": "1a7696908f73db7ea2bb1cedc58799fb13f894e53e3f540ea4a4d6359fd77c2b"
+    },
+    {
+      "name": "comparison.json",
+      "sha256": "a285121d11ea3a66dfde6b1b11dad4be4d6360e03d92ed5cd8696ead77b41814"
+    },
+    {
+      "name": "comparison.html",
+      "sha256": "2ff84e25c18a1ced11ad570b793a90fd0b45d08a203c1e47ca2471a0d32b2371"
+    }
+  ],
+  "nonclaims": [
+    "No customer or production data",
+    "No general dashboard promotion",
+    "Browser and independent oracle checks separate"
+  ]
+}

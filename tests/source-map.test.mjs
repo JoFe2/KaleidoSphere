@@ -7,6 +7,8 @@ import test from 'node:test';
 // package preimage remains replayable while this test still runs under both
 // `npm test` and `npm run test:source`.
 import './business-bi-epic-closure.test.mjs';
+// VIS-01 follows the imported-suite route to preserve the byte-bound package manifest.
+import './net-revenue-visual-v1.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
