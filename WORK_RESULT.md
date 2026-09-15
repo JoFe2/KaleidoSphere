@@ -1,3 +1,16 @@
+# PR #232 serial reconciliation after #230
+
+Original PR head: `880d250bcc5cd9c7152800b06ee715aa559544b3`.
+New main/base: verified #230 merge `be6cdfd022dec452ff0034feba3be96f1fb924d2`.
+The independent supersession review found all original functionality and evidence
+retained or improved by the delivered main. This branch preserves its complete
+product tree, all 697 source-map bindings, stronger AC03 fault-injection tests,
+and host-independent squash-provenance checks. Only this additional provenance
+note differs from the new main, and the #230 record below is preserved.
+This is a branch reconstruction with guarded remote-head replacement, not a
+claim that either historical failing PR head passed or a new real database run occurred.
+Fresh replacement-head tests/CI, exact squash merge and release readback remain gates.
+
 # PR #230 current-main reconciliation
 
 Original PR head: `b4213067796eb3b23fc7b48e7dd8edf8876465c2`.
