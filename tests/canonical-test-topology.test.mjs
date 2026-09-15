@@ -115,6 +115,7 @@ const INTENTIONAL_C2_IMPORTED_PARENT = Object.freeze('tests/postgresql-c1-certif
 const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: INTENTIONAL_C2_IMPORTED_PARENT, suite: INTENTIONAL_C2_IMPORTED_SUITE },
   { parent: INTENTIONAL_IMPORTED_PARENT, suite: INTENTIONAL_IMPORTED_SUITE },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-visual-v1.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
