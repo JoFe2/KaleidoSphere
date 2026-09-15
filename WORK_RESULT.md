@@ -1,3 +1,17 @@
+# PR #230 current-main reconciliation
+
+Original PR head: `b4213067796eb3b23fc7b48e7dd8edf8876465c2`.
+Reconciliation base: `c61d6b6ebfdff737ee9a7d093d61c5dd0b1cff3b`.
+The retained PostgreSQL C2 implementation, certificate and real clean-room bytes
+have already been integrated and strengthened by subsequent main commits.
+This branch preserves the exact current-main product and evidence tree; only
+this provenance note is added. It is rebuilt on main rather than merging the
+historical branch ancestry back into the PR: the repository is squash-only,
+and the recorded original tested-head ancestry remains historically replaced.
+Historical branch heads and all existing receipts remain recorded, not rewritten.
+No new live PostgreSQL run or product capability is claimed by this reconciliation.
+Fresh exact-candidate CI, SHA-bound merge and release readback remain separate gates.
+
 # WORK_RESULT — KS150 / PG-KS-03: Deliver the missing PostgreSQL C2 safe-aggregate bytes
 
 ## NATIVE POSTMERGE FIX-FORWARD, GENERATION 3 (AC03 falsifier vacuity at `84b0fb42`)
