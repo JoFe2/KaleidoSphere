@@ -1,0 +1,21 @@
+{
+  "testedProductHead": "092c40de9c2ea9cf860439397a3f119863c152ca",
+  "classification": "REAL_POSTGRESQL_SYNTHETIC_NON_CUSTOMER_DATA",
+  "artifacts": {
+    "execution.json": "ef3bde876f4b9bfe9e292c344cc765b06e349e665098d3fb885404c929432ff7",
+    "plan.json": "c9fdce5298f5853dbec20660a67e9a9329a6fbc0d00b1e8d02f517092c90df36",
+    "receipt.json": "38b3f4bf7067b7ed3b0ac5c08f1ceb9e7a7ce476f939b6e0183a4bdf40343f89",
+    "all.json": "9d954b8be59af31db86bfeca1c4f7ba60cb52899e2f32d2259ffc4effe4a8a91",
+    "current.json": "da3d0ad26acdd9920dea14bc6def828b11c7dcba23d11f21b07ad5c6ac8d8e56",
+    "comparison.json": "a285121d11ea3a66dfde6b1b11dad4be4d6360e03d92ed5cd8696ead77b41814",
+    "all.html": "dddadff4cbde5532c3700a437db4e436b21dbdd030acd8361060461d209d6535",
+    "browser-check.json": "3f54ecc98e1f5d7c501200c7552d9da67e9dc2d5d5a1d3b04afe18474c43ccce",
+    "browser-drilldown.png": "2bb7db9c87c0980c2faa7dfb68ac9cdfcacadea7388b3724c9e830b79afe3f9d"
+  },
+  "cleanup": {
+    "disposablePostgresContainerRemoved": true,
+    "temporaryPasswordRemoved": true,
+    "dedicatedVMRepaused": true
+  },
+  "promotion": "NOT_ADMITTED; no human comprehension or maintenance advantage claim"
+}

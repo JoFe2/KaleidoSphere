@@ -1,0 +1,114 @@
+{
+  "source": "actual PostgreSQL generated all.html",
+  "checks": [
+    {
+      "mode": "comparison",
+      "visibility": [
+        {
+          "tag": "TR",
+          "period": "comparison",
+          "visible": true
+        },
+        {
+          "tag": "TR",
+          "period": "current",
+          "visible": false
+        },
+        {
+          "tag": "g",
+          "period": "comparison",
+          "visible": true
+        },
+        {
+          "tag": "g",
+          "period": "current",
+          "visible": false
+        },
+        {
+          "tag": "DETAILS",
+          "period": "comparison",
+          "visible": true
+        },
+        {
+          "tag": "DETAILS",
+          "period": "current",
+          "visible": false
+        }
+      ]
+    },
+    {
+      "mode": "current",
+      "visibility": [
+        {
+          "tag": "TR",
+          "period": "comparison",
+          "visible": false
+        },
+        {
+          "tag": "TR",
+          "period": "current",
+          "visible": true
+        },
+        {
+          "tag": "g",
+          "period": "comparison",
+          "visible": false
+        },
+        {
+          "tag": "g",
+          "period": "current",
+          "visible": true
+        },
+        {
+          "tag": "DETAILS",
+          "period": "comparison",
+          "visible": false
+        },
+        {
+          "tag": "DETAILS",
+          "period": "current",
+          "visible": true
+        }
+      ]
+    },
+    {
+      "mode": "all",
+      "visibility": [
+        {
+          "tag": "TR",
+          "period": "comparison",
+          "visible": true
+        },
+        {
+          "tag": "TR",
+          "period": "current",
+          "visible": true
+        },
+        {
+          "tag": "g",
+          "period": "comparison",
+          "visible": true
+        },
+        {
+          "tag": "g",
+          "period": "current",
+          "visible": true
+        },
+        {
+          "tag": "DETAILS",
+          "period": "comparison",
+          "visible": true
+        },
+        {
+          "tag": "DETAILS",
+          "period": "current",
+          "visible": true
+        }
+      ]
+    }
+  ],
+  "native_details_open": true,
+  "scripts": 0,
+  "remote_resources": [],
+  "human_comprehension_study": false
+}

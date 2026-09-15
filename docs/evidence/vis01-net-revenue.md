@@ -52,6 +52,28 @@ Neither format is a redaction boundary. Native `details` provides one aggregate
 drilldown type, not raw-row access. All global UNKNOWN/out-of-scope counterevidence
 remains visible, explicitly marked as not filtered.
 
+## Parent-executed qualification (2026-09-15)
+
+Actual C2 output from PostgreSQL 16.10 in the dedicated KS test VM is retained in
+`vis01-real-execution/index.json`. The pinned image matches the original C1 profile;
+only the admitted public synthetic non-customer fixture was loaded. A real
+least-privilege read-only session executed the unchanged C2 read path; an UPDATE
+was rejected with SQLSTATE 25006. The plan and execution receipt, three filtered
+JSON projections and the generated HTML are retained, not reconstructed from the
+oracle. Product head: `092c40de9c2ea9cf860439397a3f119863c152ca`.
+
+Browser readback exercised all three radio selections, asserting matching table,
+chart and drilldown visibility, and opened the native details control. The captured
+view shows signed credit contributions and persistent global counterevidence.
+No browser script or remote resource was loaded. This is a functional browser
+inspection, not a human comprehension study. No automatic-chart, template or
+multi-dashboard promotion or measured maintenance advantage is claimed.
+
+The disposable PostgreSQL container and temporary password were removed, and the
+KS VM was paused again. Independent evidence adjudication and final publication
+remain separate delivery gates; the implementation-stage dispositions below are
+retained as historical boundaries, not claims that this run happened earlier.
+
 ## Original acceptance criteria and evidence disposition
 
 1. **Consume one versioned KPI/result contract with explicit period, units, scope,
