@@ -7,9 +7,10 @@ composition: a real local source read through the #237 mapping-profile boundary 
 ## What this is
 
 One supported entry point — `node scripts/run-net-revenue-f4-composition.mjs` — composes
-the already-released #237 mapping profiles and the #238 comparison into a single run over
-a real local read-only PostgreSQL source (injected in-process PGlite in an isolated
-runtime, never a `package.json` dependency):
+the candidate #237 mapping profiles and the candidate #238 comparison into a single run over
+a local PostgreSQL database seeded with synthetic fixture rows (injected in-process
+PGlite in an isolated runtime, never a `package.json` dependency). Seeding writes to
+that local database; the subsequent SELECT is not proof of enforced read-only access:
 
 | Primitive | Source | Role |
 | --- | --- | --- |
@@ -79,7 +80,10 @@ writes, no HTTP publish path.
 Normal: `ledger-v1` and `ledger-v2` both map through their frozen profiles and produce
 `comparison.delta.netRevenue = 21000` with identical kernel and comparison digests.
 
-Negative (all through the SAME source -> profile -> compare entry point, deny fail-closed):
+CLI `--negative` invokes the mapping/comparison boundary directly on fixture rows;
+these negative cases do NOT pass through database seeding or SELECT, even when
+`sourceMode` is `REAL_POSTGRESQL`. That field describes the positive path's engine,
+not the negative evidence's execution path. The direct boundary cases deny:
 - wrong source/layout (the other layout fed under the declared profile) -> `LEDGER_KIND_DENIED:undefined`;
 - wrong mapping (an unrecognised posting/entry kind) -> `LEDGER_KIND_DENIED:not_a_kind`;
 - wrong unit, ambiguous scale -> `LEDGER_UNIT_SCALE_AMBIGUOUS`;
