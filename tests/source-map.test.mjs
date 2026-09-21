@@ -13,6 +13,8 @@ import './net-revenue-visual-v1.test.mjs';
 import './net-revenue-journey.test.mjs';
 // #237 ledger-mapping follows the same imported-suite route (no package.json mutation).
 import './net-revenue-ledger-mapping.test.mjs';
+// #238 segment comparison follows the same imported-suite route (no package.json mutation).
+import './net-revenue-segment-comparison.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
@@ -24,16 +26,19 @@ const businessBiFiles = Object.freeze([
   'services/bi-control/src/business-bi/net-revenue-journey.mjs',
   'services/bi-control/src/business-bi/net-revenue-ledger-mapping.mjs',
   'services/bi-control/src/business-bi/net-revenue-plan.mjs',
+  'services/bi-control/src/business-bi/net-revenue-segment-comparison.mjs',
   'services/bi-control/src/business-bi/net-revenue-readback.mjs',
   'tests/business-bi-clean-room.test.mjs',
   'tests/business-bi-epic-closure.test.mjs',
   'tests/business-bi-metric-oracle.test.mjs',
   'tests/business-bi-net-revenue-plan.test.mjs',
   'tests/net-revenue-ledger-mapping.test.mjs',
+  'tests/net-revenue-segment-comparison.test.mjs',
   'tests/fixtures/business-bi/net-revenue-holdout-v1.json',
   'tests/fixtures/business-bi/net-revenue-ledger-v1.json',
   'tests/fixtures/business-bi/net-revenue-ledger-v2.json',
   'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
+  'tests/fixtures/business-bi/net-revenue-segment-v1.json',
   'verification/business-bi-epic-closure-v1.json',
   'verification/business-bi-net-revenue-falsification-v1.json',
   'verification/business-bi-net-revenue-holdout-v1.json',

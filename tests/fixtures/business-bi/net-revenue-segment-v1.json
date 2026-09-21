@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-segment-fixture/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "JoFe2/KaleidoSphere#238",
+  "reusedSourceRelation": "xra_projection_orders",
+  "segments": ["direct", "partner"],
+  "statuses": ["open", "closed", "cancelled"],
+  "rows": [
+    { "order_id": "s-201", "order_date": "2026-06-02", "record_kind": "sale",    "amount_minor_units": 30000, "status": "closed",    "segment": "direct"  },
+    { "order_id": "s-202", "order_date": "2026-06-11", "record_kind": "sale",    "amount_minor_units": 20000, "status": "closed",    "segment": "partner" },
+    { "order_id": "s-203", "order_date": "2026-06-18", "record_kind": "credit",  "amount_minor_units":  5000, "status": "closed",    "segment": "direct"  },
+    { "order_id": "s-204", "order_date": "2026-06-25", "record_kind": "cancel",  "amount_minor_units":     0, "status": "cancelled", "segment": "partner" },
+    { "order_id": "s-205", "order_date": "2026-06-28", "record_kind": "unknown", "amount_minor_units":   900, "status": "open",      "segment": "direct"  },
+    { "order_id": "s-206", "order_date": "2026-07-03", "record_kind": "sale",    "amount_minor_units": 45000, "status": "closed",    "segment": "direct"  },
+    { "order_id": "s-207", "order_date": "2026-07-09", "record_kind": "sale",    "amount_minor_units": 15000, "status": "open",      "segment": "partner" },
+    { "order_id": "s-208", "order_date": "2026-07-14", "record_kind": "credit",  "amount_minor_units":  6000, "status": "closed",    "segment": "direct"  },
+    { "order_id": "s-209", "order_date": "2026-07-20", "record_kind": "cancel",  "amount_minor_units":     0, "status": "cancelled", "segment": "direct"  },
+    { "order_id": "s-210", "order_date": "2026-07-26", "record_kind": "unknown", "amount_minor_units":  null, "status": "open",      "segment": "partner" },
+    { "order_id": "s-211", "order_date": "2026-07-30", "record_kind": "sale",    "amount_minor_units": 12000, "status": "open",      "segment": "direct"  },
+    { "order_id": "s-212", "order_date": "2026-05-30", "record_kind": "sale",    "amount_minor_units": 99000, "status": "closed",    "segment": "direct"  }
+  ]
+}
