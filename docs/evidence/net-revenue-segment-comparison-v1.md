@@ -6,7 +6,7 @@ Issue: JoFe2/KaleidoSphere#238. Smallest useful increment after the #236 journey
 ## The one concrete question
 
 For the current period 2026-07 vs comparison 2026-06 (inclusive both ends), what is
-synthetic (a) net revenue, (b) order intake (gross sale value), and (c) open orders, per
+synthetic (a) net revenue, (b) gross sale value, and (c) observed open sale rows, per
 supported segment (direct | partner) — with credits, cancellations and unknowns preserved
 and never coerced into revenue?
 
@@ -14,10 +14,10 @@ and never coerced into revenue?
 
 | Measure | 2026-06 | 2026-07 | delta |
 | --- | ---: | ---: | ---: |
-| order intake (gross sale) | 50000 | 72000 | +22000 |
+| gross sale value (NOT intake) | 50000 | 72000 | +22000 |
 | credits | 5000 | 6000 | |
 | net revenue | 45000 | 66000 | +21000 |
-| open orders (count / value) | 0 / 0 | 2 / 27000 | |
+| observed open sale rows (count / value; NOT as-of balance) | 0 / 0 | 2 / 27000 | |
 | segments (GROSS sale): direct | 30000 | 57000 | |
 | segments (GROSS sale): partner | 20000 | 15000 | |
 | unknown (count / quantified / unquantified) | 1 / 900 / 0 | 1 / 0 / 1 | |
@@ -25,12 +25,13 @@ and never coerced into revenue?
 | cancellations | 1 | 1 | |
 | out-of-scope excluded | | | 1 |
 
-`netRevenue = saleValue - creditValue` (the released C2 definition). `orderIntake` is
-gross sale value BEFORE credits/cancellations — the two are explicitly reported
-separately so intake is never conflated with net. Segment totals are GROSS sale value,
-not net-revenue contributions (credits/fees are not allocated per segment). Open orders
-are a status dimension (open SALE rows only); credits/cancels/unknowns are record kinds,
-never orders.
+`netRevenue = saleValue - creditValue` preserves the C2 arithmetic. `orderIntake`
+and its delta are unsupported (`null`), because this source has no intake-event
+contract. Gross sale values must not impersonate intake. `openOrderCount` and
+`openOrderValue` are also unsupported (`null`): no historical status/as-of source
+exists. `observedOpenSaleRowCount` and `observedOpenSaleRowValue` count only
+quantified sale rows marked open within each date window. Segment totals are gross
+sale values, not net contributions; credits are not allocated per segment.
 
 ## Missing-data / UNKNOWN semantics (bound to the released C2 core)
 
@@ -46,9 +47,10 @@ a null-date sale with an amount enters UNASSIGNED with its amount preserved.
 `record_kind` and `status` must be a supported, non-contradictory combination: a sale is
 recognized only when it is not `cancelled`; a credit must be `closed`; a cancel must be
 `cancelled`. A contradictory combination (e.g. a `sale` marked `cancelled`) is rejected
-fail-closed, not accepted as intake. `openOrder*` is an as-of snapshot over the in-window
-rows only — no status-history / status-as-of binding is modelled, and an order that became
-open in an earlier period is not retroactively carried into the later window's open balance.
+fail-closed. In-window row observations are NOT an as-of snapshot or open-order
+balance. An earlier-period open row cannot establish either zero or a nonzero
+later-period balance. Actual intake and historical open-order measures remain an
+unfulfilled #238 acceptance step, not a capability established by these tests.
 
 ## What is reused vs new
 

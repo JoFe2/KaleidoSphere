@@ -50,35 +50,48 @@ test('the declared HELD source VALIDATES against the actual PANSPHAIRA profile b
   assert.equal(validateSegmentSourceAgainstBoundary(), true);
 });
 
+test('F3: missing intake events and historical status remain unsupported', () => {
+  const row = (date) => ({order_id: 'f3-open', order_date: date, record_kind: 'sale', amount_minor_units: 100, status: 'open', segment: 'direct'});
+  for (const date of ['2026-06-01', '2026-07-01']) {
+    const r = compareSegmentsAcrossPeriods([row(date)]);
+    for (const period of ['current', 'comparison']) {
+      assert.equal(r[period].orderIntake, null);
+      assert.equal(r[period].openOrderCount, null);
+      assert.equal(r[period].openOrderValue, null);
+    }
+    assert.equal(r.delta.orderIntake, null);
+  }
+});
+
 test('period/segment comparison reconciles to independent expected values', async () => {
   const report = buildSegmentComparisonReport(compareSegmentsAcrossPeriods(await rows()));
   const c = report.comparison;
   const u = report.current;
-  assert.equal(c.orderIntake, 50000);
+  assert.equal(c.saleValue, 50000);
   assert.equal(c.netRevenue, 45000);
   assert.deepEqual(c.segments, { direct: 30000, partner: 20000 });
-  assert.equal(u.orderIntake, 72000);
+  assert.equal(u.saleValue, 72000);
   assert.equal(u.netRevenue, 66000);
   assert.deepEqual(u.segments, { direct: 57000, partner: 15000 });
   assert.equal(report.delta.netRevenue, 21000);
-  assert.equal(report.delta.orderIntake, 22000);
+  assert.equal(report.delta.saleValue, 22000);
   assert.equal(report.excludedOutOfScopeCount, 1);
 });
 
-test('order intake is explicitly separated from net revenue (not conflated)', async () => {
+test('gross sales are explicitly separated from net revenue', async () => {
   const report = buildSegmentComparisonReport(compareSegmentsAcrossPeriods(await rows()));
-  assert.equal(report.current.orderIntake, 72000);
+  assert.equal(report.current.saleValue, 72000);
   assert.equal(report.current.netRevenue, 66000);
-  assert.equal(report.current.orderIntake - report.current.creditValue, 66000);
-  assert.equal(report.comparison.orderIntake, 50000);
+  assert.equal(report.current.saleValue - report.current.creditValue, 66000);
+  assert.equal(report.comparison.saleValue, 50000);
   assert.equal(report.comparison.netRevenue, 45000);
 });
 
-test('open orders are a status dimension, distinct from intake and net', async () => {
+test('observed open sale rows are not an as-of order balance', async () => {
   const report = buildSegmentComparisonReport(compareSegmentsAcrossPeriods(await rows()));
-  assert.equal(report.current.openOrderCount, 2);
-  assert.equal(report.current.openOrderValue, 27000);
-  assert.equal(report.comparison.openOrderCount, 0);
+  assert.equal(report.current.observedOpenSaleRowCount, 2);
+  assert.equal(report.current.observedOpenSaleRowValue, 27000);
+  assert.equal(report.comparison.observedOpenSaleRowCount, 0);
   assert.equal(report.current.netRevenue, 66000);
 });
 
@@ -105,7 +118,7 @@ test('F2: a dated sale with a null amount routes to UNKNOWN (unquantified), neve
   assert.equal(report.current.unknown.unquantifiedCount, 1);
   assert.equal(report.current.unknown.quantifiedAmountMinorUnits, 0);
   // the row is NOT excluded and NOT counted as intake/net (unquantified, not zero).
-  assert.equal(report.current.orderIntake, 0);
+  assert.equal(report.current.saleValue, 0);
   assert.equal(report.current.netRevenue, 0);
   assert.equal(report.excludedOutOfScopeCount, 0);
 });
@@ -117,7 +130,7 @@ test('F2: a null-date sale with an amount routes to the UNASSIGNED channel, not 
   assert.equal(report.current.unknownUnassigned.quantifiedAmountMinorUnits, 1200);
   // not excluded from scope (it is unassigned, which is distinct from out-of-scope).
   assert.equal(report.excludedOutOfScopeCount, 0);
-  assert.equal(report.current.orderIntake, 0);
+  assert.equal(report.current.saleValue, 0);
 });
 
 test('F2: an invalid calendar date is DENIED, never lexically accepted into a period', () => {
@@ -136,7 +149,7 @@ test('F3: a cancelled sale is REJECTED (contradictory), not accepted as intake',
 test('F3: report carries explicit gross-only + as-of nonclaims', async () => {
   const report = buildSegmentComparisonReport(compareSegmentsAcrossPeriods(await rows()));
   assert.match(report.nonclaims[1], /GROSS sale value/);
-  assert.match(report.nonclaims[2], /as-of snapshot over in-window rows only/);
+  assert.match(report.nonclaims[2], /unsupported \(null\).*never a period-end balance/);
 });
 
 // --- F4: actual source boundary -----------------------------------------------------

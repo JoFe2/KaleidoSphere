@@ -2,8 +2,8 @@
 //
 // The smallest useful increment after #236 (single journey) and #237 (second layout,
 // same core): a bounded period/segment comparison that EXPLICITLY separates
-//   - order intake   (gross sale value, before credits/cancellations)
-//   - open orders    (orders still open at period end, a status dimension)
+//   - gross sale value (not order intake; intake is unsupported)
+//   - observed open sale rows (not a historical open-order balance)
 //   - net revenue    (sales minus credits — the released C2 definition, unchanged)
 //
 // The missing-data / UNKNOWN and date semantics are BOUND to the released C2 core's
@@ -179,12 +179,14 @@ function recordUnknown(channel, amount) {
 export function compareSegmentsAcrossPeriods(sourceRows) {
   if (!Array.isArray(sourceRows) || sourceRows.length === 0) fail('SEGMENT_ROWS_EMPTY');
   const mkPeriod = () => ({
-    orderIntake: 0,       // gross sale value (recognized sales only), before credits
+    orderIntake: null,    // unsupported: no intake-event source contract
     saleValue: 0,         // gross sale value — GROSS-ONLY, not net contribution
     creditValue: 0,
     netRevenue: 0,        // saleValue - creditValue (same released C2 definition)
-    openOrderCount: 0,    // sales with status 'open' among in-window rows
-    openOrderValue: 0,
+    openOrderCount: null, // unsupported: no historical status/as-of source
+    openOrderValue: null,
+    observedOpenSaleRowCount: 0,
+    observedOpenSaleRowValue: 0,
     cancelCount: 0,
     unknown: emptyUnknownChannel(),
     unknownUnassigned: emptyUnknownChannel(),
@@ -232,9 +234,8 @@ export function compareSegmentsAcrossPeriods(sourceRows) {
     if (kind === 'sale') {
       assertSegmentSourceRow(row); // recognition already enforced
       o.saleValue += amount;
-      o.orderIntake += amount;
       o.segments[row.segment] += amount;
-      if (row.status === 'open') { o.openOrderCount++; o.openOrderValue += amount; }
+      if (row.status === 'open') { o.observedOpenSaleRowCount++; o.observedOpenSaleRowValue += amount; }
     } else if (kind === 'credit') {
       o.creditValue += amount;
     } else if (kind === 'cancel') {
@@ -246,7 +247,8 @@ export function compareSegmentsAcrossPeriods(sourceRows) {
     result[p].netRevenue = result[p].saleValue - result[p].creditValue;
   }
   result.delta = {
-    orderIntake: result.current.orderIntake - result.comparison.orderIntake,
+    orderIntake: null,
+    saleValue: result.current.saleValue - result.comparison.saleValue,
     netRevenue: result.current.netRevenue - result.comparison.netRevenue,
   };
   return result;
@@ -264,7 +266,7 @@ export function buildSegmentComparisonReport(comparison) {
   comparison.nonclaims = Object.freeze([
     'No causal attribution: deltas are arithmetic over the same rows.',
     'Segment totals are GROSS sale value, not net-revenue contributions (credits/fees are not allocated per segment).',
-    'openOrder* is an as-of snapshot over in-window rows only; no status-history/as-of binding is modeled.',
+    'orderIntake and openOrder* are unsupported (null): no intake-event or historical status/as-of source. observedOpenSaleRow* describes in-window rows only, never a period-end balance.',
   ]);
   return comparison;
 }
