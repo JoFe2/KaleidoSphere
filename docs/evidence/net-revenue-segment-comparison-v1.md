@@ -35,8 +35,8 @@ sale values, not net contributions; credits are not allocated per segment.
 
 ## Missing-data / UNKNOWN semantics (bound to the released C2 core)
 
-The comparison reuses the released metric core's missing-data definition rather than
-forking it: a row routes to UNKNOWN when its date is null OR its kind is `unknown` OR its
+The comparison independently implements the released metric core's missing-data rule
+(it does not call that core): a row routes to UNKNOWN when its date is null OR its kind is `unknown` OR its
 amount is null; a null-date row is a separate UNASSIGNED channel (never "excluded" and
 never silently dropped); an invalid calendar date is DENIED, never lexically accepted.
 A dated sale with a null amount therefore counts as an unquantified UNKNOWN (never zero);
@@ -62,8 +62,14 @@ Reused (declared, not executed — PANSPHAIRA untouched): the PANSPHAIRA
 
 The declared source is a HELD synthetic counterpart, not the released upstream projection:
 its provenance (`status: HELD`, null release fields) is preserved honestly, and it is
-validated through the actual PANSPHAIRA profile-contract validator to prove the field names
-are genuine contract members — not copied strings called "released".
+validated through the existing profile-contract shape validator. Shape validity does
+not attest the field semantics or source-row origin. The focused F4 test now submits
+this exact declaration as canonical bytes to the real local ingestion pipeline with
+the repository registry: it returns `DENIED / XRA_KS01_RELEASE_HELD`, no candidate,
+and no successful ordinary answer. This is a negative admission proof, not a
+positive source handoff. Actual source-to-comparison composition and the connected
+#237→#238 CLI path remain unimplemented and parent-owned; no release authority is
+invented to make the test pass.
 
 New (this module only): the bounded `status` (open|closed|cancelled) and `segment`
 (direct|partner) dimensions, and the comparison/split surface.

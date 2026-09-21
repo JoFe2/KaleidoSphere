@@ -154,6 +154,18 @@ test('F3: report carries explicit gross-only + as-of nonclaims', async () => {
 
 // --- F4: actual source boundary -----------------------------------------------------
 
+test('F4: actual ingestion denies the declared HELD source; shape validity is not admission', async () => {
+  const { ingestProjectionProfile, validateRegistry } = await import('../services/bi-agent/src/pansphaira-analytics/pipeline.mjs');
+  const { canonicalJson } = await import('../services/bi-control/src/canonical-json.js');
+  const { extension, ...profile } = SYNTHETIC_SEGMENT_SOURCE;
+  const registry = validateRegistry(JSON.parse(await readFile('contracts/pansphaira-analytics/v1/release-registry.v1.json', 'utf8')));
+  const result = ingestProjectionProfile(Buffer.from(canonicalJson(profile)), { registry });
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'XRA_KS01_RELEASE_HELD');
+  assert.equal(result.candidate, null);
+  assert.equal(result.successfulOrdinaryAnswer, false);
+});
+
 test('F4: the declared source is a real contract member (validates) but provenance stays HELD', () => {
   // A fabricated "released" provenance would fail the real validator's provenance gate.
   assert.equal(validateSegmentSourceAgainstBoundary(), true);

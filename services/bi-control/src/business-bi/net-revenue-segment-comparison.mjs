@@ -33,9 +33,8 @@ export const NET_REVENUE_SEGMENT_COMPARISON_SCHEMA =
 // the PANSPHAIRA projection-profile/v1 field names, bound to the available LOCAL
 // synthetic counterpart — NOT a claim that the upstream PANSPHAIRA registry released
 // this exact projection.  The provenance below records the dependency honestly as
-// HELD-by-default (the local preserve limits apply), and the module exercises the
-// actual available local profile/adapter boundary rather than copying strings into a
-// constant and calling them "released".
+// HELD-by-default. The module validates profile shape only; that does not execute
+// source ingestion, admit a release, or bind the comparison rows to PANSPHAIRA.
 export const SYNTHETIC_SEGMENT_SOURCE = Object.freeze({
   profileVersion: 'pansphaira/projection-profile/v1',
   sourceRelation: 'xra_projection_orders',
@@ -128,17 +127,9 @@ export function assertSegmentSourceRow(row) {
   return true;
 }
 
-// Exercise the ACTUAL local PANSPHAIRA profile/adapter boundary: validate the declared
-// source profile through the released profile-contract validator.  This binds the
-// provenance/version contract honestly (the HELD synthetic counterpart validates; a
-// "released" field-set would need the released provenance the validator enforces).
-// Project the declared source into the EXACT closed profile-contract document shape
-// (TOP_LEVEL_KEYS only) and run it through the RELEASED PANSPHAIRA profile validator.
-// This exercises the actual available local adapter/profile boundary: the HELD synthetic
-// counterpart (provenance.status HELD, release fields null) VALIDATES, proving the field
-// names are well-formed contract members — while a would-be "released" projection would
-// need the released provenance (closedAt/headCommit/receipt) that the validator enforces
-// and that this local counterpart intentionally does NOT claim.
+// Validate the declaration against the existing closed profile shape. This is not
+// source admission: the actual ingestion pipeline denies this HELD profile with
+// XRA_KS01_RELEASE_HELD. It does not attest field semantics or comparison-row origin.
 export function validateSegmentSourceAgainstBoundary() {
   const s = SYNTHETIC_SEGMENT_SOURCE;
   validateProfileContract({
