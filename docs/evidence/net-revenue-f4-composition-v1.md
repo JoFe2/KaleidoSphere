@@ -80,16 +80,35 @@ writes, no HTTP publish path.
 Normal: `ledger-v1` and `ledger-v2` both map through their frozen profiles and produce
 `comparison.delta.netRevenue = 21000` with identical kernel and comparison digests.
 
-CLI `--negative` invokes the mapping/comparison boundary directly on fixture rows;
-these negative cases do NOT pass through database seeding or SELECT, even when
-`sourceMode` is `REAL_POSTGRESQL`. That field describes the positive path's engine,
-not the negative evidence's execution path. The direct boundary cases deny:
-- wrong source/layout (the other layout fed under the declared profile) -> `LEDGER_KIND_DENIED:undefined`;
+CLI `--negative` seeds each mutated case into an independent local synthetic database
+and reads it back through `readF4SourceRows` BEFORE the same `composeF4ForLayout`
+boundary. With `--pglite` this seed/read runs against a real in-process PostgreSQL
+engine; without it, against the clearly-labelled synthetic fallback (never real DB
+evidence). Each negative case records which path ran (`sourceRead.mode`) and whether the
+failure was a source-read failure (`stage: 'source-read'`, its own seed/read error code)
+or a frozen-profile denial (`stage: 'mapping'`), so the two are never conflated. The
+denials:
+- wrong source/layout (the other layout fed under the declared profile) ->
+  `LEDGER_KIND_DENIED:undefined` (synthetic) / `LEDGER_KIND_DENIED:null` (real): a real
+  PostgreSQL round-trip normalizes the absent wrong-layout kind column to SQL NULL, which
+  is the honest database read, not a direct-array `undefined` shortcut;
 - wrong mapping (an unrecognised posting/entry kind) -> `LEDGER_KIND_DENIED:not_a_kind`;
 - wrong unit, ambiguous scale -> `LEDGER_UNIT_SCALE_AMBIGUOUS`;
 - wrong unit, contradictory scale -> `LEDGER_UNIT_SCALE_MISMATCH`;
 - UNKNOWN / missing-data semantics are PRESERVED (not errors): the null-amount current
   row is an unquantified UNKNOWN and the quantified comparison row stays at 900.
+
+`--out` is confined to the repository or `/tmp`. Lexical containment is checked against
+exact root+separator prefixes (so a `/tmpfoo` lookalike is denied), and then EVERY path
+component below the allowed root is inspected with `lstat` (which never follows a
+symlink). Any symlink component — a dangling leaf symlink whose target does not exist
+yet, a leaf symlink to an existing file, or a symlinked ancestor directory — is denied
+fail-closed, and the final receipt open uses `O_NOFOLLOW` so a symlink leaf can never be
+followed between check and open. Ordinary in-root new/overwrite writes are preserved.
+This closes the deterministic escape where a dangling leaf symlink made `realpath` fail
+and walk UP past the symlink to a benign parent, after which `writeFile` followed the
+symlink and created the outside file. No claim is made against a hostile actor
+concurrently swapping an ANCESTOR directory after the check.
 
 ## Honest provenance (never fabricated)
 
