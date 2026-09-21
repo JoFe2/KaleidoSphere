@@ -167,8 +167,88 @@ test('the CLI entry point composes the same positive and negative paths (synthet
   assert.equal(doc.sourceMode, 'SYNTHETIC_FALLBACK');
   assert.equal(doc.layouts.length, 1);
   assert.equal(doc.layouts[0].comparison.delta.netRevenue, 21000);
-  assert.equal(doc.negativeEvidence.wrongMapping.code, 'LEDGER_KIND_DENIED:not_a_kind');
-  assert.equal(doc.negativeEvidence.wrongSource.code, 'LEDGER_KIND_DENIED:undefined');
-  assert.equal(doc.negativeEvidence.wrongUnitScale.ambiguous.code, 'LEDGER_UNIT_SCALE_AMBIGUOUS');
-  assert.equal(doc.negativeEvidence.wrongUnitScale.wrongScale.code, 'LEDGER_UNIT_SCALE_MISMATCH');
+  // The synthetic negative cases go through the labelled synthetic seed/read handoff
+  // (never real DB evidence) and fail closed at the mapping stage, not a source-read error.
+  const neg = doc.negativeEvidence;
+  assert.equal(neg.wrongMapping.stage, 'mapping');
+  assert.equal(neg.wrongMapping.sourceRead.mode, 'SYNTHETIC_FALLBACK');
+  assert.equal(neg.wrongMapping.evidence.code, 'LEDGER_KIND_DENIED:not_a_kind');
+  assert.equal(neg.wrongSource.stage, 'mapping');
+  assert.equal(neg.wrongSource.evidence.code, 'LEDGER_KIND_DENIED:undefined');
+  assert.equal(neg.wrongUnitScale.ambiguous.stage, 'mapping');
+  assert.equal(neg.wrongUnitScale.ambiguous.evidence.code, 'LEDGER_UNIT_SCALE_AMBIGUOUS');
+  assert.equal(neg.wrongUnitScale.wrongScale.stage, 'mapping');
+  assert.equal(neg.wrongUnitScale.wrongScale.evidence.code, 'LEDGER_UNIT_SCALE_MISMATCH');
+});
+
+test('CLI --pglite --negative seeds/reads the actual local database before the same boundary (real source handoff)', async (t) => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { pathToFileURL } = await import('node:url');
+  const execFileP = promisify(execFile);
+  const pgliteEntry = '/workspace/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js';
+  try { await readFile(pgliteEntry); } catch { t.skip('external PGlite runtime not present; real-database negative path not exercised here'); return; }
+  void pathToFileURL;
+  const { stdout } = await execFileP('node', ['scripts/run-net-revenue-f4-composition.mjs', '--pglite', pgliteEntry, '--layout', 'ledger-v1', '--negative'], { cwd: process.cwd() });
+  const doc = JSON.parse(stdout);
+  assert.equal(doc.sourceMode, 'REAL_POSTGRESQL');
+  assert.equal(doc.layouts[0].comparison.delta.netRevenue, 21000);
+  const neg = doc.negativeEvidence;
+  // Every negative case crossed the REAL seed/read boundary (12 rows read back) before
+  // the same composition gate — no direct mutated-array handoff, no fake query adapter.
+  for (const [name, caseOut] of [['wrongMapping', neg.wrongMapping], ['wrongSource', neg.wrongSource], ['ambiguous', neg.wrongUnitScale.ambiguous], ['wrongScale', neg.wrongUnitScale.wrongScale]]) {
+    assert.equal(caseOut.stage, 'mapping', `${name} must fail at the mapping stage after a real source read`);
+    assert.equal(caseOut.sourceRead.mode, 'REAL_POSTGRESQL', `${name} must read the real database`);
+    assert.equal(caseOut.sourceRead.rowsRead, 12, `${name} must read back all 12 seeded rows`);
+  }
+  // Mapping failures are kept distinct from source-read failures by their own codes.
+  assert.equal(neg.wrongMapping.evidence.code, 'LEDGER_KIND_DENIED:not_a_kind');
+  // A real PostgreSQL round-trip normalizes the absent wrong-layout kind column to SQL
+  // NULL, so the frozen #237 kind gate denies `:null` — an honest DB read, not a direct
+  // array `:undefined` shortcut.
+  assert.equal(neg.wrongSource.evidence.code, 'LEDGER_KIND_DENIED:null');
+  assert.equal(neg.wrongUnitScale.ambiguous.evidence.code, 'LEDGER_UNIT_SCALE_AMBIGUOUS');
+  assert.equal(neg.wrongUnitScale.wrongScale.evidence.code, 'LEDGER_UNIT_SCALE_MISMATCH');
+});
+
+test('CLI output confinement: --out denies /tmp-prefixed lookalikes and symlink escapes, accepts the real boundary', async (t) => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const { mkdtemp, symlink, rm, realpath: rp } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join, sep } = await import('node:path');
+  const execFileP = promisify(execFile);
+
+  const run = (args) => execFileP('node', ['scripts/run-net-revenue-f4-composition.mjs', ...args], { cwd: process.cwd() })
+    .then(({ stdout }) => ({ status: 0, stdout, stderr: '' }))
+    .catch((error) => ({ status: error.code ?? 255, stdout: error.stdout ?? '', stderr: error.stderr ?? '' }));
+
+  // /tmpfoo is a lexical sibling, NOT the allowed /tmp root: must deny and write nothing.
+  const sibling = (await run(['--out', '/tmpfoo/f4-receipt.json']));
+  assert.equal(sibling.status, 1, '/tmpfoo must be denied');
+  assert.match(sibling.stderr, /F4_CLI_OUT_PATH_DENIED/);
+
+  // A valid /tmp path is accepted and the receipt lands at exactly that path.
+  const tmpRoot = await mkdtemp(join(tmpdir(), 'f4-out-'));
+  t.after(() => rm(tmpRoot, { recursive: true, force: true }));
+  const okPath = join(tmpRoot, 'receipt.json');
+  const ok = await run(['--out', okPath]);
+  assert.equal(ok.status, 0, 'valid /tmp receipt must be accepted');
+  assert.equal(JSON.parse(await readFile(okPath, 'utf8')).sourceMode, 'SYNTHETIC_FALLBACK');
+
+  // A symlink inside /tmp (or the repo) that resolves OUTSIDE the allowed roots must be
+  // denied and must not leak a file to the real target.
+  // The outside target must be a DIFFERENT root than /tmp (or the repo): use /var/tmp,
+  // which resolves elsewhere and is not one of the two allowed output roots.
+  const outside = await mkdtemp(join('/var/tmp', 'f4-outside-'));
+  const escapeSource = join(tmpRoot, 'escape');
+  await symlink(outside, escapeSource);
+  t.after(() => rm(outside, { recursive: true, force: true }));
+  const escape = await run(['--out', join(escapeSource, 'leak.json')]);
+  assert.equal(escape.status, 1, 'symlink escape must be denied');
+  assert.match(escape.stderr, /F4_CLI_OUT_PATH_DENIED/);
+  await rm(join(outside, 'leak.json'), { force: true }).catch(() => {});
+  let leaked = true;
+  try { await rp(join(outside, 'leak.json')); } catch { leaked = false; }
+  assert.equal(leaked, false, 'no file must leak to the real symlink target');
 });
