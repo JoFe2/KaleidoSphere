@@ -94,18 +94,21 @@ against a real local read-only PostgreSQL source (injected PGlite in an isolated
 runtime, never a package-manifest dependency) and reconciles every rendering to the
 independent oracle. A second semantic synthetic layout maps to the same unchanged
 metric core through two frozen versioned mapping profiles that reject ambiguous or
-wrong units and unsupported role bindings fail-closed. A bounded period/segment
-comparison separates order intake and open orders (a status dimension) from net
-revenue, with credits/cancellations/unknowns preserved and segment totals labelled
-gross-only. No causal attribution, second order-management module, or broader
-chart/template/dashboard platform is claimed (the #167 promotion gate is NOT_PROMOTED);
-human reader-comprehension evidence remains recorded separately and is never fabricated.
+wrong units and unsupported role bindings fail-closed. The bounded period/segment
+comparison reports net revenue and observed sale rows; order intake and historical
+open-order balances remain unsupported (`null`), not inferred from sale rows.
+Credits/cancellations/unknowns are preserved and segment totals labelled gross-only.
+No causal attribution, second order-management module, or broader
+chart/template/dashboard platform is claimed (the #167 promotion gate is NOT_PROMOTED).
+Human reader-comprehension evidence is still missing; automated tests do not replace it.
 
 A positive local F4 composition (`node scripts/run-net-revenue-f4-composition.mjs`)
-closes the previously-unimplemented #237 to #238 CLI path: a real local read-only source
-is mapped through both frozen mapping profiles and compared period/segment, with the
-negative source/unit/mapping paths denied fail-closed through the same entry point and
-the #238 PANSPHAIRA provenance kept HELD.
+implements the #237 to #238 local CLI path with synthetic data in a real local engine.
+Isolated database setup writes data; SELECT is not enforced read-only qualification.
+Both frozen mapping profiles feed period/segment comparison. CLI `--negative` exercises
+fixture mutations directly rather than database reads. The #238 PANSPHAIRA provenance
+remains HELD. These are implemented local candidates, not full issue acceptance or a
+claim that this increment is already publicly released.
 
 ## Candidate next capabilities
 

@@ -241,10 +241,12 @@ read visibility for the declared schemas. Details are in
   ledger kernel is mapped through the frozen #237 mapping profiles (both `ledger-v1` and
   `ledger-v2`) and whose #238 `status`/`segment` extension feeds the period/segment
   comparison, all through one entry point. Both real local PGlite mappings reproduce
-  byte-identical kernel and comparison digests; wrong source/unit/mapping cases deny
-  fail-closed through the same path. This is a local-only CLI (no public state, no HTTP
-  publish path); the synthetic DI source is marked synthetic and the #238 PANSPHAIRA
-  provenance stays HELD.
+  byte-identical kernel and comparison digests using synthetic data. Database setup
+  writes only to the isolated local engine; this F4 path is not enforced read-only
+  qualification. CLI `--negative` checks source/unit/mapping denials directly on
+  fixture mutations, not through database seed/read. This is a local-only CLI (no
+  public state or HTTP publish path); the #238 PANSPHAIRA provenance stays HELD.
+  Human comprehension and full issue acceptance remain open.
 
 - Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
   clean-room falsification; no production or broader BI claim is made. The
