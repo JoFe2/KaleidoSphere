@@ -62,6 +62,14 @@ const CLOSED_LEDGER_FIELDS = {
   2: Object.freeze(['row_key', 'occurred_at', 'entry_kind', 'atomic_value', 'segment']),
 };
 
+// The supported role->column bindings per layout version.  A profile must declare each
+// role from this EXACT table, not an arbitrary column drawn from the allowed column list.
+// This rejects a profile that, e.g., binds amountField to the id column.
+const SUPPORTED_ROLE_BINDINGS = Object.freeze({
+  1: Object.freeze({ idField: 'row_key', dateField: 'occurred_at', kindField: 'posting_type', amountField: 'value_atomic_units' }),
+  2: Object.freeze({ idField: 'row_key', dateField: 'occurred_at', kindField: 'entry_kind', amountField: 'atomic_value' }),
+});
+
 // The published, frozen profile definitions.  Each profile declares:
 //   - layoutVersion: which source layout it resolves (ledger-v1 | ledger-v2)
 //   - currency: {code, minorUnitsPerMajorUnit} — MUST be exactly one currency
@@ -151,11 +159,15 @@ export function validateLedgerMappingProfile(profile) {
   if (!isPlainObject(currency)
       || currency.code !== 'EUR'
       || !Number.isInteger(currency.minorUnitsPerMajorUnit)
-      || currency.minorUnitsPerMajorUnit <= 0) fail('LEDGER_CURRENCY_DENIED');
+      // The released metric is defined over integer minor units at exactly 100 per
+      // major unit; any other minor-unit factor (e.g. 7) is an unsupported arithmetic
+      // unit, not a free parameter.
+      || currency.minorUnitsPerMajorUnit !== 100) fail('LEDGER_CURRENCY_DENIED');
   const scale = profile.unitScale;
   if (scale !== 'BASE_UNITS' && scale !== 'MINOR_UNITS') fail('LEDGER_UNIT_SCALE_AMBIGUOUS');
   for (const field of ['idField', 'dateField', 'kindField', 'amountField']) {
-    if (typeof profile[field] !== 'string' || !closed.includes(profile[field])) {
+    if (typeof profile[field] !== 'string' || !closed.includes(profile[field])
+        || profile[field] !== SUPPORTED_ROLE_BINDINGS[version === 'ledger-v2' ? 2 : 1][field]) {
       fail(`LEDGER_${field.toUpperCase()}_DENIED`);
     }
   }
@@ -169,6 +181,10 @@ export function validateLedgerMappingProfile(profile) {
 // records the computed minor value so the variant/replay test can assert v1 == v2.
 export function mapLedgerRowToCanonical(profile, sourceRow) {
   validateLedgerMappingProfile(profile);
+  // Enforce the unit/semantic gate at the MAPPING boundary, not as a caller convention:
+  // a profile whose declared unit scale contradicts the source's declared unit is
+  // rejected here (not merely by a separately invoked assertion in a test).
+  assertProfileMatchesSourceUnit(profile, declaredSourceUnit(profile.layoutVersion));
   if (!isPlainObject(sourceRow)) fail('LEDGER_ROW_DENIED');
   const kindIndex = profile.layoutVersion === 'ledger-v2' ? 2 : 1;
   const kind = KIND_MAP[kindIndex][sourceRow[profile.kindField]];
@@ -197,6 +213,9 @@ export function mapLedgerRowToCanonical(profile, sourceRow) {
 // columns did not leak.  The output is the EXACT canonical shape the metric core wants.
 export function mapLedgerRowsToCanonical(profile, sourceRows) {
   validateLedgerMappingProfile(profile);
+  // Same mandatory unit gate at the batch entry point (kept in sync with the single-row
+  // mapper) so a wrong-scale profile can never silently scale a declared source.
+  assertProfileMatchesSourceUnit(profile, declaredSourceUnit(profile.layoutVersion));
   if (!Array.isArray(sourceRows) || sourceRows.length === 0) fail('LEDGER_ROWS_EMPTY');
   const seen = new Set();
   const out = [];

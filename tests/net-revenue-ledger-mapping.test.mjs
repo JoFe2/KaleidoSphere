@@ -109,6 +109,24 @@ test('a profile whose unit scale contradicts the source declaration (wrong units
   // WRONG_SCALE_PROFILE declares BASE_UNITS while the source declares MINOR_UNITS
   assert.equal(validateLedgerMappingProfile(WRONG_SCALE_PROFILE), true, 'self-consistent profiles validate');
   assert.throws(() => assertProfileMatchesSourceUnit(WRONG_SCALE_PROFILE, declaredSourceUnit('ledger-v1')), (e) => e.code === 'LEDGER_UNIT_SCALE_MISMATCH');
+  // F5: the wrong-scale gate is enforced INSIDE the mapping entry point, not as a
+  // caller convention.  Mapping WRONG_SCALE over real rows is rejected, so a declared
+  // source can never be silently scaled by 100.
+  assert.throws(() => mapLedgerRowToCanonical(WRONG_SCALE_PROFILE, v1.rows[0]), (e) => e.code === 'LEDGER_UNIT_SCALE_MISMATCH');
+  assert.throws(() => mapLedgerRowsToCanonical(WRONG_SCALE_PROFILE, v1.rows), (e) => e.code === 'LEDGER_UNIT_SCALE_MISMATCH');
+});
+
+test('F5: unsupported currency minor-unit factor and arbitrary role bindings are rejected', () => {
+  const p1 = LEDGER_MAPPING_PROFILES['ledger-mapping-v1'];
+  // EUR at minorUnitsPerMajorUnit 7 is not the released minor-unit arithmetic and is denied.
+  assert.throws(() => validateLedgerMappingProfile({
+    ...p1, currency: { code: 'EUR', minorUnitsPerMajorUnit: 7 },
+  }), (e) => e.code === 'LEDGER_CURRENCY_DENIED');
+  // A role bound to an arbitrary column (amount -> the id column, kind -> the date column)
+  // is denied, not silently accepted from the allowed column list.
+  assert.throws(() => validateLedgerMappingProfile({ ...p1, amountField: 'row_key' }), (e) => e.code === 'LEDGER_AMOUNTFIELD_DENIED');
+  assert.throws(() => validateLedgerMappingProfile({ ...p1, kindField: 'occurred_at' }), (e) => e.code === 'LEDGER_KINDFIELD_DENIED');
+  assert.throws(() => validateLedgerMappingProfile({ ...p1, idField: 'posting_type' }), (e) => e.code === 'LEDGER_IDFIELD_DENIED');
 });
 
 test('a rewording/missing posting kind is rejected fail-closed (never silently unknown)', () => {
