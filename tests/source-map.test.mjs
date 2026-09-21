@@ -9,20 +9,44 @@ import test from 'node:test';
 import './business-bi-epic-closure.test.mjs';
 // VIS-01 follows the imported-suite route to preserve the byte-bound package manifest.
 import './net-revenue-visual-v1.test.mjs';
+// #236 journey follows the same imported-suite route (no package.json mutation).
+import './net-revenue-journey.test.mjs';
+// #237 ledger-mapping follows the same imported-suite route (no package.json mutation).
+import './net-revenue-ledger-mapping.test.mjs';
+// #238 segment comparison follows the same imported-suite route (no package.json mutation).
+import './net-revenue-segment-comparison.test.mjs';
+// #238 F4 composition follows the same imported-suite route (no package.json mutation).
+import './net-revenue-f4-composition.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
   'docs/evidence/business-bi-net-revenue-v1.md',
+  'docs/evidence/net-revenue-journey-v1.md',
   'scripts/run-business-bi-falsification-clean-room.mjs',
   'scripts/run-business-bi-holdout-clean-room.mjs',
+  'scripts/run-net-revenue-journey.mjs',
+  'services/bi-control/src/business-bi/net-revenue-journey.mjs',
+  'services/bi-control/src/business-bi/net-revenue-ledger-mapping.mjs',
   'services/bi-control/src/business-bi/net-revenue-plan.mjs',
+  'services/bi-control/src/business-bi/net-revenue-segment-comparison.mjs',
   'services/bi-control/src/business-bi/net-revenue-readback.mjs',
   'tests/business-bi-clean-room.test.mjs',
   'tests/business-bi-epic-closure.test.mjs',
   'tests/business-bi-metric-oracle.test.mjs',
   'tests/business-bi-net-revenue-plan.test.mjs',
+  'tests/net-revenue-ledger-mapping.test.mjs',
+  'tests/net-revenue-segment-comparison.test.mjs',
   'tests/fixtures/business-bi/net-revenue-holdout-v1.json',
+  'tests/fixtures/business-bi/net-revenue-ledger-v1.json',
+  'tests/fixtures/business-bi/net-revenue-ledger-v2.json',
   'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
+  'tests/fixtures/business-bi/net-revenue-segment-v1.json',
+  'services/bi-control/src/business-bi/net-revenue-f4-composition.mjs',
+  'scripts/run-net-revenue-f4-composition.mjs',
+  'tests/net-revenue-f4-composition.test.mjs',
+  'tests/fixtures/business-bi/net-revenue-f4-composition-v1.json',
+  'tests/fixtures/business-bi/net-revenue-f4-composition-v2.json',
+  'docs/evidence/net-revenue-f4-composition-v1.md',
   'verification/business-bi-epic-closure-v1.json',
   'verification/business-bi-net-revenue-falsification-v1.json',
   'verification/business-bi-net-revenue-holdout-v1.json',

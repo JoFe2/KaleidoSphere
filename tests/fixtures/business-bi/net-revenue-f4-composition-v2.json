@@ -1,0 +1,133 @@
+{
+ "schemaVersion": "kaleidosphere.business-bi/net-revenue-f4-composition-source/v1",
+ "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+ "issue": "JoFe2/KaleidoSphere#238",
+ "relation": "synthetic_bi.orders_ledger",
+ "currencyCode": "EUR",
+ "sourceUnitDeclaration": "MINOR_UNITS",
+ "minorUnitsPerMajorUnit": 100,
+ "layoutVersion": "ledger-v2",
+ "mappingProfile": "ledger-mapping-v2",
+ "columns": [
+  "row_key",
+  "occurred_at",
+  "entry_kind",
+  "atomic_value",
+  "ledger_stream",
+  "status",
+  "segment"
+ ],
+ "extensionDeclaration": {
+  "note": "status/segment are this workspaces bounded comparison extension, NOT part of the frozen #237 ledger kernel profile roles; they are read from the real source and attached after kernel mapping, never invented."
+ },
+ "rows": [
+  {
+   "row_key": "s-201",
+   "occurred_at": "2026-06-02",
+   "entry_kind": "sale_entry",
+   "atomic_value": 30000,
+   "ledger_stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-202",
+   "occurred_at": "2026-06-11",
+   "entry_kind": "sale_entry",
+   "atomic_value": 20000,
+   "ledger_stream": "ch1",
+   "status": "closed",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-203",
+   "occurred_at": "2026-06-18",
+   "entry_kind": "credit_reversal",
+   "atomic_value": 5000,
+   "ledger_stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-204",
+   "occurred_at": "2026-06-25",
+   "entry_kind": "void",
+   "atomic_value": 0,
+   "ledger_stream": "ch1",
+   "status": "cancelled",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-205",
+   "occurred_at": "2026-06-28",
+   "entry_kind": "unclassified",
+   "atomic_value": 900,
+   "ledger_stream": "ch1",
+   "status": "open",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-206",
+   "occurred_at": "2026-07-03",
+   "entry_kind": "sale_entry",
+   "atomic_value": 45000,
+   "ledger_stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-207",
+   "occurred_at": "2026-07-09",
+   "entry_kind": "sale_entry",
+   "atomic_value": 15000,
+   "ledger_stream": "ch1",
+   "status": "open",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-208",
+   "occurred_at": "2026-07-14",
+   "entry_kind": "credit_reversal",
+   "atomic_value": 6000,
+   "ledger_stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-209",
+   "occurred_at": "2026-07-20",
+   "entry_kind": "void",
+   "atomic_value": 0,
+   "ledger_stream": "ch1",
+   "status": "cancelled",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-210",
+   "occurred_at": "2026-07-26",
+   "entry_kind": "unclassified",
+   "atomic_value": null,
+   "ledger_stream": "ch1",
+   "status": "open",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-211",
+   "occurred_at": "2026-07-30",
+   "entry_kind": "sale_entry",
+   "atomic_value": 12000,
+   "ledger_stream": "ch1",
+   "status": "open",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-212",
+   "occurred_at": "2026-05-30",
+   "entry_kind": "sale_entry",
+   "atomic_value": 99000,
+   "ledger_stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  }
+ ]
+}

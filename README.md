@@ -227,6 +227,27 @@ read visibility for the declared schemas. Details are in
   digest-bound, read-only aggregate over the admitted synthetic holdout and
   emits identity-equal JSON and TABLE readbacks. It has no free SQL, real-source,
   dashboard, mutation, or shipped CLI/HTTP authority.
+- A documented, runnable local net-revenue user journey
+  (`node scripts/run-net-revenue-journey.mjs`, see
+  `docs/evidence/net-revenue-journey-v1.md`) composes the released C2 calculation,
+  readback and the VIS-01 visual into one local entry point, running normal and
+  negative paths against a real local read-only relational source (an injected
+  in-process PGlite engine in an isolated runtime, never a `package.json`
+  dependency) reconciled to the independent oracle. This is a local-only CLI: it
+  writes no public state and has no HTTP publish path.
+
+- A positive local F4 composition (`node scripts/run-net-revenue-f4-composition.mjs`,
+  see `docs/evidence/net-revenue-f4-composition-v1.md`) reads a real local source whose
+  ledger kernel is mapped through the frozen #237 mapping profiles (both `ledger-v1` and
+  `ledger-v2`) and whose #238 `status`/`segment` extension feeds the period/segment
+  comparison, all through one entry point. Both real local PGlite mappings reproduce
+  byte-identical kernel and comparison digests using synthetic data. Database setup
+  writes only to the isolated local engine; this F4 path is not enforced read-only
+  qualification. CLI `--negative` checks source/unit/mapping denials directly on
+  fixture mutations, not through database seed/read. This is a local-only CLI (no
+  public state or HTTP publish path); the #238 PANSPHAIRA provenance stays HELD.
+  Human comprehension and full issue acceptance remain open.
+
 - Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
   clean-room falsification; no production or broader BI claim is made. The
   result reports 3/3 satisfied criteria separately from 1 delivered local

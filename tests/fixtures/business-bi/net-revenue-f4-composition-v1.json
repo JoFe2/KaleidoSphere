@@ -1,0 +1,133 @@
+{
+ "schemaVersion": "kaleidosphere.business-bi/net-revenue-f4-composition-source/v1",
+ "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+ "issue": "JoFe2/KaleidoSphere#238",
+ "relation": "synthetic_bi.orders_ledger",
+ "currencyCode": "EUR",
+ "sourceUnitDeclaration": "MINOR_UNITS",
+ "minorUnitsPerMajorUnit": 100,
+ "layoutVersion": "ledger-v1",
+ "mappingProfile": "ledger-mapping-v1",
+ "columns": [
+  "row_key",
+  "occurred_at",
+  "posting_type",
+  "value_atomic_units",
+  "stream",
+  "status",
+  "segment"
+ ],
+ "extensionDeclaration": {
+  "note": "status/segment are this workspaces bounded comparison extension, NOT part of the frozen #237 ledger kernel profile roles; they are read from the real source and attached after kernel mapping, never invented."
+ },
+ "rows": [
+  {
+   "row_key": "s-201",
+   "occurred_at": "2026-06-02",
+   "posting_type": "debit_sale",
+   "value_atomic_units": 30000,
+   "stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-202",
+   "occurred_at": "2026-06-11",
+   "posting_type": "debit_sale",
+   "value_atomic_units": 20000,
+   "stream": "ch1",
+   "status": "closed",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-203",
+   "occurred_at": "2026-06-18",
+   "posting_type": "credit_note",
+   "value_atomic_units": 5000,
+   "stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-204",
+   "occurred_at": "2026-06-25",
+   "posting_type": "cancellation",
+   "value_atomic_units": 0,
+   "stream": "ch1",
+   "status": "cancelled",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-205",
+   "occurred_at": "2026-06-28",
+   "posting_type": "unclassified",
+   "value_atomic_units": 900,
+   "stream": "ch1",
+   "status": "open",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-206",
+   "occurred_at": "2026-07-03",
+   "posting_type": "debit_sale",
+   "value_atomic_units": 45000,
+   "stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-207",
+   "occurred_at": "2026-07-09",
+   "posting_type": "debit_sale",
+   "value_atomic_units": 15000,
+   "stream": "ch1",
+   "status": "open",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-208",
+   "occurred_at": "2026-07-14",
+   "posting_type": "credit_note",
+   "value_atomic_units": 6000,
+   "stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-209",
+   "occurred_at": "2026-07-20",
+   "posting_type": "cancellation",
+   "value_atomic_units": 0,
+   "stream": "ch1",
+   "status": "cancelled",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-210",
+   "occurred_at": "2026-07-26",
+   "posting_type": "unclassified",
+   "value_atomic_units": null,
+   "stream": "ch1",
+   "status": "open",
+   "segment": "partner"
+  },
+  {
+   "row_key": "s-211",
+   "occurred_at": "2026-07-30",
+   "posting_type": "debit_sale",
+   "value_atomic_units": 12000,
+   "stream": "ch1",
+   "status": "open",
+   "segment": "direct"
+  },
+  {
+   "row_key": "s-212",
+   "occurred_at": "2026-05-30",
+   "posting_type": "debit_sale",
+   "value_atomic_units": 99000,
+   "stream": "ch1",
+   "status": "closed",
+   "segment": "direct"
+  }
+ ]
+}
