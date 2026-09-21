@@ -98,10 +98,17 @@ denials:
 - UNKNOWN / missing-data semantics are PRESERVED (not errors): the null-amount current
   row is an unquantified UNKNOWN and the quantified comparison row stays at 900.
 
-`--out` is confined to the repository or `/tmp` by exact root+separator prefixes AND a
-realpath re-check of the deepest existing ancestor, so a `/tmpfoo` lookalike and a
-lexical repository (or `/tmp`) path that resolves through a symlink to a target outside
-the allowed roots are both denied.
+`--out` is confined to the repository or `/tmp`. Lexical containment is checked against
+exact root+separator prefixes (so a `/tmpfoo` lookalike is denied), and then EVERY path
+component below the allowed root is inspected with `lstat` (which never follows a
+symlink). Any symlink component — a dangling leaf symlink whose target does not exist
+yet, a leaf symlink to an existing file, or a symlinked ancestor directory — is denied
+fail-closed, and the final receipt open uses `O_NOFOLLOW` so a symlink leaf can never be
+followed between check and open. Ordinary in-root new/overwrite writes are preserved.
+This closes the deterministic escape where a dangling leaf symlink made `realpath` fail
+and walk UP past the symlink to a benign parent, after which `writeFile` followed the
+symlink and created the outside file. No claim is made against a hostile actor
+concurrently swapping an ANCESTOR directory after the check.
 
 ## Honest provenance (never fabricated)
 
