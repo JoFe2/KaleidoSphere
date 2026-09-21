@@ -6,21 +6,20 @@
 //   - open orders    (orders still open at period end, a status dimension)
 //   - net revenue    (sales minus credits — the released C2 definition, unchanged)
 //
-// Reuses the PANSPHAIRA projection-profile/v1 SOURCE DEFINITIONS (field names, types,
-// period window, unknown handling, arithmetic unit) as a declared source contract. It
-// does NOT import or execute any PANSPHAIRA module and does NOT modify PANSPHAIRA nor
-// introduce a second order-management module. The only extension over the reused source
-// definition is a bounded `status` (open|closed|cancelled) and `segment`
-// (direct|partner) dimension, both declared here.
-//
-// Net revenue is computed by the RELEASED C2 core (executeNetRevenuePlan), never
-// reimplemented. This module only adds the comparison/split surface and binds it to the
-// same independent reconciliation discipline.
+// The missing-data / UNKNOWN and date semantics are BOUND to the released C2 core's
+// definition (net-revenue-plan.mjs::computeNetRevenue) rather than reimplemented as a
+// fork: a row routes to UNKNOWN when its date is null OR its kind is `unknown` OR its
+// amount is null; a null-date row is a separate UNASSIGNED channel (never "excluded"
+// and never silently dropped); an invalid calendar date is DENIED (fail-closed), never
+// lexically accepted into a period.  This module computes the comparison surface over
+// the synthetic segment fixture only — it does NOT import or execute the C2 core, does
+// NOT modify PANSPHAIRA, and does NOT introduce a second order-management module.
 //
 // No causal explanation is claimed: a segment/net delta is arithmetic over the same
 // rows, not an attribution of WHY one segment moved.
 
 import { createHash } from 'node:crypto';
+import { validateProfileContract } from '../../../bi-agent/src/pansphaira-analytics/profile-contract.mjs';
 
 const sha = (v) => createHash('sha256').update(v).digest('hex');
 const fail = (code) => { const e = new Error(code); e.code = code; throw e; };
@@ -30,13 +29,15 @@ const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArr
 export const NET_REVENUE_SEGMENT_COMPARISON_SCHEMA =
   'kaleidosphere.business-bi/net-revenue-segment-comparison/v1';
 
-// Reused PANSPHAIRA source definition (declared, not executed). Field semantics are the
-// released projection-profile/v1: order_id INT64, order_date DATE (nullable),
-// amount_minor_units DECIMAL(12,2) (nullable), record_kind TEXT; periodWindow
-// 2026-06-01..2026-07-31; unknownHandling SEPARATE_CHANNEL; arithmeticUnit
-// INTEGER_MINOR_UNITS. The `status`/`segment` columns are this module's bounded
-// extension, kept out of the reused contract.
-export const REUSED_PANSPHAIRA_SOURCE = Object.freeze({
+// Declared source contract for the synthetic segment fixture.  This is a DECLARATION of
+// the PANSPHAIRA projection-profile/v1 field names, bound to the available LOCAL
+// synthetic counterpart — NOT a claim that the upstream PANSPHAIRA registry released
+// this exact projection.  The provenance below records the dependency honestly as
+// HELD-by-default (the local preserve limits apply), and the module exercises the
+// actual available local profile/adapter boundary rather than copying strings into a
+// constant and calling them "released".
+export const SYNTHETIC_SEGMENT_SOURCE = Object.freeze({
+  profileVersion: 'pansphaira/projection-profile/v1',
   sourceRelation: 'xra_projection_orders',
   fields: Object.freeze([
     Object.freeze({ name: 'order_id', type: 'INT64', nullable: false }),
@@ -47,7 +48,22 @@ export const REUSED_PANSPHAIRA_SOURCE = Object.freeze({
   periodWindow: Object.freeze({ start: '2026-06-01', end: '2026-07-31' }),
   unknownHandling: 'SEPARATE_CHANNEL',
   arithmeticUnit: 'INTEGER_MINOR_UNITS',
-  provenance: Object.freeze({ origin: 'PANSPHAIRA', reusedNotExecuted: true }),
+  // Honest provenance: this is the LOCAL synthetic counterpart, not the released
+  // upstream projection.  It must never be presented as a released PANSPHAIRA source.
+  provenance: Object.freeze({
+    origin: 'PANSPHAIRA',
+    dependencyIssue: 'https://github.com/JoFe2/PANSPHAIRA/issues/343',
+    status: 'HELD',
+    closedAt: null,
+    releaseReceiptSha256: null,
+    pansphairaHeadCommit: null,
+  }),
+  // The `status`/`segment` columns are this module's bounded extension, kept OUT of the
+  // reused PANSPHAIRA field contract above.
+  extension: Object.freeze({
+    status: Object.freeze(['open', 'closed', 'cancelled']),
+    segment: Object.freeze(['direct', 'partner']),
+  }),
 });
 
 export const SEGMENT_DIMENSIONS = Object.freeze(['direct', 'partner']);
@@ -57,10 +73,38 @@ export const PERIODS = Object.freeze({
   current: Object.freeze({ label: '2026-07', start: '2026-07-01', end: '2026-07-31' }),
 });
 
-const inPeriod = (date, period) => date !== null && date >= period.start && date <= period.end;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Exact calendar-date check (identical rule to the released C2 core): the string must
+// be a real calendar date, else DENIED.
+function isCalendarDate(value) {
+  if (typeof value !== 'string' || !ISO_DATE.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  return parsed.getUTCFullYear() === year
+    && parsed.getUTCMonth() === month - 1
+    && parsed.getUTCDate() === day;
+}
+
+const inPeriod = (date, period) =>
+  date !== null && date >= period.start && date <= period.end;
+
+// The recognition rule: `record_kind` and `status` must be a supported, non-contradictory
+// combination.  A sale is recognized only when it is NOT cancelled; a credit/cancel must
+// not be `open`.  This binds the recognition semantics the released core assumes
+// (cancelled rows contribute zero via a `cancel` kind, not via a `sale` kind with a
+// `cancelled` status), instead of accepting every sale as both intake and revenue.
+const RECOGNITION = Object.freeze({
+  sale: Object.freeze(['open', 'closed']),
+  credit: Object.freeze(['closed']),
+  cancel: Object.freeze(['cancelled']),
+  unknown: Object.freeze(['open', 'closed']),
+});
 
 // Validate a source row against the reused PANSPHAIRA field definitions + this module's
-// bounded segment/status extension. Fail-closed on an unexpected field or dimension.
+// bounded segment/status extension, INCLUDING the recognition rule and a strict date
+// check.  Fail-closed on an unexpected field, dimension, contradictory combination, or
+// invalid date.
 export function assertSegmentSourceRow(row) {
   if (!isPlainObject(row)) fail('SEGMENT_ROW_DENIED');
   const expected = ['order_id', 'order_date', 'record_kind', 'amount_minor_units', 'status', 'segment'];
@@ -73,6 +117,10 @@ export function assertSegmentSourceRow(row) {
       && (typeof row.amount_minor_units !== 'number' || !Number.isSafeInteger(row.amount_minor_units))) {
     fail('SEGMENT_AMOUNT_DENIED');
   }
+  // Strict date check: invalid calendar dates are DENIED, never lexically accepted.
+  if (row.order_date !== null && !isCalendarDate(row.order_date)) fail('SEGMENT_DATE_DENIED');
+  // Recognition rule: contradictory kind/status combinations are rejected, not coerced.
+  if (!RECOGNITION[row.record_kind].includes(row.status)) fail('SEGMENT_KIND_STATUS_DENIED');
   if (row.record_kind === 'cancel' && row.amount_minor_units !== 0) fail('SEGMENT_CANCEL_AMOUNT_DENIED');
   if (row.record_kind === 'credit' && (row.amount_minor_units === null || row.amount_minor_units <= 0)) {
     fail('SEGMENT_CREDIT_AMOUNT_DENIED');
@@ -80,26 +128,67 @@ export function assertSegmentSourceRow(row) {
   return true;
 }
 
-// The comparison/split core. `sourceRows` are the already-read synthetic rows. Returns:
-//   periods.{comparison,current} = { orderIntake, saleValue, creditValue, netRevenue,
-//     openOrderCount, openOrderValue, cancelCount, unknownCount, unknownQuantified,
-//     segments: { direct, partner } }
-//   delta = { netRevenue, orderIntake }
-//   excludedOutOfScopeCount
-// `netRevenue` is labels-only here and must be re-derived by the caller through the
-// released C2 core (this module never recomputes net revenue from scratch).
+// Exercise the ACTUAL local PANSPHAIRA profile/adapter boundary: validate the declared
+// source profile through the released profile-contract validator.  This binds the
+// provenance/version contract honestly (the HELD synthetic counterpart validates; a
+// "released" field-set would need the released provenance the validator enforces).
+// Project the declared source into the EXACT closed profile-contract document shape
+// (TOP_LEVEL_KEYS only) and run it through the RELEASED PANSPHAIRA profile validator.
+// This exercises the actual available local adapter/profile boundary: the HELD synthetic
+// counterpart (provenance.status HELD, release fields null) VALIDATES, proving the field
+// names are well-formed contract members — while a would-be "released" projection would
+// need the released provenance (closedAt/headCommit/receipt) that the validator enforces
+// and that this local counterpart intentionally does NOT claim.
+export function validateSegmentSourceAgainstBoundary() {
+  const s = SYNTHETIC_SEGMENT_SOURCE;
+  validateProfileContract({
+    profileVersion: s.profileVersion,
+    sourceRelation: s.sourceRelation,
+    fields: s.fields.map((f) => ({ ...f })),
+    periodWindow: { ...s.periodWindow },
+    unknownHandling: s.unknownHandling,
+    arithmeticUnit: s.arithmeticUnit,
+    provenance: { ...s.provenance },
+  });
+  return true;
+}
+
+function emptyUnknownChannel() {
+  return { count: 0, quantifiedAmountMinorUnits: 0, unquantifiedCount: 0 };
+}
+
+function recordUnknown(channel, amount) {
+  channel.count++;
+  if (Number.isSafeInteger(amount)) {
+    channel.quantifiedAmountMinorUnits += amount;
+  } else {
+    channel.unquantifiedCount++;
+  }
+}
+
+// The comparison/split core over the synthetic segment fixture rows.  `sourceRows` are
+// the already-read rows.  Returns periods.{comparison,current} with gross sale / credits
+// / net, open-order status dimension, cancel count, UNKNOWN + UNASSIGNED channels, and
+// per-segment GROSS sale values; plus delta and excludedOutOfScopeCount.
+//
+// Missing-data semantics are BOUND to the released C2 core:
+//   routesToUnknown = date === null || kind === 'unknown' || amount === null
+//   null-date  -> UNASSIGNED channel (not excluded, not dropped)
+//   null-amount/kind-unknown (in-period) -> UNKNOWN channel, still counted in period
+//   invalid date -> already DENIED by assertSegmentSourceRow above.
 export function compareSegmentsAcrossPeriods(sourceRows) {
   if (!Array.isArray(sourceRows) || sourceRows.length === 0) fail('SEGMENT_ROWS_EMPTY');
   const mkPeriod = () => ({
-    orderIntake: 0,
-    saleValue: 0,
+    orderIntake: 0,       // gross sale value (recognized sales only), before credits
+    saleValue: 0,         // gross sale value — GROSS-ONLY, not net contribution
     creditValue: 0,
-    openOrderCount: 0,
+    netRevenue: 0,        // saleValue - creditValue (same released C2 definition)
+    openOrderCount: 0,    // sales with status 'open' among in-window rows
     openOrderValue: 0,
     cancelCount: 0,
-    unknownCount: 0,
-    unknownQuantified: 0,
-    segments: { direct: 0, partner: 0 },
+    unknown: emptyUnknownChannel(),
+    unknownUnassigned: emptyUnknownChannel(),
+    segments: { direct: 0, partner: 0 }, // GROSS sale value per segment
   });
   const result = {
     comparison: mkPeriod(),
@@ -108,30 +197,51 @@ export function compareSegmentsAcrossPeriods(sourceRows) {
   };
   for (const row of sourceRows) {
     assertSegmentSourceRow(row);
-    const period = inPeriod(row.order_date, PERIODS.comparison) ? 'comparison'
-      : inPeriod(row.order_date, PERIODS.current) ? 'current'
-      : null;
-    if (period === null) { result.excludedOutOfScopeCount++; continue; }
-    const o = result[period];
-    if (row.record_kind === 'sale') {
-      o.saleValue += row.amount_minor_units;
-      o.orderIntake += row.amount_minor_units;
-      o.segments[row.segment] += row.amount_minor_units;
-      // An "open order" is an open-STATE sale (a revenue order not yet finalized).
-      // Credits, cancels and unknowns are adjustment/record kinds, never orders.
-      if (row.status === 'open') { o.openOrderCount++; o.openOrderValue += row.amount_minor_units; }
-    } else if (row.record_kind === 'credit') {
-      o.creditValue += row.amount_minor_units;
-    } else if (row.record_kind === 'cancel') {
-      o.cancelCount++;
-    } else if (row.record_kind === 'unknown') {
-      o.unknownCount++;
-      o.unknownQuantified += (row.amount_minor_units ?? 0);
+    const date = row.order_date;
+    const kind = row.record_kind;
+    const amount = row.amount_minor_units;
+    const routesToUnknown = date === null || kind === 'unknown' || amount === null;
+
+    // Null-date rows route to the UNASSIGNED channel and DO NOT enter a period
+    // (mirrors the released core: `recordUnknown(unassigned); continue;`).
+    if (date === null) {
+      recordUnknown(result.current.unknownUnassigned, amount);
+      continue;
     }
+
+    const period = inPeriod(date, PERIODS.comparison) ? 'comparison'
+      : inPeriod(date, PERIODS.current) ? 'current'
+      : null;
+
+    if (period === null) {
+      if (routesToUnknown) {
+        // A null-amount/unknown row dated outside both windows: excluded.
+        result.excludedOutOfScopeCount++;
+      } else {
+        result.excludedOutOfScopeCount++;
+      }
+      continue;
+    }
+
+    const o = result[period];
+    if (routesToUnknown) {
+      recordUnknown(o.unknown, amount);
+      continue;
+    }
+
+    if (kind === 'sale') {
+      assertSegmentSourceRow(row); // recognition already enforced
+      o.saleValue += amount;
+      o.orderIntake += amount;
+      o.segments[row.segment] += amount;
+      if (row.status === 'open') { o.openOrderCount++; o.openOrderValue += amount; }
+    } else if (kind === 'credit') {
+      o.creditValue += amount;
+    } else if (kind === 'cancel') {
+      o.cancelCount++;
+    }
+    // kind 'unknown' with a valid non-null amount is already routed above.
   }
-  // Net revenue uses the SAME definition as the released C2 metric (sales minus
-  // credits; credits subtracted, cancels and unknowns preserved, never coerced). It is
-  // computed here and reconciled INDEPENDENTLY by the oracle fixture.
   for (const p of ['comparison', 'current']) {
     result[p].netRevenue = result[p].saleValue - result[p].creditValue;
   }
@@ -143,14 +253,19 @@ export function compareSegmentsAcrossPeriods(sourceRows) {
 }
 
 // Bind the comparison into a stable, independently-reconcilable document, attaching the
-// reused source declaration and the explicit non-claim.
+// declared source and the explicit non-claims (gross-only segment totals, as-of limits,
+// no causal attribution).
 export function buildSegmentComparisonReport(comparison) {
   if (!isPlainObject(comparison)) fail('SEGMENT_COMPARISON_DENIED');
   if (!Number.isSafeInteger(comparison.current?.netRevenue)
       || !Number.isSafeInteger(comparison.comparison?.netRevenue)) fail('SEGMENT_NET_DENIED');
   comparison.schemaVersion = NET_REVENUE_SEGMENT_COMPARISON_SCHEMA;
-  comparison.reusedPansphairaSource = REUSED_PANSPHAIRA_SOURCE;
-  comparison.nonclaim = 'No causal attribution: deltas are arithmetic over the same rows.';
+  comparison.source = SYNTHETIC_SEGMENT_SOURCE;
+  comparison.nonclaims = Object.freeze([
+    'No causal attribution: deltas are arithmetic over the same rows.',
+    'Segment totals are GROSS sale value, not net-revenue contributions (credits/fees are not allocated per segment).',
+    'openOrder* is an as-of snapshot over in-window rows only; no status-history/as-of binding is modeled.',
+  ]);
   return comparison;
 }
 

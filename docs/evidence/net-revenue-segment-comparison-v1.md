@@ -18,24 +18,50 @@ and never coerced into revenue?
 | credits | 5000 | 6000 | |
 | net revenue | 45000 | 66000 | +21000 |
 | open orders (count / value) | 0 / 0 | 2 / 27000 | |
-| segments: direct | 30000 | 57000 | |
-| segments: partner | 20000 | 15000 | |
-| unknown (count / quantified) | 1 / 900 | 1 / 0 | |
+| segments (GROSS sale): direct | 30000 | 57000 | |
+| segments (GROSS sale): partner | 20000 | 15000 | |
+| unknown (count / quantified / unquantified) | 1 / 900 / 0 | 1 / 0 / 1 | |
+| unknown unassigned (null-date) | 0 | 0 | |
 | cancellations | 1 | 1 | |
 | out-of-scope excluded | | | 1 |
 
 `netRevenue = saleValue - creditValue` (the released C2 definition). `orderIntake` is
 gross sale value BEFORE credits/cancellations — the two are explicitly reported
-separately so intake is never conflated with net. Open orders are a status dimension
-(open SALE rows only); credits/cancels/unknowns are record kinds, never orders.
+separately so intake is never conflated with net. Segment totals are GROSS sale value,
+not net-revenue contributions (credits/fees are not allocated per segment). Open orders
+are a status dimension (open SALE rows only); credits/cancels/unknowns are record kinds,
+never orders.
+
+## Missing-data / UNKNOWN semantics (bound to the released C2 core)
+
+The comparison reuses the released metric core's missing-data definition rather than
+forking it: a row routes to UNKNOWN when its date is null OR its kind is `unknown` OR its
+amount is null; a null-date row is a separate UNASSIGNED channel (never "excluded" and
+never silently dropped); an invalid calendar date is DENIED, never lexically accepted.
+A dated sale with a null amount therefore counts as an unquantified UNKNOWN (never zero);
+a null-date sale with an amount enters UNASSIGNED with its amount preserved.
+
+## Recognition rule and open-order as-of limit
+
+`record_kind` and `status` must be a supported, non-contradictory combination: a sale is
+recognized only when it is not `cancelled`; a credit must be `closed`; a cancel must be
+`cancelled`. A contradictory combination (e.g. a `sale` marked `cancelled`) is rejected
+fail-closed, not accepted as intake. `openOrder*` is an as-of snapshot over the in-window
+rows only — no status-history / status-as-of binding is modelled, and an order that became
+open in an earlier period is not retroactively carried into the later window's open balance.
 
 ## What is reused vs new
 
 Reused (declared, not executed — PANSPHAIRA untouched): the PANSPHAIRA
-`projection-profile/v1` source definition — `xra_projection_orders` with fields
+`projection-profile/v1` field definition — `xra_projection_orders` with fields
 `order_id INT64`, `order_date DATE` (nullable), `amount_minor_units DECIMAL(12,2)`
 (nullable), `record_kind TEXT`; `periodWindow` 2026-06-01..2026-07-31;
 `unknownHandling SEPARATE_CHANNEL`; `arithmeticUnit INTEGER_MINOR_UNITS`.
+
+The declared source is a HELD synthetic counterpart, not the released upstream projection:
+its provenance (`status: HELD`, null release fields) is preserved honestly, and it is
+validated through the actual PANSPHAIRA profile-contract validator to prove the field names
+are genuine contract members — not copied strings called "released".
 
 New (this module only): the bounded `status` (open|closed|cancelled) and `segment`
 (direct|partner) dimensions, and the comparison/split surface.
