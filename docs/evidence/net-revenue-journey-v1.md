@@ -77,22 +77,35 @@ Negative (all deterministic, real local database when `--pglite` is supplied):
   `cannot execute UPDATE in a read-only transaction`, zero residue (row unchanged);
 - an altered operation id / widened scope -> `BUSINESS_BI_OPERATION_DENIED`;
 - a read-only session proof reports `transaction_read_only = on` (inside `BEGIN READ ONLY`).
+  It ALSO reports the OBSERVED database role and its actual privileges (in the injected
+  single-user PGlite engine this is `postgres` with `rolsuper/rolcreatedb/rolcreaterole`
+  true, i.e. `adminCapabilities: true`) — a read-only TRANSACTION is not presented as a
+  least-privilege principal, and no such principal is fabricated.
 
 ## Real local database note (honest boundary)
 
-The canonical `npm test` graph is byte-bound (`package.json` has zero dependencies), so the
-dedicated-vm/docker PostgreSQL that the C1/C2 clean-rooms recorded as `BLOCKED_EXTERNAL`
-cannot be reproduced from this source tree alone. For the journey's "real local database"
-execution I inject PGlite (`@electric-sql/pglite`, a genuine PostgreSQL engine running
-in-process) from an external runtime directory — never from `package.json`. This is REAL
-PostgreSQL executing REAL SQL (schema `synthetic_bi`, table `orders`, `SELECT ... ORDER BY
-order_id`, read-only transaction, rejected UPDATE), reconciled to the independent oracle.
+The C2 real clean-room HAS been executed and certified: `docs/evidence/postgresql-c2-real-cleanroom/`
+records the released #150 actual LIVE PostgreSQL 16.10 positive/negative clean-room with
+independent oracle equality and recovery (machine record at
+`.ks150-c2-real-cleanroom-{primary,post-restore}-evidence.json`). That certificate is NOT
+reproduced or reopened by this journey; its proof class is preserved unchanged.
+
+What this journey adds is a *portable, runnable local entry point*. The canonical `npm test`
+graph is byte-bound (`package.json` has zero dependencies), so the dedicated-vm/docker
+PostgreSQL used by the certified clean-room is not replayed from this source tree alone. For
+the journey's "real local database" execution I inject PGlite (`@electric-sql/pglite`, a
+genuine PostgreSQL engine running in-process) from an external runtime directory — never
+from `package.json`. This is REAL PostgreSQL executing REAL SQL (schema `synthetic_bi`, table
+`orders`, `SELECT ... ORDER BY order_id`, read-only transaction, rejected UPDATE), reconciled
+to the independent oracle.
 
 Two honest caveats, not relabelled:
-1. The injected engine is PostgreSQL **18.3** (PGlite 0.5.8); the pinned C1 profile is
+1. The injected engine is PostgreSQL **18.3** (PGlite 0.5.8); the certified C1 profile is
    PostgreSQL **16.10** (docker digest-pinned). The metric result is version-independent
-   (integer arithmetic over the same rows), but I do **not** claim this run satisfies the
-   C1/C2 16.10 clean-room acceptance. That BLOCKED_EXTERNAL status is unchanged.
+   (integer arithmetic over the same rows), but this run does **not** claim to satisfy the
+   16.10 clean-room acceptance. The BLOCKED_EXTERNAL fields that remain on the source-local
+   C1 certificate are historical source-local mint marks and are left untouched; they do not
+   contradict the separately-recorded #150 live-run provenance.
 2. PGlite is in-process/single-user, not a networked multi-tenant server; this is an
    isolated local test database, which is exactly what the task asks for ("only own test
    container, no docker socket, no host rebuild").
@@ -116,7 +129,9 @@ for a human reader — nothing below is fabricated.
    - [ ] Human comprehension: reader states why UNKNOWN must never read as zero.
 3. Run the negative path (`--pglite ... --format JSON --negative`) and confirm the write is
    rejected with SQLSTATE 25006 and the row is unchanged.
-   - [x] Machine evidence: `writeRejection.rejected = true`, `residueFree = true`, s-001 still 10000.
+   - [x] Machine evidence: `writeRejection.rejected = true`, `residueFree = true` (computed
+     from an actual before/after re-read, not hardcoded), s-001 still 10000; the session
+     proof reports the observed role privileges truthfully (see negative-path note above).
    - [ ] Human comprehension: reader states why a read-only source must reject a write and
      what "mutationAuthority: false" means in the receipt.
 
@@ -127,12 +142,14 @@ promotion gate is **not** claimed as passed from any automated test.
 
 ## Reconcile README/roadmap
 
-`README.md`'s "Local library/contract surfaces" already documents the released
-`bi-ks-01-net-revenue/v1` local operation. This increment adds a documented runnable
-journey entry point without changing the released contract, the frozen package manifest,
-or any historical proof class. The C1/C2 certificates, their BLOCKED_EXTERNAL fields, and
-the C1 byte identities remain untouched. `docs/ROADMAP.md` is unchanged: the journey is a
-composition of released stages, not a new capability stage.
+`README.md`'s "Local library/contract surfaces" documents the released `bi-ks-01-net-revenue/v1`
+local operation AND (since this increment) the documented runnable journey entry point
+(`node scripts/run-net-revenue-journey.mjs`) with its real-local-database execution note, so
+the shipped-CLI authority is no longer described as absent. `docs/ROADMAP.md` gains a
+"Portable net-revenue user journey" capability stage listing the composed journey and the
+second-layout mapping. Neither edit changes the released contract, the frozen package
+manifest, or any historical proof class: the #150 C2 real clean-room certificate, its
+recorded live-run provenance, and the C1 byte identities remain untouched.
 
 ## Verification
 

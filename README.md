@@ -227,6 +227,15 @@ read visibility for the declared schemas. Details are in
   digest-bound, read-only aggregate over the admitted synthetic holdout and
   emits identity-equal JSON and TABLE readbacks. It has no free SQL, real-source,
   dashboard, mutation, or shipped CLI/HTTP authority.
+- A documented, runnable local net-revenue user journey
+  (`node scripts/run-net-revenue-journey.mjs`, see
+  `docs/evidence/net-revenue-journey-v1.md`) composes the released C2 calculation,
+  readback and the VIS-01 visual into one local entry point, running normal and
+  negative paths against a real local read-only relational source (an injected
+  in-process PGlite engine in an isolated runtime, never a `package.json`
+  dependency) reconciled to the independent oracle. This is a local-only CLI: it
+  writes no public state and has no HTTP publish path.
+
 - Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
   clean-room falsification; no production or broader BI claim is made. The
   result reports 3/3 satisfied criteria separately from 1 delivered local

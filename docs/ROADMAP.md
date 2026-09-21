@@ -85,6 +85,22 @@ six-surface hash-chained diff retain support and counterevidence. Observed
 removal is distinct from denied, unsupported or unknown visibility. This does
 not activate an external runtime, infer a domain model or promote business truth.
 
+### Portable net-revenue user journey
+
+Issue #236/#237/#238 compose the released PostgreSQL C2 net-revenue calculation
+and the VIS-01 visual into a documented, runnable local journey
+(`node scripts/run-net-revenue-journey.mjs`) that runs normal and negative paths
+against a real local read-only PostgreSQL source (injected PGlite in an isolated
+runtime, never a package-manifest dependency) and reconciles every rendering to the
+independent oracle. A second semantic synthetic layout maps to the same unchanged
+metric core through two frozen versioned mapping profiles that reject ambiguous or
+wrong units and unsupported role bindings fail-closed. A bounded period/segment
+comparison separates order intake and open orders (a status dimension) from net
+revenue, with credits/cancellations/unknowns preserved and segment totals labelled
+gross-only. No causal attribution, second order-management module, or broader
+chart/template/dashboard platform is claimed (the #167 promotion gate is NOT_PROMOTED);
+human reader-comprehension evidence remains recorded separately and is never fabricated.
+
 ## Candidate next capabilities
 
 These are candidates for later reviewed work. They are not implemented claims:
