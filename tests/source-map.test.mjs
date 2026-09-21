@@ -9,12 +9,17 @@ import test from 'node:test';
 import './business-bi-epic-closure.test.mjs';
 // VIS-01 follows the imported-suite route to preserve the byte-bound package manifest.
 import './net-revenue-visual-v1.test.mjs';
+// #236 journey follows the same imported-suite route (no package.json mutation).
+import './net-revenue-journey.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
   'docs/evidence/business-bi-net-revenue-v1.md',
+  'docs/evidence/net-revenue-journey-v1.md',
   'scripts/run-business-bi-falsification-clean-room.mjs',
   'scripts/run-business-bi-holdout-clean-room.mjs',
+  'scripts/run-net-revenue-journey.mjs',
+  'services/bi-control/src/business-bi/net-revenue-journey.mjs',
   'services/bi-control/src/business-bi/net-revenue-plan.mjs',
   'services/bi-control/src/business-bi/net-revenue-readback.mjs',
   'tests/business-bi-clean-room.test.mjs',
