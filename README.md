@@ -236,6 +236,16 @@ read visibility for the declared schemas. Details are in
   dependency) reconciled to the independent oracle. This is a local-only CLI: it
   writes no public state and has no HTTP publish path.
 
+- A positive local F4 composition (`node scripts/run-net-revenue-f4-composition.mjs`,
+  see `docs/evidence/net-revenue-f4-composition-v1.md`) reads a real local source whose
+  ledger kernel is mapped through the frozen #237 mapping profiles (both `ledger-v1` and
+  `ledger-v2`) and whose #238 `status`/`segment` extension feeds the period/segment
+  comparison, all through one entry point. Both real local PGlite mappings reproduce
+  byte-identical kernel and comparison digests; wrong source/unit/mapping cases deny
+  fail-closed through the same path. This is a local-only CLI (no public state, no HTTP
+  publish path); the synthetic DI source is marked synthetic and the #238 PANSPHAIRA
+  provenance stays HELD.
+
 - Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
   clean-room falsification; no production or broader BI claim is made. The
   result reports 3/3 satisfied criteria separately from 1 delivered local

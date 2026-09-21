@@ -101,6 +101,12 @@ gross-only. No causal attribution, second order-management module, or broader
 chart/template/dashboard platform is claimed (the #167 promotion gate is NOT_PROMOTED);
 human reader-comprehension evidence remains recorded separately and is never fabricated.
 
+A positive local F4 composition (`node scripts/run-net-revenue-f4-composition.mjs`)
+closes the previously-unimplemented #237 to #238 CLI path: a real local read-only source
+is mapped through both frozen mapping profiles and compared period/segment, with the
+negative source/unit/mapping paths denied fail-closed through the same entry point and
+the #238 PANSPHAIRA provenance kept HELD.
+
 ## Candidate next capabilities
 
 These are candidates for later reviewed work. They are not implemented claims:

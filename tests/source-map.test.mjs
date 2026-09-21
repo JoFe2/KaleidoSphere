@@ -15,6 +15,8 @@ import './net-revenue-journey.test.mjs';
 import './net-revenue-ledger-mapping.test.mjs';
 // #238 segment comparison follows the same imported-suite route (no package.json mutation).
 import './net-revenue-segment-comparison.test.mjs';
+// #238 F4 composition follows the same imported-suite route (no package.json mutation).
+import './net-revenue-f4-composition.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
@@ -39,6 +41,12 @@ const businessBiFiles = Object.freeze([
   'tests/fixtures/business-bi/net-revenue-ledger-v2.json',
   'tests/fixtures/business-bi/net-revenue-oracle-v1.json',
   'tests/fixtures/business-bi/net-revenue-segment-v1.json',
+  'services/bi-control/src/business-bi/net-revenue-f4-composition.mjs',
+  'scripts/run-net-revenue-f4-composition.mjs',
+  'tests/net-revenue-f4-composition.test.mjs',
+  'tests/fixtures/business-bi/net-revenue-f4-composition-v1.json',
+  'tests/fixtures/business-bi/net-revenue-f4-composition-v2.json',
+  'docs/evidence/net-revenue-f4-composition-v1.md',
   'verification/business-bi-epic-closure-v1.json',
   'verification/business-bi-net-revenue-falsification-v1.json',
   'verification/business-bi-net-revenue-holdout-v1.json',

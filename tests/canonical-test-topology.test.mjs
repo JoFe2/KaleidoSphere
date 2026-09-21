@@ -119,6 +119,7 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-journey.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-ledger-mapping.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-segment-comparison.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-f4-composition.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
