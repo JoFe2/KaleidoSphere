@@ -146,11 +146,12 @@ export function buildJourneyRead(database) {
   return read;
 }
 
-// A read-only session proof, mirroring the C2 least-privilege principal shape: the
-// original C2 SESSION_PROOF_SQL reads both transaction_read_only and
-// default_transaction_read_only inside the session. Here we open a genuine READ ONLY
-// transaction and read the ACTIVE setting, so a read-only principal is actually
-// demonstrated (not merely defaulted).
+// A read-only session proof.  A READ ONLY transaction is genuinely demonstrated (the
+// transaction_read_only setting is read INSIDE the active transaction), but a
+// least-privilege PRINCIPAL is a separate claim that this connector cannot make for
+// itself: the injected local engine reports the actual current role and its privileges,
+// and the proof records those OBSERVED values verbatim.  If the privileges cannot be
+// determined, the fields are reported as NOT_VERIFIED rather than fabricated.
 export async function readJourneySessionProof(database) {
   assertDatabaseShape(database);
   const begin = typeof database.exec === 'function' && database.__mode === 'REAL_POSTGRESQL';
@@ -161,11 +162,41 @@ export async function readJourneySessionProof(database) {
       + `current_setting('default_transaction_read_only') AS dtro`);
     const transactionReadOnly = result.rows?.[0]?.tro === 'on' ? 'on' : 'off';
     const defaultTransactionReadOnly = result.rows?.[0]?.dtro === 'on' ? 'on' : 'off';
+    let role;
+    try {
+      const roleResult = await database.query(
+        `SELECT current_user AS name, `
+        + `(SELECT rolsuper FROM pg_roles WHERE rolname = current_user) AS rolsuper, `
+        + `(SELECT rolcreatedb FROM pg_roles WHERE rolname = current_user) AS rolcreatedb, `
+        + `(SELECT rolcreaterole FROM pg_roles WHERE rolname = current_user) AS rolcreaterole`);
+      const row = roleResult.rows?.[0];
+      if (row && typeof row.name === 'string'
+          && typeof row.rolsuper === 'boolean'
+          && typeof row.rolcreatedb === 'boolean'
+          && typeof row.rolcreaterole === 'boolean') {
+        role = {
+          name: row.name,
+          rolsuper: row.rolsuper,
+          rolcreatedb: row.rolcreatedb,
+          rolcreaterole: row.rolcreaterole,
+          adminCapabilities: row.rolsuper || row.rolcreatedb || row.rolcreaterole,
+          leastPrivilege: row.rolsuper || row.rolcreatedb || row.rolcreaterole
+            ? false
+            : `${row.name} (least-privilege read-only principal)`,
+        };
+      }
+    } catch {
+      role = null;
+    }
     const proof = {
       transactionReadOnly,
       defaultTransactionReadOnly,
-      adminCapabilities: false,
-      leastPrivilege: 'kalcidoscope_read_only (synthetic journey mirror)',
+      // Observed, never fabricated: the injected local engine is a single-user
+      // superuser by default.  A least-privilege principal is NOT demonstrated by a
+      // read-only transaction and is reported truthfully here.
+      role: role ?? null,
+      adminCapabilities: role ? role.adminCapabilities : 'NOT_VERIFIED',
+      leastPrivilege: role ? role.leastPrivilege : 'NOT_VERIFIED',
     };
     return proof;
   } finally {
@@ -174,9 +205,18 @@ export async function readJourneySessionProof(database) {
 }
 
 // Negative path: a write attempt against a read-only session must be rejected with a
-// real SQLSTATE, and the source must remain byte-identical (zero-residue).
+// real SQLSTATE, and the source must remain byte-identical (zero-residue).  The residue
+// verdict is COMPUTED from an actual before/after re-read -- it is only reported when
+// the write was actually rejected AND the re-read proves the source is unchanged.
 export async function attemptJourneyWriteRejection(database) {
   assertDatabaseShape(database);
+  const readRows = async () => {
+    const result = await database.query(
+      `SELECT order_id, order_date::text AS order_date, record_kind, amount_minor_units `
+      + `FROM synthetic_bi.orders ORDER BY order_id`);
+    return Array.isArray(result.rows) ? result.rows : [];
+  };
+  const before = serializeHoldout(normalizeSourceRows(await readRows()));
   await database.exec('SET default_transaction_read_only = on');
   let rejected = false;
   let sqlstate = null;
@@ -191,7 +231,20 @@ export async function attemptJourneyWriteRejection(database) {
   } finally {
     await database.exec('SET default_transaction_read_only = off');
   }
-  return { rejected, sqlstate, message, residueFree: true };
+  const after = serializeHoldout(normalizeSourceRows(await readRows()));
+  const residueFree = rejected && Buffer.isBuffer(before) && Buffer.isBuffer(after) && before.equals(after);
+  return { rejected, sqlstate, message, residueFree };
+}
+
+// Normalize raw source rows to the exact closed holdout row shape before serialization,
+// so the residue comparison is byte-meaningful (dates as text, nulls preserved).
+function normalizeSourceRows(rows) {
+  return rows.map((row) => ({
+    order_id: row.order_id,
+    order_date: row.order_date ?? null,
+    record_kind: row.record_kind,
+    amount_minor_units: row.amount_minor_units ?? null,
+  }));
 }
 
 export function normalizeCamera(object) {

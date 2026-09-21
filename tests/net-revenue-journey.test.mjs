@@ -24,6 +24,7 @@ import {
   JOURNEY_SOURCE_MODES,
   buildSyntheticJourneyDatabase,
   buildJourneyRead,
+  buildPgliteJourneyDatabase,
   seedJourneyDatabase,
   readJourneySessionProof,
   attemptJourneyWriteRejection,
@@ -115,10 +116,15 @@ test('negative paths: read-only session proof and a rejected write leave zero re
 
   const proof = await readJourneySessionProof(database);
   assert.ok(['on', 'off'].includes(proof.transactionReadOnly));
-  assert.equal(proof.adminCapabilities, false);
+  // The synthetic fallback cannot determine a real database role: the proof reports
+  // that honestly instead of fabricating a least-privilege principal.
+  assert.equal(proof.role, null);
+  assert.equal(proof.adminCapabilities, 'NOT_VERIFIED');
+  assert.equal(proof.leastPrivilege, 'NOT_VERIFIED');
 
   const rejection = await attemptJourneyWriteRejection(database);
   assert.equal(rejection.rejected, true);
+  // residueFree is COMPUTED from an actual before/after re-read, not hardcoded.
   assert.equal(rejection.residueFree, true);
   // The source is unchanged after the rejected write (verified re-read).
   const read = buildJourneyRead(database);
@@ -187,6 +193,42 @@ test('a denied widen (altered operation id) is rejected by the existing closed-o
     { code: 'BUSINESS_BI_OPERATION_DENIED' },
   );
   void holdoutBytes;
+});
+
+test('real local PostgreSQL reports the OBSERVED role (no fabricated least-privilege principal)', async (t) => {
+  // Exercises the injected PGlite engine: the session proof must read the ACTUAL role
+  // (postgres superuser) and report adminCapabilities truthfully, rather than hardcoding
+  // a least-privilege principal that a read-only transaction does not demonstrate.
+  const { pathToFileURL } = await import('node:url');
+  let makeDb;
+  try {
+    const entry = '/workspace/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js';
+    await readFile(entry);
+    const mod = await import(pathToFileURL(entry));
+    makeDb = () => buildPgliteJourneyDatabase(new mod.PGlite());
+  } catch { /* fall through to skip */ }
+  if (typeof makeDb !== 'function') {
+    t.skip('external PGlite runtime not present; real-database role proof not exercised here');
+    return;
+  }
+  const { metricContractBytes, oracleBytes, holdoutBytes } = await readInputs();
+  const database = makeDb();
+  await runNetRevenueJourney({ metricContractBytes, oracleBytes, holdoutBytes, database });
+  const proof = await readJourneySessionProof(database);
+  // transactionReadOnly is genuinely observed from an active READ ONLY transaction.
+  assert.equal(proof.transactionReadOnly, 'on');
+  // The real role is observed and reported honestly (superuser in the single-user engine),
+  // NOT a fabricated least-privilege principal.
+  assert.equal(proof.role.name, 'postgres');
+  assert.equal(proof.role.rolsuper, true);
+  assert.equal(proof.adminCapabilities, true);
+  assert.equal(proof.leastPrivilege, false);
+
+  // The write rejection computes residue from a real before/after re-read.
+  const rejection = await attemptJourneyWriteRejection(database);
+  assert.equal(rejection.rejected, true);
+  assert.equal(rejection.sqlstate, '25006');
+  assert.equal(rejection.residueFree, true);
 });
 
 export { ORACLE_EXPECTED };
