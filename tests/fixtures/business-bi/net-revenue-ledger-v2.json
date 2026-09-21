@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-ledger-layout/v1",
+  "classification": "SYNTHETIC_HOLDOUT_METRIC",
+  "issue": "JoFe2/KaleidoSphere#237",
+  "relation": "synthetic_bi.ledger",
+  "currencyCode": "EUR",
+  "sourceUnitDeclaration": "MINOR_UNITS",
+  "minorUnitsPerMajorUnit": 100,
+  "layoutVersion": "ledger-v2",
+  "columns": [
+    "row_key",
+    "occurred_at",
+    "entry_kind",
+    "atomic_value",
+    "segment"
+  ],
+  "rows": [
+    {
+      "row_key": "s-001",
+      "occurred_at": "2026-06-01",
+      "entry_kind": "sale_entry",
+      "atomic_value": 10000,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-002",
+      "occurred_at": "2026-06-15",
+      "entry_kind": "sale_entry",
+      "atomic_value": 25500,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-003",
+      "occurred_at": "2026-06-30",
+      "entry_kind": "credit_reversal",
+      "atomic_value": 5500,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-004",
+      "occurred_at": "2026-06-10",
+      "entry_kind": "void",
+      "atomic_value": 0,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-005",
+      "occurred_at": "2026-06-20",
+      "entry_kind": "unclassified",
+      "atomic_value": 777,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-006",
+      "occurred_at": "2026-06-12",
+      "entry_kind": "sale_entry",
+      "atomic_value": null,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-007",
+      "occurred_at": null,
+      "entry_kind": "credit_reversal",
+      "atomic_value": 1200,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-008",
+      "occurred_at": "2026-06-18",
+      "entry_kind": "sale_entry",
+      "atomic_value": 0,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-009",
+      "occurred_at": "2026-07-01",
+      "entry_kind": "sale_entry",
+      "atomic_value": 41234,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-010",
+      "occurred_at": "2026-07-31",
+      "entry_kind": "credit_reversal",
+      "atomic_value": 41234,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-011",
+      "occurred_at": "2026-07-15",
+      "entry_kind": "sale_entry",
+      "atomic_value": 99999,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-012",
+      "occurred_at": "2026-07-22",
+      "entry_kind": "void",
+      "atomic_value": 0,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-013",
+      "occurred_at": "2026-07-25",
+      "entry_kind": "unclassified",
+      "atomic_value": null,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-014",
+      "occurred_at": "2026-07-28",
+      "entry_kind": "sale_entry",
+      "atomic_value": 60,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-015",
+      "occurred_at": "2026-05-31",
+      "entry_kind": "sale_entry",
+      "atomic_value": 500000,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-016",
+      "occurred_at": "2026-08-01",
+      "entry_kind": "sale_entry",
+      "atomic_value": 500000,
+      "segment": "ch1"
+    },
+    {
+      "row_key": "s-017",
+      "occurred_at": "2026-08-02",
+      "entry_kind": "credit_reversal",
+      "atomic_value": 1,
+      "segment": "ch1"
+    }
+  ]
+}

@@ -1,0 +1,138 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/net-revenue-ledger-layout/v1",
+  "classification": "SYNTHETIC_HOLDOUT_METRIC",
+  "issue": "JoFe2/KaleidoSphere#237",
+  "relation": "synthetic_bi.ledger",
+  "currencyCode": "EUR",
+  "sourceUnitDeclaration": "MINOR_UNITS",
+  "minorUnitsPerMajorUnit": 100,
+  "layoutVersion": "ledger-v1",
+  "columns": [
+    "row_key",
+    "occurred_at",
+    "posting_type",
+    "value_atomic_units",
+    "stream"
+  ],
+  "rows": [
+    {
+      "row_key": "s-001",
+      "occurred_at": "2026-06-01",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 10000,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-002",
+      "occurred_at": "2026-06-15",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 25500,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-003",
+      "occurred_at": "2026-06-30",
+      "posting_type": "credit_note",
+      "value_atomic_units": 5500,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-004",
+      "occurred_at": "2026-06-10",
+      "posting_type": "cancellation",
+      "value_atomic_units": 0,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-005",
+      "occurred_at": "2026-06-20",
+      "posting_type": "unclassified",
+      "value_atomic_units": 777,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-006",
+      "occurred_at": "2026-06-12",
+      "posting_type": "debit_sale",
+      "value_atomic_units": null,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-007",
+      "occurred_at": null,
+      "posting_type": "credit_note",
+      "value_atomic_units": 1200,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-008",
+      "occurred_at": "2026-06-18",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 0,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-009",
+      "occurred_at": "2026-07-01",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 41234,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-010",
+      "occurred_at": "2026-07-31",
+      "posting_type": "credit_note",
+      "value_atomic_units": 41234,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-011",
+      "occurred_at": "2026-07-15",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 99999,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-012",
+      "occurred_at": "2026-07-22",
+      "posting_type": "cancellation",
+      "value_atomic_units": 0,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-013",
+      "occurred_at": "2026-07-25",
+      "posting_type": "unclassified",
+      "value_atomic_units": null,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-014",
+      "occurred_at": "2026-07-28",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 60,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-015",
+      "occurred_at": "2026-05-31",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 500000,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-016",
+      "occurred_at": "2026-08-01",
+      "posting_type": "debit_sale",
+      "value_atomic_units": 500000,
+      "stream": "ch1"
+    },
+    {
+      "row_key": "s-017",
+      "occurred_at": "2026-08-02",
+      "posting_type": "credit_note",
+      "value_atomic_units": 1,
+      "stream": "ch1"
+    }
+  ]
+}
