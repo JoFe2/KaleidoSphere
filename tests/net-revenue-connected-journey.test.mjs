@@ -15,6 +15,7 @@
 //      is denied by the provenance gate — two distinct, non-collapsed outcomes.
 
 import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -593,4 +594,164 @@ test('a truncated source is refused at the KS237 boundary before any comparison 
     (e) => e.code === 'CONNECTED_KS237_KERNEL_DIVERGENCE'
       || e.code === 'CONNECTED_KS237_PROJECTION_DIVERGENCE',
   );
+});
+
+// ---------------------------------------------------------------------------------------
+// Package 3 — the remaining entrypoint negatives named by the order, and confinement.
+//
+// The order requires the actual entrypoint be exercised with EOF/missing decisions,
+// an incompatible business goal of the SAME output shape, ambiguous/wrong mapping, expiry
+// after load, wrong units, source substitutions, and PRESERVED SYMLINK CONFINEMENT.
+// Ambiguity and unit/scale cases are already covered at the released unit boundary
+// (net-revenue-ledger-mapping.test.mjs, net-revenue-f4-composition.test.mjs); the cases
+// below are the ones that were still open on the CONNECTED entrypoint.
+// ---------------------------------------------------------------------------------------
+
+test('an incompatible business goal of the SAME output shape is refused by digest, not by shape', async () => {
+  const base = await inputs();
+  // Same top-level contract shape and the same periods; a DIFFERENT business goal:
+  // renamed metric, different classification, and credit semantics flipped from net to
+  // gross. Nothing about the OUTPUT shape distinguishes it, so shape inspection would pass.
+  const goal = JSON.parse(base.metricContractBytes.toString('utf8'));
+  goal.metric.id = 'bi-ks-01-gross-revenue';
+  goal.metric.name = 'Synthetic Gross Revenue';
+  goal.metric.classification = 'SYNTHETIC_PRODUCTION_METRIC';
+  goal.recordRules.credit.contribution = 'amount_minor_units ADDED to the period total (gross, not net)';
+
+  await assert.rejects(
+    () => runConnectedJourney({
+      ...base,
+      metricContractBytes: Buffer.from(JSON.stringify(goal, null, 2) + '\n'),
+      database: buildSyntheticJourneyDatabase(),
+    }),
+    (e) => e.code === 'BUSINESS_BI_METRIC_DIGEST_DENIED',
+  );
+});
+
+test('EOF/missing decision: an absent declared profile is DENIED, never defaulted to RELEASED', async () => {
+  const base = await inputs();
+  // The dangerous default would be to treat a missing decision as an admission. The chain
+  // must refuse to run the PSAi stage without a declared profile at all.
+  const { declaredProfile, ...withoutProfile } = base;
+  await assert.rejects(
+    () => runConnectedJourney({ ...withoutProfile, database: buildSyntheticJourneyDatabase() }),
+    (e) => e.code === 'CONNECTED_PSAI_PROFILE_DENIED',
+  );
+});
+
+test('a source that ends early (zero rows in a declared layout) is denied, not reported as a zero result', async () => {
+  const base = await inputs();
+  await assert.rejects(
+    () => runConnectedJourney({
+      ...base,
+      f4Sources: { 'ledger-v1': { ...base.f4Sources['ledger-v1'], rows: [] }, 'ledger-v2': base.f4Sources['ledger-v2'] },
+      database: buildSyntheticJourneyDatabase(),
+    }),
+    (e) => e.code === 'CONNECTED_F4_SOURCE_DENIED:ledger-v1',
+  );
+});
+
+test('CLI symlink confinement is PRESERVED: leaf, dangling leaf, ancestor and prefix lookalike all deny', async () => {
+  const { mkdtemp, mkdir, symlink, writeFile, rm } = await import('node:fs/promises');
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const run = promisify(execFile);
+  const os = await import('node:os');
+
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'ks-connected-sym-'));
+  const outside = path.join(sandbox, 'outside');
+  const real = path.join(sandbox, 'real');
+  await mkdir(outside, { recursive: true });
+  await mkdir(real, { recursive: true });
+  const benign = path.join(outside, 'target.json');
+  await writeFile(benign, '{}');
+
+  const cli = path.join(root, 'scripts/run-connected-net-revenue-journey.mjs');
+  const attempt = async (out) => {
+    try {
+      await run(process.execPath, [cli, '--out', out], { cwd: root });
+      return null;
+    } catch (error) {
+      return `${error.stderr ?? ''}${error.stdout ?? ''}`;
+    }
+  };
+
+  try {
+    // 1. leaf symlink pointing at a harmless file
+    const leaf = path.join(sandbox, 'leaf.json');
+    await symlink(benign, leaf);
+    assert.match(await attempt(leaf), /CONNECTED_CLI_OUT_PATH_DENIED: --out must not contain a symlink/);
+
+    // 2. DANGLING leaf symlink: realpath would walk up past it, so lstat on each component
+    //    is what keeps this closed.
+    const dangling = path.join(sandbox, 'dangling.json');
+    await symlink(path.join(outside, 'never-created.json'), dangling);
+    assert.match(await attempt(dangling), /CONNECTED_CLI_OUT_PATH_DENIED: --out must not contain a symlink/);
+
+    // 3. ancestor DIRECTORY symlink, even when its target is itself inside an allowed root:
+    //    confinement is per component, not by resolved destination.
+    const dirLink = path.join(sandbox, 'leaflink');
+    await symlink(outside, dirLink);
+    assert.match(await attempt(path.join(dirLink, 'inside.json')),
+      /CONNECTED_CLI_OUT_PATH_DENIED: --out must not contain a symlink/);
+
+    // 4. prefix lookalike: a sibling whose name merely starts with the repository path.
+    assert.match(await attempt(`${root}-evil/x.json`),
+      /CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or \/tmp/);
+
+    // 5. outside every allowed root
+    assert.match(await attempt('/etc/ks-connected-evil.json'),
+      /CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or \/tmp/);
+
+    // ...while an honest path still writes, so the confinement is not a blanket refusal.
+    const honest = path.join(real, 'ok.json');
+    assert.equal(await attempt(honest), null);
+    const written = JSON.parse(await readFile(honest, 'utf8'));
+    assert.equal(written.allStagesReconciled, true);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
+});
+
+test('the KS236 reader-task emitter ships a BLANK comprehension record and cannot fill it', async () => {
+  // KS236 acceptance: "Document a short reader-task protocol and record actual comprehension
+  // evidence separately from browser/agent tests. Do not fabricate human responses."
+  // The emitter must therefore be incapable of producing a comprehension result: every
+  // answer, the reader identity and the timestamp must come out null whatever we do.
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const os = await import('node:os');
+  const { mkdtemp, readFile: rf, rm } = await import('node:fs/promises');
+  const run = promisify(execFile);
+
+  const sandbox = await mkdtemp(path.join(os.tmpdir(), 'ks236-reader-'));
+  const out = path.join(sandbox, 'worksheet.json');
+  try {
+    await run(process.execPath, [path.join(root, 'scripts/emit-ks236-reader-task.mjs'), '--out', out],
+      { cwd: root });
+
+    const { worksheet, referenceAnswers } = JSON.parse(await rf(out, 'utf8'));
+
+    // The record is structurally blank — no fabricated human response can exist.
+    const record = worksheet.comprehensionRecord;
+    assert.equal(record.readerIdentity, null);
+    assert.equal(record.readAt, null);
+    assert.equal(record.notes, null);
+    assert.deepEqual(Object.values(record.answers), Object.values(record.answers).map(() => null));
+
+    // Every graded task has a reference answer, held OUT of the reader-facing worksheet.
+    const taskIds = worksheet.readerFacing.tasks.map((t) => t.id);
+    assert.deepEqual(Object.keys(referenceAnswers).sort(), [...taskIds].sort());
+
+    // The figures the reader is asked about come from a REAL run, not a placeholder.
+    const f = worksheet.readerFacing.figures;
+    assert.equal(f.currentNetRevenueMinorUnits, 66000);
+    assert.equal(f.comparisonNetRevenueMinorUnits, 45000);
+    assert.equal(f.deltaNetRevenueMinorUnits, 21000);
+    // ...and the unsupported fields are still honestly null in the reader's own view.
+    assert.equal(f.orderIntake, null);
+    assert.equal(f.openOrderValue, null);
+  } finally {
+    await rm(sandbox, { recursive: true, force: true });
+  }
 });

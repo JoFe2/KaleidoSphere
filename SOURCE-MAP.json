@@ -751,8 +751,10 @@
     "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "1aaa345f1e0468f54ded17d9e8074a12fb3f9ebe00d0854d6d966db4e00a8b25",
     "services/bi-control/src/business-bi/net-revenue-connected-journey.mjs": "d37cde7afec3f78d5f9f5a9b8f7a862d8d0238d4326588304f9d559cff17e835",
     "scripts/run-connected-net-revenue-journey.mjs": "d3ec72b45e11e5d12893a9a49655e1f7196dfe3f086cae864a5607a060ab8f0e",
-    "tests/net-revenue-connected-journey.test.mjs": "303fc5c26613d18c261c246df01e5b88a129fbe9cb1d4ed579f23218d764e113",
-    "docs/evidence/net-revenue-connected-journey-v1.md": "7e4a4603579f92ba2b2b68c2c95920a56ec47dca3e1fa0ce5145c93da264cb4f"
+    "tests/net-revenue-connected-journey.test.mjs": "e2008daad5021a4a0b539a671d3e0d310f28bd1ccce41b2f45a1ad38f2f9413c",
+    "docs/evidence/net-revenue-connected-journey-v1.md": "7e4a4603579f92ba2b2b68c2c95920a56ec47dca3e1fa0ce5145c93da264cb4f",
+    "scripts/emit-ks236-reader-task.mjs": "5eae4b4b81819db66e99b5f12c2666b25816f4ca233488bcf7aa8a5f2d4c26bd",
+    "docs/evidence/ks236-reader-task-protocol-v1.md": "8bd60984cdfbadaa2514f1f6003d0046b8f436c9b75acee649a6110379aac323"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {
