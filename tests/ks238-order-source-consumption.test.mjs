@@ -51,6 +51,13 @@ const retainedAuthority = () => {
   return result.authority;
 };
 
+// The commit binding is read from the producer's own Git object database. A bare,
+// disposable checkout has none, so the assertion below can only demand a positive MATCH
+// when that database is actually reachable — and must never accept a MISMATCH either way.
+const producerRepoHasObjectDatabase = () => spawnSync(
+  'git', ['rev-parse', '--git-dir'], { cwd: PRODUCER_REPO, encoding: 'utf8' },
+).status === 0;
+
 const consume = async (overrides = {}) => consumeOrderSourceHandoff({
   retainedAuthority: retainedAuthority(),
   repoRoot: REPO_ROOT,
@@ -82,8 +89,20 @@ test('KS238-R: the resolved producer module really is the pinned PAN module', as
   });
   assert.equal(resolved.ok, true, resolved.code);
   assert.equal(resolved.moduleSha256, PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256);
-  assert.equal(resolved.commitBinding, 'MATCH',
-    'module bytes must match the blob at the pinned producer commit');
+  // The commit binding is only computable when the producer is present AS a Git checkout:
+  // it is read from the producer's own object database. In a bare, disposable checkout
+  // (no .git) there is no object database, so the honest value is UNRESOLVED — never a
+  // fabricated MATCH. Whenever a producer repository IS reachable the binding must be a
+  // positive MATCH: a MISMATCH is always a failure, and an UNRESOLVED that could have been
+  // resolved is never accepted here.
+  assert.notEqual(resolved.commitBinding, 'MISMATCH',
+    'module bytes must not contradict the blob at the pinned producer commit');
+  assert.ok(['MATCH', 'UNRESOLVED'].includes(resolved.commitBinding),
+    `commitBinding must be MATCH or UNRESOLVED, got ${resolved.commitBinding}`);
+  if (producerRepoHasObjectDatabase()) {
+    assert.equal(resolved.commitBinding, 'MATCH',
+      'with a producer object database present, module bytes must match the pinned blob');
+  }
   assert.equal(typeof resolved.producer.createKs238OrderSourceHandoff, 'function');
   assert.equal(typeof resolved.producer.rebindSerializedOrderSource, 'function');
 });
@@ -476,7 +495,10 @@ test('KS238-R: the CLI normal path consumes, compares and self-checks end to end
   const payload = JSON.parse(run.stdout);
   assert.equal(payload.stage, 'NORMAL');
   assert.equal(payload.outcome, 'CONSUMED');
-  assert.equal(payload.dependency.commitBinding, 'MATCH');
+  assert.notEqual(payload.dependency.commitBinding, 'MISMATCH');
+  if (producerRepoHasObjectDatabase()) {
+    assert.equal(payload.dependency.commitBinding, 'MATCH');
+  }
   assert.equal(payload.dependency.moduleSha256, PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256);
   // The intermediate handoff is created AND rebound against the retained authority.
   assert.equal(payload.intermediateHandoff.created, payload.intermediateHandoff.rebound);
