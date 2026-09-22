@@ -18,7 +18,7 @@
     }
   },
   "files": {
-    ".github/workflows/ci.yml": "92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9",
+    ".github/workflows/ci.yml": "f9d5e6fc929b2bbbdd56d52c839434be13f249abf721d98d1289af474269b6a1",
     ".gitignore": "7fb3de007c4e8d4931d480f07864ce46fc4482389e59b2e014d2060c7f2976fb",
     ".ks150-c2-real-cleanroom-post-restore-evidence.json": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382",
     ".ks150-c2-real-cleanroom-primary-evidence.json": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382",
@@ -272,7 +272,7 @@
     "packages/codex/kaleidosphere/skills/kaleidosphere/references/contract.json": "9d964e02e2606a8f35c0e378bb1f3a5b353e20db5a5836c2677557bde99a7d71",
     "packages/codex/kaleidosphere/skills/kaleidosphere/scripts/validate-request.mjs": "20000bab047da9741bb338cd52fe0d33afef6cef84e9d7427f2ce54ec5651509",
     "packages/codex/kaleidosphere/skills/kaleidosphere/SKILL.md": "4c711c4d4111530a9c895070710c74be12711834daab19f3adc8267383d1ca2c",
-    "README.md": "5ca6578a170df359087495d77f586a4e0c87fdd9fe6a4ca3c2606206d80e7b83",
+    "README.md": "243ddfa995c8684f676148335c5692f66e12a83470e4dbbeba839123f4973674",
     "scripts/build-agent-skill-distribution.mjs": "0ceff56816541eb3fc5c65728513fca8336ae1a434bdacf55484c93254c3d391",
     "scripts/build-release.mjs": "a8a87c765fcfa84611d1448fd422639eb845c4685fefc29de88f2798a8b0479b",
     "scripts/check-canonical-test-topology.mjs": "2cf9593fc86f16ad8578c163303c7b4b475a889f58f48f2d6d694cdc59c22965",
@@ -683,7 +683,7 @@
     "tests/portable-companion-template-validator.test.mjs": "864870da07dbf7d6d1ab54e3aad3987fce849e436d6b073e716d1eded3299216",
     "tests/postgresql-adapter.test.mjs": "8c129dfc5433e10f8bc7a85c6bba7782a2b42d6643603941d4375b83c63a465c",
     "tests/postgresql-c1-certification.test.mjs": "86d2fbabbda4df624cc68d4803dd2c9a503b1278a29d65c9a787976bf0b5288a",
-    "tests/postgresql-c2-safe-aggregate.test.mjs": "c909f57bfba433f79c0f55542cd1289a79085dc30da4957ebefd78c10ed4eb9d",
+    "tests/postgresql-c2-safe-aggregate.test.mjs": "f76b912f3da5ee9422b79d9fd84b3bbc03dc557844294c9fe4e4d81b2c15e253",
     "tests/postgresql-e2e.test.mjs": "9fb62380ed6c22945bc2ccde27bf7f3e566de7875069cbcb2152cf6f60ec6001",
     "tests/postgresql-product-dispatch.test.mjs": "a8101d63c4cb442fde551c2e4a6799f8c8c44d2ce07df7e6ef45df258e7a8761",
     "tests/postgresql-structure-scan.test.mjs": "3b5d830134bca1ddc4a8791bfc3643a4c50f306a5deb10c3d6295f5a38dd33d7",
@@ -752,7 +752,7 @@
     "services/bi-control/src/business-bi/net-revenue-connected-journey.mjs": "a6e691c7ce97346f9d98242875832dbe890b7fdf6c313794ba54284f9a544034",
     "scripts/run-connected-net-revenue-journey.mjs": "5898e4ba9a37700de005da1f69e2528204b1088443e8675d54a4f5b0210837f1",
     "tests/net-revenue-connected-journey.test.mjs": "15baa65bb1c5c3b12658b98bd330f4b880d5592334dcb5f49131d9a15eeb73fc",
-    "docs/evidence/net-revenue-connected-journey-v1.md": "df9fe6a7c54c624b552c57539c7a8a04e91495841f06220b0ac6ad0ccb683853",
+    "docs/evidence/net-revenue-connected-journey-v1.md": "dd5f99c46b520ac0792e562cb6fa32ec7d36c154ec5fba7a8c0d9500b0538680",
     "scripts/emit-ks236-reader-task.mjs": "5eae4b4b81819db66e99b5f12c2666b25816f4ca233488bcf7aa8a5f2d4c26bd",
     "docs/evidence/ks236-reader-task-protocol-v1.md": "8bd60984cdfbadaa2514f1f6003d0046b8f436c9b75acee649a6110379aac323"
   },

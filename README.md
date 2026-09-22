@@ -248,6 +248,15 @@ read visibility for the declared schemas. Details are in
   public state or HTTP publish path); the #238 PANSPHAIRA provenance stays HELD.
   Human comprehension and full issue acceptance remain open.
 
+- The [connected synthetic runner](docs/evidence/net-revenue-connected-journey-v1.md)
+  (`node scripts/run-connected-net-revenue-journey.mjs`) exposes calculation,
+  table/chart/details, two-layout reuse and comparison in one noninteractive run.
+  Its holdout and F4 data are separate fixtures, not one end-to-end business lineage.
+  The optional PGlite path executes real SQL, including the exact provenance-negative
+  gate; the real PSAi registry still returns HELD. A separate
+  [reader-task protocol](docs/evidence/ks236-reader-task-protocol-v1.md) prepares human
+  evaluation without inventing answers. No broader #167 promotion is claimed.
+
 - Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
   clean-room falsification; no production or broader BI claim is made. The
   result reports 3/3 satisfied criteria separately from 1 delivered local
