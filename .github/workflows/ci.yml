@@ -36,7 +36,7 @@ jobs:
       - name: Execute connected SQL paths and exact CLI negative
         run: |
           export PGLITE_CORE_PATH="$RUNNER_TEMP/ks-connected-runtime/node_modules/@electric-sql/pglite/dist/index.js"
-          node --test tests/net-revenue-connected-journey.test.mjs
+          node --test tests/net-revenue-connected-journey.test.mjs tests/net-revenue-guided-journey.test.mjs
           node scripts/run-connected-net-revenue-journey.mjs --pglite "$PGLITE_CORE_PATH" --negative > "$RUNNER_TEMP/ks-connected-real-cli.json"
       - name: Validate Docker Compose
         run: docker compose --env-file .env.example --file compose.yaml config --quiet
