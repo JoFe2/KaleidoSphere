@@ -22,6 +22,11 @@ import './net-revenue-f4-composition.test.mjs';
 // twice (the topology kernel proves exactly one route), so it rides this parent rather
 // than becoming a second direct package.json root.
 import './net-revenue-connected-journey.test.mjs';
+// #236 GUIDED local user journey follows the same imported-suite route: it is the
+// guided COMPLEMENT of the connected runner above (it consumes a real user's answers),
+// so it rides this parent rather than becoming a second direct package.json root — the
+// topology kernel still proves exactly one route per suite.
+import './net-revenue-guided-journey.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

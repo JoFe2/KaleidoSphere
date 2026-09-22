@@ -124,6 +124,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // per-stage suites, reachable through this parent exactly once (never a second direct
   // root), so the exactly-one-route invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-connected-journey.test.mjs' },
+  // #236 GUIDED local user journey: the guided complement of the connected runner — it
+  // consumes a real user's answers instead of a fixed synthetic orchestration — reachable
+  // through this parent exactly once, preserving the exactly-one-route invariant.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-guided-journey.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
