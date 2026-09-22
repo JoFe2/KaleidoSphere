@@ -749,9 +749,9 @@
     "verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json": "40b6d1ae6a249b51d0deb964c37ecbf0fb1e8b16a1703a03ab416b699060c529",
     "verification/postgresql/postgresql-c1-live-matrix-v1.json": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
     "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "1aaa345f1e0468f54ded17d9e8074a12fb3f9ebe00d0854d6d966db4e00a8b25",
-    "services/bi-control/src/business-bi/net-revenue-connected-journey.mjs": "1dbcee5f58fec38d094726d2dfe998ee3dace038b53c637ebbde8096bf3b3b70",
-    "scripts/run-connected-net-revenue-journey.mjs": "22297c6a609ba65105fd098347908892eff26c81f087667984c79ce52587435e",
-    "tests/net-revenue-connected-journey.test.mjs": "82fc02874e244b889cf07adce20eaff2dd51c78007308e23042902bc01e8fb1f",
+    "services/bi-control/src/business-bi/net-revenue-connected-journey.mjs": "a6e691c7ce97346f9d98242875832dbe890b7fdf6c313794ba54284f9a544034",
+    "scripts/run-connected-net-revenue-journey.mjs": "5898e4ba9a37700de005da1f69e2528204b1088443e8675d54a4f5b0210837f1",
+    "tests/net-revenue-connected-journey.test.mjs": "15baa65bb1c5c3b12658b98bd330f4b880d5592334dcb5f49131d9a15eeb73fc",
     "docs/evidence/net-revenue-connected-journey-v1.md": "df9fe6a7c54c624b552c57539c7a8a04e91495841f06220b0ac6ad0ccb683853",
     "scripts/emit-ks236-reader-task.mjs": "5eae4b4b81819db66e99b5f12c2666b25816f4ca233488bcf7aa8a5f2d4c26bd",
     "docs/evidence/ks236-reader-task-protocol-v1.md": "8bd60984cdfbadaa2514f1f6003d0046b8f436c9b75acee649a6110379aac323"

@@ -324,6 +324,9 @@ export async function runConnectedJourney(input) {
     }
   }
   const ks237 = runKs237Stage(F4_LAYOUT_VERSIONS, rowsByLayout);
+  if (!ks237.profileBound || ks237.layouts[0].kernelRowCount !== 12) {
+    fail('CONNECTED_KS237_EXPECTATION_DENIED');
+  }
   stages.push({
     stage: ks237.stage,
     ran: true,

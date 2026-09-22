@@ -85,14 +85,17 @@ try {
   ]);
 
   let database;
+  let newDatabase;
   let sourceMode;
   if (values.pglite) {
     if (!path.isAbsolute(values.pglite)) throw new Error('CONNECTED_CLI_PGLITE_PATH_DENIED: --pglite must be an absolute path');
     const { PGlite } = await import(pathToFileURL(values.pglite).href);
-    database = buildPgliteJourneyDatabase(new PGlite());
+    newDatabase = () => buildPgliteJourneyDatabase(new PGlite());
+    database = newDatabase();
     sourceMode = 'REAL_POSTGRESQL';
   } else {
-    database = buildSyntheticJourneyDatabase();
+    newDatabase = () => buildSyntheticJourneyDatabase();
+    database = newDatabase();
     sourceMode = 'SYNTHETIC_FALLBACK';
   }
 
@@ -140,13 +143,15 @@ try {
           'ledger-v1': JSON.parse(f4v1.toString('utf8')),
           'ledger-v2': JSON.parse(f4v2.toString('utf8')),
         },
-        database,
+        database: newDatabase(),
         declaredProfile: forgedProfile,
         registryBytes,
       });
-      scheme = { stage: 'accepted', evidence: null };
+      throw new Error('CONNECTED_NEGATIVE_EXPECTED_REJECTION_MISSING');
     } catch (error) {
-      scheme = { stage: 'denied', evidence: { code: error?.code ?? String(error?.message ?? error) } };
+      const code = error?.code ?? String(error?.message ?? error);
+      if (code !== 'CONNECTED_PSAI_BOUNDARY_DENIED:XRA_KS01_PROVENANCE_FORGERY_DENIED') throw error;
+      scheme = { stage: 'denied', evidence: { code } };
     }
     negativeEvidence = {
       forgedProvenance: scheme,

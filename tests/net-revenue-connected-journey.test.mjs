@@ -86,6 +86,25 @@ async function makeRealDatabase() {
   return buildPgliteJourneyDatabase(new mod.PGlite());
 }
 
+test('parent F1: real CLI negative reaches the exact provenance rejection', async (t) => {
+  const entry = await resolvePgliteEntry();
+  if (!entry) return t.skip('PGlite runtime required');
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(process.execPath, ['scripts/run-connected-net-revenue-journey.mjs', '--pglite', entry, '--negative'], { cwd: root, encoding: 'utf8', timeout: 60000 });
+  assert.equal(r.status, 0, r.stderr);
+  const out = JSON.parse(r.stdout);
+  assert.equal(out.negativeEvidence.forgedProvenance.evidence.code, 'CONNECTED_PSAI_BOUNDARY_DENIED:XRA_KS01_PROVENANCE_FORGERY_DENIED');
+});
+
+test('parent F2: symmetric missing cancellation stops before PSAi access', async () => {
+  const args = await inputs();
+  for (const source of Object.values(args.f4Sources)) source.rows = source.rows.filter(row => row.row_key !== 's-204');
+  let downstreamRead = false;
+  args.declaredProfile = new Proxy({}, { get() { downstreamRead = true; throw new Error('DOWNSTREAM_REACHED'); } });
+  await assert.rejects(runConnectedJourney({ ...args, database: buildSyntheticJourneyDatabase() }), /CONNECTED_KS237_EXPECTATION_DENIED/);
+  assert.equal(downstreamRead, false);
+});
+
 // ---- Independent expectations, derived by hand from the released fixtures ----------
 //
 // KS238 comparison window is 2026-06-01..2026-06-30; current window 2026-07-01..2026-07-31.
