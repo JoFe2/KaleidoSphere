@@ -21,9 +21,10 @@
 // guided package that broke the released chain would fail here rather than pass quietly.
 
 import { readFile } from 'node:fs/promises';
+import { createRequire } from 'node:module';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
@@ -54,6 +55,7 @@ import {
   buildPgliteJourneyDatabase,
 } from '../services/bi-control/src/business-bi/net-revenue-journey.mjs';
 
+const require = createRequire(import.meta.url);
 const root = path.resolve(import.meta.dirname, '..');
 const METRIC = path.join(root, 'contracts/business-bi/v1/net-revenue.metric.json');
 const ORACLE = path.join(root, 'tests/fixtures/business-bi/net-revenue-oracle-v1.json');
@@ -77,12 +79,19 @@ async function resolvePgliteEntry() {
   return null;
 }
 
+// Every real PGlite instance this file opens is tracked so the file can close them all.
+// An unclosed PGlite holds live IPC sockets, which keeps the test-file event loop alive
+// after the last assertion and makes the suite hang instead of exiting.
+const openPglite = [];
+
 async function makeRealDatabase() {
   const entry = await resolvePgliteEntry();
   if (!entry) return null;
   const { pathToFileURL } = await import('node:url');
   const mod = await import(pathToFileURL(entry).href);
-  return buildPgliteJourneyDatabase(new mod.PGlite());
+  const instance = new mod.PGlite();
+  openPglite.push(instance);
+  return buildPgliteJourneyDatabase(instance);
 }
 
 async function inputs() {
@@ -112,6 +121,15 @@ async function session(lines, { confirm = () => true, database = null } = {}) {
     confirm,
   });
 }
+
+// Close every real database opened above. Without this the file's event loop stays alive
+// on PGlite's IPC sockets and `node --test` never exits.
+after(async () => {
+  for (const instance of openPglite) {
+    try { await instance.close(); } catch { /* already closed */ }
+  }
+  openPglite.length = 0;
+});
 
 // =================================================================================
 // Parent C1 — the released connected runner still works, unchanged.
@@ -486,6 +504,7 @@ test('parent D6: the guided surface is registered in the content-addressed sourc
   const guided = [
     'services/bi-control/src/business-bi/net-revenue-guided-decisions.mjs',
     'services/bi-control/src/business-bi/net-revenue-guided-session.mjs',
+    'services/bi-control/src/business-bi/net-revenue-guided-view.mjs',
     'scripts/run-guided-net-revenue-journey.mjs',
     'scripts/update-guided-journey-source-map.mjs',
     'tests/net-revenue-guided-journey.test.mjs',
@@ -498,4 +517,370 @@ test('parent D6: the guided surface is registered in the content-addressed sourc
   // The schema identity is a real, distinct schema version for this surface.
   assert.equal(NET_REVENUE_GUIDED_DECISIONS_SCHEMA, 'kaleidosphere.business-bi/net-revenue-guided-decisions/v1');
   assert.equal(ADMITTED_SOURCES['holdout-orders-v1'].status, 'ADMITTED');
+});
+// =================================================================================
+// Parent R1 — clarification and the confirmation summary are emitted BEFORE each
+// answer is read, and the bounded command is documented.
+// =================================================================================
+
+// The CLI's own rendering half, imported directly so a prompt-before-read test needs no
+// database.
+const CLI_MOD = '../scripts/run-guided-net-revenue-journey.mjs';
+
+// Drive the REAL terminal. A pty has no EOF, so a run that consumed all of stdin before
+// printing anything would hang here until the timeout — which is exactly the defect R1
+// reported. Each question's options must be on the screen BEFORE the answer is sent.
+// node-pty is not a dependency of this repo, so the pty is opened with the stdlib
+// `pty`/`os` modules of whatever Python is here (Python is needed to drive a pty at all).
+const PTY_DRIVER = `
+import errno, json, os, pty, select, sys, time
+spec = json.loads(sys.argv[1])
+pid, fd = pty.fork()
+if pid == 0:
+    os.chdir(spec['cwd'])
+    os.environ['PGLITE_CORE_PATH'] = spec['pglite']
+    os.execvpe(spec['node'], [spec['node'], spec['cli'], '--confirm'], os.environ)
+answers, projections = spec['answers'], spec['projections']
+screen = ''
+state = {'next': 0, 'sent': []}
+deadline = time.time() + spec['timeoutMs'] / 1000.0
+while time.time() < deadline:
+    try:
+        r, _, _ = select.select([fd], [], [], 0.3)
+    except OSError:
+        break
+    if r:
+        try:
+            chunk = os.read(fd, 65536)
+        except OSError as e:
+            if e.errno == errno.EIO:
+                break
+            raise
+        if not chunk:
+            break
+        screen += chunk.decode('utf-8', 'replace')
+    # advance one step at a time: only send the answer for step N once question N+1 is
+    # visible, which proves question N was answered and question N+1 was shown BEFORE it.
+    nxt = state['next']
+    if nxt < len(answers):
+        # Answer step N once ITS OWN question and options are on screen. The CLI prints the
+        # prompt and then blocks on the answer, so its own text is the signal; waiting for
+        # the NEXT question would DEADLOCK, because that question cannot be printed until
+        # this answer arrives.
+        ready = projections[nxt] in screen
+        if ready:
+            os.write(fd, (answers[nxt] + chr(10)).encode())
+            state['sent'].append({'index': nxt, 'screenPos': len(screen)})
+            state['next'] += 1
+            time.sleep(0.15)
+    if state['next'] >= len(answers) and '"writesPerformed"' in screen:
+        time.sleep(0.6)
+        break
+try:
+    os.close(fd)
+except OSError:
+    pass
+# The forked terminal child must not outlive the driver: otherwise the pty stays open,
+# the parent stdio never fully closes, and the test file event loop never drains.
+try:
+    os.kill(pid, 9)
+except OSError:
+    pass
+try:
+    os.waitpid(pid, 0)
+except OSError:
+    pass
+print('__RESULT__' + json.dumps({'screen': screen, 'sent': state['sent']}), flush=True)
+os._exit(0)
+`;
+
+function pythonBin() {
+  for (const bin of ['python3', 'python']) {
+    const r = spawnSync(bin, ['-c', 'import pty,os,select,json;print(1)'], { encoding: 'utf8' });
+    if (r.status === 0 && r.stdout.trim() === '1') return bin;
+  }
+  return null;
+}
+
+test('parent R1: the real terminal shows options and the confirmation summary BEFORE the answer is read', async (t) => {
+  const entry = await resolvePgliteEntry();
+  if (!entry) return t.skip('PGlite runtime required');
+  const py = pythonBin();
+  if (!py) return t.skip('python3 with pty/os/select required to drive a real terminal');
+
+  const answers = [SUPPORTED_QUESTION_ID, 'holdout-orders-v1', 'holdout-contract-periods-v1', SUPPORTED_UNIT_ID];
+  // The visible text of each question, in order, as the CLI actually prints it.
+  const projections = GUIDED_STEPS.map((step) => GUIDED_PROMPTS[step].prompt);
+  const distinctProjections = new Set(projections);
+  assert.equal(distinctProjections.size, projections.length,
+    'the four projections must be distinguishable to prove ordering');
+
+  const { spawn } = await import('node:child_process');
+  const spec = JSON.stringify({
+    cwd: root, node: process.execPath, cli: CLI, pglite: entry, answers,
+    projections, timeoutMs: 60000,
+  });
+  // Async spawn: this test must not block the event loop while the pty driver runs. The
+  // driver forks a real terminal child, so it is run in its OWN process group and the whole
+  // group is torn down afterwards — otherwise the forked grandchild keeps the pty (and this
+  // test file's event loop) alive after the assertions are already satisfied.
+  const r = await new Promise((resolve, reject) => {
+    const child = spawn(py, ['-c', PTY_DRIVER, spec], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('error', reject);
+    const killGroup = (sig) => {
+      try { process.kill(-child.pid, sig); } catch { try { child.kill(sig); } catch { /* gone */ } }
+    };
+    const timer = setTimeout(() => killGroup('SIGKILL'), 75000);
+    child.on('close', (status) => {
+      clearTimeout(timer);
+      killGroup('SIGKILL');
+      child.stdout.destroy();
+      child.stderr.destroy();
+      child.unref();
+      resolve({ status, stdout, stderr });
+    });
+  });
+  assert.equal(r.status, 0, r.stderr);
+  const marker = r.stdout.lastIndexOf('__RESULT__');
+  assert.ok(marker !== -1, `no result marker; stderr=${r.stderr}`);
+  const { screen, sent } = JSON.parse(r.stdout.slice(marker + '__RESULT__'.length));
+
+  // Every question must have been displayed with its answer options. This is the actual
+  // R1 defect: before correction the terminal printed NOTHING and waited for EOF.
+  for (const step of GUIDED_STEPS) {
+    assert.match(screen, new RegExp(GUIDED_PROMPTS[step].prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+      `${step} question was never displayed`);
+    for (const option of GUIDED_PROMPTS[step].options) {
+      assert.ok(screen.includes(option), `${step} option ${option} was never displayed`);
+    }
+  }
+  // ...and it was displayed BEFORE the answer for that step was sent.
+  assert.equal(sent.length, answers.length, 'not every answer was consumed');
+  GUIDED_STEPS.forEach((step, i) => {
+    const optionsPos = screen.indexOf(GUIDED_PROMPTS[step].options[0]);
+    assert.ok(optionsPos !== -1 && optionsPos < sent[i].screenPos,
+      `${step}: its options/meaning appeared AFTER its answer was supplied (R1)`);
+  });
+  // The resolved dataset/period/unit summary is shown before the run is authorized. The
+  // summary is part of the CLI receipt, so assert the preview text is on the terminal and
+  // precedes the final receipt.
+  assert.match(screen, /Confirm what will run/);
+  assert.ok(screen.indexOf('Confirm what will run') < screen.indexOf('"phase":"EXECUTED"'),
+    'the confirmation summary must precede the executed receipt');
+  assert.ok(screen.indexOf('Confirm what will run') < screen.indexOf('"asked"'),
+    'the confirmation summary must precede the receipt\'s record of what was asked');
+  assert.match(screen, /holdout-orders-v1/);
+  assert.match(screen, /EUR_MINOR_UNITS/);
+  assert.ok(screen.includes('"phase":"EXECUTED"'), 'the real terminal run did execute');
+});
+
+test('parent R1: the bounded guided command is documented and --help exits 0', async () => {
+  // The CLI is an ESM entry point with top-level await, so it must be imported, not required.
+  const mod = await import(CLI_MOD);
+  assert.equal(typeof mod.GUIDED_CLI_HELP_TEXT, 'string', 'the CLI must export its own help text');
+  assert.ok(mod.GUIDED_CLI_HELP_TEXT.length > 200, 'the exported help text must be the full document');
+  const help = mod.GUIDED_CLI_HELP_TEXT;
+  assert.match(help, /run-guided-net-revenue-journey\.mjs/);
+  assert.match(help, /--confirm/);
+  assert.match(help, /--answers/);
+  assert.match(help, /--format/);
+  for (const step of GUIDED_STEPS) {
+    assert.match(help, new RegExp(GUIDED_PROMPTS[step].prompt.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+      `help must document the ${step} question`);
+  }
+
+  const { spawnSync } = await import('node:child_process');
+  const r = spawnSync(process.execPath, [CLI, '--help'], { cwd: root, encoding: 'utf8', timeout: 60000 });
+  // Before correction: exit 1 with ERR_PARSE_ARGS_UNKNOWN_OPTION.
+  assert.equal(r.status, 0, r.stderr);
+  assert.equal(r.stderr, '');
+  assert.match(r.stdout, /--confirm/);
+  assert.match(help, /non-?interactive|NONINTERACTIVE/i, 'answer-file mode must be named machine/noninteractive');
+});
+
+// =================================================================================
+// Parent R2 — the practical, dataset-bound view is delivered as a real artifact.
+// =================================================================================
+
+const VIEW_MOD = '../services/bi-control/src/business-bi/net-revenue-guided-view.mjs';
+
+test('parent R2: a guided run delivers a practical view for BOTH admitted source kinds', async () => {
+  const view = await import(VIEW_MOD);
+  const cases = [
+    { kind: 'holdout', sourceId: 'holdout-orders-v1', periodSetId: 'holdout-contract-periods-v1', expect: [30000, 100059] },
+    { kind: 'ledger-v1', sourceId: 'ledger-v1', periodSetId: 'f4-comparison-periods-v1', expect: [45000, 66000] },
+  ];
+  for (const c of cases) {
+    const out = await session([SUPPORTED_QUESTION_ID, c.sourceId, c.periodSetId, SUPPORTED_UNIT_ID]);
+    assert.equal(out.phase, 'EXECUTED', `${c.kind} did not execute: ${JSON.stringify(out.stoppedBecause)}`);
+
+    // The view is produced from the session's OWN executed result, for whichever dataset the
+    // user actually chose. Before correction the ledger sources had NO view at all and the
+    // holdout view existed only as an escaped string inside the JSON receipt.
+    const table = view.renderGuidedNetRevenueView(out, 'TABLE');
+    const html = view.renderGuidedNetRevenueView(out, 'HTML');
+    assert.equal(typeof table, 'string');
+    assert.ok(table.length > 100, `${c.kind}: TABLE view is not a practical artifact`);
+    // The released result's OWN numbers appear in both renderings.
+    for (const n of c.expect) {
+      assert.ok(table.includes(String(n)), `${c.kind}: TABLE missing ${n}`);
+      assert.ok(html.includes(String(n)), `${c.kind}: HTML missing ${n}`);
+    }
+    assert.ok(html.startsWith('<!doctype html'), `${c.kind}: HTML view must be a real document`);
+    assert.ok(!html.includes('\\u003c'), `${c.kind}: HTML must not be an escaped JSON string`);
+    // Dataset-bound: the view names the dataset that ran and never the other one's numbers.
+    assert.ok(table.includes(c.sourceId), `${c.kind}: view does not name the dataset that ran`);
+
+    // A refused run renders NO view: an empty table would be a fabricated fact.
+    const refused = { ...out, phase: 'STOPPED' };
+    assert.throws(() => view.renderGuidedNetRevenueView(refused, 'TABLE'), (e) => String(e.code).startsWith('GUIDED_VIEW_NOT_EXECUTED'));
+  }
+});
+
+test('parent R2: --format TABLE and --format HTML write views, not escaped JSON', async (t) => {
+  const entry = await resolvePgliteEntry();
+  if (!entry) return t.skip('PGlite runtime required');
+  const { mkdtemp, writeFile: wf } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { spawn } = await import('node:child_process');
+  const dir = await mkdtemp(path.join(tmpdir(), 'ks-guided-view-'));
+  const answers = path.join(dir, 'answers.txt');
+  await wf(answers, `${[SUPPORTED_QUESTION_ID, 'holdout-orders-v1', 'holdout-contract-periods-v1', SUPPORTED_UNIT_ID].join('\n')}\n`);
+
+  // Async spawn: a synchronous spawn inside an async test would block the event loop that
+  // the pty reader above still needs.
+  const run = (fmt) => new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [CLI, '--answers', answers, '--pglite', entry, '--confirm', '--format', fmt],
+      { cwd: root });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('error', reject);
+    child.on('close', (code) => resolve({ code, stdout, stderr }));
+  });
+
+  const tableRun = await run('TABLE');
+  assert.equal(tableRun.code, 0, tableRun.stderr);
+  assert.ok(tableRun.stdout.includes('30000') && tableRun.stdout.includes('100059'), 'TABLE must show the numbers');
+  assert.ok(!tableRun.stdout.trimStart().startsWith('{'), 'TABLE must not be the JSON receipt');
+  assert.ok(tableRun.stdout.length < 20000, 'the practical view must be smaller than the escaped-JSON receipt');
+
+  const htmlRun = await run('HTML');
+  assert.equal(htmlRun.code, 0, htmlRun.stderr);
+  assert.ok(htmlRun.stdout.includes('<!doctype html'), 'HTML format must emit an HTML document');
+  assert.ok(!htmlRun.stdout.includes('\\u003c'), 'HTML must not be an escaped JSON string');
+
+  // The machine receipt is still available and still canonical JSON.
+  const jsonRun = await run('JSON');
+  assert.equal(jsonRun.code, 0, jsonRun.stderr);
+  assert.equal(JSON.parse(jsonRun.stdout).phase, 'EXECUTED');
+});
+
+// =================================================================================
+// Parent R3 — the underlying denial is propagated, so EXECUTED is never the terminal
+// phase of a run whose released readback was DENIED.
+// =================================================================================
+
+test('parent R3: a denied stale holdout is reported as the denial, not as a successful session', async (t) => {
+  const entry = await resolvePgliteEntry();
+  if (!entry) return t.skip('PGlite runtime required');
+
+  // Reproduce the review's exact mutation IN MEMORY: rows[0].amount_minor_units 10000 -> 10001.
+  const holdout = JSON.parse((await readFile(HOLDOUT, 'utf8')));
+  assert.equal(holdout.rows[0].amount_minor_units, 10000, 'fixture baseline moved; update this probe');
+  const stale = { ...holdout, rows: holdout.rows.map((row, i) => (i === 0 ? { ...row, amount_minor_units: 10001 } : row)) };
+  const staleBytes = Buffer.from(`${JSON.stringify(stale, null, 2)}\n`, 'utf8');
+
+  const { metricContractBytes, oracleBytes, f4Sources } = await inputs();
+  const out = await runGuidedSession({
+    answerSource: createListAnswerSource(answersFor({ source: 'holdout-orders-v1', period: 'holdout-contract-periods-v1' })),
+    metricContractBytes, oracleBytes, f4Sources,
+    holdoutBytes: staleBytes,
+    database: await makeRealDatabase(),
+    confirm: () => true,
+  });
+
+  // The lower-level refusal is unchanged...
+  assert.equal(out.result.oracleEquality, 'NOT_EVALUATED');
+  assert.equal(out.result.presentation.readback.coverage.state, 'DENIED');
+  assert.equal(out.result.presentation.readback.coverage.reasonCode, 'BUSINESS_BI_HOLDOUT_DIGEST_DENIED');
+  // ...and the GUIDED session now reports that refusal as its own outcome.
+  assert.equal(out.executed, false, 'a denied readback must not be reported as executed (R3)');
+  assert.notEqual(out.phase, 'EXECUTED', 'DENIED must not present as the success terminal phase (R3)');
+  assert.equal(out.phase, 'STOPPED');
+  assert.ok(out.stoppedBecause, 'a denied run must carry a stop reason');
+  assert.match(out.stoppedBecause.code, /HOLDOUT_DIGEST_DENIED/);
+  // It is distinguishable from "we never tried", so "attempted and refused" is its own fact.
+  assert.equal(out.stoppedBecause.attemptedExecution, true);
+  assert.equal(out.authority.humanComprehension, false);
+});
+
+test('parent R3: a complete run is still EXECUTED, so the denial branch is not a blanket stop', async () => {
+  const out = await session(answersFor({ source: 'holdout-orders-v1', period: 'holdout-contract-periods-v1' }));
+  assert.equal(out.phase, 'EXECUTED');
+  assert.equal(out.executed, true);
+  assert.equal(out.stoppedBecause, null);
+  assert.equal(out.result.oracleEquality, 'EXACT');
+});
+
+// =================================================================================
+// Parent R4 — the admission boundary binds the LOADED source declaration, not just the
+// chosen answer label or the frozen table.
+// =================================================================================
+
+test('parent R4: a loaded ledger source that contradicts its own declaration is denied before it is read', async () => {
+  const { metricContractBytes, oracleBytes, f4Sources } = await inputs();
+  const base = f4Sources['ledger-v1'];
+  const database = await makeRealDatabase();
+  // The review's five independent mutations, applied to the LOADED fixture object with the
+  // rows untouched. Each must be refused, and none may execute or produce a result.
+  const mutations = [
+    { name: 'base-units', mutate: (f) => ({ ...f, sourceUnitDeclaration: 'BASE_UNITS', minorUnitsPerMajorUnit: 1 }), code: /UNIT/ },
+    { name: 'currency', mutate: (f) => ({ ...f, currencyCode: 'USD' }), code: /CURRENCY|EUR/ },
+    { name: 'mapping-profile', mutate: (f) => ({ ...f, mappingProfile: 'ledger-mapping-wrong-scale' }), code: /MAPPING|PROFILE/ },
+    { name: 'layout-version', mutate: (f) => ({ ...f, layoutVersion: 'ledger-v2' }), code: /LAYOUT/ },
+    { name: 'classification', mutate: (f) => ({ ...f, classification: 'CUSTOMER_PRODUCTION_BYTES' }), code: /CLASSIFICATION|PRODUCTION|SYNTHETIC/ },
+  ];
+
+  for (const m of mutations) {
+    let out = null;
+    let error = null;
+    try {
+      out = await runGuidedSession({
+        answerSource: createListAnswerSource(answersFor({ source: 'ledger-v1', period: 'f4-comparison-periods-v1' })),
+        metricContractBytes, oracleBytes,
+        f4Sources: { ...f4Sources, 'ledger-v1': m.mutate(base) },
+        database,
+        confirm: () => true,
+      });
+    } catch (e) {
+      error = e;
+    }
+    if (error) {
+      // The admission boundary refused it with its own exact code, before any read.
+      assert.match(String(error.code), /^GUIDED_SOURCE_DECLARATION_DENIED:/, `${m.name}: wrong denial (${error.code})`);
+      assert.match(String(error.code), m.code, `${m.name}: wrong denial field (${error.code})`);
+      assert.equal(out, null, `${m.name}: a refused source produced a session`);
+      continue;
+    }
+    // If the shape is ever returned instead of thrown, it must still be an explicit refusal.
+    assert.equal(out.executed, false, `${m.name}: a mis-declared loaded source must not execute (R4)`);
+    assert.notEqual(out.phase, 'EXECUTED', `${m.name}: mis-declared source presented as success (R4)`);
+    assert.equal(out.result, null, `${m.name}: no result may be produced for a mis-declared source`);
+    assert.ok(out.stoppedBecause, `${m.name}: must stop with a reason`);
+    assert.match(out.stoppedBecause.code, m.code, `${m.name}: wrong denial code (${out.stoppedBecause.code})`);
+  }
+});
+
+test('parent R4: the unmutated ledger source is still admitted and executes', async () => {
+  const out = await session(answersFor({ source: 'ledger-v1', period: 'f4-comparison-periods-v1' }));
+  assert.equal(out.phase, 'EXECUTED');
+  assert.equal(out.result.comparison.delta.netRevenue, 21000);
+  assert.equal(out.decision.source.disposition, 'ADMITTED');
+  assert.equal(out.result.presentation.viewSourceKind, 'F4_COMPARISON');
 });

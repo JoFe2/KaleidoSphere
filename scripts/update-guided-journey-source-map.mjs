@@ -13,6 +13,9 @@ import { readFile, writeFile } from 'node:fs/promises';
 const paths = [
   'services/bi-control/src/business-bi/net-revenue-guided-decisions.mjs',
   'services/bi-control/src/business-bi/net-revenue-guided-session.mjs',
+  // R2 correction added this module (the practical dataset-bound view). It is tracked
+  // source of this surface, so it is registered here like every other guided file.
+  'services/bi-control/src/business-bi/net-revenue-guided-view.mjs',
   'scripts/run-guided-net-revenue-journey.mjs',
   'scripts/update-guided-journey-source-map.mjs',
   'tests/net-revenue-guided-journey.test.mjs',

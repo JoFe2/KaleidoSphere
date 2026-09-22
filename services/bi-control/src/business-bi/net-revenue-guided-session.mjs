@@ -103,7 +103,8 @@ export const GUIDED_PROMPTS = Object.freeze({
 // ---------------------------------------------------------------------------------
 // Answer intake.
 //
-// An answer source is `{ read: () => string|null }`. `read()` returning null (or an
+// An answer source is `{ read: () => string|null|Promise<string|null> }`. `read()` is
+// awaited, so a live-terminal reader may wait for the human. Returning null (or an
 // exhausted array) means THE USER DID NOT ANSWER — EOF. It never means "take the
 // default", because there is no default: every step carries `defaultApplied: null` and
 // the session records `absent` for that step.
@@ -176,7 +177,12 @@ export async function runGuidedSession(input) {
   const raw = {};
   const asked = [];
   for (const step of GUIDED_STEPS) {
-    const value = normalizeAnswer(answerSource.read());
+    // R1 correction: `read()` is AWAITED. The list adapter resolves synchronously, so its
+    // behaviour is unchanged; a live-terminal reader (which must wait for the human) can
+    // now return a promise. Before this, an async reader's promise was handed straight to
+    // normalizeAnswer and every interactive answer failed as GUIDED_ANSWER_DENIED:TYPE —
+    // the interactive path could not work at all.
+    const value = normalizeAnswer(await answerSource.read());
     raw[step] = value;
     asked.push({
       step,
@@ -294,9 +300,42 @@ export async function runGuidedSession(input) {
   }
 
   // ---- Phase EXECUTED: hand the admitted source to its released owner ----------------
+  //
+  // R3 correction (focused review, finding R3): reaching the owner is NOT the same fact
+  // as the owner succeeding. The released holdout readback can legitimately return
+  // coverage.state DENIED with its own reasonCode (e.g. BUSINESS_BI_HOLDOUT_DIGEST_DENIED
+  // for stale bytes) while jsonTableIdentity stays true, so a wrapper that only checked
+  // the rendering identity reported a REFUSED metric execution as its own success terminal
+  // phase. The dispatch reports the OWNER'S OWN outcome; this function maps a refused
+  // owner outcome onto a distinct non-success phase. A session that ends anywhere other
+  // than EXECUTED is a complete, honest record that the journey produced no numbers.
   const result = await dispatchAdmittedSource({
     runParameters, decision, metricContractBytes, oracleBytes, holdoutBytes, f4Sources, database,
   });
+
+  const refusal = ownerRefusal(result);
+  if (refusal) {
+    return deepFreeze({
+      ...base,
+      phase: 'STOPPED',
+      stoppedBecause: {
+        // The EXACT code from the released owner, never re-spelled here.
+        code: refusal.code,
+        step: 'execute',
+        incomplete: false,
+        // Distinguishes "the owner was asked and refused" from "the owner was never asked".
+        attemptedExecution: true,
+        ownerEntryPoint: result.ownerEntryPoint,
+      },
+      runParameters,
+      confirmation: true,
+      confirmed: true,
+      // No successful numeric execution is claimed at any level.
+      executed: false,
+      result,
+      writesPerformed: [],
+    });
+  }
 
   return deepFreeze({
     ...base,
@@ -309,6 +348,33 @@ export async function runGuidedSession(input) {
     result,
     writesPerformed: [],
   });
+}
+
+// R3 correction: read the OWNER'S refusal out of the released result shape. This is a
+// pass-through of the released vocabulary, not a second validator: it only INSPECTS what
+// the released modules already decided, and never re-derives a coverage state itself.
+//
+//   holdout owner  presentation.readback.coverage.state / reasonCode, oracleEquality and
+//                  reconcilesToIndependentOracle. A holdout read that is not COMPLETE, or
+//                  whose oracle equality is not EXACT, is a refused metric execution.
+//   F4 owner       the released comparison carries no coverage channel and no oracle
+//                  equality, so an F4 refusal is never fabricated here.
+export function ownerRefusal(result) {
+  if (!isPlainObject(result)) return null;
+  const coverage = result.presentation && result.presentation.readback
+    ? result.presentation.readback.coverage
+    : null;
+  if (!isPlainObject(coverage)) return null;
+  if (coverage.state !== 'COMPLETE') {
+    return { code: coverage.reasonCode || 'GUIDED_EXECUTION_NOT_COMPLETE', state: coverage.state };
+  }
+  if (result.oracleEquality !== 'EXACT') {
+    return { code: 'GUIDED_EXECUTION_ORACLE_NOT_EXACT', state: coverage.state };
+  }
+  if (result.reconcilesToIndependentOracle !== true) {
+    return { code: 'GUIDED_EXECUTION_NOT_RECONCILED', state: coverage.state };
+  }
+  return null;
 }
 
 // What the user is asked to confirm. It states the bound one more time so a confirmation
@@ -354,6 +420,82 @@ function firstBlockingStep(decision) {
     if (value.code) return step;
   }
   return decision.consistency ? 'period' : null;
+}
+
+// ---------------------------------------------------------------------------------
+// R4 correction — bind the LOADED source's own declaration to the user's answer.
+//
+// The decision layer already proves that the chosen SOURCE ID is in the closed admitted
+// set and that the frozen mapping profile agrees with the frozen source-unit table. That
+// is an identity check over frozen tables; it says nothing about the bytes the CLI
+// actually loaded. This function closes that gap: the loaded fixture's own declarations
+// must agree with the answer that selected it, and a contradiction is refused BEFORE the
+// relation is seeded or read.
+//
+// Only declarations the released source schema actually carries are checked. Each refusal
+// carries its own code and names the field, so "wrong unit", "wrong currency", "wrong
+// profile", "wrong layout" and "not synthetic" stay five different facts.
+//
+// The comparison targets are the answer's own admitted source record — never a
+// re-declared constant table — so there is exactly one place a unit ruler is defined.
+export function assertSourceDeclarationMatchesAnswer(source, fixture) {
+  if (!isPlainObject(source)) fail('GUIDED_SOURCE_DECLARATION_DENIED:SOURCE');
+  if (!isPlainObject(fixture)) fail('GUIDED_SOURCE_DECLARATION_DENIED:FIXTURE');
+
+  const refusals = [];
+  const refuse = (code, detail) => refusals.push({ code: `${code}`, detail });
+
+  // 1. Classification: only synthetic non-customer bytes may be read by this local surface.
+  const classification = fixture.classification ?? null;
+  if (classification !== 'SYNTHETIC_NON_CUSTOMER_BYTES') {
+    refuse('GUIDED_SOURCE_DECLARATION_DENIED:CLASSIFICATION', `loaded classification is ${String(classification)}`);
+  }
+
+  // 2. Relation name: the fixture must describe the relation the admitted source names.
+  const relation = fixture.relation ?? null;
+  if (relation !== source.relation) {
+    refuse('GUIDED_SOURCE_DECLARATION_DENIED:RELATION', `loaded relation is ${String(relation)}, answer selected ${source.relation}`);
+  }
+
+  // 3. Currency and minor-unit factor.
+  if (fixture.currencyCode !== source.currency.code) {
+    refuse('GUIDED_SOURCE_DECLARATION_DENIED:CURRENCY', `loaded currencyCode is ${String(fixture.currencyCode)}`);
+  }
+  if (fixture.minorUnitsPerMajorUnit !== source.currency.minorUnitsPerMajorUnit) {
+    refuse('GUIDED_SOURCE_DECLARATION_DENIED:MINOR_UNIT_FACTOR', `loaded minorUnitsPerMajorUnit is ${String(fixture.minorUnitsPerMajorUnit)}`);
+  }
+
+  // 4. Arithmetic unit declaration. The released fixtures spell this MINOR_UNITS; the
+  //    admitted source's own declared unit is INTEGER_MINOR_UNITS, so the mapping between
+  //    the two vocabularies is stated here explicitly rather than guessed.
+  const unitVocabulary = Object.freeze({ INTEGER_MINOR_UNITS: 'MINOR_UNITS' });
+  const expectedUnitDeclaration = unitVocabulary[source.declaredArithmeticUnit] ?? null;
+  if (fixture.sourceUnitDeclaration !== expectedUnitDeclaration) {
+    refuse(
+      'GUIDED_SOURCE_DECLARATION_DENIED:UNIT_SCALE',
+      `loaded sourceUnitDeclaration is ${String(fixture.sourceUnitDeclaration)}, expected ${String(expectedUnitDeclaration)}`,
+    );
+  }
+
+  // 5. Mapping profile and layout version: the answer selected a named frozen profile and
+  //    a named layout; the loaded bytes must declare that same pair.
+  if (source.mappingProfileId !== null && fixture.mappingProfile !== source.mappingProfileId) {
+    refuse('GUIDED_SOURCE_DECLARATION_DENIED:MAPPING_PROFILE', `loaded mappingProfile is ${String(fixture.mappingProfile)}, answer selected ${source.mappingProfileId}`);
+  }
+  if (source.layoutVersion !== null && fixture.layoutVersion !== source.layoutVersion) {
+    refuse('GUIDED_SOURCE_DECLARATION_DENIED:LAYOUT_VERSION', `loaded layoutVersion is ${String(fixture.layoutVersion)}, answer selected ${source.layoutVersion}`);
+  }
+
+  if (refusals.length > 0) {
+    // The first refusal is the thrown code (exact and singular); every additional
+    // disagreement is carried on the error so a caller can report all of them.
+    const error = new Error(refusals[0].code);
+    error.code = refusals[0].code;
+    error.detail = refusals[0].detail;
+    error.declarationRefusals = refusals;
+    throw error;
+  }
+  return true;
 }
 
 // ---------------------------------------------------------------------------------
@@ -404,6 +546,15 @@ export async function dispatchAdmittedSource({
     if (!isPlainObject(fixture) || !Array.isArray(fixture.rows) || fixture.rows.length === 0) {
       fail(`GUIDED_DISPATCH_DENIED:F4_SOURCE_REQUIRED:${source.layoutVersion}`);
     }
+    // R4 correction (focused review, finding R4): the trust boundary must include the
+    // LOADED source's OWN declaration, not only the frozen profile/source-unit tables.
+    // Before this, a chosen source was labelled admitted EUR minor-unit synthetic data as
+    // soon as its id matched, so a fixture declaring BASE_UNITS / USD / a different
+    // mappingProfile / a different layoutVersion / non-synthetic classification still
+    // executed and was reported as admitted minor-unit EUR data. The declarations below
+    // are read off the fixture the CLI actually loaded and compared to the answer the user
+    // gave; each mismatch is refused with the released vocabulary and the field names.
+    assertSourceDeclarationMatchesAnswer(source, fixture);
     // The rows reaching the profile come from the real source when one was supplied: the
     // dispatch recreates the released relation for THIS layout, seeds it and reads it back
     // through the released closure, so the profile sees what the source actually returned.
@@ -419,6 +570,10 @@ export async function dispatchAdmittedSource({
     // composeF4ForLayout applies the released profile AND the released comparison, so the
     // guided session never touches either.
     const composed = composeF4ForLayout(source.layoutVersion, rows, { sourceMode });
+    // R2 correction (focused review, finding R2): the F4 owner returns a released comparison
+    // REPORT but no presentation at all, so a ledger run could only be handed back as JSON.
+    // The practical view for this dataset is built here from the released comparison bytes
+    // (see net-revenue-guided-view.mjs) — no second renderer and no re-derived arithmetic.
     return {
       ownerEntryPoint: 'composeF4ForLayout',
       ownerSchemaVersion: composed.schemaVersion,
@@ -429,6 +584,12 @@ export async function dispatchAdmittedSource({
       usedDeclaredProfile: composed.usedDeclaredProfile,
       kernelRowCount: composed.kernelRowCount,
       comparison: composed.comparison,
+      // R2 correction: the released F4 comparison has no presentation channel of its own,
+      // so the guided surface marks the dataset kind it actually ran. The view module reads
+      // this marker plus the released comparison bytes; it re-derives no arithmetic.
+      presentation: {
+        viewSourceKind: 'F4_COMPARISON',
+      },
       digests: {
         kernelDigest: composed.kernelDigest,
         comparisonDigest: composed.comparisonDigest,
