@@ -4,7 +4,7 @@
   "profileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
   "release": {
     "version": "0.26.0",
-    "manifestSha256": "5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310"
+    "manifestSha256": "85ca0ccac0fa41d937e2ce62768bff6b1cfe3b2ec3d04886343fcd905646c401"
   },
   "binding": {
     "productDescriptor": {
@@ -140,5 +140,5 @@
     "The certified structural categories are identity, schemas, relations, columns, constraints and dependencies; index enumeration is NOT a tested capability of this C1 structural pack and is not claimed.",
     "Real-disposable-PostgreSQL execution (verified least-privilege principal connect and role readback, real-source positive run, and the live timeout/cancel/denied matrix) is BLOCKED_EXTERNAL and not proven by this source-local certificate."
   ],
-  "certificateSha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868"
+  "certificateSha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b"
 }

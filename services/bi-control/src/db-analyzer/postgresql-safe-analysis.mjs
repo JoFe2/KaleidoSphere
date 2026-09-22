@@ -83,9 +83,9 @@ export const ORACLE_FIXTURE_PATH = 'tests/fixtures/business-bi/net-revenue-oracl
 export const C1_PROFILE_SHA256 =
   '3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1';
 export const C1_CERTIFICATE_SHA256 =
-  '859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6';
+  '779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb';
 export const C1_CERTIFICATE_IDENTITY_SHA256 =
-  '31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868';
+  '9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b';
 export const C1_LIVE_MATRIX_SHA256 =
   '90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab';
 export const C1_LIVE_MATRIX_PROVENANCE_RAW_SHA256 =
@@ -670,7 +670,7 @@ export function buildPostgresqlC2Evidence({
       'C2 is a separately-versioned capability layered on the certified C1 profile; it is not a C1 scope widening and C1 structural certification does not imply C2 safe-aggregate capability.',
       'The source-local C2 certificate records the real-disposable-PostgreSQL clean-room as BLOCKED_EXTERNAL; the real positive/negative clean-room (loopback-only, SCRAM, least-privilege, zero-residue) is separate parent-executed evidence.',
       'No arbitrary SQL, no second metric, no grouping widening, and no production/customer/HA/scale/all-versions claim; synthetic_bi.orders is synthetic non-customer data only.',
-      'C2 issuance/revocation never modifies or rewrites the frozen C1 bytes (profile 3faea403..., certificate 859970ca..., live matrix 90866c86..., provenance 05014aaf...): the C1 lifecycle regression pins all of them byte-identical.',
+      'C2 issuance/revocation never modifies or rewrites the frozen C1 bytes (profile 3faea403..., certificate 779831c6..., live matrix 90866c86..., provenance 05014aaf...): the C1 lifecycle regression pins all of them byte-identical.',
     ],
   };
   return deepFreeze({ ...body, certificateSha256: identitySha256(body) });

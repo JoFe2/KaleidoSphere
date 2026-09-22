@@ -613,11 +613,11 @@ const C2_RAW_EVIDENCE_PRIMARY_PATH = '.ks150-c2-real-cleanroom-primary-evidence.
 const C2_RAW_EVIDENCE_POST_RESTORE_PATH = '.ks150-c2-real-cleanroom-post-restore-evidence.json';
 const C2_RAW_EVIDENCE_SHA256 = 'b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382';
 const C2_REAL_CLEANROOM_PROVENANCE_PATH = 'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json';
-const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5';
+const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '342ac1d037834e1b70aa22be9273d89097205acac4d9027a3168421783a9416d';
 const C2_REAL_CLEANROOM_READBACK_PATH = 'docs/evidence/postgresql-c2-real-cleanroom/README.md';
 const C2_REAL_CLEANROOM_READBACK_SHA256 = 'b2739ec7391c2a2233be22e764150597b08bf614119569b968fb549fa1d1dca3';
-const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b';
-const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = '959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496';
+const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '1d1ca03819f659cffc014d38b29b4cbab5890197a960a69ed003bb98b6affc7c';
+const C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA = 'ea335bbc0d0d18dd145420e733954bd57b6877aedce8739b17f97a407f634e76';
 // Independently fixed historical endpoint: 4bf5575 delivered the actual C2 correction;
 // c61d6b6 only appended WORK_RESULT.md. Never derive this endpoint from HEAD or provenance.
 const C2_CORRECTION_COMMIT = '4bf55758904f04369afb74b6d185a511f731c71d';

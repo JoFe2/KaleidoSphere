@@ -136,6 +136,8 @@ const ERV_ANALYTICS_ALIAS_REGISTRATION =
   '\n    "test:erv-analytics": "node --test tests/erv-analytics-consumption.test.mjs",';
 const ERV_ANALYTICS_TEST_REGISTRATION =
   ' tests/erv-analytics-consumption.test.mjs';
+const KS238_ORDER_SOURCE_CONSUMPTION_TEST_REGISTRATION =
+  ' tests/ks238-order-source-consumption.test.mjs';
 
 const EXPECTED_RESULT = Object.freeze({
   periods: Object.freeze({
@@ -496,6 +498,7 @@ function reconstructFrozenReleasePackage(packageBytes) {
     CLI_COMMAND_CONTRACT_TEST_REGISTRATION,
     ERV_ANALYTICS_ALIAS_REGISTRATION,
     ERV_ANALYTICS_TEST_REGISTRATION,
+    KS238_ORDER_SOURCE_CONSUMPTION_TEST_REGISTRATION,
   ]) {
     const first = reconstructed.indexOf(addition);
     invariant(first !== -1 && first === reconstructed.lastIndexOf(addition),

@@ -348,5 +348,5 @@ test('the KS149 live-matrix evidence family is content-addressed and the histori
   // BLOCKED_EXTERNAL real-PostgreSQL state.
   const frozen = JSON.parse(await readFile(postgresqlC1Family.evidence, 'utf8'));
   assert.equal(frozen.realDisprovablePostgresql.state, 'BLOCKED_EXTERNAL');
-  assert.equal(frozen.certificateSha256, '31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868');
+  assert.equal(frozen.certificateSha256, '9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b');
 });

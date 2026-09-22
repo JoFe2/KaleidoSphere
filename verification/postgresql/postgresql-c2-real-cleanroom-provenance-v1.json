@@ -64,8 +64,8 @@
   },
   "bindings": {
     "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
-    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
-    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "c1CertificateSha256": "779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb",
+    "c1CertificateIdentitySha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b",
     "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
     "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
     "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
@@ -142,8 +142,8 @@
   },
   "certificate": {
     "path": "verification/postgresql-c2-safe-aggregate-v1.json",
-    "sha256": "630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b",
-    "certificateSha256": "959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496",
+    "sha256": "1d1ca03819f659cffc014d38b29b4cbab5890197a960a69ed003bb98b6affc7c",
+    "certificateSha256": "ea335bbc0d0d18dd145420e733954bd57b6877aedce8739b17f97a407f634e76",
     "state": "UNCHANGED",
     "note": "The committed C2 certificate remains the byte-deterministic output of the source-local clean-room (scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs) and is not re-minted by this registration. The real-run evidence is registered as separate, later provenance bound to the same certified C1 substrate and fixture digests; nothing here relabels the certificate or the frozen C1 bytes."
   },
@@ -194,5 +194,5 @@
     "No credential, connection string, or raw row value is reproduced here; the secret stays on the file-secret route.",
     "If authentic evidence is insufficient for any gate, that gate stays open with its own verifiable resume trigger; nothing is claimed delivered."
   ],
-  "provenanceSha256": "2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5"
+  "provenanceSha256": "342ac1d037834e1b70aa22be9273d89097205acac4d9027a3168421783a9416d"
 }
