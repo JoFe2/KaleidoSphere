@@ -17,6 +17,11 @@ import './net-revenue-ledger-mapping.test.mjs';
 import './net-revenue-segment-comparison.test.mjs';
 // #238 F4 composition follows the same imported-suite route (no package.json mutation).
 import './net-revenue-f4-composition.test.mjs';
+// KS236->KS237->KS238 connected journey follows the same imported-suite route: it is the
+// compositional successor of the three per-stage suites above and must not be reachable
+// twice (the topology kernel proves exactly one route), so it rides this parent rather
+// than becoming a second direct package.json root.
+import './net-revenue-connected-journey.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
@@ -47,6 +52,10 @@ const businessBiFiles = Object.freeze([
   'tests/fixtures/business-bi/net-revenue-f4-composition-v1.json',
   'tests/fixtures/business-bi/net-revenue-f4-composition-v2.json',
   'docs/evidence/net-revenue-f4-composition-v1.md',
+  'services/bi-control/src/business-bi/net-revenue-connected-journey.mjs',
+  'scripts/run-connected-net-revenue-journey.mjs',
+  'tests/net-revenue-connected-journey.test.mjs',
+  'docs/evidence/net-revenue-connected-journey-v1.md',
   'verification/business-bi-epic-closure-v1.json',
   'verification/business-bi-net-revenue-falsification-v1.json',
   'verification/business-bi-net-revenue-holdout-v1.json',
