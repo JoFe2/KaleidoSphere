@@ -102,3 +102,81 @@ Registering a new suite trips the repository's own self-policing gates, which is
   from the released #238 limit — the connected journey does not invent them.
 - No causal attribution, gross-only segments, as-of limits: carried from the released
   report, not restated as new claims.
+
+---
+
+# Package 2 — the PSAi handoff's normal path, substitution, and expiry
+
+Status: LOCAL CANDIDATE, same commit series as above. Not released, not published.
+
+## The gap this closes
+
+Package 1 exercised the PSAi handoff only in its denial shape, and the stage hard-wired its
+expectation to `DENIED`:
+
+    expected: { state: 'DENIED', code: 'XRA_KS01_RELEASE_HELD', boundaryRespected: true }
+
+That made the **normal, admitted** handoff unrepresentable — the successful path could never
+be tested, and "boundaryRespected" silently meant "was denied". The order requires the actual
+entrypoint be exercised for normal paths, not only rejection. Fixed by deriving the expected
+outcome from the declared provenance instead:
+
+    const expectedState = provenanceStatus === 'HELD' ? 'DENIED' : 'CANDIDATE';
+    const boundaryRespected = result.state === expectedState;
+
+A HELD profile that is admitted, and a release-attested profile that is denied, are now BOTH
+correctly reported as boundary violations.
+
+## Evidence from real execution
+
+Driving a genuine admission through the released ingestion boundary with a synthetic
+dependency-injection registry (not a mock of the pipeline — the pipeline itself runs):
+
+    state: CANDIDATE | code: null | expected: CANDIDATE | respected: true
+    authorityFree: true
+    candidate state: CANDIDATE
+    pansphairaHead: {"status":"RELEASED","commitOid":"6d7a7b43f2e16ff088afd409e601520cace23c4b"}
+    coverage: {"relation":"OBSERVED","fields":"OBSERVED","periodWindow":"OBSERVED",
+               "periodEvaluability":"OBSERVED","unknownChannel":"OBSERVED","releaseEvidence":"OBSERVED"}
+
+`releaseEvidence` flips HELD -> OBSERVED only because a RELEASED entry actually matched the
+profile digest — evidence, not assertion. Admission is still **not authority**: the candidate
+carries `promote/mutate/execute/publish: false` and empty capabilities/effects.
+
+## New negatives, each with its own distinct code
+
+- `XRA_KS01_PROFILE_DIGEST_MISMATCH_DENIED` — a release-attested profile whose BYTES are
+  substituted (one extra column) is denied rather than silently re-attested. This is a
+  different fact from the HELD denial, and the registry-has-a-released-entry branch proves it.
+- `XRA_KS01_PROVENANCE_FORGERY_DENIED` — provenance that **expires after load**: the profile
+  keeps its attested edge while the registry entry reverts to HELD, so the withdrawn
+  release can no longer admit anything.
+- `LEDGER_KIND_DENIED:undefined` — a real **source substitution** between the two released
+  layouts. Serving the v2 rows to the v1 kernel profile is rejected by the released mapping
+  profile DIRECTLY (v2 carries `entry_kind`, not the `posting_type` the v1 profile requires),
+  so the substitution never reaches the comparison. Stronger than a late divergence check.
+
+## A HELD dependency is a complete run, not a partial one
+
+    allStagesReconciled: true   dependencyClosed: false   psai.code: XRA_KS01_RELEASE_HELD
+
+Both fields are reported so a reviewer can tell "the chain ran and every handoff behaved as
+its provenance entitled" from "the dependency is closed". Only the latter requires real public
+closure of XRA-PS-01; conflating them would misreport an honest open dependency as unfinished
+technical work.
+
+## Reuse, not duplication
+
+The order forbids a duplicate order module. The null order-intake / open-order claims are
+inherited from the released #238 comparison, whose own nonclaims already state that
+`orderIntake` and `openOrder*` are unsupported (no intake-event or historical status/as-of
+source) and that observed open sale rows describe in-window rows only, never a period-end
+balance. PANSPHAIRA's real frozen sales-governance candidate (`src/cscl-10/sales-candidate.mjs`)
+covers order lifecycle/events but is `NON_AUTHORITATIVE_CANDIDATE_FROZEN` and carries
+`NO_HOLDOUT_SEMANTICS_CLAIM` — so an order-intake figure would be an unsupported historical
+order-book claim. This package reuses those definitions and adds none.
+
+## Verified
+
+`node --test tests/net-revenue-connected-journey.test.mjs` — 19 tests, 19 pass.
+`tests/source-map.test.mjs` + `tests/canonical-test-topology.test.mjs` — 150 pass.

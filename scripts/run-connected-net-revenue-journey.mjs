@@ -161,6 +161,7 @@ try {
     sourceMarking: connected.sourceMarking,
     stageOrder: connected.stageOrder,
     allStagesReconciled: connected.allStagesReconciled,
+    dependencyClosed: connected.dependencyClosed,
     connectedDigest: connected.connectedDigest,
     expectations: CONNECTED_JOURNEY_EXPECTATIONS,
     stages: connected.stages.map((s) => ({

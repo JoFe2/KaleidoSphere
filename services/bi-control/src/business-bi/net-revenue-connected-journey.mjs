@@ -200,11 +200,21 @@ export function runKs238Stage(comparisonRows) {
 // projection profile is still HELD, so ingestion DENIES it — that denial IS the correct,
 // recorded handoff outcome. This function never fabricates a RELEASED admission and never
 // upgrades the provenance; it records the denial code and the request digest verbatim.
-export async function runPsaiHandoff({ declaredProfile, registryBytes }) {
+export async function runPsaiHandoff({ declaredProfile, registryBytes, context }) {
   if (!isPlainObject(declaredProfile)) fail('CONNECTED_PSAI_PROFILE_DENIED');
   const registry = validateRegistry(JSON.parse(registryBytes.toString('utf8')));
   const profileBytes = Buffer.from(canonicalJson(declaredProfile));
-  const result = ingestProjectionProfile(profileBytes, { registry });
+  const result = ingestProjectionProfile(profileBytes, { registry, ...(context ?? {}) });
+  const provenanceStatus = declaredProfile.provenance?.status ?? null;
+
+  // The boundary is "respected" when the outcome matches what the declared provenance
+  // ENTITLES. This must not be written as "was denied": a HELD profile that is admitted,
+  // and a RELEASED-attested profile that is denied, are BOTH boundary violations. The
+  // earlier version hard-wired the denial, which made the ADMITTED path unrepresentable —
+  // i.e. the normal successful handoff could never be tested.
+  const expectedState = provenanceStatus === 'HELD' ? 'DENIED' : 'CANDIDATE';
+  const boundaryRespected = result.state === expectedState;
+
   return {
     stage: 'PSAI',
     ran: true,
@@ -217,9 +227,14 @@ export async function runPsaiHandoff({ declaredProfile, registryBytes }) {
     ordinaryAnswer: result.ordinaryAnswer ?? null,
     successfulOrdinaryAnswer: result.successfulOrdinaryAnswer ?? false,
     denialSha256: result.denialSha256 ?? null,
-    provenanceStatus: declaredProfile.provenance?.status ?? null,
-    // A HELD profile MUST be denied; anything else means the boundary was bypassed.
-    boundaryRespected: result.state === 'DENIED' && result.code === 'XRA_KS01_RELEASE_HELD',
+    provenanceStatus,
+    expectedState,
+    boundaryRespected,
+    // An admitted handoff must carry NO promotion authority, whatever the provenance says:
+    // a candidate is still only a candidate.
+    authorityFree: result.candidate === undefined || result.candidate === null
+      ? null
+      : Object.values(result.candidate.authority).every((v) => v === false || (Array.isArray(v) && v.length === 0)),
   };
 }
 
@@ -238,7 +253,7 @@ export async function runConnectedJourney(input) {
   if (!isPlainObject(input)) fail('CONNECTED_INPUT_DENIED');
   const {
     metricContractBytes, oracleBytes, holdoutBytes,
-    f4Sources, database, declaredProfile, registryBytes,
+    f4Sources, database, declaredProfile, registryBytes, psaiContext,
   } = input;
   if (!isPlainObject(f4Sources)) fail('CONNECTED_F4_SOURCES_DENIED');
   if (!isPlainObject(database)) fail('CONNECTED_DATABASE_DENIED');
@@ -327,15 +342,23 @@ export async function runConnectedJourney(input) {
   });
 
   // ---- PSAi handoff: the released fail-closed ingestion boundary ------------------
-  const psai = await runPsaiHandoff({ declaredProfile, registryBytes });
+  const psai = await runPsaiHandoff({ declaredProfile, registryBytes, context: psaiContext });
   stages.push({
     stage: psai.stage,
     ran: psai.ran,
-    expected: { state: 'DENIED', code: 'XRA_KS01_RELEASE_HELD', boundaryRespected: true },
+    // The expected outcome is derived from the DECLARED provenance, not hard-wired: HELD
+    // must be denied, a release-attested profile must be admitted. Hard-wiring the denial
+    // here would silently make the normal admitted handoff untestable.
+    expected: {
+      state: psai.expectedState,
+      provenanceStatus: psai.provenanceStatus,
+      boundaryRespected: true,
+    },
     actual: {
       state: psai.state,
       code: psai.code,
       boundaryRespected: psai.boundaryRespected,
+      authorityFree: psai.authorityFree,
     },
     reconciled: psai.boundaryRespected,
     digests: { requestSha256: psai.requestSha256, denialSha256: psai.denialSha256 },
@@ -348,6 +371,12 @@ export async function runConnectedJourney(input) {
     fail(`CONNECTED_PSAI_BOUNDARY_DENIED:${psai.code ?? psai.state}`);
   }
 
+  // A HELD dependency is not a failure of the journey — it is the honest, recorded outcome.
+  // The connected journey therefore distinguishes "the chain ran and every handoff behaved
+  // as its provenance entitled" from "the dependency is closed". Both are successes; only
+  // the first is achievable while XRA-PS-01 stays HELD.
+  const dependencyClosed = psai.state === 'CANDIDATE';
+
   const connected = {
     schemaVersion: NET_REVENUE_CONNECTED_JOURNEY_SCHEMA,
     sourceMode,
@@ -355,6 +384,9 @@ export async function runConnectedJourney(input) {
     stageOrder: CONNECTED_JOURNEY_STAGES,
     stages,
     allStagesReconciled: stages.every((s) => s.reconciled === true),
+    // Explicit: a reconciled chain with a HELD dependency is a COMPLETE run, not a
+    // partial one. Never report the HELD state as an unfinished journey.
+    dependencyClosed,
     ks236: {
       planSha256: journey.planSha256,
       receiptSha256: journey.receiptSha256,

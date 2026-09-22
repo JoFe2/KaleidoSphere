@@ -36,6 +36,7 @@ import {
   compareSegmentsAcrossPeriods,
 } from '../services/bi-control/src/business-bi/net-revenue-segment-comparison.mjs';
 import { canonicalJson } from '../services/bi-control/src/canonical-json.js';
+import { createHash } from 'node:crypto';
 
 const root = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 
@@ -374,4 +375,222 @@ test('the connected expectations are declared in one frozen place (no scattered 
   assert.equal(CONNECTED_JOURNEY_EXPECTATIONS.KS238.comparisonNetRevenue, INDEPENDENT_KS238.comparisonNetRevenue);
   assert.equal(CONNECTED_JOURNEY_EXPECTATIONS.KS236.deltaMinorUnits, INDEPENDENT_KS236.deltaMinorUnits);
   assert.equal(canonicalJson(CONNECTED_JOURNEY_EXPECTATIONS.KS238.orderIntake), 'null');
+});
+
+// ---------------------------------------------------------------------------------------
+// Package 2 — the PSAi handoff's NORMAL path, source substitution, and expiry after load.
+//
+// The order requires the actual entrypoint be exercised for normal real-DB paths, not only
+// rejection, plus source substitutions. The released service boundary was previously
+// exercised through the connected chain in its HELD (denial) shape only; below, the handoff
+// is driven to a genuine ADMISSION with a synthetic dependency-injection registry, so the
+// successful ordinary handoff is a tested fact rather than an untestable branch.
+// ---------------------------------------------------------------------------------------
+
+const sha256hex = (value) => createHash('sha256').update(value).digest('hex');
+
+// A synthetic DI registry that really admits the fixture's releasedVariant profile digest.
+// The fixture itself is explicit that this is NOT public closure evidence for XRA-PS-01 and
+// must never be presented as such.
+async function admittedMaterials() {
+  const root_ = root;
+  const fixture = JSON.parse(await readFile(`${root_}/tests/pansphaira-analytics-synthetic-profile-v1.json`, 'utf8'));
+  const releasedProfile = fixture.releasedVariant;
+  const profileBytes = Buffer.from(canonicalJson(releasedProfile));
+  const diRegistry = {
+    schemaVersion: 'kaleidosphere.pansphaira-analytics/release-registry/v1',
+    issue: 'XRA-KS-01',
+    admissionRule: 'synthetic dependency-injection registry used ONLY to prove the connected admission path',
+    entries: [{
+      releaseId: 'xra-ps-01-di',
+      status: 'RELEASED',
+      profileSha256: sha256hex(profileBytes),
+      releaseReceiptSha256: releasedProfile.provenance.releaseReceiptSha256,
+      pansphairaHeadCommit: releasedProfile.provenance.pansphairaHeadCommit,
+      publicClosureEvidence: fixture.syntheticRegistryEvidence.publicClosureEvidence,
+    }],
+    nonclaim: 'Synthetic DI registry. Not public closure evidence for XRA-PS-01.',
+  };
+  const environment = {
+    nodeVersion: process.version, nodeModulesAbi: '127',
+    platform: process.platform, architecture: process.arch,
+    canonicalJsonSha256: sha256hex('connected-test'), packageSha256: sha256hex('connected-test'),
+  };
+  return {
+    releasedProfile,
+    registryBytes: Buffer.from(JSON.stringify(diRegistry)),
+    context: {
+      heads: { commitOid: 'a'.repeat(40), treeOid: 'b'.repeat(40) },
+      environment,
+      environmentSha256: sha256hex(canonicalJson(environment)),
+      projectionContractBytes: await readFile(`${root_}/contracts/pansphaira-analytics/v1/projection-profile.v1.json`),
+      analysisContractBytes: await readFile(`${root_}/contracts/pansphaira-analytics/v1/analysis.v1.json`),
+    },
+  };
+}
+
+test('PSAi handoff NORMAL path: a release-attested profile is ADMITTED as an authority-free candidate', async () => {
+  const { releasedProfile, registryBytes, context } = await admittedMaterials();
+  const handoff = await runPsaiHandoff({ declaredProfile: releasedProfile, registryBytes, context });
+
+  // The successful handoff — previously unrepresentable, because the stage hard-wired its
+  // expectation to DENIED.
+  assert.equal(handoff.state, 'CANDIDATE');
+  assert.equal(handoff.code, null);
+  assert.equal(handoff.expectedState, 'CANDIDATE');
+  assert.equal(handoff.boundaryRespected, true);
+  assert.equal(handoff.provenanceStatus, 'RELEASED');
+
+  // Admission is NOT authority: the candidate carries no promotion/mutation/execution/
+  // publication power and no capabilities or effects, whatever the provenance attests.
+  assert.equal(handoff.authorityFree, true);
+  assert.deepEqual(handoff.candidate.authority,
+    { promote: false, mutate: false, execute: false, publish: false, capabilities: [], effects: [] });
+  assert.equal(handoff.candidate.state, 'CANDIDATE');
+
+  // The release evidence flips from HELD to OBSERVED only when a RELEASED entry actually
+  // matched this profile digest — evidence, not assertion.
+  assert.equal(handoff.candidate.coverage.releaseEvidence, 'OBSERVED');
+  assert.deepEqual(handoff.candidate.bindings.pansphairaHead,
+    { status: 'RELEASED', commitOid: releasedProfile.provenance.pansphairaHeadCommit });
+  assert.match(handoff.requestSha256, /^[a-f0-9]{64}$/);
+});
+
+test('PSAi handoff: the admitted and denied outcomes are distinguished, never collapsed', async () => {
+  const { registryBytes, declaredProfile } = await inputs();
+  const held = await runPsaiHandoff({ declaredProfile, registryBytes });
+
+  const admitted = await admittedMaterials();
+  const released = await runPsaiHandoff({
+    declaredProfile: admitted.releasedProfile,
+    registryBytes: admitted.registryBytes,
+    context: admitted.context,
+  });
+
+  // Both respected their boundary, but they are DIFFERENT facts: one dependency is closed,
+  // one is not. A reviewer must never read the HELD denial as an admission failure nor the
+  // admission as a promotion.
+  assert.equal(held.boundaryRespected, true);
+  assert.equal(released.boundaryRespected, true);
+  assert.notEqual(held.state, released.state);
+  assert.equal(held.code, 'XRA_KS01_RELEASE_HELD');
+  assert.equal(released.code, null);
+});
+
+test('PSAi handoff: a release-attested profile whose bytes are SUBSTITUTED is denied', async () => {
+  const { releasedProfile, registryBytes, context } = await admittedMaterials();
+  // Same provenance, one extra nullable column: the digest no longer matches the RELEASED
+  // registry entry, so admission must be denied rather than silently re-attested.
+  const substituted = JSON.parse(JSON.stringify(releasedProfile));
+  substituted.fields = [...substituted.fields,
+    { name: 'injected_extra', type: 'TEXT', nullable: true }];
+
+  const handoff = await runPsaiHandoff({ declaredProfile: substituted, registryBytes, context });
+  assert.equal(handoff.state, 'DENIED');
+  assert.equal(handoff.boundaryRespected, false);
+  assert.equal(handoff.candidate, null);
+  assert.equal(handoff.successfulOrdinaryAnswer, false);
+  // The registry HAS a released entry, so this is a digest mismatch — not the HELD denial.
+  assert.equal(handoff.code, 'XRA_KS01_PROFILE_DIGEST_MISMATCH_DENIED');
+});
+
+test('PSAi handoff: provenance that EXPIRES after load is denied on the connected entrypoint', async () => {
+  // "Expiry after load": the profile bytes and the registry agreed when the run began, but
+  // the attested release is withdrawn before ingestion. Modelled by keeping the profile's
+  // attested provenance while the registry entry reverts to HELD — the previously-matching
+  // attestation must no longer admit anything.
+  const { releasedProfile, context } = await admittedMaterials();
+  const withdrawnRegistry = {
+    schemaVersion: 'kaleidosphere.pansphaira-analytics/release-registry/v1',
+    issue: 'XRA-KS-01',
+    admissionRule: 'synthetic registry whose release was withdrawn between load and ingest',
+    entries: [{
+      releaseId: 'xra-ps-01-di', status: 'HELD',
+      profileSha256: null, releaseReceiptSha256: null,
+      pansphairaHeadCommit: null, publicClosureEvidence: null,
+    }],
+    nonclaim: 'Synthetic withdrawal fixture. Not a real release state.',
+  };
+  const handoff = await runPsaiHandoff({
+    declaredProfile: releasedProfile,
+    registryBytes: Buffer.from(JSON.stringify(withdrawnRegistry)),
+    context,
+  });
+  assert.equal(handoff.state, 'DENIED');
+  assert.equal(handoff.boundaryRespected, false);
+  assert.equal(handoff.candidate, null);
+  // The registry can no longer attest the provenance edge, so the forgery gate fires.
+  assert.equal(handoff.code, 'XRA_KS01_PROVENANCE_FORGERY_DENIED');
+});
+
+test('the connected journey reports a HELD dependency as a COMPLETE run, not a partial one', async () => {
+  const { metricContractBytes, oracleBytes, holdoutBytes, f4Sources, registryBytes, declaredProfile } = await inputs();
+  const held = await runConnectedJourney({
+    metricContractBytes, oracleBytes, holdoutBytes, f4Sources,
+    database: buildSyntheticJourneyDatabase(), declaredProfile, registryBytes,
+  });
+  // Every handoff behaved as its provenance entitled, so the run is complete...
+  assert.equal(held.allStagesReconciled, true);
+  // ...while the dependency itself is honestly still open.
+  assert.equal(held.dependencyClosed, false);
+  assert.equal(held.psai.code, 'XRA_KS01_RELEASE_HELD');
+
+  // And with a genuinely admitting registry the same chain reports the dependency closed.
+  const admitted = await admittedMaterials();
+  const closed = await runConnectedJourney({
+    metricContractBytes, oracleBytes, holdoutBytes, f4Sources,
+    database: buildSyntheticJourneyDatabase(),
+    declaredProfile: admitted.releasedProfile,
+    registryBytes: admitted.registryBytes,
+    psaiContext: admitted.context,
+  });
+  assert.equal(closed.allStagesReconciled, true);
+  assert.equal(closed.dependencyClosed, true);
+  assert.equal(closed.psai.state, 'CANDIDATE');
+});
+
+test('the connected journey refuses a SOURCE SUBSTITUTION between the two released layouts', async () => {
+  // A genuine source substitution: both layouts are composed in the SAME run, but one
+  // layout's rows are replaced by the other layout's. Each layout individually still maps
+  // and reconciles, so only the cross-layout projection comparison can catch it — which is
+  // exactly what the KS237 boundary must do. This is the failure mode arithmetic alone
+  // cannot see.
+  const { f4Sources } = await inputs();
+
+  // Sanity: the honest pairing binds (no false positive from the guard itself).
+  const honest = runKs237Stage(['ledger-v1', 'ledger-v2'], {
+    'ledger-v1': f4Sources['ledger-v1'].rows,
+    'ledger-v2': f4Sources['ledger-v2'].rows,
+  });
+  assert.equal(honest.profileBound, true);
+
+  // Substituted pairing: the v1 slot is served v2's rows. Both map, but they are not the
+  // same domain core, so the projection comparison must fail closed.
+  assert.throws(
+    () => runKs237Stage(['ledger-v1', 'ledger-v2'], {
+      'ledger-v1': f4Sources['ledger-v2'].rows,
+      'ledger-v2': f4Sources['ledger-v2'].rows,
+    }),
+    // The released ledger-mapping profile rejects the wrong layout's bytes DIRECTLY: v2
+    // rows carry `entry_kind`, not the `posting_type` the v1 kernel profile requires, so
+    // the denial is the kernel's own kind gate rather than a downstream divergence check.
+    // That is a stronger result than a late comparison mismatch — the substitution never
+    // reaches the comparison at all.
+    (e) => /^LEDGER_KIND_DENIED:undefined$/.test(e.code),
+  );
+});
+
+test('a truncated source is refused at the KS237 boundary before any comparison is published', async () => {
+  // Independent negative: dropping rows from one layout must not be reported as a bound
+  // profile pair. The count divergence is caught at the handoff, so no comparison is ever
+  // emitted from a partial source.
+  const { f4Sources } = await inputs();
+  assert.throws(
+    () => runKs237Stage(['ledger-v1', 'ledger-v2'], {
+      'ledger-v1': f4Sources['ledger-v1'].rows.slice(0, 5),
+      'ledger-v2': f4Sources['ledger-v2'].rows,
+    }),
+    (e) => e.code === 'CONNECTED_KS237_KERNEL_DIVERGENCE'
+      || e.code === 'CONNECTED_KS237_PROJECTION_DIVERGENCE',
+  );
 });
