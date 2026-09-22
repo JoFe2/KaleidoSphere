@@ -1,3 +1,46 @@
+# KS238 current-Main integration of the reviewed receiving-side candidate
+
+Reviewed candidate head: `d54709b73a1c3c0caf2eada22c520d6082456e67` (retained branch
+`dependency/ks238-reviewed`), based on `db0c0c4ea4d6e1ba213d7bfdd2902de43e1918d8`.
+New main/base: public Main `23d30217a890fd6c6025ef41c5e9474912d448f1` (PR #243, guided
+local net-revenue choices and dataset views).
+
+The four candidate commits are replayed on the new base in dependency order, preserving
+their exact predecessor reference. No capability is added, dropped, relabelled or
+widened: the released guided-entry work of #243 and the connected/guided journey suites
+are retained byte-identical, and the KS238 receiving surface is re-bound to the
+integrated tree. This is a branch reconstruction onto current Main, not a claim that a
+new real-database run occurred and not an issue-closure claim.
+
+Shared source-map/test/provenance bindings were resolved deliberately. `SOURCE-MAP.json`
+is regenerated from the current-Main table with the repository's own surface updaters in
+dependency order (KS149 PG-C1 live matrix, KS228/KS149 delivery correction, KS150 C2,
+guided journey, KS238 receiving surface) plus a convention-matching residual re-digest
+for the two changed entries no surface updater owns:
+`scripts/run-business-bi-falsification-clean-room.mjs` (its frozen-package
+reconstruction gained the KS238 canonical test registration) and
+`verification/postgresql/postgresql-c1-evidence-v1.json` (re-minted because its
+`release.manifestSha256` binds `package.json`, whose bytes this increment extends; the
+C2 real-run provenance records the historical versus current identity axes separately).
+No additional repository file is changed by the integration itself.
+
+Every replayed commit is source-map consistent and the registration is idempotent:
+re-running all five surface updaters followed by the residual re-digest leaves the map
+byte-stable. The historical C1/C2 execution evidence is preserved on its own axis; no
+historical binding was silently rewritten and no byte check was removed.
+
+Integration-head evidence (see the sibling `HANDOFF.md`/`TASKS.md` for commands and raw
+results): canonical `npm test` at the integrated tree is 1396/1396 PASS with 0 failures
+(current-Main baseline 1359/1359, delta exactly the 37 KS238 receiving-surface tests);
+the affected source-map / legacy-identity census / C1 / C2 / KS238 family is 226/226;
+`npm run build` and `scripts/check-canonical-test-topology.mjs` are green; the real KS238
+CLI reports orders 3 (OPEN 2 / FULFILLED 1), customers ACTIVE 2 / ON_HOLD 1 and the
+separately executed released net-revenue comparison 66000 vs 45000 (delta 21000) with
+`separation` AVAILABLE and `datasetsAreDistinct`; the CLI negative run refuses 8/8; and a
+disposable `git archive` tree with no `.git` and no producer sibling passes 37/37 with an
+honest `commitBinding` UNRESOLVED, tamper-denied provisioning and a fail-closed absent
+producer.
+
 # PR #232 serial reconciliation after #230
 
 Original PR head: `880d250bcc5cd9c7152800b06ee715aa559544b3`.
