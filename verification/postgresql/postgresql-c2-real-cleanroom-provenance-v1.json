@@ -64,13 +64,39 @@
   },
   "bindings": {
     "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
-    "c1CertificateSha256": "779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb",
-    "c1CertificateIdentitySha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b",
+    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
     "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
     "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
     "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
     "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
     "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee"
+  },
+  "identityMigration": {
+    "recordKind": "HISTORICAL_VERSUS_CURRENT_IDENTITY_MIGRATION",
+    "historicalBindings": {
+      "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+      "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
+      "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+      "metricContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+      "holdoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+      "oracleSha256": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+      "planSha256": "90bca7ef18339928f1dd70bcfc5288e853045bd5f08776c700a7c863ec4526a8",
+      "operationSha256": "1a538833c6cd6adefb09019a868ccf87dc46c45e4620c0fc6f21daad0d2909ee"
+    },
+    "currentBindings": {
+      "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
+      "c1CertificateSha256": "779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb",
+      "c1CertificateIdentitySha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b"
+    },
+    "driftedBindings": [
+      "c1CertificateSha256",
+      "c1CertificateIdentitySha256"
+    ],
+    "cause": "After the tested head, the C1 evidence file verification/postgresql/postgresql-c1-evidence-v1.json was itself re-minted: its release.manifestSha256 moved 5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310 -> 85ca0ccac0fa41d937e2ce62768bff6b1cfe3b2ec3d04886343fcd905646c401 (package.json bytes) and its own certificateSha256 31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868 -> 9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b, so the file bytes moved 859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6 -> 779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb. The KS238 commit 40f87f4467630cc6c2d9ea3d28fd9dfe6a42d435 (the agent that authored the receiving-side change) silently rewrote THIS record's bindings to the new values, which made a historical observation claim to have bound bytes that did not exist when it ran.",
+    "remediation": "The historical bindings are restored to what the real run actually bound. The current values are stated on their own axis rather than substituted into the historical one. No historical evidence, raw retained byte, or re-run result is re-minted or relabelled.",
+    "currentC1EvidencePath": "verification/postgresql/postgresql-c1-evidence-v1.json",
+    "nonClaim": "This records a migration of identity, not a re-execution. The real VM clean-room result (COMPLETE, oracleEquality EXACT, READ_ONLY VERIFIED) is unchanged and still describes the historical bytes; it is not claimed to have been re-run against the current C1 evidence."
   },
   "execution": {
     "state": "COMPLETE",
@@ -144,8 +170,9 @@
     "path": "verification/postgresql-c2-safe-aggregate-v1.json",
     "sha256": "1d1ca03819f659cffc014d38b29b4cbab5890197a960a69ed003bb98b6affc7c",
     "certificateSha256": "ea335bbc0d0d18dd145420e733954bd57b6877aedce8739b17f97a407f634e76",
-    "state": "UNCHANGED",
-    "note": "The committed C2 certificate remains the byte-deterministic output of the source-local clean-room (scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs) and is not re-minted by this registration. The real-run evidence is registered as separate, later provenance bound to the same certified C1 substrate and fixture digests; nothing here relabels the certificate or the frozen C1 bytes."
+    "state": "CHANGED_AFTER_TESTED_HEAD",
+    "note": "The certificate is the byte-deterministic output of the source-local clean-room (scripts/run-postgresql-c2-safe-aggregate-clean-room.mjs) and is NOT re-minted by this registration in the sense of a new clean-room run. It was, however, edited after the tested head by the KS238 commit to carry the current C1 identity, which this record previously described as UNCHANGED. That claim was false; it is corrected here. The real-run evidence remains bound to the historical C1 substrate, and no clean-room result is re-claimed against the current certificate bytes.",
+    "historicalNote": "At the tested head and through the C2 correction endpoint the certificate bytes were 630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b with identity 959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496. The KS238 commit 40f87f4467630cc6c2d9ea3d28fd9dfe6a42d435 re-bound the C1 identity lines inside it, so the certificate bytes are now 1d1ca03819f659cffc014d38b29b4cbab5890197a960a69ed003bb98b6affc7c with identity ea335bbc0d0d18dd145420e733954bd57b6877aedce8739b17f97a407f634e76."
   },
   "integration": {
     "recordKind": "SQUASH_INTEGRATION_EQUIVALENCE",
@@ -194,5 +221,10 @@
     "No credential, connection string, or raw row value is reproduced here; the secret stays on the file-secret route.",
     "If authentic evidence is insufficient for any gate, that gate stays open with its own verifiable resume trigger; nothing is claimed delivered."
   ],
-  "provenanceSha256": "342ac1d037834e1b70aa22be9273d89097205acac4d9027a3168421783a9416d"
+  "provenanceSha256": "30d1a55ffed2ccb36b31293c5d64557671c690db3d337cb4d2a6890363d0a85b",
+  "historicalProvenanceSha256": {
+    "atC2Integration33beed8": "4686d5e91a2dff5fd1e94efb137d4691cdba10eff0be61a5c2c5e0f3e56686c0",
+    "atC2CorrectionEndpoint4bf5575": "2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5",
+    "asAuthoredByKs23840f87f4ThroughE7dff54BeforeMigration": "342ac1d037834e1b70aa22be9273d89097205acac4d9027a3168421783a9416d"
+  }
 }

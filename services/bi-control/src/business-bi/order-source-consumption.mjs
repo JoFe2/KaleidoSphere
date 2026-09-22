@@ -40,12 +40,13 @@
 // publication or public-write authority, and it is not the complete KS238 capability.
 
 import { createHash } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import {
   NET_REVENUE_SEGMENT_COMPARISON_SCHEMA,
+  SYNTHETIC_SEGMENT_SOURCE,
   PERIODS as NET_REVENUE_COMPARISON_PERIODS,
   compareSegmentsAcrossPeriods,
   buildSegmentComparisonReport,
@@ -67,7 +68,27 @@ export const PAN_ORDER_SOURCE_DEPENDENCY = Object.freeze({
   parentCandidateCommit: '2fb96e3f8ef599459da7f2ca8bd087c463366fc1',
   runtimeCommit: 'a1b65af354e17f206bc7bc1c5df29cdcb11bef6f',
   expectedModuleSha256: 'a9b3e0d28133c0f2a2aa2a1b7a630693a50aea993814993c23e3d4c573d2b917',
-  expectedRuntimeSha256: null, // filled at release time; null means "not yet pinned"
+  // The producer wrapper IMPORTS its real implementation from
+  // `../../dist/packages/contracts/src/index.js`. Pinning only the wrapper bytes therefore
+  // does NOT bind the executable reader: an isolated directory can carry the exact genuine
+  // wrapper plus a substituted runtime and be consumed as if it were the pinned producer.
+  //
+  // This is the ARTIFACT-BASED closure pin. It is the content digest of the producer's
+  // compiled runtime directory (every `.js` under
+  // `dist/packages/contracts/src`, path-keyed in sorted order), so it is verifiable from
+  // bytes alone: no private Git history, no network, no published release required. The
+  // digest is computed from the actual pinned build, and the git blob check below remains
+  // an ADDITIONAL, optional confirmation rather than the identity itself.
+  runtimeClosureRoot: 'dist/packages/contracts/src',
+  expectedRuntimeClosureSha256: 'a4db88ea0b8dc08024992e433d5742fa01a7b24f463d281d3a5beed9fe8dd866',
+  expectedRuntimeClosureFileCount: 156,
+  // The two release-critical members of the closure, named explicitly so a caller can
+  // report WHICH byte drifted instead of only that something did.
+  runtimeCriticalFiles: Object.freeze({
+    'index.js': '06af2801509b54af28dae3a380fa5079404b4a761c7a9f5e0632ffb517f5a6eb',
+    'erp-read-connector.js': '63d592d8b9ba194bba1927df92d09ffc8eb60c8070f47f529fd31698e701fe82',
+  }),
+  expectedRuntimeSha256: '06af2801509b54af28dae3a380fa5079404b4a761c7a9f5e0632ffb517f5a6eb',
   producerEntryPoints: Object.freeze({
     create: 'createKs238OrderSourceHandoff',
     rebind: 'rebindSerializedOrderSource',
@@ -76,8 +97,14 @@ export const PAN_ORDER_SOURCE_DEPENDENCY = Object.freeze({
   // resolved through a private Git history, an absolute host path baked into source, or a
   // package registry the CI machine may not have.
   defaultCandidates: Object.freeze([
-    'dependencies/pansphaira/order-source-handoff.mjs',
+    // FIRST the pinned sibling checkout when it is present (it carries a Git object
+    // database, so the commit binding can be a positive MATCH), THEN the pinned artifact
+    // provision, which needs no Git history at all. Both are integrity-checked against the
+    // same module + runtime-closure pins, so a provisioned tree is a first-class identity,
+    // not a fallback that weakens the check. Canonical qualification works with EITHER
+    // present and does NOT require the unpublished sibling.
     '../PANSPHAIRA-source/src/ks238/order-source-handoff.mjs',
+    'dependencies/pansphaira/src/ks238/order-source-handoff.mjs',
   ]),
   scanBases: Object.freeze([
     'KaleidoSphere',
@@ -104,6 +131,73 @@ export const ORDER_SOURCE_CONSUMPTION_NONCLAIMS = Object.freeze([
 // ------------------------------------------------ producer locator + integrity
 
 const sha256Hex = (value) => createHash('sha256').update(value).digest('hex');
+
+/**
+ * Compute the ARTIFACT-BASED identity of the producer's executable runtime closure.
+ *
+ * The producer wrapper does not implement the reader; it imports it. So the bytes that
+ * decide what a consumption actually REPORTS are the compiled runtime files, and an
+ * identity that pins only the wrapper is not an identity of the executed code.
+ *
+ * This walks every `.js` file under `runtimeClosureRoot` beside the located wrapper,
+ * keyed by its path relative to the producer root, in sorted order, and hashes the
+ * resulting map. It needs NO Git history: the same bytes on any host produce the same
+ * digest, so the check is portable and the portable artifact digest is the identity.
+ *
+ * Returns an explicit verdict; a missing directory is `UNAVAILABLE` (honest absence,
+ * e.g. an unbuilt checkout), never a silent pass.
+ */
+export function computeRuntimeClosureSha256({ moduleFile, dependency = PAN_ORDER_SOURCE_DEPENDENCY } = {}) {
+  // The wrapper lives at <producerRoot>/src/ks238/order-source-handoff.mjs and imports
+  // '../../dist/...'. Walk up from the wrapper's own directory to that producer root, so
+  // the closure is measured beside the ACTUAL resolved module rather than from any other
+  // repository a caller happens to name.
+  const producerRoot = path.resolve(path.dirname(moduleFile), '..', '..');
+  const closureRoot = path.resolve(producerRoot, dependency.runtimeClosureRoot);
+  if (!existsSync(closureRoot)) {
+    return { ok: false, state: 'UNAVAILABLE', code: 'PAN_ORDER_SOURCE_RUNTIME_CLOSURE_MISSING', closureRoot };
+  }
+  const files = [];
+  const walk = (dir) => {
+    let entries;
+    try { entries = readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of [...entries].sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0))) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.js')) files.push(full);
+    }
+  };
+  walk(closureRoot);
+  if (files.length === 0) {
+    return { ok: false, state: 'UNAVAILABLE', code: 'PAN_ORDER_SOURCE_RUNTIME_CLOSURE_EMPTY', closureRoot };
+  }
+  const partials = {};
+  let criticalMismatch = null;
+  for (const file of files) {
+    const rel = path.relative(producerRoot, file).split(path.sep).join('/');
+    const digest = sha256Hex(readFileSync(file));
+    partials[rel] = digest;
+    const criticalName = Object.keys(dependency.runtimeCriticalFiles ?? {})
+      .find((name) => rel === `${dependency.runtimeClosureRoot}/${name}`);
+    if (criticalName !== undefined && digest !== dependency.runtimeCriticalFiles[criticalName]) {
+      criticalMismatch = { file: rel, actual: digest, expected: dependency.runtimeCriticalFiles[criticalName] };
+    }
+  }
+  const closureSha256 = sha256Hex(JSON.stringify(partials));
+  const expected = dependency.expectedRuntimeClosureSha256;
+  return {
+    ok: closureSha256 === expected && criticalMismatch === null,
+    state: closureSha256 === expected && criticalMismatch === null ? 'AVAILABLE' : 'DENIED',
+    code: closureSha256 === expected && criticalMismatch === null
+      ? 'OK'
+      : 'PAN_ORDER_SOURCE_RUNTIME_CLOSURE_DENIED',
+    closureRoot,
+    fileCount: files.length,
+    closureSha256,
+    expectedClosureSha256: expected,
+    criticalMismatch,
+  };
+}
 
 function locateOrderSourceModuleFile(explicitPath, repoRoot) {
   if (typeof explicitPath === 'string' && explicitPath.length > 0) {
@@ -194,6 +288,27 @@ export async function resolveOrderSourceHandoffModule({
       dependency: PAN_ORDER_SOURCE_DEPENDENCY,
     };
   }
+  // FINDING 3: the wrapper's own bytes are pinned above, but the wrapper does not
+  // implement the reader -- it imports it from the compiled runtime. Verify the FULL
+  // runtime closure BEFORE importing, so a genuine wrapper carrying a substituted
+  // implementation is refused instead of consumed. This runs pre-import by construction:
+  // no producer code has executed at this point.
+  const runtimeClosure = computeRuntimeClosureSha256({
+    moduleFile: located.file,
+    dependency: PAN_ORDER_SOURCE_DEPENDENCY,
+  });
+  if (!runtimeClosure.ok) {
+    return {
+      ok: false,
+      state: runtimeClosure.state,
+      code: runtimeClosure.code,
+      file: located.file,
+      moduleSha256,
+      commitBinding,
+      runtimeClosure,
+      dependency: PAN_ORDER_SOURCE_DEPENDENCY,
+    };
+  }
   const producer = await import(pathToFileURL(located.file).href);
   for (const name of Object.values(PAN_ORDER_SOURCE_DEPENDENCY.producerEntryPoints)) {
     if (typeof producer[name] !== 'function') {
@@ -273,10 +388,21 @@ export function createRetainedSourceAuthority({
   } catch {
     return { ok: false, state: 'DENIED', code: 'RETAINED_CONTRACT_MALFORMED', file: contractPath };
   }
+  // FINDING 2: freezing the authority record stops FIELD reassignment, but the retained
+  // source bytes are a Buffer -- a mutable object whose freeze() only blocks property
+  // changes, not writes into the bytes themselves. In-place mutation (e.g.
+  // `authority.sourceBytes.write('2026-01', offset)`) therefore changed what the producer
+  // re-read while `sourceBytesSha256` kept asserting the ORIGINAL byte identity, so a
+  // forged payload could be consumed as if it were the retained one.
+  //
+  // The fix is to consume an IMMUTABLE COPY, and to make the identity a property of the
+  // copy that is recomputed from the copy's own bytes. A caller holding a reference to the
+  // buffer it passed in can no longer reach the bytes this authority consumes.
+  const retainedBytes = Buffer.from(sourceBytes); // deliberate copy: never the caller's buffer
   const authority = {
     sourceLabel,
-    sourceBytes,
-    sourceBytesSha256: sha256Hex(sourceBytes),
+    sourceBytes: retainedBytes,
+    sourceBytesSha256: sha256Hex(retainedBytes),
     contract,
     contractSha256: sha256Hex(contractBytes),
     now,
@@ -353,6 +479,24 @@ export async function consumeOrderSourceHandoff({
   producerRepoRoot = null,
 } = {}) {
   const authority = assertRetainedAuthority(retainedAuthority);
+  // FINDING 2 (consume-time half): re-derive the digest from the bytes we are ABOUT to
+  // hand the producer and compare it to the identity the authority declares. This closes
+  // the gap between "the retained identity" and "the bytes actually consumed" for ANY
+  // route that could still reach the bytes -- a subclassed/aliased buffer, a caller that
+  // reached the copy through another reference, or a future authority shape. A mismatch is
+  // a hard DENIAL naming both digests, never a silent consume.
+  const consumedBytesSha256 = sha256Hex(authority.sourceBytes);
+  if (consumedBytesSha256 !== authority.sourceBytesSha256) {
+    return {
+      outcome: 'DENIED',
+      code: 'RETAINED_SOURCE_BYTES_MUTATED',
+      state: 'DENIED',
+      reason: 'The retained source bytes no longer match the retained byte identity.',
+      declaredSourceBytesSha256: authority.sourceBytesSha256,
+      consumedSourceBytesSha256: consumedBytesSha256,
+      retainedSourceLabel: authority.sourceLabel,
+    };
+  }
   const resolved = await resolveOrderSourceHandoffModule({
     repoRoot,
     explicitPath: explicitModulePath,
@@ -601,7 +745,24 @@ export function buildOrderSourceMissingSemantics(consumption) {
 
 // ---------------------------------------------- supported CURRENT-ORDER comparison
 
-const DEFAULT_SUPPORTED_ORDER_STATUSES = Object.freeze(['CONFIRMED', 'PENDING']);
+/**
+ * FINDING 1: the default supported-order vocabulary must be the READER'S OWN vocabulary.
+ *
+ * The released ERP reader validates orderStatus against exactly ['OPEN', 'FULFILLED',
+ * 'CANCELLED'] (see the producer's erp-read-connector contract) and customerStatus against
+ * exactly ['ACTIVE', 'ON_HOLD']. The previous default -- ['CONFIRMED', 'PENDING'] -- was a
+ * vocabulary this reader can NEVER emit, so the shipped positive journey "compared" three
+ * orders against a bill that could only ever be empty: supportedOrderCount 0, byPeriod {},
+ * and every real order EXCLUDED as unsupported. That is a fail-closed claim, not a user
+ * journey, and it reported the reader's actual facts as unusable.
+ *
+ * The default is therefore derived from what the reader DECLARES, and the receiver keeps
+ * `supportedStatuses` overridable so a caller can still narrow it deliberately.
+ */
+const READER_ORDER_STATUS_VOCABULARY = Object.freeze(['OPEN', 'FULFILLED', 'CANCELLED']);
+const READER_CUSTOMER_STATUS_VOCABULARY = Object.freeze(['ACTIVE', 'ON_HOLD']);
+const DEFAULT_SUPPORTED_ORDER_STATUSES = READER_ORDER_STATUS_VOCABULARY;
+const DEFAULT_SUPPORTED_CUSTOMER_STATUSES = READER_CUSTOMER_STATUS_VOCABULARY;
 
 /**
  * The SUPPORTED CURRENT-ORDER comparison.
@@ -627,6 +788,7 @@ const DEFAULT_SUPPORTED_ORDER_STATUSES = Object.freeze(['CONFIRMED', 'PENDING'])
 export function compareSupportedCurrentOrders({
   consumption,
   supportedStatuses = DEFAULT_SUPPORTED_ORDER_STATUSES,
+  supportedCustomerStatuses = DEFAULT_SUPPORTED_CUSTOMER_STATUSES,
 } = {}) {
   if (!consumption || consumption.outcome !== 'CONSUMED') {
     return {
@@ -665,10 +827,22 @@ export function compareSupportedCurrentOrders({
   // Period distribution, restricted to supported statuses and to the periods the reader
   // itself reported. A fact with no period is counted under an explicit UNKNOWN bucket
   // rather than being dropped or guessed into a period.
+  const supportedCustomerSet = new Set(
+    (Array.isArray(supportedCustomerStatuses) ? supportedCustomerStatuses : [])
+      .map((s) => String(s)),
+  );
+
+  // FINDING 1 (composition half): the period distribution and the customer-segment
+  // distribution are computed over the reader's REAL orders -- the same orders the census
+  // above is derived from -- keyed by the reader's own EVALUATED period fact, not by a
+  // second, narrower status filter that could silently empty them. The census, the period
+  // spread and the segment spread are therefore three views of ONE evidenced fact set.
   const byPeriod = {};
+  const byCustomerSegment = {};
   let supportedOrderCount = 0;
   let unsupportedOrderCount = 0;
   let unknownPeriodCount = 0;
+  let unknownCustomerStatusCount = 0;
   const countedOrderIds = [];
   for (const fact of facts) {
     const status = fact?.order?.orderStatus;
@@ -680,19 +854,52 @@ export function compareSupportedCurrentOrders({
       && typeof fact.order.period.month === 'string' && fact.order.period.month.length > 0
       ? fact.order.period.month
       : null;
-    if (!supportedSet.has(status)) {
-      unsupportedOrderCount += 1;
-      continue;
-    }
-    supportedOrderCount += 1;
+    // The reader's own customer fact. `UNAVAILABLE` is the producer's explicit
+    // missing-customer evidence and stays explicit here -- it is never folded into a
+    // segment, and never dropped.
+    const rawCustomerStatus = fact?.customerStatus;
+    const customerStatus = typeof rawCustomerStatus === 'string' && rawCustomerStatus.length > 0
+      ? rawCustomerStatus
+      : null;
+    const isSupportedStatus = supportedSet.has(status);
+    if (isSupportedStatus) supportedOrderCount += 1;
+    else unsupportedOrderCount += 1;
+    // Period and segment are reported for EVERY observed order, including orders in a
+    // status outside the supported set: the reader evidenced their period and their
+    // customer, and suppressing that because of a status choice would be the same
+    // empty-the-evidence defect in a different place. `totals.supportedOrderCount` and
+    // `.unsupportedOrderCount` still state the supported/unsupported split explicitly.
     const bucket = period ?? 'UNKNOWN_PERIOD';
     if (period === null) unknownPeriodCount += 1;
-    byPeriod[bucket] = byPeriod[bucket] ?? { period: bucket, count: 0 };
+    byPeriod[bucket] = byPeriod[bucket] ?? { period: bucket, count: 0, orderIds: [] };
     byPeriod[bucket].count += 1;
-    countedOrderIds.push(fact?.order?.orderId ?? null);
+    byPeriod[bucket].orderIds.push(fact?.order?.orderId ?? null);
+
+    const segment = customerStatus ?? 'UNKNOWN_CUSTOMER_STATUS';
+    if (customerStatus === null) unknownCustomerStatusCount += 1;
+    const segmentSupported = supportedCustomerSet.size === 0
+      ? customerStatus !== null
+      : supportedCustomerSet.has(customerStatus);
+    byCustomerSegment[segment] = byCustomerSegment[segment] ?? {
+      customerStatus: segment,
+      count: 0,
+      supported: segmentSupported,
+      orderIds: [],
+    };
+    byCustomerSegment[segment].count += 1;
+    byCustomerSegment[segment].orderIds.push(fact?.order?.orderId ?? null);
+
+    if (isSupportedStatus) countedOrderIds.push(fact?.order?.orderId ?? null);
   }
   const byPeriodSorted = Object.freeze(Object.fromEntries(
-    Object.keys(byPeriod).sort().map((k) => [k, Object.freeze(byPeriod[k])]),
+    Object.keys(byPeriod).sort().map((k) => [k, Object.freeze({
+      ...byPeriod[k], orderIds: Object.freeze(byPeriod[k].orderIds),
+    })]),
+  ));
+  const byCustomerSegmentSorted = Object.freeze(Object.fromEntries(
+    Object.keys(byCustomerSegment).sort().map((k) => [k, Object.freeze({
+      ...byCustomerSegment[k], orderIds: Object.freeze(byCustomerSegment[k].orderIds),
+    })]),
   ));
 
   const totalObserved = observedStatuses.reduce((sum, s) => sum + census[s], 0);
@@ -716,12 +923,20 @@ export function compareSupportedCurrentOrders({
     )),
     byPeriod: byPeriodSorted,
     knownPeriods: Object.freeze(Object.keys(byPeriodSorted).filter((k) => k !== 'UNKNOWN_PERIOD')),
+    // The customer-segment composition, from the reader's own customer fact. This is the
+    // "customer segment" half of the composition: the same evidenced orders as the census,
+    // grouped by the status the customer reader actually reported.
+    byCustomerSegment: byCustomerSegmentSorted,
+    knownCustomerStatuses: Object.freeze(Object.keys(byCustomerSegmentSorted)
+      .filter((k) => k !== 'UNKNOWN_CUSTOMER_STATUS')),
+    supportedCustomerStatuses: Object.freeze([...supportedCustomerSet].sort()),
     totals: Object.freeze({
       supportedOrderCount,
       unsupportedOrderCount,
       totalObserved,
       supportedCensusTotal,
       unknownPeriodCount,
+      unknownCustomerStatusCount,
     }),
     countedOrderIds: Object.freeze(countedOrderIds),
     // Explicit separation from revenue: no monetary or quantity value exists here at all.
@@ -743,14 +958,294 @@ export function compareSupportedCurrentOrders({
  * `netRevenue` is read from the RELEASED segment-comparison output, carried through
  * verbatim, and is clearly marked as a value this handoff does not own.
  */
-export function buildOrderVsRevenueSeparation({ currentOrderComparison, netRevenueReport }) {
+// ------------------------------------------- released net-revenue execution binding
+
+// FINDING 1 (revenue half, hard part). A released-LOOKING object with a self-consistent
+// digest is NOT evidence that the released module executed. The parent's exact reproducer
+// is `{schemaVersion, current:{netRevenue:12345}, comparison:{netRevenue:11000},
+// source:{sourceRelation}, nonclaims:['not real']}`: every "public label" the previous
+// revision demanded, plus a digest `comparisonDigest` recomputes -- and it was published
+// as AVAILABLE. Public labels plus self-consistent hashes are not execution evidence.
+//
+// The published comparison is therefore bound to ACTUAL EXECUTION in exactly one of two
+// ways, and neither is a caller-settable field:
+//
+//   1. the candidate object is the one `composeReleasedNetRevenueComparison` returned in
+//      this process (recorded below in a private WeakMap), or
+//   2. the caller supplies the SEPARATELY RETAINED source rows, and re-executing the
+//      released module over those rows reproduces the candidate digest exactly.
+const RELEASED_COMPARISON_EXECUTIONS = new WeakMap();
+
+const releasedComparisonModule = (released) => ({
+  comparisonDigest,
+  compareSegmentsAcrossPeriods,
+  buildSegmentComparisonReport,
+  ...(released ?? {}),
+});
+
+/**
+ * The SHAPE + DIGEST half of attestation: the released schema tag, the released provenance
+ * declaration and non-claims attached by `buildSegmentComparisonReport`, safe-integer
+ * period nets, and a digest the released module's own `comparisonDigest` reproduces.
+ *
+ * This is necessary but NOT sufficient: it says the object is well-formed and
+ * self-consistent, never that the released module produced it. Execution binding is a
+ * separate step (see `attestReleasedNetRevenueComparison`).
+ */
+function inspectReleasedComparisonShape(report, mod) {
+  if (!report || typeof report !== 'object' || Array.isArray(report)) {
+    return { ok: false, state: 'DENIED', code: 'NET_REVENUE_RELEASED_COMPARISON_REQUIRED' };
+  }
+  if (report.schemaVersion !== NET_REVENUE_SEGMENT_COMPARISON_SCHEMA
+    && report.schema !== NET_REVENUE_SEGMENT_COMPARISON_SCHEMA) {
+    return {
+      ok: false,
+      state: 'DENIED',
+      code: 'NET_REVENUE_RELEASED_SCHEMA_DENIED',
+      observed: report.schemaVersion ?? report.schema ?? null,
+      expected: NET_REVENUE_SEGMENT_COMPARISON_SCHEMA,
+    };
+  }
+  if (!Number.isSafeInteger(report.current?.netRevenue)
+    || !Number.isSafeInteger(report.comparison?.netRevenue)) {
+    return { ok: false, state: 'DENIED', code: 'NET_REVENUE_RELEASED_PERIODS_DENIED' };
+  }
+  let digest;
+  try {
+    digest = mod.comparisonDigest(report);
+  } catch (error) {
+    return {
+      ok: false,
+      state: 'DENIED',
+      code: 'NET_REVENUE_RELEASED_DIGEST_REFUSED',
+      message: String(error?.message ?? error),
+    };
+  }
+  // `comparisonDigest` is the released module's own digest of ANY object, so a bare
+  // `{current, comparison}` stub recomputes to a matching digest. What a genuine released
+  // report carries because `buildSegmentComparisonReport` attached it: the released
+  // `source` declaration and the released non-claims. Require them so an ad-hoc object
+  // cannot even reach the execution-binding step.
+  if (report.source?.sourceRelation !== SYNTHETIC_SEGMENT_SOURCE.sourceRelation
+    || !Array.isArray(report.nonclaims) || report.nonclaims.length === 0) {
+    return {
+      ok: false,
+      state: 'DENIED',
+      code: 'NET_REVENUE_RELEASED_PROVENANCE_DENIED',
+      reason: 'A released comparison carries the released source declaration and non-claims.',
+      observed: {
+        sourceRelation: report.source?.sourceRelation ?? null,
+        nonclaims: Array.isArray(report.nonclaims) ? report.nonclaims.length : null,
+      },
+    };
+  }
+  const declared = typeof report.digest === 'string' ? report.digest : null;
+  if (declared !== null && declared !== digest) {
+    return {
+      ok: false,
+      state: 'DENIED',
+      code: 'NET_REVENUE_RELEASED_DIGEST_MISMATCH',
+      declaredDigest: declared,
+      recomputedDigest: digest,
+    };
+  }
+  return {
+    ok: true,
+    state: 'AVAILABLE',
+    code: 'OK',
+    digest,
+    schema: NET_REVENUE_SEGMENT_COMPARISON_SCHEMA,
+    periodWindows: {
+      comparison: { ...NET_REVENUE_COMPARISON_PERIODS.comparison },
+      current: { ...NET_REVENUE_COMPARISON_PERIODS.current },
+    },
+  };
+}
+
+/**
+ * FINDING 1 (revenue half): COMPOSE the revenue side from the RELEASED module over REAL
+ * source rows, instead of accepting an opaque object.
+ *
+ * The released module's own default periods are REUSED (2026-06 comparison, 2026-07
+ * current) rather than invented here. The exact returned report object is recorded in this
+ * module's private execution registry together with the digest of the rows it was composed
+ * from, which is what makes it attestable later without any caller-minted certification.
+ */
+export function composeReleasedNetRevenueComparison({
+  sourceRows,
+  released = null,
+} = {}) {
+  const mod = releasedComparisonModule(released);
+  if (!Array.isArray(sourceRows) || sourceRows.length === 0) {
+    return {
+      ok: false,
+      outcome: 'UNAVAILABLE',
+      code: 'NET_REVENUE_SOURCE_ROWS_REQUIRED',
+    };
+  }
+  let report;
+  try {
+    report = mod.buildSegmentComparisonReport(mod.compareSegmentsAcrossPeriods(sourceRows));
+  } catch (error) {
+    return {
+      ok: false,
+      outcome: 'DENIED',
+      code: 'NET_REVENUE_COMPOSITION_REFUSED',
+      message: String(error?.message ?? error),
+    };
+  }
+  const shape = inspectReleasedComparisonShape(report, mod);
+  if (!shape.ok) return { ...shape, report };
+  const sourceRowsSha256 = sha256Hex(JSON.stringify(sourceRows));
+  // Bind THIS object to the execution that produced it, and to the rows it came from. The
+  // registry is a private WeakMap: there is no public field, token or digest a caller can
+  // mint to qualify a report, and a JSON round-trip of a genuine report is a DIFFERENT
+  // object that must be re-qualified through separately retained rows.
+  RELEASED_COMPARISON_EXECUTIONS.set(report, Object.freeze({
+    sourceRowsSha256,
+    digest: shape.digest,
+  }));
+  return {
+    ok: true,
+    outcome: 'COMPOSED',
+    code: 'OK',
+    report,
+    schema: report.schemaVersion,
+    digest: shape.digest,
+    sourceRowsSha256,
+    periods: {
+      comparison: { ...NET_REVENUE_COMPARISON_PERIODS.comparison },
+      current: { ...NET_REVENUE_COMPARISON_PERIODS.current },
+    },
+  };
+}
+
+/**
+ * Attest that a candidate is genuinely the RELEASED comparison.
+ *
+ * Two INDEPENDENT facts are required, and neither is a caller-settable field:
+ *
+ *  1. SHAPE + DIGEST (see `inspectReleasedComparisonShape`) -- necessary, not sufficient.
+ *  2. ACTUAL EXECUTION BINDING, established in exactly one of two ways:
+ *       a. the candidate object is the object that `composeReleasedNetRevenueComparison`
+ *          returned in this process (private WeakMap provenance), or
+ *       b. the caller supplies the SEPARATELY RETAINED source rows the comparison is about,
+ *          and re-executing the released module over those rows reproduces the candidate
+ *          digest exactly.
+ *
+ * Anything else -- however many released labels it wears, and however self-consistent its
+ * digest is -- is DENIED as unverified execution evidence. No certification field is added
+ * and no validation path is bypassed.
+ */
+export function attestReleasedNetRevenueComparison(report, {
+  released = null,
+  retainedSourceRows = null,
+} = {}) {
+  const mod = releasedComparisonModule(released);
+  const shape = inspectReleasedComparisonShape(report, mod);
+  if (!shape.ok) return shape;
+  const recorded = RELEASED_COMPARISON_EXECUTIONS.get(report);
+  if (recorded !== undefined && recorded.digest === shape.digest) {
+    return {
+      ok: true,
+      state: 'AVAILABLE',
+      code: 'OK',
+      digest: shape.digest,
+      schema: NET_REVENUE_SEGMENT_COMPARISON_SCHEMA,
+      basis: 'IN_PROCESS_RELEASED_COMPOSITION',
+      sourceRowsSha256: recorded.sourceRowsSha256,
+      periodWindows: shape.periodWindows,
+    };
+  }
+  if (Array.isArray(retainedSourceRows) && retainedSourceRows.length > 0) {
+    let recomposed;
+    try {
+      recomposed = mod.buildSegmentComparisonReport(mod.compareSegmentsAcrossPeriods(retainedSourceRows));
+    } catch (error) {
+      return {
+        ok: false,
+        state: 'DENIED',
+        code: 'NET_REVENUE_RETAINED_ROWS_RECOMPOSITION_REFUSED',
+        message: String(error?.message ?? error),
+      };
+    }
+    const recomposedDigest = mod.comparisonDigest(recomposed);
+    if (recomposedDigest !== shape.digest) {
+      return {
+        ok: false,
+        state: 'DENIED',
+        code: 'NET_REVENUE_RETAINED_ROWS_DIGEST_MISMATCH',
+        declaredDigest: shape.digest,
+        recomposedDigest,
+      };
+    }
+    return {
+      ok: true,
+      state: 'AVAILABLE',
+      code: 'OK',
+      digest: shape.digest,
+      schema: NET_REVENUE_SEGMENT_COMPARISON_SCHEMA,
+      basis: 'RECOMPOSED_FROM_SEPARATELY_RETAINED_SOURCE_ROWS',
+      sourceRowsSha256: sha256Hex(JSON.stringify(retainedSourceRows)),
+      periodWindows: shape.periodWindows,
+    };
+  }
+  return {
+    ok: false,
+    state: 'DENIED',
+    code: 'NET_REVENUE_RELEASED_EXECUTION_UNVERIFIED',
+    reason: 'Released labels and a self-consistent digest are not execution evidence. Attest an output of composeReleasedNetRevenueComparison, or supply the separately retained source rows for recomputation.',
+    observed: {
+      sourceRelation: report.source?.sourceRelation ?? null,
+      nonclaims: Array.isArray(report.nonclaims) ? report.nonclaims.length : null,
+      selfConsistentDigest: shape.digest,
+    },
+  };
+}
+
+export function buildOrderVsRevenueSeparation({
+  currentOrderComparison,
+  netRevenueReport,
+  netRevenueSourceRows = null,
+  requireReleasedAttestation = true,
+}) {
   const orderSide = currentOrderComparison?.outcome === 'COMPARED'
     ? present(Object.freeze({
       census: currentOrderComparison.byStatus,
       totals: currentOrderComparison.totals,
       basis: currentOrderComparison.basis,
+      // The period and customer-segment composition travel with the order side, so a
+      // consumer does not have to re-derive them from the raw facts.
+      byPeriod: currentOrderComparison.byPeriod ?? null,
+      byCustomerSegment: currentOrderComparison.byCustomerSegment ?? null,
     }))
     : missing(currentOrderComparison?.code ?? 'CURRENT_ORDER_COMPARISON_UNAVAILABLE');
+
+  // FINDING 1 (revenue half): an object is NOT sufficient evidence that a comparison was
+  // released. Unless the caller explicitly opts out, the revenue side is published only
+  // when the RELEASED module attests it -- its schema tag, its recomputed digest, its
+  // period shape. A stub is DENIED instead of being carried as a released number.
+  const attestation = (netRevenueReport && typeof netRevenueReport === 'object')
+    ? attestReleasedNetRevenueComparison(netRevenueReport, { retainedSourceRows: netRevenueSourceRows })
+    : null;
+  if (requireReleasedAttestation && netRevenueReport && typeof netRevenueReport === 'object'
+    && attestation !== null && !attestation.ok) {
+    return Object.freeze({
+      separation: 'ORDER_CENSUS_AND_NET_REVENUE_ARE_SEPARATE_FACTS',
+      combinedTotal: missing('NET_REVENUE_RELEASED_COMPARISON_NOT_ATTESTED'),
+      reconciliation: missing('NET_REVENUE_RELEASED_COMPARISON_NOT_ATTESTED'),
+      attribution: missing('NET_REVENUE_RELEASED_COMPARISON_NOT_ATTESTED'),
+      arithmeticPerformedAcrossSides: false,
+      datasetsAreDistinct: true,
+      orderSide,
+      revenueSide: Object.freeze({
+        state: 'DENIED',
+        reason: 'NET_REVENUE_RELEASED_ATTESTATION_FAILED',
+        value: null,
+        attestation: Object.freeze({ ...attestation }),
+      }),
+    });
+  }
 
   let revenueSide;
   if (netRevenueReport && typeof netRevenueReport === 'object') {
@@ -764,6 +1259,11 @@ export function buildOrderVsRevenueSeparation({ currentOrderComparison, netReven
       schema: netRevenueReport.schema ?? netRevenueReport.schemaVersion
         ?? NET_REVENUE_SEGMENT_COMPARISON_SCHEMA,
       releasedDigest: typeof netRevenueReport.digest === 'string' ? netRevenueReport.digest : null,
+      // HOW the released comparison was bound to actual execution (in-process composition,
+      // or recomputation from separately retained rows). Not a caller claim: it is the
+      // verdict of attestReleasedNetRevenueComparison, which this branch only reaches when
+      // `attestation.ok` is true.
+      attestation: Object.freeze({ ...attestation }),
       ownedByThisHandoff: false,
     }));
   } else {
@@ -795,6 +1295,7 @@ export function buildOrderVsRevenueSeparation({ currentOrderComparison, netReven
 export function buildOrderSourceConsumptionReport({
   consumption,
   netRevenueComparison = null,
+  netRevenueSourceRows = null,
   supportedStatuses = DEFAULT_SUPPORTED_ORDER_STATUSES,
   generatedAt,
 } = {}) {
@@ -803,6 +1304,7 @@ export function buildOrderSourceConsumptionReport({
   const separation = buildOrderVsRevenueSeparation({
     currentOrderComparison,
     netRevenueReport: netRevenueComparison,
+    netRevenueSourceRows,
   });
   const report = {
     schema: ORDER_SOURCE_CONSUMPTION_SCHEMA,

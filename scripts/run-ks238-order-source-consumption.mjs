@@ -19,7 +19,8 @@
 import { realpath, lstat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 
 import {
@@ -27,6 +28,7 @@ import {
   createRetainedSourceAuthority,
   consumeOrderSourceHandoff,
   compareSupportedCurrentOrders,
+  composeReleasedNetRevenueComparison,
   buildOrderSourceConsumptionReport,
   buildOrderVsRevenueSeparation,
   assertOrderSourceConsumptionSelfChecks,
@@ -36,9 +38,36 @@ const root = path.resolve(import.meta.dirname, '..');
 const SOURCE_BYTES = 'tests/fixtures/business-bi/ks238-order-source/erp-supported-export-v1.json';
 const CONTRACT = 'tests/fixtures/business-bi/ks238-order-source/erp-read-contract-v1.json';
 const SOURCE_LABEL = 'LOCAL_SYNTHETIC_ERP_ORDER_SOURCE_V1';
+// FINDING 1 (revenue half, CLI half). The supported normal run must answer the bounded
+// question ALONGSIDE the separately bounded net-revenue comparison -- and that comparison
+// must be an ACTUAL execution of the released net-revenue module over the real released
+// segment dataset, not a caller-authored positive fixture. This is the released #242/#239
+// SYNTHETIC ledger fixture (a DIFFERENT dataset from the order export, deliberately so).
+const NET_REVENUE_SEGMENT_FIXTURE = 'tests/fixtures/business-bi/net-revenue-segment-v1.json';
 // The released export is valid 2026-08-10T08:00:00Z .. 09:00:00Z.
 const NOW = '2026-08-10T08:30:00Z';
-const PRODUCER_REPO = path.resolve(root, '..', 'PANSPHAIRA-source');
+// FINDING 4 (portable canonical provisioning). The producer is located through the
+// consumer's own explicit locator, which prefers the PINNED ARTIFACT PROVISION at
+// `dependencies/pansphaira/` and only then falls back to an unpublished sibling checkout.
+// A provisioned tree therefore needs no private Git history, and `producerRepoRoot` is
+// supplied ONLY when an actual Git object database is present: the commit binding is an
+// OPTIONAL additional confirmation, never the artifact identity.
+const PROVISIONED = path.resolve(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+const SIBLING_REPO = path.resolve(root, '..', 'PANSPHAIRA-source');
+const PRODUCER_MODULE_CANDIDATES = [PROVISIONED, path.join(SIBLING_REPO, 'src/ks238/order-source-handoff.mjs')];
+const PRODUCER_MODULE = PRODUCER_MODULE_CANDIDATES.find((candidate) => existsSync(candidate)) ?? null;
+// A provisioned dependency lives INSIDE this repository, so a bare `git rev-parse` would
+// find THIS repo's object database and then fail to resolve the producer commit. The
+// database only counts when it actually contains the pinned producer commit.
+const hasGitObjectDatabase = (dir) => {
+  if (typeof dir !== 'string' || dir.length === 0) return false;
+  return spawnSync('git', ['cat-file', '-e',
+    `${PAN_ORDER_SOURCE_DEPENDENCY.parentCandidateCommit}:${PAN_ORDER_SOURCE_DEPENDENCY.module}`,
+  ], {cwd: dir, encoding: 'utf8'}).status === 0;
+};
+const PRODUCER_REPO = PRODUCER_MODULE !== null && hasGitObjectDatabase(path.dirname(PRODUCER_MODULE))
+  ? path.dirname(PRODUCER_MODULE)
+  : null;
 
 // Same confinement contract as the released #240 CLI: no symlink component, no prefix
 // lookalike, and the write target must live inside the repository or /tmp.
@@ -98,15 +127,34 @@ async function intermediateTestedHandoff(authority) {
   return { consumed, rebound };
 }
 
-async function runNormal({ netRevenueComparison = null } = {}) {
+/**
+ * Execute the RELEASED net-revenue comparison over its separately retained synthetic source
+ * rows. The rows are read here and handed to `composeReleasedNetRevenueComparison`, which
+ * runs the released module and records the exact report object in the module's private
+ * execution registry -- so the reported revenue side is an ACTUAL released execution, not a
+ * self-consistent stub. The order export and this ledger remain two distinct datasets.
+ */
+function composeRevenueComparison() {
+  const fixture = JSON.parse(readFileSync(path.join(root, NET_REVENUE_SEGMENT_FIXTURE), 'utf8'));
+  const sourceRows = fixture.rows ?? fixture;
+  const composed = composeReleasedNetRevenueComparison({ sourceRows });
+  if (composed.outcome !== 'COMPOSED') {
+    throw new Error(`NET_REVENUE_COMPOSITION_${composed.outcome}: ${composed.code}`);
+  }
+  return composed;
+}
+
+async function runNormal() {
   const authority = retained();
   const { consumed, rebound } = await intermediateTestedHandoff(authority);
   const comparison = compareSupportedCurrentOrders({ consumption: consumed });
+  // The real, released revenue execution -- composed in-process from its own retained rows.
+  const revenue = composeRevenueComparison();
   const separation = buildOrderVsRevenueSeparation({
-    currentOrderComparison: comparison, netRevenueReport: netRevenueComparison,
+    currentOrderComparison: comparison, netRevenueReport: revenue.report,
   });
   const report = buildOrderSourceConsumptionReport({
-    consumption: consumed, netRevenueComparison, generatedAt: NOW,
+    consumption: consumed, netRevenueComparison: revenue.report, generatedAt: NOW,
   });
   assertOrderSourceConsumptionSelfChecks({
     report, consumption: consumed,
@@ -127,6 +175,19 @@ async function runNormal({ netRevenueComparison = null } = {}) {
       reboundAgainstRetainedAuthority: rebound.rebind.payloadReboundAgainstRetainedAuthority,
     },
     currentOrderComparison: comparison,
+    netRevenueComparison: {
+      source: 'KS released net-revenue-segment-comparison over its own retained synthetic rows',
+      dataset: NET_REVENUE_SEGMENT_FIXTURE,
+      basis: 'IN_PROCESS_RELEASED_COMPOSITION',
+      digest: revenue.digest,
+      sourceRowsSha256: revenue.sourceRowsSha256,
+      schema: revenue.schema,
+      periods: revenue.periods,
+      current: revenue.report.current?.netRevenue ?? null,
+      comparison: revenue.report.comparison?.netRevenue ?? null,
+      delta: revenue.report.delta?.netRevenue ?? null,
+      attestationBasis: separation.revenueSide?.value?.attestationBasis ?? separation.revenueSide?.attestation?.basis ?? null,
+    },
     separation,
     missingSemantics: report.missingSemantics,
     selfChecks: 'ALL_GREEN',

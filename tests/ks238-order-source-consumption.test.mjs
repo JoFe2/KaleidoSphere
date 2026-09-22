@@ -9,19 +9,23 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import fs, { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import {
   ORDER_SOURCE_CONSUMPTION_SCHEMA,
   ORDER_SOURCE_CONSUMPTION_NONCLAIMS,
   PAN_ORDER_SOURCE_DEPENDENCY,
+  computeRuntimeClosureSha256,
   resolveOrderSourceHandoffModule,
   createRetainedSourceAuthority,
   consumeOrderSourceHandoff,
   buildOrderSourceMissingSemantics,
   compareSupportedCurrentOrders,
+  composeReleasedNetRevenueComparison,
+  attestReleasedNetRevenueComparison,
   buildOrderVsRevenueSeparation,
   buildOrderSourceConsumptionReport,
   orderSourceConsumptionDigest,
@@ -41,7 +45,21 @@ const SOURCE_LABEL = 'LOCAL_SYNTHETIC_ERP_ORDER_SOURCE_V1';
 // The released export is valid 2026-08-10T08:00:00Z .. 09:00:00Z; the producer's own
 // suite uses 08:30:00Z, so the receiver must too.
 const NOW = '2026-08-10T08:30:00Z';
-const PRODUCER_REPO = path.resolve(REPO_ROOT, '..', 'PANSPHAIRA-source');
+// FINDING 4: prefer the PINNED ARTIFACT PROVISION (`dependencies/pansphaira/`, installed by
+// scripts/provision-ks238-order-source-dependency.mjs) and fall back to an unpublished
+// sibling checkout only if it exists. A provisioned tree needs no private Git history.
+const PROVISIONED_MODULE = path.resolve(REPO_ROOT,
+  'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+const SIBLING_MODULE = path.resolve(REPO_ROOT, '..', 'PANSPHAIRA-source',
+  'src/ks238/order-source-handoff.mjs');
+const PRODUCER_MODULE_FILE = fs.existsSync(PROVISIONED_MODULE) ? PROVISIONED_MODULE
+  : (fs.existsSync(SIBLING_MODULE) ? SIBLING_MODULE : PROVISIONED_MODULE);
+const PRODUCER_MODULE_ROOT = path.resolve(path.dirname(PRODUCER_MODULE_FILE), '..', '..');
+const PRODUCER_REPO = PRODUCER_MODULE_ROOT;
+// FINDING 1: the REAL released segment dataset (12 rows, the #242/#239 fixture), used to
+// compose the revenue side through the released module rather than through a stub.
+const SEGMENT_FIXTURE = JSON.parse(readFileSync(
+  path.join(REPO_ROOT, 'tests/fixtures/business-bi/net-revenue-segment-v1.json'), 'utf8'));
 
 const retainedAuthority = () => {
   const result = createRetainedSourceAuthority({
@@ -54,9 +72,17 @@ const retainedAuthority = () => {
 // The commit binding is read from the producer's own Git object database. A bare,
 // disposable checkout has none, so the assertion below can only demand a positive MATCH
 // when that database is actually reachable — and must never accept a MISMATCH either way.
-const producerRepoHasObjectDatabase = () => spawnSync(
-  'git', ['rev-parse', '--git-dir'], { cwd: PRODUCER_REPO, encoding: 'utf8' },
-).status === 0;
+const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
+
+// A provisioned dependency lives INSIDE this repository, so a bare `git rev-parse` would
+// find THIS repo's object database and then fail to resolve the producer commit. The
+// database only counts when it actually contains the pinned producer commit.
+const producerRepoHasObjectDatabase = () => {
+  const probe = spawnSync('git', ['cat-file', '-e',
+    `${PAN_ORDER_SOURCE_DEPENDENCY.parentCandidateCommit}:${PAN_ORDER_SOURCE_DEPENDENCY.module}`,
+  ], { cwd: PRODUCER_REPO, encoding: 'utf8' });
+  return probe.status === 0;
+};
 
 const consume = async (overrides = {}) => consumeOrderSourceHandoff({
   retainedAuthority: retainedAuthority(),
@@ -118,6 +144,59 @@ test('KS238-R negative: a substituted producer module is DENIED on bytes, before
   assert.equal(resolved.ok, false);
   assert.equal(resolved.state, 'DENIED');
   assert.equal(resolved.code, 'PAN_ORDER_SOURCE_MODULE_INTEGRITY_DENIED');
+});
+
+// FINDING 3: pinning the wrapper's bytes does NOT bind the executable reader, because the
+// wrapper imports its implementation from ../../dist/packages/contracts/src/index.js. A
+// directory carrying the EXACT genuine wrapper plus a substituted runtime was previously
+// consumed as if it were the pinned producer. The full runtime closure is now measured
+// BEFORE import, so the genuine wrapper succeeds and the substituted runtime is refused.
+test('KS238-R negative: a GENUINE wrapper over a SUBSTITUTED runtime is DENIED before import', async () => {
+  const os = await import('node:os');
+  const fs = await import('node:fs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ks238-closure-'));
+  // Byte-for-byte the real wrapper: its own sha256 equals the pinned expectedModuleSha256,
+  // so the wrapper-bytes gate and the commit binding both pass.
+  fs.mkdirSync(path.join(dir, 'src', 'ks238'), { recursive: true });
+  fs.copyFileSync(path.join(PRODUCER_REPO, 'src', 'ks238', 'order-source-handoff.mjs'),
+    path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs'));
+  // ...and the real, release-critical runtime, so the forgery is exactly one file deep.
+  fs.cpSync(path.join(PRODUCER_REPO, 'dist', 'packages', 'contracts', 'src'),
+    path.join(dir, 'dist', 'packages', 'contracts', 'src'), { recursive: true });
+  const reader = path.join(dir, 'dist', 'packages', 'contracts', 'src', 'erp-read-connector.js');
+  const genuine = fs.readFileSync(reader, 'utf8');
+  const forged = genuine.replace(/"FULFILLED"/g, '"CANCELLED"');
+  assert.notEqual(forged, genuine, 'the substitution must actually change the reader bytes');
+  fs.writeFileSync(reader, forged);
+
+  const wrapperBytes = fs.readFileSync(path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs'));
+  assert.equal(sha256(wrapperBytes), PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256,
+    'the wrapper itself must be the genuine, correctly pinned module');
+
+  const resolved = await resolveOrderSourceHandoffModule({
+    repoRoot: REPO_ROOT, explicitPath: path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs'),
+  });
+  assert.equal(resolved.ok, false, 'a substituted runtime must not be consumed');
+  assert.equal(resolved.state, 'DENIED');
+  assert.equal(resolved.code, 'PAN_ORDER_SOURCE_RUNTIME_CLOSURE_DENIED');
+  // The diagnostic must name WHICH byte drifted, not merely that something did.
+  assert.equal(resolved.runtimeClosure.criticalMismatch.file,
+    'dist/packages/contracts/src/erp-read-connector.js');
+  assert.notEqual(resolved.runtimeClosure.criticalMismatch.actual,
+    resolved.runtimeClosure.criticalMismatch.expected);
+  // The wrapper gate alone would NOT have caught this: the module bytes are exactly the pin.
+  assert.equal(resolved.moduleSha256, PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256);
+});
+
+test('KS238-R positive: the REAL producer runtime attests the closure and yields the entry points', async () => {
+  const wrapper = path.join(PRODUCER_REPO, 'src', 'ks238', 'order-source-handoff.mjs');
+  const closure = computeRuntimeClosureSha256({ moduleFile: wrapper });
+  assert.equal(closure.ok, true,
+    `the genuine runtime must attest the closure: ${closure.code}`);
+  assert.equal(closure.state, 'AVAILABLE');
+  assert.equal(closure.closureSha256, PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureSha256);
+  assert.equal(closure.fileCount, PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureFileCount);
+  assert.equal(closure.criticalMismatch, null);
 });
 
 test('KS238-R negative: a missing producer module is an explicit UNAVAILABLE, not an exception', async () => {
@@ -244,34 +323,60 @@ test('KS238-R negative: a wrong source label is refused before any composition',
 // ------------------------------------- metric discrepancy census (current orders)
 
 /**
- * The released export's order statuses are FULFILLED / OPEN, not the CONFIRMED / PENDING
- * vocabulary this surface supports. That is the point of the bounded comparison: the
- * supported set is a DECLARED choice, and the observed statuses outside it are reported
- * as EXCLUDED rather than being folded in. The reader's census (FULFILLED 1, OPEN 2) is
- * therefore the fixture's REAL current-order census, and this surface reports it as
- * observed-but-unsupported.
+ * FINDING 1: the default supported vocabulary must be the READER'S OWN.
+ *
+ * The released ERP reader validates orderStatus against exactly OPEN / FULFILLED /
+ * CANCELLED. The previous default (CONFIRMED / PENDING) was a vocabulary this reader can
+ * never emit, so the shipped "positive" journey compared three real orders against a bill
+ * that could only ever be empty: supportedOrderCount 0, byPeriod {}, every real order
+ * EXCLUDED. That is a fail-closed claim, not a journey.
+ *
+ * With the reader's own vocabulary as the default, the SAME fixture yields the reader's
+ * REAL census -- FULFILLED 1, OPEN 2 -- and a real period/customer-segment composition.
+ * The independent expected outcomes below are derived from the fixture's own facts, not
+ * from the implementation.
  */
-test('KS238-R: the current-order comparison is bounded to the declared supported statuses', async () => {
+test('KS238-R: the comparison defaults to the READER\'s own status vocabulary and composes real orders', async () => {
   const comparison = compareSupportedCurrentOrders({ consumption: await consumed() });
   assert.equal(comparison.outcome, 'COMPARED');
   assert.equal(comparison.comparison, 'SUPPORTED_CURRENT_ORDER_CENSUS');
-  assert.deepEqual(comparison.supportedStatuses, ['CONFIRMED', 'PENDING']);
-  // Every observed status in the released export is outside the supported set: none of
-  // them may appear in a supported bucket.
-  assert.deepEqual(comparison.unsupportedStatusesObserved, ['FULFILLED', 'OPEN']);
-  assert.deepEqual(comparison.excludedUnsupported, [
-    { status: 'FULFILLED', count: 1, disposition: 'EXCLUDED_UNSUPPORTED' },
-    { status: 'OPEN', count: 2, disposition: 'EXCLUDED_UNSUPPORTED' },
-  ]);
+  // The reader's declared vocabulary, verbatim.
+  assert.deepEqual(comparison.supportedStatuses, ['CANCELLED', 'FULFILLED', 'OPEN']);
+  assert.deepEqual(comparison.supportedCustomerStatuses, ['ACTIVE', 'ON_HOLD']);
+  // Nothing is excluded any more: the released export's statuses are all supported.
+  assert.deepEqual(comparison.unsupportedStatusesObserved, []);
+  assert.deepEqual(comparison.excludedUnsupported, []);
+  // The reader's OWN census: FULFILLED 1, OPEN 2 (fixture orders 001/002/003).
+  assert.deepEqual(comparison.byStatus.FULFILLED, { status: 'FULFILLED', count: 1, evidence: 'READER_CENSUS' });
+  assert.deepEqual(comparison.byStatus.OPEN, { status: 'OPEN', count: 2, evidence: 'READER_CENSUS' });
+  assert.deepEqual(comparison.byStatus.CANCELLED, { status: 'CANCELLED', count: 0, evidence: 'NO_READER_EVIDENCE' });
   assert.deepEqual(comparison.totals, {
-    supportedOrderCount: 0, unsupportedOrderCount: 3,
-    totalObserved: 3, supportedCensusTotal: 0, unknownPeriodCount: 0,
+    supportedOrderCount: 3, unsupportedOrderCount: 0,
+    totalObserved: 3, supportedCensusTotal: 3, unknownPeriodCount: 0,
+    unknownCustomerStatusCount: 0,
   });
-  // Counts are the reader's own census, and a supported status with no evidence is 0
-  // WITH its evidence state -- never an inferred order.
-  assert.deepEqual(comparison.byStatus.CONFIRMED, { status: 'CONFIRMED', count: 0, evidence: 'NO_READER_EVIDENCE' });
-  assert.deepEqual(comparison.byStatus.PENDING, { status: 'PENDING', count: 0, evidence: 'NO_READER_EVIDENCE' });
-  assert.deepEqual(comparison.byPeriod, {});
+  // REAL period composition: every fixture order is dated 2026-08, and the period is the
+  // reader's own evaluated period fact.
+  assert.deepEqual(comparison.byPeriod, {
+    '2026-08': {
+      period: '2026-08', count: 3,
+      orderIds: ['order:synthetic-001', 'order:synthetic-002', 'order:synthetic-003'],
+    },
+  });
+  assert.deepEqual(comparison.knownPeriods, ['2026-08']);
+  // REAL customer-segment composition: customer:zoo-001 is ACTIVE and carries orders
+  // 001/003; customer:zoo-002 is ON_HOLD and carries order 002.
+  assert.deepEqual(comparison.byCustomerSegment, {
+    ACTIVE: {
+      customerStatus: 'ACTIVE', count: 2, supported: true,
+      orderIds: ['order:synthetic-001', 'order:synthetic-003'],
+    },
+    ON_HOLD: {
+      customerStatus: 'ON_HOLD', count: 1, supported: true,
+      orderIds: ['order:synthetic-002'],
+    },
+  });
+  assert.deepEqual(comparison.knownCustomerStatuses, ['ACTIVE', 'ON_HOLD']);
 });
 
 test('KS238-R: an explicit supported-status override drives the real reader census', async () => {
@@ -284,7 +389,12 @@ test('KS238-R: an explicit supported-status override drives the real reader cens
   assert.equal(comparison.totals.supportedOrderCount, 3);
   // All three orders are in the reader's reported period (2026-08), so the period
   // distribution is real, not a guess.
-  assert.deepEqual(comparison.byPeriod, { '2026-08': { period: '2026-08', count: 3 } });
+  assert.deepEqual(comparison.byPeriod, {
+    '2026-08': {
+      period: '2026-08', count: 3,
+      orderIds: ['order:synthetic-001', 'order:synthetic-002', 'order:synthetic-003'],
+    },
+  });
   assert.deepEqual(comparison.knownPeriods, ['2026-08']);
   assert.equal(comparison.totals.unknownPeriodCount, 0);
   assert.deepEqual(comparison.countedOrderIds,
@@ -379,14 +489,24 @@ test('KS238-R: the separation record refuses every order-to-revenue merger', asy
   assert.equal(separation.revenueSide.reason, 'NET_REVENUE_COMPARISON_NOT_SUPPLIED');
 });
 
-test('KS238-R: a supplied net-revenue report is carried through VERBATIM and not merged', async () => {
+/**
+ * FINDING 1 (revenue half): the revenue side must be COMPOSED by the released module over
+ * the real dataset -- not accepted merely because it is an object. The prior test passed a
+ * hand-written `{current:{netRevenue:12345}}` stub and the surface published it as a
+ * released comparison; that is an unverified claim wearing a released module's name.
+ *
+ * The independent expected outcomes below are the fixture's OWN arithmetic (12 rows over
+ * the released 2026-06 / 2026-07 windows), computed by the released module.
+ */
+test('KS238-R: the released net-revenue comparison is COMPOSED from real rows and carried verbatim', async () => {
   const consumedHandoff = await consumed();
-  // A real released comparison report, built by the released module itself.
-  const netRevenue = {
-    schemaVersion: 'kaleidosphere.business-bi/net-revenue-segment-comparison/v1',
-    current: { netRevenue: 12345 },
-    comparison: { netRevenue: 11000 },
-  };
+  const rows = SEGMENT_FIXTURE.rows ?? SEGMENT_FIXTURE;
+  // Real composition through the RELEASED module -- no re-derivation here.
+  const composed = composeReleasedNetRevenueComparison({ sourceRows: rows });
+  assert.equal(composed.outcome, 'COMPOSED');
+  assert.equal(composed.code, 'OK');
+  const netRevenue = composed.report;
+
   const report = buildOrderSourceConsumptionReport({
     consumption: consumedHandoff, netRevenueComparison: netRevenue, generatedAt: NOW,
   });
@@ -395,15 +515,62 @@ test('KS238-R: a supplied net-revenue report is carried through VERBATIM and not
   const revenueValue = report.separation.revenueSide.value;
   // Verbatim: the exact same object, not a summary or a re-derivation.
   assert.equal(revenueValue.releasedComparison, netRevenue);
-  assert.equal(revenueValue.releasedComparison.current.netRevenue, 12345);
-  assert.equal(revenueValue.releasedComparison.comparison.netRevenue, 11000);
-  // The revenue side is explicitly NOT owned by this handoff.
-  assert.equal(revenueValue.ownedByThisHandoff, false);
+  // The fixture's real released arithmetic: current 2026-07 nets 66000, comparison
+  // 2026-06 nets 45000 (the released module's own definition: saleValue - creditValue).
+  assert.equal(revenueValue.releasedComparison.current.netRevenue, 66000);
+  assert.equal(revenueValue.releasedComparison.comparison.netRevenue, 45000);
+  assert.equal(revenueValue.releasedComparison.delta.netRevenue, 21000);
+  // The released schema tag and the released periods travel with it.
   assert.equal(revenueValue.schema,
     'kaleidosphere.business-bi/net-revenue-segment-comparison/v1');
+  assert.deepEqual(composed.periods, {
+    comparison: { label: '2026-06', start: '2026-06-01', end: '2026-06-30' },
+    current: { label: '2026-07', start: '2026-07-01', end: '2026-07-31' },
+  });
+  // The revenue side is explicitly NOT owned by this handoff.
+  assert.equal(revenueValue.ownedByThisHandoff, false);
   // And still no cross-side arithmetic.
   assert.equal(report.separation.arithmeticPerformedAcrossSides, false);
   assert.equal(report.separation.combinedTotal.state, 'UNAVAILABLE');
+});
+
+/**
+ * Adversarial regression: an object that merely LOOKS like a released comparison must not
+ * be publishable as one. The stub carries the released schema tag and integers, so only
+ * the released provenance (source declaration + non-claims) can expose it.
+ */
+test('KS238-R negative: a hand-written stub cannot pass as a released comparison', async () => {
+  const stub = {
+    schemaVersion: 'kaleidosphere.business-bi/net-revenue-segment-comparison/v1',
+    current: { netRevenue: 12345 },
+    comparison: { netRevenue: 11000 },
+  };
+  const attestation = attestReleasedNetRevenueComparison(stub);
+  assert.equal(attestation.ok, false);
+  assert.equal(attestation.code, 'NET_REVENUE_RELEASED_PROVENANCE_DENIED');
+  const separation = buildOrderVsRevenueSeparation({
+    currentOrderComparison: null, netRevenueReport: stub,
+  });
+  // The revenue side is DENIED, not published, and the separation record still refuses to
+  // merge the two sides.
+  assert.equal(separation.revenueSide.state, 'DENIED');
+  assert.equal(separation.revenueSide.reason, 'NET_REVENUE_RELEASED_ATTESTATION_FAILED');
+  assert.equal(separation.revenueSide.value, null);
+  assert.equal(separation.arithmeticPerformedAcrossSides, false);
+});
+
+/**
+ * Adversarial regression: a REAL released comparison whose carried digest has been
+ * tampered with must be refused -- the released module's own digest is recomputed.
+ */
+test('KS238-R negative: a tampered released-comparison digest is refused', async () => {
+  const composed = composeReleasedNetRevenueComparison({ sourceRows: SEGMENT_FIXTURE.rows ?? SEGMENT_FIXTURE });
+  const tampered = { ...composed.report, digest: '0'.repeat(64) };
+  const attestation = attestReleasedNetRevenueComparison(tampered);
+  assert.equal(attestation.ok, false);
+  assert.equal(attestation.code, 'NET_REVENUE_RELEASED_DIGEST_MISMATCH');
+  assert.equal(attestation.declaredDigest, '0'.repeat(64));
+  assert.match(attestation.recomputedDigest, /^[a-f0-9]{64}$/);
 });
 
 // --------------------------------------------------------- report + self-checks
@@ -533,4 +700,143 @@ test('KS238-R negative: the CLI refuses a write outside the repository and /tmp'
   const run = runCli(['--out', '/etc/ks238-escape.json']);
   assert.notEqual(run.status, 0);
   assert.match(run.stderr, /KS238_CLI_OUT_PATH_DENIED/);
+});
+
+// ----------------------------- FINDING 2: retained bytes are not mutable in place
+
+/**
+ * FINDING 2: `Object.freeze(authority)` freezes the outer RECORD only; `authority.sourceBytes`
+ * stays a writable Buffer. The parent's probe wrote a substituted date into those bytes and
+ * the handoff was consumed as OK while still claiming the original retained SHA. The receiver
+ * now re-derives the byte identity from the bytes it is about to hand the producer and refuses
+ * any mismatch BEFORE resolving or importing the producer, so no downstream composition runs.
+ */
+test('KS238-R negative: an IN-PLACE mutation of the retained bytes is refused before any producer call', async () => {
+  const authority = retainedAuthority();
+  const declared = authority.sourceBytesSha256;
+  const needle = Buffer.from('"orderDate": "2026-08-01"');
+  const at = authority.sourceBytes.indexOf(needle);
+  assert.ok(at >= 0, 'the fixture must contain the order date the probe rewrites');
+  // Same-length in-place substitution into the buffer the producer would consume.
+  authority.sourceBytes.write('2026-07-01', at + needle.indexOf('2026-08-01'));
+  const result = await consumeOrderSourceHandoff({
+    retainedAuthority: authority, repoRoot: REPO_ROOT, producerRepoRoot: PRODUCER_REPO,
+  });
+  assert.equal(result.outcome, 'DENIED');
+  assert.equal(result.code, 'RETAINED_SOURCE_BYTES_MUTATED');
+  assert.equal(result.declaredSourceBytesSha256, declared);
+  assert.notEqual(result.consumedSourceBytesSha256, declared);
+  // Failed admission publishes no handoff at all, and the producer was never imported.
+  assert.equal(result.handoff, undefined);
+});
+
+// ----------------- FINDING 1 (revenue half): released labels are not execution evidence
+
+/**
+ * FINDING 1 (revenue half), EXACT parent reproducer from PARENT-FOCUSED-CORRECTIONS.md. The
+ * object wears every public label (schema tag, both period nets, the released sourceRelation
+ * and a nonclaim) and its digest is self-consistent, yet no released module ever produced it.
+ * Public labels plus self-consistent hashes are NOT execution evidence.
+ */
+test('KS238-R negative: the parent reproducer — released labels + self-consistent digest — is DENIED', async () => {
+  const fabricated = {
+    schemaVersion: 'kaleidosphere.business-bi/net-revenue-segment-comparison/v1',
+    current: { netRevenue: 12345 },
+    comparison: { netRevenue: 11000 },
+    source: { sourceRelation: 'xra_projection_orders' },
+    nonclaims: ['not real'],
+  };
+  const attestation = attestReleasedNetRevenueComparison(fabricated);
+  assert.equal(attestation.ok, false);
+  assert.equal(attestation.code, 'NET_REVENUE_RELEASED_EXECUTION_UNVERIFIED');
+  const separation = buildOrderVsRevenueSeparation({ netRevenueReport: fabricated });
+  assert.equal(separation.revenueSide.state, 'DENIED');
+  assert.equal(separation.revenueSide.value, null);
+  assert.equal(separation.arithmeticPerformedAcrossSides, false);
+});
+
+/**
+ * The honest second binding route: a genuine comparison that has lost object identity across
+ * serialization is still attestable, but ONLY by re-executing the released module over the
+ * SEPARATELY RETAINED source rows it is about. Labels and a digest alone are not enough, and a
+ * different retained input cannot reproduce the digest.
+ */
+test('KS238-R negative: a serialized genuine comparison needs its retained rows; labels alone are refused', async () => {
+  const rows = SEGMENT_FIXTURE.rows ?? SEGMENT_FIXTURE;
+  const composed = composeReleasedNetRevenueComparison({ sourceRows: rows });
+  const roundTripped = JSON.parse(JSON.stringify(composed.report));
+  const bare = attestReleasedNetRevenueComparison(roundTripped);
+  assert.equal(bare.ok, false);
+  assert.equal(bare.code, 'NET_REVENUE_RELEASED_EXECUTION_UNVERIFIED');
+  const attested = attestReleasedNetRevenueComparison(roundTripped, { retainedSourceRows: rows });
+  assert.equal(attested.ok, true);
+  assert.equal(attested.basis, 'RECOMPOSED_FROM_SEPARATELY_RETAINED_SOURCE_ROWS');
+  assert.equal(attested.digest, composed.digest);
+  // A different retained input cannot reproduce the same digest.
+  const altered = rows.map((row, i) => (i === 0 ? { ...row, amount_minor_units: row.amount_minor_units + 1 } : row));
+  const mismatched = attestReleasedNetRevenueComparison(roundTripped, { retainedSourceRows: altered });
+  assert.equal(mismatched.ok, false);
+  assert.equal(mismatched.code, 'NET_REVENUE_RETAINED_ROWS_DIGEST_MISMATCH');
+});
+
+// ------------------------- FINDING 3 + 4: portable pinned-artifact provisioning
+
+test('KS238-R: the provisioned pinned artifact resolves with NO Git object database', async () => {
+  const provisioned = path.resolve(REPO_ROOT,
+    'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+  assert.ok(PAN_ORDER_SOURCE_DEPENDENCY.defaultCandidates
+    .includes('dependencies/pansphaira/src/ks238/order-source-handoff.mjs'),
+  'the pinned artifact provision must be a declared candidate');
+  assert.ok(fs.existsSync(provisioned),
+    'the pinned artifact provision must be present so canonical qualification needs no sibling');
+  // No producerRepoRoot is supplied: there is no object database to bind against, so the
+  // honest commit binding is UNRESOLVED -- never a fabricated MATCH.
+  const resolved = await resolveOrderSourceHandoffModule({ repoRoot: REPO_ROOT, explicitPath: provisioned });
+  assert.equal(resolved.ok, true, resolved.code);
+  assert.equal(resolved.moduleSha256, PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256);
+  assert.equal(resolved.commitBinding, 'UNRESOLVED');
+  assert.equal(typeof resolved.producer.createKs238OrderSourceHandoff, 'function');
+  assert.equal(typeof resolved.producer.rebindSerializedOrderSource, 'function');
+});
+
+test('KS238-R: the provisioned closure verifies byte-for-byte against the artifact manifest', () => {
+  const provisioned = path.resolve(REPO_ROOT,
+    'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+  assert.equal(sha256(fs.readFileSync(provisioned)),
+    PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256);
+  const closure = computeRuntimeClosureSha256({ moduleFile: provisioned });
+  assert.equal(closure.ok, true, closure.code);
+  assert.equal(closure.closureSha256, PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureSha256);
+  assert.equal(closure.fileCount, PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureFileCount);
+  const verify = spawnSync(process.execPath, [
+    path.join(REPO_ROOT, 'scripts/provision-ks238-order-source-dependency.mjs'), '--verify',
+  ], { encoding: 'utf8', cwd: REPO_ROOT });
+  assert.equal(verify.status, 0, verify.stderr);
+  assert.match(verify.stdout, /PROVISION-VERIFIED/);
+});
+
+// ------------------- FINDING 1 (CLI half): the normal run ANSWERS the bounded question
+
+test('KS238-R: the CLI normal path EXECUTES the released revenue comparison beside the order census', () => {
+  const run = runCli([]);
+  assert.equal(run.status, 0, run.stderr);
+  const payload = JSON.parse(run.stdout);
+  // F1: top-level self-checks are green AND the revenue side is a real released execution,
+  // never an unconditional UNAVAILABLE on the normal path.
+  assert.equal(payload.selfChecks, 'ALL_GREEN');
+  assert.equal(payload.separation.revenueSide.state, 'AVAILABLE');
+  assert.equal(payload.separation.revenueSide.reason, null);
+  const value = payload.separation.revenueSide.value;
+  assert.equal(value.attestation.basis, 'IN_PROCESS_RELEASED_COMPOSITION');
+  assert.equal(value.ownedByThisHandoff, false);
+  // Independent expected fixture outcomes: the released 2026-06 / 2026-07 windows.
+  assert.equal(value.releasedComparison.current.netRevenue, 66000);
+  assert.equal(value.releasedComparison.comparison.netRevenue, 45000);
+  assert.equal(value.releasedComparison.delta.netRevenue, 21000);
+  // The order side independently answers the reader's own census, and stays separate.
+  assert.equal(payload.currentOrderComparison.byStatus.OPEN.count, 2);
+  assert.equal(payload.currentOrderComparison.byStatus.FULFILLED.count, 1);
+  assert.equal(payload.currentOrderComparison.byCustomerSegment.ACTIVE.count, 2);
+  assert.equal(payload.currentOrderComparison.byCustomerSegment.ON_HOLD.count, 1);
+  assert.equal(payload.separation.arithmeticPerformedAcrossSides, false);
 });

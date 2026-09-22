@@ -34,7 +34,7 @@
 
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {rmSync} from 'node:fs';
+import {readFileSync, rmSync} from 'node:fs';
 import {mkdtemp, readFile, writeFile} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -613,7 +613,18 @@ const C2_RAW_EVIDENCE_PRIMARY_PATH = '.ks150-c2-real-cleanroom-primary-evidence.
 const C2_RAW_EVIDENCE_POST_RESTORE_PATH = '.ks150-c2-real-cleanroom-post-restore-evidence.json';
 const C2_RAW_EVIDENCE_SHA256 = 'b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382';
 const C2_REAL_CLEANROOM_PROVENANCE_PATH = 'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json';
-const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '342ac1d037834e1b70aa22be9273d89097205acac4d9027a3168421783a9416d';
+// FINDING 5: this record's identity hash moved when the historical bindings were restored to
+// the values the real run actually bound (859970ca/31e72dbf) and the current axis was added.
+// The previous value 342ac1d0... was the identity of the record as silently rewritten by the
+// KS238 commit; it is superseded, not restored, because the rewritten record was the defect.
+const C2_REAL_CLEANROOM_PROVENANCE_IDENTITY_SHA256 = '30d1a55ffed2ccb36b31293c5d64557671c690db3d337cb4d2a6890363d0a85b';
+// The identity this record carried from its delivery until the KS238 commit rewrote it. Pinned
+// so the historical regression can prove the substitution is no longer present.
+// Identities the provenance body actually had at each prior milestone; the migration axis
+// asserts these are the real historical values, not placeholders.
+const C2_REAL_CLEANROOM_PROVENANCE_PRE_MIGRATION_IDENTITY_SHA256 = '342ac1d037834e1b70aa22be9273d89097205acac4d9027a3168421783a9416d';
+const C2_REAL_CLEANROOM_PROVENANCE_HISTORICAL_AT_INTEGRATION_SHA256 = '4686d5e91a2dff5fd1e94efb137d4691cdba10eff0be61a5c2c5e0f3e56686c0';
+const C2_REAL_CLEANROOM_PROVENANCE_HISTORICAL_AT_CORRECTION_SHA256 = '2cea3db5b723b1b1fedc6527472006916177182820eea990b8d9694ded5ad2e5';
 const C2_REAL_CLEANROOM_READBACK_PATH = 'docs/evidence/postgresql-c2-real-cleanroom/README.md';
 const C2_REAL_CLEANROOM_READBACK_SHA256 = 'b2739ec7391c2a2233be22e764150597b08bf614119569b968fb549fa1d1dca3';
 const C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA = '1d1ca03819f659cffc014d38b29b4cbab5890197a960a69ed003bb98b6affc7c';
@@ -648,6 +659,20 @@ const ALLOWED_C2_CORRECTION_PATHS = new Set([
   'services/bi-control/src/business-bi/net-revenue-plan.mjs',
 ]);
 
+// The C1 identity digests as they were before and after the KS238 re-binding. Only these
+// values may appear on a changed line of the rebound evidence files.
+const HISTORICAL = [
+  '859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6',
+  '31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868',
+  // The release manifest digest is package.json's own sha256; the same commit moved it.
+  '5f8eac55337f60e524ada3988168afbbaef91d472e186d2bcbb89b7de11e3310',
+];
+const CURRENT = [
+  '779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb',
+  '9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b',
+  '85ca0ccac0fa41d937e2ce62768bff6b1cfe3b2ec3d04886343fcd905646c401',
+];
+
 const assertC2CorrectionScope = ({cwd = root, integrated = C2_INTEGRATED_COMMIT,
   correction = C2_CORRECTION_COMMIT, head = 'HEAD',
   boundPaths = [...C2_TESTED_BINDING_PATHS, 'package.json']} = {}) => {
@@ -658,9 +683,133 @@ const assertC2CorrectionScope = ({cwd = root, integrated = C2_INTEGRATED_COMMIT,
   assert.ok(historicalChanges.every((file) => ALLOWED_C2_CORRECTION_PATHS.has(file)),
     `changed files outside the bounded correction: ${historicalChanges.join(', ')}`);
   // Bound bytes remain protected through current HEAD, not just through the correction.
+  //
+  // FINDING 5 (honest historical/current migration). This gate previously asserted EVERY bound
+  // path is byte-identical from the squash integration through HEAD. That is true of the
+  // contract, the certificate, the runner, the C1 substrate, and the admitted BI fixtures.
+  // It is NOT true of services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs: the
+  // KS238 commit 40f87f4467630cc6c2d9ea3d28fd9dfe6a42d435 changed exactly three lines of it,
+  // re-binding the C1 certificate digests the C2 record cites from the historical values the
+  // real run bound (859970ca.../31e72dbf...) to the current C1 evidence values
+  // (779831c6.../9a34711f...). Asserting byte-identity here was the dishonest option: it
+  // forced the "fix" to be a silent rewrite of a historical observation. The gate now:
+  //   (a) still fails closed on drift in any OTHER bound path, and
+  //   (b) permits drift ONLY in this one module, ONLY in the exact C1-identity lines, and
+  //       ONLY when the historical bindings are preserved on the historical axis and the
+  //       current values are stated explicitly.
   const changed = runGit(cwd, 'diff', '--name-only', integrated, head).split('\n').filter(Boolean);
+  const REBOUND_C1_IDENTITY_MODULE = 'services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs';
+  const drifted = [];
   for (const bound of boundPaths) {
-    assert.ok(!changed.includes(bound), `${bound} is byte-identical since the squash integration`);
+    if (!changed.includes(bound)) continue;
+    // A synthetic repo has no KS238 re-binding to permit: every bound path there must be
+    // byte-identical, which is what the "still fail closed" subtest asserts.
+    if (cwd !== root) {
+      assert.fail(`${bound} is byte-identical on Main`);
+    }
+    if (![
+      REBOUND_C1_IDENTITY_MODULE,
+      'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
+      'verification/postgresql/postgresql-c1-evidence-v1.json',
+      // The C2 certificate's own identity fields were re-bound by the same KS238 commit, and
+      // its raw bytes therefore moved; the migration axis below asserts that explicitly.
+      'verification/postgresql-c2-safe-aggregate-v1.json',
+      // package.json gained the KS238 test registration; asserted to be additive below.
+      'package.json',
+    ].includes(bound)) drifted.push(bound);
+  }
+  assert.deepEqual(drifted, [],
+    `bound paths drifted outside the one permitted C1-identity re-binding: ${drifted.join(', ')}`);
+  if (cwd === root && boundPaths.some((b) => changed.includes(b) && [
+      REBOUND_C1_IDENTITY_MODULE,
+      'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
+      'verification/postgresql/postgresql-c1-evidence-v1.json',
+    ].includes(b))) {
+    // The permitted drift must be exactly the C1-identity constants and nothing else.
+    const moduleDiff = runGit(cwd, 'diff', '-U0', integrated, head, '--', REBOUND_C1_IDENTITY_MODULE)
+      .split('\n').filter((line) => (line.startsWith('+') || line.startsWith('-'))
+        && !line.startsWith('+++') && !line.startsWith('---'));
+    const OTHER_REBOUND = [
+      'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
+      'verification/postgresql/postgresql-c1-evidence-v1.json',
+    ];
+    for (const file of OTHER_REBOUND) {
+      const lines = runGit(cwd, 'diff', '-U0', integrated, head, '--', file)
+        .split('\n').filter((line) => (line.startsWith('+') || line.startsWith('-'))
+          && !line.startsWith('+++') && !line.startsWith('---'));
+      for (const line of lines) {
+        assert.ok([...HISTORICAL, ...CURRENT].some((digest) => line.includes(digest)),
+          `drift in ${file} may only touch the C1 identity binding: ${line}`);
+      }
+    }
+    // package.json may only have gained the KS238 registration; nothing may be removed from it.
+    const pkgLines = runGit(cwd, 'diff', '-U0', integrated, head, '--', 'package.json')
+      .split('\n').filter((line) => (line.startsWith('+') || line.startsWith('-'))
+        && !line.startsWith('+++') && !line.startsWith('---'));
+    // package.json drift must be append-only: no test may be dropped from the aggregate runner,
+    // and nothing new may be registered except the KS238 suite.
+    const pkgThen = JSON.parse(runGit(cwd, 'show', `${integrated}:package.json`));
+    const pkgNow = JSON.parse(runGit(cwd, 'show', `${head}:package.json`));
+    const testsThen = pkgThen.scripts.test.split(/\s+/);
+    const testsNow = pkgNow.scripts.test.split(/\s+/);
+    for (const t of testsThen) {
+      assert.ok(testsNow.includes(t), `package.json drift dropped a registered test: ${t}`);
+    }
+    for (const t of testsNow) {
+      assert.ok(testsThen.includes(t) || /ks238/i.test(t),
+        `package.json drift registered something other than the KS238 suite: ${t}`);
+    }
+    assert.ok(pkgLines.length > 0 || true);
+    for (const line of moduleDiff) {
+      const isC1IdentityLine = [...HISTORICAL, ...CURRENT].some((digest) => line.includes(digest))
+        // The prose nonclaim that quotes the certificate prefix is part of the same re-binding.
+        || line.includes('certificate 859970ca...') || line.includes('certificate 779831c6...');
+      assert.ok(isC1IdentityLine,
+        `the permitted module drift may only touch the C1 identity binding: ${line}`);
+    }
+    // Both the removed (historical) and the added (current) identities must appear, so the
+    // change is a genuine, visible re-binding rather than an arbitrary mutation.
+    const MODULE_HISTORICAL = HISTORICAL.filter((d) => !d.startsWith('5f8eac55'));
+    const MODULE_CURRENT = CURRENT.filter((d) => !d.startsWith('85ca0cca'));
+    for (const digest of MODULE_HISTORICAL) {
+      assert.ok(moduleDiff.some((line) => line.startsWith('-') && line.includes(digest)),
+        `the historical C1 identity ${digest} must be visible as the removed side`);
+    }
+    for (const digest of MODULE_CURRENT) {
+      assert.ok(moduleDiff.some((line) => line.startsWith('+') && line.includes(digest)),
+        `the current C1 identity ${digest} must be visible as the added side`);
+    }
+    // The evidence files carry the same re-binding plus the release-manifest digest (package.json's
+    // own sha256). Each such value must likewise be visibly removed then added, never silently
+    // rewritten to an unrelated number.
+    const evidenceDiff = [
+      'verification/postgresql/postgresql-c1-evidence-v1.json',
+      'contracts/connectors/postgresql/c2-safe-aggregate-v1.json',
+      'verification/postgresql-c2-safe-aggregate-v1.json',
+    ].flatMap((file) => runGit(cwd, 'diff', '-U0', integrated, head, '--', file)
+      .split('\n').filter((line) => (line.startsWith('+') || line.startsWith('-'))
+        && !line.startsWith('+++') && !line.startsWith('---')));
+    const EVIDENCE_HISTORICAL = [...HISTORICAL];
+    const EVIDENCE_CURRENT = [...CURRENT];
+    // The C2 certificate's raw bytes are not a field inside any file, so they cannot appear in a
+    // text diff. Assert them against the real artifacts instead: the historical bytes are exactly
+    // recoverable from the tested head, and the current bytes are exactly what is committed now.
+    const certThen = execFileSync('git', ['show', `${integrated}:verification/postgresql-c2-safe-aggregate-v1.json`], {cwd});
+    const certNow = readFileSync(path.join(root, 'verification/postgresql-c2-safe-aggregate-v1.json'));
+    assert.equal(fileSha256(certThen), '630096d44765665b6aa13d6d99f897c80dc2b011e6cfe9cd7efd027a25147e3b',
+      'the C2 certificate bytes at the tested head are the historical ones');
+    assert.equal(fileSha256(certNow), '1d1ca03819f659cffc014d38b29b4cbab5890197a960a69ed003bb98b6affc7c',
+      'the committed C2 certificate bytes are the current ones');
+    assert.notEqual(fileSha256(certThen), fileSha256(certNow),
+      'the certificate is not claimed UNCHANGED while its bytes moved');
+    for (const digest of EVIDENCE_HISTORICAL) {
+      assert.ok(evidenceDiff.some((line) => line.startsWith('-') && line.includes(digest)),
+        `the historical evidence digest ${digest} must be visible as the removed side`);
+    }
+    for (const digest of EVIDENCE_CURRENT) {
+      assert.ok(evidenceDiff.some((line) => line.startsWith('+') && line.includes(digest)),
+        `the current evidence digest ${digest} must be visible as the added side`);
+    }
   }
   return changed;
 };
@@ -850,7 +999,39 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   assert.equal(provBody.certificate.certificateSha256, C2_REAL_CLEANROOM_CERTIFICATE_IDENTITY_SHA);
   assert.equal(fileSha256(await readFile(committedPath)), C2_REAL_CLEANROOM_CERTIFICATE_RAW_SHA);
   assert.equal(provBody.bindings.c1ProfileSha256, C1_PROFILE_SHA256);
-  assert.equal(provBody.bindings.c1CertificateSha256, C1_CERTIFICATE_SHA256);
+  // FINDING 5 (honest historical/current migration). The C1 evidence file was itself
+  // re-minted after the tested head: its own bytes moved 859970ca... -> 779831c6... and its
+  // certificateSha256 31e72dbf... -> 9a34711f.... A prior revision silently substituted the
+  // CURRENT values into this record's HISTORICAL bindings, so a 2026-09-12 real observation
+  // appeared to have bound bytes that did not exist on that date. The historical axis now
+  // records what the run actually bound, and the current axis is stated separately.
+  const HISTORICAL_C1_CERTIFICATE_SHA256 =
+    '859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6';
+  const HISTORICAL_C1_CERTIFICATE_IDENTITY_SHA256 =
+    '31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868';
+  assert.equal(provBody.bindings.c1CertificateSha256, HISTORICAL_C1_CERTIFICATE_SHA256,
+    'the historical binding records the bytes the real run actually bound');
+  assert.equal(provBody.bindings.c1CertificateIdentitySha256, HISTORICAL_C1_CERTIFICATE_IDENTITY_SHA256,
+    'the historical certificate identity records what the real run actually bound');
+  assert.notEqual(provBody.bindings.c1CertificateSha256, C1_CERTIFICATE_SHA256,
+    'the historical axis must not be silently rewritten to the current identity');
+  // The current axis is explicit, so the drift is carried as a stated fact rather than a
+  // contradiction between this record and the live C1 bytes.
+  const migration = provBody.identityMigration;
+  assert.equal(migration.recordKind, 'HISTORICAL_VERSUS_CURRENT_IDENTITY_MIGRATION');
+  assert.deepEqual(migration.historicalBindings, {...provBody.bindings});
+  assert.equal(migration.currentBindings.c1CertificateSha256, C1_CERTIFICATE_SHA256,
+    'the current axis names the on-disk C1 certificate');
+  assert.equal(migration.currentBindings.c1CertificateIdentitySha256, C1_CERTIFICATE_IDENTITY_SHA256,
+    'the current axis names the on-disk C1 certificate identity');
+  assert.deepEqual(migration.driftedBindings,
+    ['c1CertificateSha256', 'c1CertificateIdentitySha256']);
+  // The current axis must be TRUE of the live tree, not merely recorded.
+  assert.equal(fileSha256(await readFile(c1CertPath)), migration.currentBindings.c1CertificateSha256,
+    'the current axis agrees with the actual C1 evidence bytes on disk');
+  assert.equal((await readFile(c1CertPath, 'utf8') && JSON.parse(await readFile(c1CertPath, 'utf8'))
+    ).certificateSha256, migration.currentBindings.c1CertificateIdentitySha256,
+    'the current axis agrees with the C1 evidence self-identity on disk');
   assert.equal(provBody.bindings.metricContractSha256, ADMITTED_METRIC_CONTRACT_SHA256);
   assert.equal(provBody.bindings.holdoutSha256, ADMITTED_HOLDOUT_SHA256);
   assert.equal(provBody.bindings.oracleSha256, ADMITTED_ORACLE_SHA256);

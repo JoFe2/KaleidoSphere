@@ -15,6 +15,13 @@ const authoredFiles = [
   // The canonical test registration (`package.json#scripts.test`) is part of this
   // surface's migration, so its bytes are content-addressed here too.
   'package.json',
+  '.gitignore',
+  // The pinned-artifact provision (FINDING 3/4): the manifest is the tamper-evident root of
+  // the provisioned dependency, and the provisioner is the code that verifies it. The
+  // provisioned closure bytes are transitively covered by this manifest, so only the root
+  // needs its own entry here.
+  'contracts/dependencies/pansphaira-order-source-v1.json',
+  'scripts/provision-ks238-order-source-dependency.mjs',
   'scripts/build-ks238-order-source-fixtures.mjs',
   'scripts/run-ks238-order-source-consumption.mjs',
   'scripts/update-ks238-order-source-consumption-source-map.mjs',
@@ -22,6 +29,10 @@ const authoredFiles = [
   'tests/fixtures/business-bi/ks238-order-source/erp-read-contract-v1.json',
   'tests/fixtures/business-bi/ks238-order-source/erp-supported-export-v1.json',
   'tests/ks238-order-source-consumption.test.mjs',
+  // FINDING 5: the C2 evidence-boundary regression and the provenance record whose historical
+  // versus current identities this increment reconciles.
+  'tests/postgresql-c2-safe-aggregate.test.mjs',
+  'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json',
 ];
 
 const sourceMap = JSON.parse(await readFile(sourceMapPath, 'utf8'));

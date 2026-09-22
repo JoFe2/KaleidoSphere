@@ -8,3 +8,10 @@ npm-debug.log*
 *.tar
 *.tgz
 dist/
+
+# KS238 pinned PAN producer artifact provision (verified by
+# scripts/provision-ks238-order-source-dependency.mjs --verify). The pinned wrapper imports
+# its compiled runtime from ../../dist, so the closure is re-included here explicitly rather
+# than left to the global dist/ rule.
+!dependencies/pansphaira/dist/
+!dependencies/pansphaira/dist/**
