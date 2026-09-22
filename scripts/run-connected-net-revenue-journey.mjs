@@ -179,6 +179,10 @@ try {
       resultSha256: connected.ks236.resultSha256,
       oracleEquality: connected.ks236.oracleEquality,
       reconcilesToIndependentOracle: connected.ks236.reconcilesToIndependentOracle,
+      // The released C2 (#150) table readback and VIS-01 (#168) chart, surfaced so the
+      // supported entry point actually shows calculation/readback/table/chart/details
+      // rather than only digests. Nothing is re-rendered here.
+      presentation: connected.ks236.presentation,
     },
     ks237: { kernelDigest: connected.ks237.kernelDigest, layouts: connected.ks237.layouts },
     ks238: {

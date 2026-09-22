@@ -268,6 +268,22 @@ export async function runConnectedJourney(input) {
     reconcilesToIndependentOracle: journey.reconcilesToIndependentOracle,
     deltaMinorUnits: journey.result.deltaMinorUnits,
   };
+  // KS236 acceptance requires actual calculation/readback/TABLE/CHART/DETAILS, not only
+  // scalars and digests. These are the RELEASED C2 (#150) and VIS-01 (#168) artifacts that
+  // the released journey already renders — surfaced here rather than re-implemented, so the
+  // connected entry point composes existing calculation/readback/visualization instead of
+  // manufacturing its own receipts. The readback<->rendering identity is asserted, so a
+  // table that silently disagreed with the readback would fail rather than be published.
+  if (journey.jsonTableIdentity !== true) fail('CONNECTED_KS236_PRESENTATION_DENIED');
+  const ks236Presentation = {
+    readbackSha256: journey.readbackSha256,
+    readback: journey.readback,
+    tableRendering: journey.tableRendering,
+    chart: journey.visual,
+    chartHtml: journey.visualHtml,
+    jsonRendering: journey.jsonRendering,
+    jsonTableIdentity: journey.jsonTableIdentity,
+  };
   const ks236 = stageReceipt('KS236', {
     sourceRowsRead: JSON.parse(holdoutBytes.toString('utf8')).rows.length,
     expected: CONNECTED_EXPECTATIONS.KS236,
@@ -395,6 +411,7 @@ export async function runConnectedJourney(input) {
       reconcilesToIndependentOracle: journey.reconcilesToIndependentOracle,
       result: journey.result,
       nonclaims: journey.nonclaims,
+      presentation: ks236Presentation,
     },
     ks237: {
       kernelDigest: ks237.kernelDigest,

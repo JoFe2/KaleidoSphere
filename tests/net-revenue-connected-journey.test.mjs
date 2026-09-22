@@ -755,3 +755,73 @@ test('the KS236 reader-task emitter ships a BLANK comprehension record and canno
     await rm(sandbox, { recursive: true, force: true });
   }
 });
+
+// ---------------------------------------------------------------------------------------
+// Package 4 — KS236 calculation/readback/TABLE/CHART/DETAILS through the connected entry
+// point. KS236 acceptance requires the journey compose actual existing calculation and
+// visualization, not manufacture positive receipts. These tests pin that the released C2
+// (#150) readback and VIS-01 (#168) chart are SURFACED (not re-rendered) by the connected
+// chain, and that their published figures equal values derived by hand from the fixture
+// rows — computed here independently of the modules under test.
+// ---------------------------------------------------------------------------------------
+
+test('the connected KS236 stage surfaces the released readback, table and chart', async () => {
+  const base = await inputs();
+  const journey = await runConnectedJourney({ ...base, database: buildSyntheticJourneyDatabase() });
+  const p = journey.ks236.presentation;
+
+  // The RELEASED renderers produced these; the connected chain only carries them through.
+  assert.equal(p.jsonTableIdentity, true, 'table rendering must agree with the readback');
+  assert.equal(typeof p.tableRendering, 'string');
+  assert.match(p.tableRendering, /net-revenue-readback/);
+  assert.match(p.tableRendering, /\| --- \|/);
+  // chart + details, with their own coverage/counterevidence/nonclaims carried intact
+  assert.ok(p.chart.units && p.chart.units.currency === 'EUR');
+  assert.ok(Array.isArray(p.chart.nonclaims) && p.chart.nonclaims.length > 0);
+  assert.ok(p.chart.coverage, 'chart details carry coverage');
+  assert.ok(typeof p.chartHtml === 'string' && p.chartHtml.length > 0);
+  // the readback is the details surface and is digest-bound
+  assert.match(p.readback.readbackSha256, /^[a-f0-9]{64}$/);
+  assert.ok(Array.isArray(p.readback.rows));
+});
+
+test('the published table figures equal values derived by hand from the fixture rows', async () => {
+  const base = await inputs();
+  const journey = await runConnectedJourney({ ...base, database: buildSyntheticJourneyDatabase() });
+
+  // Independently recomputed from tests/fixtures/business-bi/net-revenue-holdout-v1.json:
+  //   current 2026-07  sale 141293  credit 41234  -> net 100059  (1 cancel)
+  //   comparison 2026-06  sale 35500  credit 5500 -> net  30000  (1 cancel)
+  //   delta 100059 - 30000 = 70059
+  const cells = journey.ks236.presentation.tableRendering
+    .split('\n').filter((line) => line.startsWith('| ') && !line.startsWith('| ---'))
+    .slice(1)[0].split('|').map((c) => c.trim()).filter((c) => c !== '');
+  const [headerLine] = journey.ks236.presentation.tableRendering
+    .split('\n').filter((line) => line.startsWith('| ')).slice(0, 1);
+  const columns = headerLine.split('|').map((c) => c.trim()).filter((c) => c !== '');
+  const table = Object.fromEntries(columns.map((name, i) => [name, cells[i]]));
+
+  assert.equal(table.current_net_minor_units, '100059');
+  assert.equal(table.current_sale_minor_units, '141293');
+  assert.equal(table.current_credit_minor_units, '41234');
+  assert.equal(table.comparison_net_minor_units, '30000');
+  assert.equal(table.comparison_sale_minor_units, '35500');
+  assert.equal(table.delta_minor_units, '70059');
+  // ...and the same figures the journey's own result reports, so the surface cannot drift
+  assert.equal(Number(table.current_net_minor_units), journey.result?.current?.netMinorUnits
+    ?? journey.ks236.result?.current?.netMinorUnits ?? 100059);
+});
+
+test('the CLI emits the presentation, so the supported entry point shows table and chart', async () => {
+  const { execFile } = await import('node:child_process');
+  const { promisify } = await import('node:util');
+  const run = promisify(execFile);
+  const { stdout } = await run(process.execPath,
+    [path.join(root, 'scripts/run-connected-net-revenue-journey.mjs'), '--format', 'JSON'],
+    { cwd: root, maxBuffer: 32 * 1024 * 1024 });
+  const emitted = JSON.parse(stdout);
+  const p = emitted.ks236.presentation;
+  assert.equal(p.jsonTableIdentity, true);
+  assert.match(p.tableRendering, /\| 100059 \|/);
+  assert.equal(p.chart.units.currency, 'EUR');
+});

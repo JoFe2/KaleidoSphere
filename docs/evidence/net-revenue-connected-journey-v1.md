@@ -180,3 +180,74 @@ order-book claim. This package reuses those definitions and adds none.
 
 `node --test tests/net-revenue-connected-journey.test.mjs` — 19 tests, 19 pass.
 `tests/source-map.test.mjs` + `tests/canonical-test-topology.test.mjs` — 150 pass.
+
+---
+
+# Package 4 — KS236 presentation surface, and the KS238 #167 promotion assessment
+
+## The gap
+
+KS236 acceptance requires "actual calculation/readback/table/chart/details". The connected
+chain surfaced only three scalars plus digests, silently discarding the readback, table and
+chart the released journey already renders. Fixed by carrying the RELEASED C2 (#150) and
+VIS-01 (#168) artifacts through the connected entry point — surfaced, not re-rendered, so
+the connected journey composes existing calculation/visualization instead of manufacturing
+its own receipts.
+
+    ks236.presentation = { readbackSha256, readback, tableRendering, chart, chartHtml,
+                           jsonRendering, jsonTableIdentity }
+
+The readback<->table identity is asserted as a gate (`CONNECTED_KS236_PRESENTATION_DENIED`),
+not merely reported, so a rendering that disagreed with the readback fails rather than being
+published. The released table genuinely carries its figures:
+
+    | 100059 | 141293 | 41234 | 1 | ... | 30000 | 35500 | 5500 | 1 | ... | 70059 | ...
+
+Independently derived from `tests/fixtures/business-bi/net-revenue-holdout-v1.json` by hand:
+current 2026-07 sale 141293 - credit 41234 = net 100059; comparison 2026-06 sale 35500 -
+credit 5500 = net 30000; delta 70059. The chart carries its own units (EUR, 100 minor units),
+coverage, counterevidence, drilldown and four nonclaims — details, not a stub.
+
+## #167 promotion assessment — KS238 (and the connected chain)
+
+Status: **NOT_PROMOTED.** Recorded as KS238 acceptance requires, before any broader visual
+composition, and with no automatic template or dashboard generator claimed.
+
+What is asserted, and by what: each localized increment (#236 journey, #237 second-layout
+mapping over the same metric core, #238 period/segment comparison) reconciles to expected
+values derived independently of the modules under test, and the connected chain now runs all
+four stages in order over one real synthetic PostgreSQL source with every handoff checked.
+The KS238 comparison digest is byte-identical across source modes and across both released
+layouts — the semantic core is transport-neutral.
+
+What is NOT asserted: broader visual composition (generic chart/template/dashboard
+expansion) remains gated behind the #167 promotion gate and is not claimed from these
+automated tests. No customer or production readiness, no causal attribution, no
+order-intake/open-order semantics, and no release authority is inferred.
+
+Blocker on promotion, stated plainly: `dependencyClosed` is false. The released PSAi
+registry entry for XRA-PS-01 is HELD with all-null closure evidence, and admission of a
+candidate is deliberately not authority to promote. The promotion assessment therefore stays
+NOT_PROMOTED regardless of how many local proofs pass, and only a real human release
+decision can change it. Human comprehension for KS236 is likewise outstanding and cannot be
+supplied by a test.
+
+## A stale released sentence — recorded here, NOT edited there
+
+The released `docs/evidence/net-revenue-segment-comparison-v1.md` (introduced by released PR
+#239) states that "actual source-to-comparison composition and the connected #237→#238 CLI
+path remain unimplemented and parent-owned". That was accurate at release and is now stale:
+the connected composition and its CLI entry point exist on this branch.
+
+I deliberately did NOT edit that file. It is part of a released candidate, the order forbids
+modifying earlier candidates, and rewriting released evidence from an unreleased branch would
+blur a released proof class with an unreleased claim in the very document that attests it.
+The correction is recorded here instead, as a pointer for the parent reviewer:
+
+    released : docs/evidence/net-revenue-segment-comparison-v1.md  (PR #239) — unchanged
+    stale    : "the connected #237→#238 CLI path remain unimplemented and parent-owned"
+    actual   : implemented as a LOCAL CANDIDATE on branch work/ks-connected-flash
+               services/bi-control/src/business-bi/net-revenue-connected-journey.mjs
+               scripts/run-connected-net-revenue-journey.mjs
+    effect   : unreleased and unpushed; no proof class changes, no promotion claimed.
+               Correcting the sibling document is the parent's call, not this branch's.
