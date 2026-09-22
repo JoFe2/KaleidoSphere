@@ -2,10 +2,11 @@
 /**
  * FINDING 4 -- portable canonical provisioning.
  *
- * The KS238 canonical test consumed the PAN order-source handoff from a sibling checkout
- * (`../PANSPHAIRA-source`) that carries unpublished Git history. That made the canonical
- * command depend on a private checkout a CI machine may not have, and made the no-`.git`
- * qualification fail.
+ * The KS238 canonical test consumed the PAN order-source handoff from a local sibling
+ * checkout (`../PANSPHAIRA-source`) that a CI machine may not have, which made the no-`.git`
+ * qualification fail. The producer is also PUBLICLY RELEASED (`bounded-order-source-
+ * dbdea89e1d55`, Main `dbdea89e1d553a7fdb60727224e1ab677717d371`), and the manifest's
+ * `release` block records that released SOURCE identity alongside the bytes below.
  *
  * This provisions the dependency from the PINNED ARTIFACT MANIFEST instead:
  *
@@ -27,8 +28,10 @@ import {cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSy
 import path from 'node:path';
 import process from 'node:process';
 
-import {PAN_ORDER_SOURCE_DEPENDENCY} from
-  '../services/bi-control/src/business-bi/order-source-consumption.mjs';
+import {
+  PAN_ORDER_SOURCE_DEPENDENCY,
+  PAN_ORDER_SOURCE_RELEASE,
+} from '../services/bi-control/src/business-bi/order-source-consumption.mjs';
 
 const REPO_ROOT = path.resolve(import.meta.dirname, '..');
 const MANIFEST_PATH = path.join(REPO_ROOT, 'contracts/dependencies/pansphaira-order-source-v1.json');
@@ -85,6 +88,27 @@ if (manifest.runtimeClosureSha256 !== PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntim
 if (manifest.files.length !== PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureFileCount) {
   fail('MANIFEST_FILE_COUNT_DISAGREES_WITH_CONSUMER_PIN',
     `${manifest.files.length} != ${PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureFileCount}`);
+}
+// The manifest's `release` block is the PUBLIC RELEASED SOURCE identity. It must agree with
+// the consumer's own pinned release record, so the provision cannot drift away from the
+// release it claims to reproduce -- and it must never claim a published compiled bundle.
+const release = manifest.release ?? {};
+const releaseDisagreements = [
+  ['releaseId', release.releaseId, PAN_ORDER_SOURCE_RELEASE.releaseId],
+  ['tag', release.tag, PAN_ORDER_SOURCE_RELEASE.tag],
+  ['mainCommit', release.mainCommit, PAN_ORDER_SOURCE_RELEASE.mainCommit],
+  ['publishedAt', release.publishedAt, PAN_ORDER_SOURCE_RELEASE.publishedAt],
+  ['releaseClass', release.releaseClass, PAN_ORDER_SOURCE_RELEASE.releaseClass],
+  ['sourceModuleSha256', release.sourceModuleSha256, PAN_ORDER_SOURCE_RELEASE.moduleSha256],
+  ['attachedAssets', release.attachedAssets, PAN_ORDER_SOURCE_RELEASE.attachedAssets],
+  ['compiledClosurePublished', release.compiledClosurePublished, PAN_ORDER_SOURCE_RELEASE.compiledClosurePublished],
+].filter(([, actual, expected]) => actual !== expected);
+if (releaseDisagreements.length > 0) {
+  fail('MANIFEST_RELEASE_DISAGREES_WITH_CONSUMER_PIN',
+    releaseDisagreements.map(([field, actual, expected]) => `${field}:${actual}!==${expected}`).join(', '));
+}
+if (release.compiledClosurePublished !== false) {
+  fail('MANIFEST_RELEASE_INFLATED_INTO_A_PUBLICATION', 'the release is SOURCE_EVIDENCE_ONLY with no assets');
 }
 
 const verifyInstall = () => {

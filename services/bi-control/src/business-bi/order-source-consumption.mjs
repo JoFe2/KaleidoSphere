@@ -97,12 +97,13 @@ export const PAN_ORDER_SOURCE_DEPENDENCY = Object.freeze({
   // resolved through a private Git history, an absolute host path baked into source, or a
   // package registry the CI machine may not have.
   defaultCandidates: Object.freeze([
-    // FIRST the pinned sibling checkout when it is present (it carries a Git object
+    // FIRST a local sibling checkout when one is present (it carries a Git object
     // database, so the commit binding can be a positive MATCH), THEN the pinned artifact
     // provision, which needs no Git history at all. Both are integrity-checked against the
     // same module + runtime-closure pins, so a provisioned tree is a first-class identity,
-    // not a fallback that weakens the check. Canonical qualification works with EITHER
-    // present and does NOT require the unpublished sibling.
+    // not a fallback that weakens the check. The producer IS publicly released
+    // (PAN_ORDER_SOURCE_RELEASE below), so canonical qualification needs NEITHER the
+    // sibling NOR any private history: the released source bytes are the identity.
     '../PANSPHAIRA-source/src/ks238/order-source-handoff.mjs',
     'dependencies/pansphaira/src/ks238/order-source-handoff.mjs',
   ]),
@@ -115,6 +116,60 @@ export const PAN_ORDER_SOURCE_DEPENDENCY = Object.freeze({
   envVar: 'KS238_PAN_ORDER_SOURCE_MODULE',
   defaultSourceBytes: 'tests/fixtures/erp-read/supported-export-v1.json',
   defaultContract: 'tests/fixtures/erp-read/contract-v1.json',
+});
+
+// The PUBLIC RELEASED SOURCE IDENTITY of the producer, independent of any local checkout.
+//
+// The producer is NOT unpublished: `bounded-order-source-dbdea89e1d55` is a public GitHub
+// release whose tag resolves to Main `dbdea89e1d553a7fdb60727224e1ab677717d371`, published
+// 2026-09-22T20:43:57Z. It is a SOURCE_EVIDENCE_ONLY release and carries NO attached assets:
+// the released artifact IS the source module, and the released repository's own SHA256SUMS
+// lists that module at exactly `moduleSha256` below. Nothing here is a placeholder for a
+// future publication, and nothing here claims a published COMPILED bundle.
+//
+// The three identities this record keeps apart (FINDING: they must never be conflated):
+//
+//   1. PUBLIC RELEASED SOURCE — the module bytes at the released Main / release tag. This is
+//      the authority. It is what `moduleSha256` binds.
+//   2. RETAINED COMPILED ARTIFACT — `dist/packages/contracts/src` beside the located module.
+//      The release publishes SOURCE ONLY, so this closure is a LOCAL BUILD of the released
+//      source (locked build `tsc -p tsconfig.json`), reproducible from the released bytes.
+//      It is byte-identical to `runtimeClosureSha256`, but it was NOT published as a release
+//      asset and `compiledClosurePublished` stays false.
+//   3. HISTORICAL CANDIDATE COMMITS — the corrected-branch commits below. They are public
+//      and they carry the SAME handoff module bytes, but they are NOT Main and NOT the
+//      release. A commit binding to them is provenance, never a public release identifier.
+//
+// A fourth, optional fact is the Git object-database binding reported as `commitBinding`
+// (MATCH / MISMATCH / UNRESOLVED). It is additional confirmation, never the identity.
+export const PAN_ORDER_SOURCE_RELEASE = Object.freeze({
+  host: 'github',
+  repository: 'JoFe2/PANSPHAIRA',
+  releaseId: 'bounded-order-source-dbdea89e1d55',
+  tag: 'bounded-order-source-dbdea89e1d55',
+  mainCommit: 'dbdea89e1d553a7fdb60727224e1ab677717d371',
+  publishedAt: '2026-09-22T20:43:57Z',
+  releaseClass: 'SOURCE_EVIDENCE_ONLY',
+  proofClass: 'SOURCE_EVIDENCE',
+  gate: 'ANONYMOUS_PUBLIC_READBACK',
+  // The published release has no attached assets: it is source-only.
+  attachedAssets: 0,
+  module: 'src/ks238/order-source-handoff.mjs',
+  // The released module bytes, equal to the release's own SHA256SUMS entry.
+  moduleSha256: 'a9b3e0d28133c0f2a2aa2a1b7a630693a50aea993814993c23e3d4c573d2b917',
+  // The locked, supported local build that compiles the released source to the closure.
+  buildCommand: 'tsc -p tsconfig.json',
+  runtimeClosureRoot: 'dist/packages/contracts/src',
+  runtimeClosureSha256: 'a4db88ea0b8dc08024992e433d5742fa01a7b24f463d281d3a5beed9fe8dd866',
+  runtimeClosureFileCount: 156,
+  // SOURCE-EVIDENCE ONLY: the compiled closure is a reproducible local build of the released
+  // source, NOT a published release artifact. Never reported as published.
+  compiledClosurePublished: false,
+  // Historical candidate commits (public; NOT Main, NOT the release). Same module bytes.
+  historicalCandidateCommits: Object.freeze([
+    'a1b65af354e17f206bc7bc1c5df29cdcb11bef6f',
+    '2fb96e3f8ef599459da7f2ca8bd087c463366fc1',
+  ]),
 });
 
 export const ORDER_SOURCE_CONSUMPTION_NONCLAIMS = Object.freeze([
@@ -196,6 +251,179 @@ export function computeRuntimeClosureSha256({ moduleFile, dependency = PAN_ORDER
     closureSha256,
     expectedClosureSha256: expected,
     criticalMismatch,
+  };
+}
+
+/**
+ * QUALIFY a located producer against the PUBLIC RELEASED SOURCE IDENTITY.
+ *
+ * This is the narrow executable binding that keeps four identities apart instead of
+ * letting them collapse into "the producer":
+ *
+ *   - PUBLIC RELEASED SOURCE      the module bytes at the released Main / release tag;
+ *   - RETAINED COMPILED ARTIFACT  the closure built beside the located module;
+ *   - HISTORICAL CANDIDATE        the public corrected-branch commits (same module bytes);
+ *   - GIT EVIDENCE                the optional `commitBinding` (MATCH / MISMATCH / UNRESOLVED).
+ *
+ * It is BYTES-ONLY and therefore PORTABLE: no network, no `.git`, no sibling checkout, no
+ * package registry. Given the same released bytes on any host it returns the same verdict,
+ * and it refuses when the bytes are not the released ones — it never upgrades a source-only
+ * release into a compiled publication.
+ *
+ * Expected values come ONLY from the pinned released identity (`release`, defaulting to
+ * PAN_ORDER_SOURCE_RELEASE) and the consumer pin (`dependency`). A caller may pass `claimed`
+ * to have its own declaration checked, and any disagreement is a DENIAL: an unverified
+ * release id is not an identity. Naming a HISTORICAL CANDIDATE commit as the release is the
+ * wrong-release-identity case and is refused the same way.
+ *
+ * A missing module is an honest UNAVAILABLE, never a pass.
+ */
+export function qualifyReleasedOrderSourceBinding({
+  moduleFile,
+  dependency = PAN_ORDER_SOURCE_DEPENDENCY,
+  release = PAN_ORDER_SOURCE_RELEASE,
+  claimed = null,
+} = {}) {
+  const base = {
+    release: {
+      host: release.host,
+      repository: release.repository,
+      releaseId: release.releaseId,
+      tag: release.tag,
+      mainCommit: release.mainCommit,
+      publishedAt: release.publishedAt,
+      releaseClass: release.releaseClass,
+      proofClass: release.proofClass,
+      gate: release.gate,
+      attachedAssets: release.attachedAssets,
+      compiledClosurePublished: release.compiledClosurePublished,
+    },
+    historicalCandidate: {
+      commits: [...release.historicalCandidateCommits],
+      isTheRelease: false,
+      state: 'NOT_THE_RELEASE',
+    },
+  };
+  const deny = (code, detail) => ({
+    ok: false, state: 'DENIED', code, ...base, ...detail,
+    // A decision this function makes is never itself a release identifier.
+    releaseBinding: null,
+  });
+  const unavailable = (code, detail) => ({
+    ok: false, state: 'UNAVAILABLE', code, ...base, ...detail, releaseBinding: null,
+  });
+
+  // 0. The two pins must agree with each other before either is used as an expectation.
+  //    A silent divergence here would let the consumer verify one identity while reporting
+  //    another, so it is a DENIAL rather than a warning.
+  const pinDivergence = [];
+  if (dependency.expectedModuleSha256 !== release.moduleSha256) pinDivergence.push('moduleSha256');
+  if (dependency.expectedRuntimeClosureSha256 !== release.runtimeClosureSha256) pinDivergence.push('runtimeClosureSha256');
+  if (dependency.expectedRuntimeClosureFileCount !== release.runtimeClosureFileCount) pinDivergence.push('runtimeClosureFileCount');
+  if (pinDivergence.length > 0) {
+    return deny('PAN_ORDER_SOURCE_RELEASE_PIN_DIVERGENCE', { pinDivergence });
+  }
+
+  // 1. A caller's own release declaration, when supplied, must match the pinned release.
+  //    This is the "wrong release identity" boundary: it distinguishes the release from the
+  //    historical candidate commits, which carry the same module bytes.
+  if (claimed !== null && claimed !== undefined) {
+    const claim = claimed ?? {};
+    const identityFields = ['releaseId', 'tag', 'mainCommit'];
+    const identityMismatch = identityFields
+      .filter((field) => claim[field] !== undefined && claim[field] !== release[field])
+      .map((field) => ({ field, claimed: claim[field], expected: release[field] }));
+    if (identityMismatch.length > 0) {
+      const namesHistoricalCandidate = identityMismatch.some((m) => (
+        release.historicalCandidateCommits.includes(m.claimed)
+      ));
+      return deny('PAN_ORDER_SOURCE_RELEASE_IDENTITY_DENIED', {
+        identityMismatch,
+        namesHistoricalCandidate,
+        reason: namesHistoricalCandidate
+          ? 'A HISTORICAL CANDIDATE commit was presented as the public release identity; '
+            + 'the candidate carries the same module bytes but is not Main and not the release.'
+          : 'The claimed release identity is not the pinned public release identity.',
+      });
+    }
+    if (claim.moduleSha256 !== undefined && claim.moduleSha256 !== release.moduleSha256) {
+      return deny('PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED', {
+        claimed: { moduleSha256: claim.moduleSha256 },
+        actual: { moduleSha256: release.moduleSha256 },
+        reason: 'The claimed released module bytes are not the pinned released module bytes.',
+      });
+    }
+    if (claim.runtimeClosureSha256 !== undefined
+      && claim.runtimeClosureSha256 !== release.runtimeClosureSha256) {
+      return deny('PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED', {
+        claimed: { runtimeClosureSha256: claim.runtimeClosureSha256 },
+        actual: { runtimeClosureSha256: release.runtimeClosureSha256 },
+        reason: 'The claimed released closure bytes are not the pinned released closure bytes.',
+      });
+    }
+  }
+
+  // 2. Measure the ACTUAL bytes. Nothing below is taken from the caller.
+  if (typeof moduleFile !== 'string' || moduleFile.length === 0) {
+    return unavailable('PAN_ORDER_SOURCE_RELEASE_MODULE_MISSING', { moduleFile: moduleFile ?? null });
+  }
+  if (!existsSync(moduleFile)) {
+    return unavailable('PAN_ORDER_SOURCE_RELEASE_MODULE_NOT_FOUND', { moduleFile });
+  }
+  const moduleBytes = readFileSync(moduleFile);
+  const moduleSha256 = sha256Hex(moduleBytes);
+  if (moduleSha256 !== release.moduleSha256) {
+    return deny('PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED', {
+      moduleFile,
+      actual: { moduleSha256 },
+      expected: { moduleSha256: release.moduleSha256 },
+      reason: 'The located module bytes are not the bytes of the public released source.',
+    });
+  }
+  const runtimeClosure = computeRuntimeClosureSha256({ moduleFile, dependency });
+  if (!runtimeClosure.ok) {
+    return deny('PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED', {
+      moduleFile,
+      runtimeClosure,
+      expected: { runtimeClosureSha256: release.runtimeClosureSha256, fileCount: release.runtimeClosureFileCount },
+      reason: 'The compiled closure beside the located module is not the closure of the released source.',
+    });
+  }
+
+  return {
+    ok: true,
+    state: 'QUALIFIED',
+    code: 'OK',
+    releaseBinding: 'PUBLIC_RELEASED_SOURCE',
+    ...base,
+    publicReleasedSource: {
+      module: release.module,
+      moduleSha256,
+      expectedModuleSha256: release.moduleSha256,
+      state: 'MATCH',
+      // SOURCE_EVIDENCE_ONLY: the released artifact IS the source module.
+      compiledAssetsPublished: false,
+    },
+    retainedCompiledArtifact: {
+      closureRoot: runtimeClosure.closureRoot,
+      fileCount: runtimeClosure.fileCount,
+      closureSha256: runtimeClosure.closureSha256,
+      expectedClosureSha256: release.runtimeClosureSha256,
+      // Byte-identical to the closure the released source compiles to, under the locked
+      // local build. Reproducible from the released bytes -- and NOT a published asset.
+      state: 'BYTE_IDENTICAL_TO_RELEASED_SOURCE_BUILD',
+      buildCommand: release.buildCommand,
+      publishedAsReleaseAsset: false,
+    },
+    historicalCandidate: {
+      commits: [...release.historicalCandidateCommits],
+      isTheRelease: false,
+      state: 'NOT_THE_RELEASE',
+      // Recorded: the candidate commits carry the same module bytes, so bytes alone cannot
+      // tell the candidate from the release -- the release identity above is what does.
+      moduleSha256,
+      sameModuleBytesAsRelease: true,
+    },
   };
 }
 
@@ -309,6 +537,28 @@ export async function resolveOrderSourceHandoffModule({
       dependency: PAN_ORDER_SOURCE_DEPENDENCY,
     };
   }
+  // Independently QUALIFY the located producer against the PUBLIC RELEASED SOURCE IDENTITY
+  // before any producer code executes. This keeps the released source, the retained compiled
+  // artifact, the historical candidate commits and the optional Git evidence apart instead of
+  // collapsing them into "the producer". The qualification is bytes-only, so it holds with no
+  // `.git` and no sibling checkout.
+  const release = qualifyReleasedOrderSourceBinding({
+    moduleFile: located.file,
+    dependency: PAN_ORDER_SOURCE_DEPENDENCY,
+  });
+  if (!release.ok) {
+    return {
+      ok: false,
+      state: release.state,
+      code: release.code,
+      file: located.file,
+      moduleSha256,
+      commitBinding,
+      runtimeClosure,
+      release,
+      dependency: PAN_ORDER_SOURCE_DEPENDENCY,
+    };
+  }
   const producer = await import(pathToFileURL(located.file).href);
   for (const name of Object.values(PAN_ORDER_SOURCE_DEPENDENCY.producerEntryPoints)) {
     if (typeof producer[name] !== 'function') {
@@ -329,6 +579,7 @@ export async function resolveOrderSourceHandoffModule({
     file: located.file,
     moduleSha256,
     commitBinding,
+    release,
     producer,
     dependency: PAN_ORDER_SOURCE_DEPENDENCY,
   };
@@ -597,6 +848,9 @@ export async function consumeOrderSourceHandoff({
       moduleSha256: resolved.moduleSha256,
       commitBinding: resolved.commitBinding,
       parentCandidateCommit: PAN_ORDER_SOURCE_DEPENDENCY.parentCandidateCommit,
+      // The narrow executable binding: public released source vs retained compiled artifact
+      // vs historical candidate vs optional Git evidence. Never a published compiled bundle.
+      release: resolved.release ?? null,
     },
     retainedSourceAuthority: {
       sourceLabel: authority.sourceLabel,
@@ -1495,6 +1749,37 @@ export function runOrderSourceConsumptionSelfChecks({
       moduleSourceInspected: typeof moduleSourceText === 'string',
       delegatesCreate: typeof moduleSourceText === 'string' ? moduleSourceText.includes('createKs238OrderSourceHandoff') : null,
       forbiddenTokensFound: forks,
+    });
+
+  // The receiving side must not inflate a SOURCE_EVIDENCE_ONLY release into a published
+  // compiled bundle, and must keep the public released source, the retained compiled
+  // artifact, the historical candidate commits and the optional Git evidence apart. Checked
+  // on the LIVE consumption AND on the PUBLISHED report: a report that dropped the release
+  // binding is not proof that a released producer was used, so it fails here.
+  const liveRelease = consumption?.module?.release ?? null;
+  const publishedRelease = publishedModule?.release ?? null;
+  const releaseBound = (value) => value !== null && typeof value === 'object'
+    && value.state === 'QUALIFIED'
+    && value.releaseBinding === 'PUBLIC_RELEASED_SOURCE'
+    && value.publicReleasedSource?.state === 'MATCH'
+    && value.release?.releaseClass === 'SOURCE_EVIDENCE_ONLY'
+    && value.release?.compiledClosurePublished === false
+    && value.retainedCompiledArtifact?.publishedAsReleaseAsset === false
+    && value.historicalCandidate?.isTheRelease === false
+    && Array.isArray(value.historicalCandidate?.commits)
+    && typeof value.release?.mainCommit === 'string'
+    && value.historicalCandidate.commits.includes(value.release.mainCommit) === false;
+  push('S11_released_source_is_bound_without_inflating_it_into_a_publication',
+    releaseBound(liveRelease) && releaseBound(publishedRelease)
+      && liveRelease.release.mainCommit === publishedRelease.release.mainCommit
+      && liveRelease.retainedCompiledArtifact.closureSha256
+        === publishedRelease.retainedCompiledArtifact.closureSha256,
+    {
+      liveState: liveRelease?.state ?? null,
+      publishedState: publishedRelease?.state ?? null,
+      releaseBinding: liveRelease?.releaseBinding ?? null,
+      compiledClosurePublished: liveRelease?.release?.compiledClosurePublished ?? null,
+      publishedAsReleaseAsset: liveRelease?.retainedCompiledArtifact?.publishedAsReleaseAsset ?? null,
     });
 
   return Object.freeze(checks.map((c) => Object.freeze(c)));

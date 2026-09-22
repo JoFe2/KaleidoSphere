@@ -1,6 +1,27 @@
 {
   "schemaVersion": "kaleidosphere.dependencies/pansphaira-order-source/v1",
   "dependency": "PANSPHAIRA ks238 order-source handoff",
+  "release": {
+    "host": "github",
+    "repository": "JoFe2/PANSPHAIRA",
+    "releaseId": "bounded-order-source-dbdea89e1d55",
+    "tag": "bounded-order-source-dbdea89e1d55",
+    "mainCommit": "dbdea89e1d553a7fdb60727224e1ab677717d371",
+    "publishedAt": "2026-09-22T20:43:57Z",
+    "releaseClass": "SOURCE_EVIDENCE_ONLY",
+    "proofClass": "SOURCE_EVIDENCE",
+    "gate": "ANONYMOUS_PUBLIC_READBACK",
+    "attachedAssets": 0,
+    "compiledClosurePublished": false,
+    "buildCommand": "tsc -p tsconfig.json",
+    "sourceModule": "src/ks238/order-source-handoff.mjs",
+    "sourceModuleSha256": "a9b3e0d28133c0f2a2aa2a1b7a630693a50aea993814993c23e3d4c573d2b917",
+    "historicalCandidateCommits": [
+      "a1b65af354e17f206bc7bc1c5df29cdcb11bef6f",
+      "2fb96e3f8ef599459da7f2ca8bd087c463366fc1"
+    ],
+    "note": "The published release is SOURCE_EVIDENCE_ONLY and carries no attached assets; the retained compiled closure is a reproducible LOCAL build of this released source, not a published artifact. The historical candidate commits are public but are NOT Main and NOT the release."
+  },
   "parentCandidateCommit": "2fb96e3f8ef599459da7f2ca8bd087c463366fc1",
   "runtimeCommit": "a1b65af354e17f206bc7bc1c5df29cdcb11bef6f",
   "module": "src/ks238/order-source-handoff.mjs",

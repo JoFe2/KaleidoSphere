@@ -9,9 +9,10 @@
 //        [--out <path>] [--negative]
 //
 //   --negative runs the EXACT negative paths (substituted producer module, stale decision
-//   time, wrong source label, tampered carried payload, unsupported-status folding, and a
-//   merged order+revenue attempt) and requires every one of them to be REFUSED. A
-//   negative run that any path accepts exits non-zero.
+//   time, wrong source label, tampered carried payload, unsupported-status folding, a merged
+//   order+revenue attempt, and the release-identity paths: a HISTORICAL CANDIDATE commit
+//   presented as the public release, a changed module and a changed closure) and requires
+//   every one of them to be REFUSED. A negative run that any path accepts exits non-zero.
 //
 // No credentials, no network, no mutation, no publish path, and no public write. The only
 // optional write is a local JSON receipt under the repository or /tmp.
@@ -20,11 +21,13 @@ import { realpath, lstat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 
 import {
   PAN_ORDER_SOURCE_DEPENDENCY,
+  PAN_ORDER_SOURCE_RELEASE,
+  qualifyReleasedOrderSourceBinding,
   createRetainedSourceAuthority,
   consumeOrderSourceHandoff,
   compareSupportedCurrentOrders,
@@ -48,10 +51,11 @@ const NET_REVENUE_SEGMENT_FIXTURE = 'tests/fixtures/business-bi/net-revenue-segm
 const NOW = '2026-08-10T08:30:00Z';
 // FINDING 4 (portable canonical provisioning). The producer is located through the
 // consumer's own explicit locator, which prefers the PINNED ARTIFACT PROVISION at
-// `dependencies/pansphaira/` and only then falls back to an unpublished sibling checkout.
-// A provisioned tree therefore needs no private Git history, and `producerRepoRoot` is
-// supplied ONLY when an actual Git object database is present: the commit binding is an
-// OPTIONAL additional confirmation, never the artifact identity.
+// `dependencies/pansphaira/` and only then falls back to a local sibling checkout.
+// The producer is also PUBLICLY RELEASED (`bounded-order-source-dbdea89e1d55`, Main
+// `dbdea89e…`), so a provisioned tree needs NEITHER a sibling NOR any private Git history:
+// `producerRepoRoot` is supplied ONLY when an actual Git object database is present, and the
+// commit binding is an OPTIONAL additional confirmation, never the artifact identity.
 const PROVISIONED = path.resolve(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
 const SIBLING_REPO = path.resolve(root, '..', 'PANSPHAIRA-source');
 const PRODUCER_MODULE_CANDIDATES = [PROVISIONED, path.join(SIBLING_REPO, 'src/ks238/order-source-handoff.mjs')];
@@ -168,6 +172,22 @@ async function runNormal() {
       parentCandidateCommit: PAN_ORDER_SOURCE_DEPENDENCY.parentCandidateCommit,
       moduleSha256: consumed.module.moduleSha256,
       commitBinding: consumed.module.commitBinding,
+    },
+    // The narrow executable binding, reported as four distinguished identities. It states
+    // plainly that the release is SOURCE_EVIDENCE_ONLY with no attached assets and that the
+    // retained compiled artifact was NOT published: a source-only release is never converted
+    // into compiled/production readiness here.
+    releaseBinding: consumed.module.release?.releaseBinding ?? null,
+    release: consumed.module.release === null || consumed.module.release === undefined ? null : {
+      releaseId: consumed.module.release.release.releaseId,
+      mainCommit: consumed.module.release.release.mainCommit,
+      publishedAt: consumed.module.release.release.publishedAt,
+      releaseClass: consumed.module.release.release.releaseClass,
+      attachedAssets: consumed.module.release.release.attachedAssets,
+      publicReleasedSource: consumed.module.release.publicReleasedSource,
+      retainedCompiledArtifact: consumed.module.release.retainedCompiledArtifact,
+      historicalCandidate: consumed.module.release.historicalCandidate,
+      compiledClosurePublished: consumed.module.release.release.compiledClosurePublished,
     },
     intermediateHandoff: {
       created: consumed.handoff.bindingDigest,
@@ -292,6 +312,64 @@ async function runNegative() {
     record('N8_COMPARISON_REQUIRES_CONSUMED_HANDOFF',
       denied.outcome === 'UNAVAILABLE' && denied.code === 'CURRENT_ORDER_COMPARISON_REQUIRES_CONSUMED_HANDOFF',
       { outcome: denied.outcome, code: denied.code });
+  }
+
+  // N9 — the HISTORICAL CANDIDATE commit presented as the public release identity is
+  // refused. The candidate carries the SAME module bytes, so this is exactly the case bytes
+  // alone cannot settle: the release identity (Main / release tag) is what must be named.
+  {
+    const moduleFile = PRODUCER_MODULE ?? path.join(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+    const result = qualifyReleasedOrderSourceBinding({
+      moduleFile,
+      claimed: {
+        releaseId: PAN_ORDER_SOURCE_RELEASE.releaseId,
+        mainCommit: PAN_ORDER_SOURCE_RELEASE.historicalCandidateCommits[1],
+      },
+    });
+    record('N9_HISTORICAL_CANDIDATE_AS_RELEASE_IDENTITY_DENIED',
+      result.ok === false && result.state === 'DENIED'
+        && result.code === 'PAN_ORDER_SOURCE_RELEASE_IDENTITY_DENIED'
+        && result.namesHistoricalCandidate === true,
+      { state: result.state, code: result.code, namesHistoricalCandidate: result.namesHistoricalCandidate ?? null });
+  }
+
+  // N10 — a CHANGED MODULE is refused by the released-source binding, naming the digests.
+  {
+    const moduleFile = PRODUCER_MODULE ?? path.join(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'ks238-rel-mod-'));
+    const forged = path.join(dir, 'order-source-handoff.mjs');
+    const genuine = readFileSync(moduleFile, 'utf8');
+    const changed = genuine.replace('KS238_QUANTITY_UNAVAILABLE_V1', 'KS238_QUANTITY_AVAILABLE_V1');
+    writeFileSync(forged, changed);
+    const result = qualifyReleasedOrderSourceBinding({ moduleFile: forged });
+    record('N10_CHANGED_MODULE_DENIED',
+      result.ok === false && result.state === 'DENIED'
+        && result.code === 'PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED'
+        && result.actual.moduleSha256 !== PAN_ORDER_SOURCE_RELEASE.moduleSha256,
+      { state: result.state, code: result.code });
+  }
+
+  // N11 — a CHANGED CLOSURE is refused by the released-source binding: the genuine released
+  // module beside a substituted compiled runtime is not the released source's build.
+  {
+    const moduleFile = PRODUCER_MODULE ?? path.join(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+    const dir = mkdtempSync(path.join(os.tmpdir(), 'ks238-rel-clo-'));
+    mkdirSync(path.join(dir, 'src', 'ks238'), { recursive: true });
+    cpSync(moduleFile, path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs'));
+    const sourceClosure = path.resolve(path.dirname(moduleFile), '..', '..', 'dist/packages/contracts/src');
+    cpSync(sourceClosure, path.join(dir, 'dist', 'packages', 'contracts', 'src'), { recursive: true });
+    const reader = path.join(dir, 'dist', 'packages', 'contracts', 'src', 'erp-read-connector.js');
+    const genuine = readFileSync(reader, 'utf8');
+    const changed = genuine.replace(/"FULFILLED"/g, '"CANCELLED"');
+    if (changed === genuine) throw new Error('KS238_N11_PROBE_DID_NOT_CHANGE_BYTES');
+    writeFileSync(reader, changed);
+    const result = qualifyReleasedOrderSourceBinding({
+      moduleFile: path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs'),
+    });
+    record('N11_CHANGED_CLOSURE_DENIED',
+      result.ok === false && result.state === 'DENIED'
+        && result.code === 'PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED',
+      { state: result.state, code: result.code });
   }
 
   return {

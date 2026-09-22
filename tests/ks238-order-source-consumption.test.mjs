@@ -18,6 +18,8 @@ import {
   ORDER_SOURCE_CONSUMPTION_SCHEMA,
   ORDER_SOURCE_CONSUMPTION_NONCLAIMS,
   PAN_ORDER_SOURCE_DEPENDENCY,
+  PAN_ORDER_SOURCE_RELEASE,
+  qualifyReleasedOrderSourceBinding,
   computeRuntimeClosureSha256,
   resolveOrderSourceHandoffModule,
   createRetainedSourceAuthority,
@@ -46,8 +48,8 @@ const SOURCE_LABEL = 'LOCAL_SYNTHETIC_ERP_ORDER_SOURCE_V1';
 // suite uses 08:30:00Z, so the receiver must too.
 const NOW = '2026-08-10T08:30:00Z';
 // FINDING 4: prefer the PINNED ARTIFACT PROVISION (`dependencies/pansphaira/`, installed by
-// scripts/provision-ks238-order-source-dependency.mjs) and fall back to an unpublished
-// sibling checkout only if it exists. A provisioned tree needs no private Git history.
+// scripts/provision-ks238-order-source-dependency.mjs) and fall back to a local sibling
+// checkout only if it exists. A provisioned tree needs no private Git history.
 const PROVISIONED_MODULE = path.resolve(REPO_ROOT,
   'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
 const SIBLING_MODULE = path.resolve(REPO_ROOT, '..', 'PANSPHAIRA-source',
@@ -597,7 +599,7 @@ test('KS238-R: every task-specific self-check passes, and each can fail', async 
   const checks = runOrderSourceConsumptionSelfChecks({
     report, consumption, moduleSourceText: MODULE_SOURCE,
   });
-  assert.equal(checks.length, 10);
+  assert.equal(checks.length, 11);
   assert.deepEqual(checks.filter((c) => !c.ok), [], 'all self-checks must be green');
   assert.doesNotThrow(() => assertOrderSourceConsumptionSelfChecks({
     report, consumption, moduleSourceText: MODULE_SOURCE,
@@ -839,4 +841,205 @@ test('KS238-R: the CLI normal path EXECUTES the released revenue comparison besi
   assert.equal(payload.currentOrderComparison.byCustomerSegment.ACTIVE.count, 2);
   assert.equal(payload.currentOrderComparison.byCustomerSegment.ON_HOLD.count, 1);
   assert.equal(payload.separation.arithmeticPerformedAcrossSides, false);
+});
+
+// ------------------------------- RELEASE BINDING: released source vs its local build
+//
+// The producer is NOT unpublished: `bounded-order-source-dbdea89e1d55` is a public GitHub
+// release whose tag resolves to Main `dbdea89e1d553a7fdb60727224e1ab677717d371`. It is a
+// SOURCE_EVIDENCE_ONLY release with NO attached assets, and the repository's own SHA256SUMS
+// lists the handoff module at exactly the pinned digest. These tests bind that released
+// SOURCE identity, keep it apart from the retained compiled artifact (a reproducible LOCAL
+// build), the historical candidate commits and the optional Git evidence, and refuse to
+// inflate a source-only release into a published compiled bundle.
+
+test('KS238-R: the public released source identity is pinned and agrees with the consumer pin', () => {
+  // The release identity itself.
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.repository, 'JoFe2/PANSPHAIRA');
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.releaseId, 'bounded-order-source-dbdea89e1d55');
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.tag, PAN_ORDER_SOURCE_RELEASE.releaseId);
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.mainCommit,
+    'dbdea89e1d553a7fdb60727224e1ab677717d371');
+  assert.match(PAN_ORDER_SOURCE_RELEASE.publishedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
+  // SOURCE EVIDENCE ONLY: the release publishes no compiled bundle.
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.releaseClass, 'SOURCE_EVIDENCE_ONLY');
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.attachedAssets, 0);
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.compiledClosurePublished, false);
+  // The released module bytes ARE the consumer pin; the released closure is the pinned one.
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.module, PAN_ORDER_SOURCE_DEPENDENCY.module);
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.moduleSha256,
+    PAN_ORDER_SOURCE_DEPENDENCY.expectedModuleSha256);
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.runtimeClosureSha256,
+    PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureSha256);
+  assert.equal(PAN_ORDER_SOURCE_RELEASE.runtimeClosureFileCount,
+    PAN_ORDER_SOURCE_DEPENDENCY.expectedRuntimeClosureFileCount);
+  // The historical candidate commits are explicitly NOT the release.
+  assert.deepEqual([...PAN_ORDER_SOURCE_RELEASE.historicalCandidateCommits], [
+    'a1b65af354e17f206bc7bc1c5df29cdcb11bef6f',
+    '2fb96e3f8ef599459da7f2ca8bd087c463366fc1',
+  ]);
+  assert.ok(PAN_ORDER_SOURCE_RELEASE.historicalCandidateCommits
+    .includes(PAN_ORDER_SOURCE_RELEASE.mainCommit) === false);
+  // The artifact manifest carries the same released identity, as an executable agreement.
+  const manifest = JSON.parse(readFileSync(
+    path.join(REPO_ROOT, 'contracts/dependencies/pansphaira-order-source-v1.json'), 'utf8'));
+  assert.equal(manifest.release.releaseId, PAN_ORDER_SOURCE_RELEASE.releaseId);
+  assert.equal(manifest.release.mainCommit, PAN_ORDER_SOURCE_RELEASE.mainCommit);
+  assert.equal(manifest.release.releaseClass, 'SOURCE_EVIDENCE_ONLY');
+  assert.equal(manifest.release.attachedAssets, 0);
+  assert.equal(manifest.release.compiledClosurePublished, false);
+  assert.equal(manifest.release.sourceModuleSha256, PAN_ORDER_SOURCE_RELEASE.moduleSha256);
+  assert.equal(manifest.moduleSha256, PAN_ORDER_SOURCE_RELEASE.moduleSha256);
+  assert.equal(manifest.runtimeClosureSha256, PAN_ORDER_SOURCE_RELEASE.runtimeClosureSha256);
+});
+
+test('KS238-R: the retained compiled artifact QUALIFIES as the released source, portably', () => {
+  // The provisioned artifact is measured with NO Git object database and NO sibling source:
+  // the release binding is bytes-only, so it holds in a bare, disposable tree.
+  const qualified = qualifyReleasedOrderSourceBinding({ moduleFile: PRODUCER_MODULE_FILE });
+  assert.equal(qualified.ok, true, qualified.code);
+  assert.equal(qualified.state, 'QUALIFIED');
+  assert.equal(qualified.code, 'OK');
+  assert.equal(qualified.releaseBinding, 'PUBLIC_RELEASED_SOURCE');
+  assert.equal(qualified.release.releaseId, PAN_ORDER_SOURCE_RELEASE.releaseId);
+  assert.equal(qualified.release.releaseClass, 'SOURCE_EVIDENCE_ONLY');
+  assert.equal(qualified.release.attachedAssets, 0);
+  assert.equal(qualified.release.compiledClosurePublished, false);
+  // The released SOURCE module is the artifact of the release.
+  assert.equal(qualified.publicReleasedSource.state, 'MATCH');
+  assert.equal(qualified.publicReleasedSource.module, 'src/ks238/order-source-handoff.mjs');
+  assert.equal(qualified.publicReleasedSource.moduleSha256, PAN_ORDER_SOURCE_RELEASE.moduleSha256);
+  assert.equal(qualified.publicReleasedSource.compiledAssetsPublished, false);
+  // The retained compiled artifact is byte-identical to the released source's own build --
+  // and is NOT reported as published.
+  assert.equal(qualified.retainedCompiledArtifact.state, 'BYTE_IDENTICAL_TO_RELEASED_SOURCE_BUILD');
+  assert.equal(qualified.retainedCompiledArtifact.closureSha256,
+    PAN_ORDER_SOURCE_RELEASE.runtimeClosureSha256);
+  assert.equal(qualified.retainedCompiledArtifact.fileCount,
+    PAN_ORDER_SOURCE_RELEASE.runtimeClosureFileCount);
+  assert.equal(qualified.retainedCompiledArtifact.publishedAsReleaseAsset, false);
+  assert.equal(qualified.retainedCompiledArtifact.buildCommand, 'tsc -p tsconfig.json');
+  // The historical candidate commits are named, and are NOT the release.
+  assert.equal(qualified.historicalCandidate.isTheRelease, false);
+  assert.equal(qualified.historicalCandidate.state, 'NOT_THE_RELEASE');
+  assert.equal(qualified.historicalCandidate.sameModuleBytesAsRelease, true);
+  assert.ok(qualified.historicalCandidate.commits.includes(qualified.release.mainCommit) === false);
+});
+
+test('KS238-R: the CONSUMED handoff carries the release binding into the published report', async () => {
+  const consumption = await consumed();
+  const release = consumption.module.release;
+  assert.equal(release.state, 'QUALIFIED');
+  assert.equal(release.releaseBinding, 'PUBLIC_RELEASED_SOURCE');
+  assert.equal(release.release.mainCommit, PAN_ORDER_SOURCE_RELEASE.mainCommit);
+  assert.equal(release.release.compiledClosurePublished, false);
+  const report = buildOrderSourceConsumptionReport({ consumption, generatedAt: NOW });
+  // The published report carries the same four distinguished identities.
+  assert.equal(report.handoff.module.release.releaseBinding, 'PUBLIC_RELEASED_SOURCE');
+  assert.equal(report.handoff.module.release.publicReleasedSource.state, 'MATCH');
+  assert.equal(report.handoff.module.release.retainedCompiledArtifact.publishedAsReleaseAsset, false);
+  assert.equal(report.handoff.module.release.historicalCandidate.isTheRelease, false);
+  // S11 is the self-check that would fail if this binding were inflated or dropped.
+  const checks = runOrderSourceConsumptionSelfChecks({
+    report, consumption, moduleSourceText: MODULE_SOURCE,
+  });
+  const s11 = checks.find((c) => c.id.startsWith('S11'));
+  assert.ok(s11, 'S11 must exist');
+  assert.equal(s11.ok, true, JSON.stringify(s11.detail));
+});
+
+test('KS238-R negative: S11 fails if the release is inflated into a publication', async () => {
+  const consumption = await consumed();
+  const report = buildOrderSourceConsumptionReport({ consumption, generatedAt: NOW });
+  // RED: the compiled artifact is re-declared as a PUBLISHED release asset.
+  const inflated = JSON.parse(JSON.stringify(report));
+  inflated.handoff.module.release.retainedCompiledArtifact.publishedAsReleaseAsset = true;
+  assert.throws(() => assertOrderSourceConsumptionSelfChecks({
+    report: inflated, consumption, moduleSourceText: MODULE_SOURCE,
+  }), (error) => error.code === 'ORDER_SOURCE_CONSUMPTION_SELF_CHECK_FAILED'
+    && error.failed.some((f) => f.id.startsWith('S11')));
+
+  // RED: the release class is upgraded away from SOURCE_EVIDENCE_ONLY.
+  const upgraded = JSON.parse(JSON.stringify(report));
+  upgraded.handoff.module.release.release.releaseClass = 'PRODUCTION_READY';
+  assert.throws(() => assertOrderSourceConsumptionSelfChecks({
+    report: upgraded, consumption, moduleSourceText: MODULE_SOURCE,
+  }), (error) => error.failed.some((f) => f.id.startsWith('S11')));
+
+  // RED: the historical candidate is passed off as the release.
+  const conflated = JSON.parse(JSON.stringify(report));
+  conflated.handoff.module.release.historicalCandidate.isTheRelease = true;
+  assert.throws(() => assertOrderSourceConsumptionSelfChecks({
+    report: conflated, consumption, moduleSourceText: MODULE_SOURCE,
+  }), (error) => error.failed.some((f) => f.id.startsWith('S11')));
+});
+
+test('KS238-R negative: a HISTORICAL CANDIDATE commit is not the public release identity', () => {
+  const claimed = qualifyReleasedOrderSourceBinding({
+    moduleFile: PRODUCER_MODULE_FILE,
+    claimed: {
+      releaseId: PAN_ORDER_SOURCE_RELEASE.releaseId,
+      mainCommit: PAN_ORDER_SOURCE_RELEASE.historicalCandidateCommits[1],
+    },
+  });
+  assert.equal(claimed.ok, false);
+  assert.equal(claimed.state, 'DENIED');
+  assert.equal(claimed.code, 'PAN_ORDER_SOURCE_RELEASE_IDENTITY_DENIED');
+  assert.equal(claimed.namesHistoricalCandidate, true);
+  // The genuine released identity is accepted with the same bytes: the difference is the
+  // release identity, not the bytes.
+  const genuine = qualifyReleasedOrderSourceBinding({
+    moduleFile: PRODUCER_MODULE_FILE,
+    claimed: {
+      releaseId: PAN_ORDER_SOURCE_RELEASE.releaseId,
+      mainCommit: PAN_ORDER_SOURCE_RELEASE.mainCommit,
+      moduleSha256: PAN_ORDER_SOURCE_RELEASE.moduleSha256,
+      runtimeClosureSha256: PAN_ORDER_SOURCE_RELEASE.runtimeClosureSha256,
+    },
+  });
+  assert.equal(genuine.ok, true, genuine.code);
+  assert.equal(genuine.releaseBinding, 'PUBLIC_RELEASED_SOURCE');
+});
+
+test('KS238-R negative: a CHANGED MODULE is refused by the released-source binding', async () => {
+  const os = await import('node:os');
+  const fs = await import('node:fs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ks238-rel-mod-'));
+  const forged = path.join(dir, 'order-source-handoff.mjs');
+  const genuine = fs.readFileSync(PRODUCER_MODULE_FILE, 'utf8');
+  const changed = genuine.replace('KS238_QUANTITY_UNAVAILABLE_V1', 'KS238_QUANTITY_AVAILABLE_V1');
+  assert.notEqual(changed, genuine, 'the probe must actually change the module bytes');
+  fs.writeFileSync(forged, changed);
+  const result = qualifyReleasedOrderSourceBinding({ moduleFile: forged });
+  assert.equal(result.ok, false);
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED');
+  assert.notEqual(result.actual.moduleSha256, PAN_ORDER_SOURCE_RELEASE.moduleSha256);
+  // A missing module is an honest UNAVAILABLE, not a pass.
+  const absent = qualifyReleasedOrderSourceBinding({ moduleFile: path.join(dir, 'nope.mjs') });
+  assert.equal(absent.state, 'UNAVAILABLE');
+  assert.equal(absent.code, 'PAN_ORDER_SOURCE_RELEASE_MODULE_NOT_FOUND');
+});
+
+test('KS238-R negative: a CHANGED CLOSURE is refused by the released-source binding', async () => {
+  const os = await import('node:os');
+  const fs = await import('node:fs');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ks238-rel-clo-'));
+  fs.mkdirSync(path.join(dir, 'src', 'ks238'), { recursive: true });
+  fs.copyFileSync(PRODUCER_MODULE_FILE, path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs'));
+  const producerRoot = PRODUCER_MODULE_ROOT;
+  fs.cpSync(path.join(producerRoot, 'dist', 'packages', 'contracts', 'src'),
+    path.join(dir, 'dist', 'packages', 'contracts', 'src'), { recursive: true });
+  // The module is EXACTLY the released bytes; only the compiled runtime is substituted.
+  const substituted = path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs');
+  assert.equal(sha256(fs.readFileSync(substituted)), PAN_ORDER_SOURCE_RELEASE.moduleSha256);
+  const reader = path.join(dir, 'dist', 'packages', 'contracts', 'src', 'erp-read-connector.js');
+  const genuineReader = fs.readFileSync(reader, 'utf8');
+  const changedReader = genuineReader.replace(/"FULFILLED"/g, '"CANCELLED"');
+  assert.notEqual(changedReader, genuineReader, 'the probe must actually change the runtime');
+  fs.writeFileSync(reader, changedReader);
+  const result = qualifyReleasedOrderSourceBinding({ moduleFile: substituted });
+  assert.equal(result.ok, false);
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED');
 });
