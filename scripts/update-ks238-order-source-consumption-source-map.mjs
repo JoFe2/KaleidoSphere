@@ -33,6 +33,13 @@ const authoredFiles = [
   // versus current identities this increment reconciles.
   'tests/postgresql-c2-safe-aggregate.test.mjs',
   'verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json',
+  // CANONICAL CORRECTION: the legacy-identity census. Provisioning the pinned producer artifact
+  // (dependencies/pansphaira/**) tracked four closure files carrying legacy CM_* environment
+  // identities, which the census had never registered, so tests/legacy-technical-identity-plan.test.mjs
+  // rejected the tracked tree. The census was re-frozen additively (the scanner still walks every
+  // tracked file, including dependencies/; no pinned artifact byte changed) and its bytes are
+  // content-addressed here like every other authored input of this surface.
+  'docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json',
 ];
 
 const sourceMap = JSON.parse(await readFile(sourceMapPath, 'utf8'));

@@ -1,6 +1,39 @@
 {
   "schemaVersion": "kaleidosphere/evidence/legacy-technical-identity-inventory/v1",
   "baseCommit": "a709582278c0d5bc35c09cd2f89808b6b1d242d6",
+  "censusRevisions": [
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "33beed8f387216a73621e1ff1cb0354612fad0e1",
+      "predecessorOccurrences": 1046,
+      "predecessorInventorySha256": "548e75c75d1a8f302315ab2f1ef39a1e875fcdfa049a197495e2360dffded9b2",
+      "addedOccurrences": 16,
+      "removedOccurrences": 0,
+      "occurrences": 1062,
+      "addedIdentityClasses": [
+        "environment"
+      ],
+      "origin": "PINNED_DEPENDENCY_ARTIFACT",
+      "originCommit": "410b45460a9f577fcfbb0381475cec633463719e",
+      "addedValues": [
+        "CM_GOVERNED_INPUT",
+        "CM_OBS_FIXTURE",
+        "CM_OWNED_CONTRACT",
+        "CM_VIDEO_REFERENCE_ARTIFACT_SHA256",
+        "CM_VIDEO_REFERENCE_ARTIFACT_URL",
+        "CM_VIDEO_REFERENCE_CONTRACT_VERSION",
+        "CM_VIDEO_REFERENCE_TIMEOUT_MS",
+        "CM_VIDEO_REFERENCE_VERSION"
+      ],
+      "addedPaths": [
+        "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js",
+        "dependencies/pansphaira/dist/packages/contracts/src/integration-profile.js",
+        "dependencies/pansphaira/dist/packages/contracts/src/operation-event-quality.js",
+        "dependencies/pansphaira/dist/packages/contracts/src/voice-local-ptt.js"
+      ],
+      "note": "The KS238 receiving-side increment tracked the pinned PANSPHAIRA producer artifact provision (dependencies/pansphaira/**: the wrapper plus the 156-file runtime closure declared by contracts/dependencies/pansphaira-order-source-v1.json). Four of those closure files carry legacy CM_* environment identities, so the tracked tree contained identities the census had never registered. They are registered here additively, not by relaxing the census: the census enumerates the tracked bytes of THIS repository regardless of which project authored them, so a pinned producer artifact is in scope exactly like consumer-authored source. No dependency path is excluded from the scanner, no pinned artifact byte was rewritten (the declared runtime closure digest a4db88ea0b8d... is unchanged), and the compatibility plan environment adapter and its negative probes apply to these occurrences unchanged."
+    }
+  ],
   "occurrences": [
     {
       "identityClass": "contractAuthority",
@@ -89,6 +122,16 @@
     },
     {
       "identityClass": "environment",
+      "value": "CM_GOVERNED_INPUT",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/voice-local-ptt.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_GOVERNED_INPUT",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/voice-local-ptt.js"
+    },
+    {
+      "identityClass": "environment",
       "value": "CM_MSSQL_PASSWORD",
       "path": "services/bi-control/src/db-analyzer/postgresql-safe-analysis.mjs"
     },
@@ -116,6 +159,11 @@
       "identityClass": "environment",
       "value": "CM_MSSQL_PASSWORD",
       "path": "tests/runtime-config-canonical-int.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_OBS_FIXTURE",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/operation-event-quality.js"
     },
     {
       "identityClass": "environment",
@@ -216,6 +264,11 @@
       "identityClass": "environment",
       "value": "CM_ORACLE_PASSWORD",
       "path": "tests/progressive-controller.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_OWNED_CONTRACT",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/integration-profile.js"
     },
     {
       "identityClass": "environment",
@@ -386,6 +439,66 @@
       "identityClass": "environment",
       "value": "CM_POSTGRESQL_PASSWORD",
       "path": "verification/postgresql/postgresql-c1-live-matrix-v1.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_ARTIFACT_SHA256",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_ARTIFACT_SHA256",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_ARTIFACT_SHA256",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_ARTIFACT_URL",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_ARTIFACT_URL",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_ARTIFACT_URL",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_CONTRACT_VERSION",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_CONTRACT_VERSION",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_TIMEOUT_MS",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_TIMEOUT_MS",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_VERSION",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_VIDEO_REFERENCE_VERSION",
+      "path": "dependencies/pansphaira/dist/packages/contracts/src/external-video-service.js"
     },
     {
       "identityClass": "packageContainer",
