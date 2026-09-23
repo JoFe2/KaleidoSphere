@@ -19,7 +19,10 @@
 //       The comparison never reads its expectation out of the run: a caller-supplied
 //       evidence claim whose digest was RECOMPUTED for substituted bytes is still
 //       refused, because the claim is compared against the maintained pin, not against
-//       its own self-consistency.
+//       its own self-consistency.  The claim's OWN material identities are compared with
+//       the ACTUAL observed read as well: a claim attributed to another source revision,
+//       or resting on a result digest the read did not produce, is refused by name even
+//       though both are syntactically well formed.
 //
 //     * AC03 — the deterministic verified numbers are a SEPARATE section from free-form
 //       explanation.  An explanation is text, it carries no numeric field, it is rendered
@@ -513,6 +516,18 @@ function verifyEvidence({ journey, expectation, evidenceClaim }) {
   if (evidenceClaim.canonicalHoldoutSha256 !== expectation.current.canonicalHoldoutSha256
       || binding.canonicalHoldoutSha256 !== expectation.current.canonicalHoldoutSha256) {
     fail('KS247_LINEAGE_DENIED:EVIDENCE_NOT_CURRENT');
+  }
+  // (d) The claim's OWN material identities are compared with the ACTUAL observed read and the
+  // maintained pin, not merely with their own well-formedness: a claim attributed to another
+  // revision, or resting on a result digest the read did not produce, is refused BEFORE any
+  // number is presented.  A syntactically valid revision string or a valid-looking digest is
+  // therefore never enough on its own.
+  if (evidenceClaim.sourceRevision !== binding.sourceRevision
+      || evidenceClaim.sourceRevision !== expectation.current.sourceRevision) {
+    fail('KS247_LINEAGE_DENIED:EVIDENCE_SOURCE_REVISION_STALE');
+  }
+  if ((evidenceClaim.resultSha256 ?? null) !== (journey.resultSha256 ?? null)) {
+    fail('KS247_LINEAGE_DENIED:EVIDENCE_RESULT_DIGEST_MISMATCH');
   }
   return {
     sourceRevision: evidenceClaim.sourceRevision,

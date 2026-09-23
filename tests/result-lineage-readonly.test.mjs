@@ -899,6 +899,10 @@ test('the CLI --negative mode reports its exact rejection codes and accepts noth
   assert.equal(codes['source-substitution-with-recomputed-digest'], 'KS247_LINEAGE_DENIED:SOURCE_SUBSTITUTED');
   assert.equal(codes['stale-evidence'], 'KS247_LINEAGE_DENIED:STALE_EVIDENCE');
   assert.equal(codes['evidence-not-current'], 'KS247_LINEAGE_DENIED:EVIDENCE_NOT_CURRENT');
+  assert.equal(codes['evidence-claim-source-revision-stale'],
+    'KS247_LINEAGE_DENIED:EVIDENCE_SOURCE_REVISION_STALE');
+  assert.equal(codes['evidence-claim-result-digest-mismatch'],
+    'KS247_LINEAGE_DENIED:EVIDENCE_RESULT_DIGEST_MISMATCH');
   assert.equal(codes['contract-substituted'], 'KS247_LINEAGE_DENIED:CONTRACT_SUBSTITUTED');
   assert.equal(codes['causal-assertion-presented-as-verified'], 'KS247_LINEAGE_DENIED:UNSUPPORTED_CAUSAL_ASSERTION');
   assert.equal(codes['completion-assertion-presented-as-verified'], 'KS247_LINEAGE_DENIED:UNSUPPORTED_COMPLETION_ASSERTION');
@@ -988,8 +992,13 @@ test('the CLI refuses a caller-recomputed evidence claim for substituted bytes, 
     }));
     const out = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', claimPath]);
     assert.equal(out.status, 0, out.stderr);
+    // The claim is refused, but the read itself DID complete: the observed execution is
+    // reported separately from the verification status, and no verified number is emitted.
     assert.equal(out.summary.lineage, null);
-    assert.equal(out.summary.executed, false);
+    assert.equal(out.summary.executed, true);
+    assert.equal(out.summary.observedCompletion.complete, true);
+    assert.equal(out.summary.verification.status, 'REFUSED');
+    assert.equal(out.summary.verification.verifiedNumberCount, 0);
     assert.equal(out.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:SOURCE_SUBSTITUTED');
   } finally {
     rmSync(scratch, { recursive: true, force: true });
@@ -1009,10 +1018,221 @@ test('the CLI reports a retained-composition refusal with no number presented as
     const out = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--source', resealed]);
     assert.equal(out.status, 0, out.stderr);
     assert.equal(out.summary.lineage, null);
+    // This refusal happens BEFORE any read: the released confinement denies the resealed source
+    // at bind time, so there is no observed completion to report.
     assert.equal(out.summary.executed, false);
+    assert.equal(out.summary.observedCompletion, null);
     assert.equal(out.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:SOURCE_NOT_COHERENT_WITH_RELEASED_HOLDOUT');
   } finally {
     rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+// ---------------------------------------------------------------------------------
+// Independent-focused-review corrections B1 and B2.  Both are driven through the ACTUAL CLI
+// entry point, not by re-stating its control flow.
+//
+// Disposable CLI variants: a regression runs a byte-copy of the real CLI against a sabotaged
+// module (or a sabotaged copy of the CLI itself) and then removes both.  The variant CLI lives
+// in `scripts/` and the variant module in the module's own directory, so every relative import
+// resolves exactly as it does for the real entry point.
+// ---------------------------------------------------------------------------------
+const variantTag = () => `${process.pid}-${Math.random().toString(36).slice(2, 8)}`;
+
+function writeVariantModule(source) {
+  const name = `.ks247-variant-${variantTag()}.mjs`;
+  const target = join(ROOT, 'services/bi-control/src/business-bi', name);
+  writeFileSync(target, source);
+  return { abs: target, rel: `../services/bi-control/src/business-bi/${name}` };
+}
+
+function writeVariantCli(source, moduleRel = null) {
+  const name = `.ks247-variant-cli-${variantTag()}.mjs`;
+  const target = join(ROOT, 'scripts', name);
+  const body = moduleRel === null ? source : source.replace(
+    "} from '../services/bi-control/src/business-bi/result-lineage-v1.mjs';",
+    `} from '${moduleRel}';`,
+  );
+  if (moduleRel !== null) assert.notEqual(body, source, 'the variant CLI must import the variant module');
+  writeFileSync(target, body);
+  return target;
+}
+
+function evidenceClaimJson(evidence, overrides = {}) {
+  return JSON.stringify({
+    schemaVersion: RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
+    issue: 'KS-EVO-02',
+    sourceRevision: evidence.sourceRevision,
+    sourceByteSha256: evidence.sourceByteSha256,
+    canonicalHoldoutSha256: evidence.canonicalHoldoutSha256,
+    resultSha256: evidence.resultSha256,
+    ...overrides,
+  });
+}
+
+test("AC02 the CLI compares an evidence claim's OWN revision and result digest with the observed read (B1)", () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-claim-identity-'));
+  try {
+    // The observed identities, taken from the CLI's OWN honest run.
+    const positive = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--format', 'JSON']);
+    assert.equal(positive.status, 0, positive.stderr);
+    const observed = positive.summary.verification.evidence;
+    assert.equal(observed.sourceRevision, SOURCE_REVISION);
+    assert.equal(observed.resultSha256, positive.summary.sections.completion.resultSha256);
+
+    // POSITIVE counterpart: a claim naming the ACTUAL observed identities is accepted and
+    // still renders all 24 verified numbers.
+    const honestPath = join(scratch, 'honest.json');
+    writeFileSync(honestPath, evidenceClaimJson(observed));
+    const honest = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', honestPath]);
+    assert.equal(honest.status, 0, honest.stderr);
+    assert.equal(honest.summary.verification.verifiedNumberCount, 24);
+    assert.equal(honest.summary.sourceRevision, SOURCE_REVISION);
+
+    // NEGATIVE 1: change ONLY sourceRevision, to the stale discovery revision.
+    const stalePath = join(scratch, 'stale-revision.json');
+    writeFileSync(stalePath, evidenceClaimJson(observed, { sourceRevision: 'synthetic-unfamiliar-v1' }));
+    const stale = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', stalePath]);
+    assert.equal(stale.status, 0, stale.stderr);
+    assert.equal(stale.summary.lineage, null, 'a stale-revision claim must render no verified number');
+    assert.equal(stale.summary.verification.verifiedNumberCount, 0);
+    assert.equal(stale.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:EVIDENCE_SOURCE_REVISION_STALE');
+
+    // NEGATIVE 2: change ONLY resultSha256, to 64 zeros.
+    const zeroPath = join(scratch, 'zero-result.json');
+    writeFileSync(zeroPath, evidenceClaimJson(observed, { resultSha256: '0'.repeat(64) }));
+    const zero = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', zeroPath]);
+    assert.equal(zero.status, 0, zero.stderr);
+    assert.equal(zero.summary.lineage, null, 'a contradictory result digest must render no verified number');
+    assert.equal(zero.summary.verification.verifiedNumberCount, 0);
+    assert.equal(zero.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:EVIDENCE_RESULT_DIGEST_MISMATCH');
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test('RED/GREEN: without the claim-identity comparison the CLI renders 24 verified numbers for a stale revision (B1)', async () => {
+  const moduleSource = await readFile(MODULE_PATH, 'utf8');
+  const brokenModule = moduleSource
+    .replace(
+      "  if (evidenceClaim.sourceRevision !== binding.sourceRevision\n"
+      + '      || evidenceClaim.sourceRevision !== expectation.current.sourceRevision) {',
+      '  if (false) {',
+    )
+    .replace(
+      '  if ((evidenceClaim.resultSha256 ?? null) !== (journey.resultSha256 ?? null)) {',
+      '  if (false) {',
+    );
+  assert.notEqual(brokenModule, moduleSource, 'the sabotage must actually change the module');
+  const variantModule = writeVariantModule(brokenModule);
+  const variantCli = writeVariantCli(await readFile(CLI_PATH, 'utf8'), variantModule.rel);
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-b1-red-'));
+  try {
+    const observed = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--format', 'JSON'])
+      .summary.verification.evidence;
+    const stalePath = join(scratch, 'stale-revision.json');
+    writeFileSync(stalePath, evidenceClaimJson(observed, { sourceRevision: 'synthetic-unfamiliar-v1' }));
+
+    // RED: the variant CLI ACCEPTS the stale-revision claim and attributes 24 verified numbers
+    // to a revision the read never observed.
+    const red = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', stalePath], variantCli);
+    assert.equal(red.summary.lineage === null, false, 'the sabotaged CLI accepts the stale claim');
+    assert.equal(red.summary.verification.verifiedNumberCount, 24);
+    assert.equal(red.summary.sourceRevision, 'synthetic-unfamiliar-v1');
+
+    // GREEN: the real CLI refuses the exact same input, and no verified number is rendered.
+    const green = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', stalePath]);
+    assert.equal(green.summary.lineage, null);
+    assert.equal(green.summary.verification.verifiedNumberCount, 0);
+    assert.equal(green.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:EVIDENCE_SOURCE_REVISION_STALE');
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+    rmSync(variantCli, { force: true });
+    rmSync(variantModule.abs, { force: true });
+  }
+});
+
+test('AC04 a completed read whose lineage refuses keeps its observed completion in the CLI summary (B2)', async () => {
+  // Instrument the read itself: the counter proves a read was actually issued, so
+  // `executed: true` on a refusal is a runtime fact rather than control-flow analysis.
+  const counter = { reads: 0 };
+  const inner = buildUnfamiliarSyntheticDatabase();
+  const instrumented = {
+    ...inner,
+    async query(sql, params) { counter.reads += 1; return inner.query(sql, params); },
+  };
+  const journey = await journeyFor({ database: instrumented });
+  assert.ok(counter.reads > 0, 'the instrumented read must have been issued');
+  assert.equal(journey.executed, true);
+  assert.equal(journey.acceptance.executionState, 'COMPLETE');
+
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-b2-'));
+  try {
+    const wrongPath = join(scratch, 'expectation-wrong-delta.json');
+    writeFileSync(wrongPath, mutateJson(expectationBytes, (value) => {
+      value.expectedNumbers.deltaMinorUnits = 1;
+    }));
+
+    // NEGATIVE: the WRONG_NUMBER refusal must not erase the completed read.
+    const refused = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--expectation', wrongPath]);
+    assert.equal(refused.status, 0, refused.stderr);
+    assert.equal(refused.summary.lineage, null, 'no verified number on refusal');
+    assert.equal(refused.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:WRONG_NUMBER');
+    assert.equal(refused.summary.executed, true, 'the completed read must not be erased');
+    assert.equal(refused.summary.observedCompletion.state, 'COMPLETE');
+    assert.equal(refused.summary.observedCompletion.complete, true);
+    assert.equal(refused.summary.verification.status, 'REFUSED');
+    assert.equal(refused.summary.verification.reasonCode, 'KS247_LINEAGE_DENIED:WRONG_NUMBER');
+    assert.equal(refused.summary.verification.verifiedNumberCount, 0);
+
+    // POSITIVE counterpart: the maintained expectation renders the same read as 24 verified.
+    const good = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--format', 'JSON']);
+    assert.equal(good.summary.verification.verifiedNumberCount, 24);
+    assert.equal(good.summary.observedCompletion, undefined);
+
+    // A refusal BEFORE any read still reports executed:false.
+    const preRead = cliWithAnswers(CONFIRMED_ANSWERS,
+      ['--business-semantics', BUSINESS_SEMANTICS_PATH, '--source-revision', SOURCE_REVISION]);
+    assert.equal(preRead.summary.executed, false);
+    assert.equal(preRead.summary.observedCompletion, null);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test('RED/GREEN: a variant CLI that resets executed=false erases a completed read on a WRONG_NUMBER refusal (B2)', async () => {
+  const cliSource = await readFile(CLI_PATH, 'utf8');
+  const broken = cliSource
+    .replace(
+      '      summary.executed = observedJourney !== null && observedJourney.executed === true;',
+      '      summary.executed = false;',
+    )
+    .replace(
+      '      summary.observedCompletion = observedCompletion;',
+      '      summary.observedCompletion = null;',
+    );
+  assert.notEqual(broken, cliSource, 'the sabotage must actually change the CLI');
+  const variantCli = writeVariantCli(broken);
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-b2-red-'));
+  try {
+    const wrongPath = join(scratch, 'expectation-wrong-delta.json');
+    writeFileSync(wrongPath, mutateJson(expectationBytes, (value) => {
+      value.expectedNumbers.deltaMinorUnits = 1;
+    }));
+
+    // RED: the sabotaged CLI falsely reports that nothing was executed.
+    const red = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--expectation', wrongPath], variantCli);
+    assert.equal(red.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:WRONG_NUMBER');
+    assert.equal(red.summary.executed, false);
+    assert.equal(red.summary.observedCompletion, null);
+
+    // GREEN: the real CLI keeps the observed completion and refuses only the verification.
+    const green = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--expectation', wrongPath]);
+    assert.equal(green.summary.executed, true);
+    assert.equal(green.summary.observedCompletion.complete, true);
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+    rmSync(variantCli, { force: true });
   }
 });
 

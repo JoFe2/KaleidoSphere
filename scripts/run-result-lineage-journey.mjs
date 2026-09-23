@@ -27,7 +27,10 @@
 //       --evidence-claim lets a CALLER state which digests the presented numbers rest on.
 //       Without it the CLI states the ACTUAL evidence it observed.  A claim whose digest was
 //       recomputed for substituted bytes is still refused, because the claim is compared
-//       against the maintained expectation and not against its own self-consistency.
+//       against the maintained expectation and not against its own self-consistency.  A
+//       claim attributed to another source revision, or resting on a different result
+//       digest than the observed read, is refused by name too, even though both are
+//       syntactically well formed.
 //       --explanation supplies the free-form interpretation.  It is rendered labelled
 //       UNVERIFIED and never counted as verified.
 //       --effect-status supplies the SEPARATELY CONFIRMED effect status.  This journey is
@@ -39,6 +42,13 @@
 //   node scripts/run-result-lineage-journey.mjs --negative
 //       execute the bounded negative gates and print their exact rejection codes.  Every
 //       input below is authored here FOR THE GATE, never adopted on the caller path.
+//
+// On a refusal the summary reports the OBSERVED execution/completion (`executed`,
+// `observedCompletion`, taken from the released receipt) SEPARATELY from the verification
+// status (`verification.status`, `lineage: null`): a read that actually completed and whose
+// rendering was then refused stays a completed read and emits NO verified number, while EOF
+// and a refusal that happened before any read report `executed: false` and no observed
+// completion.
 //
 // This CLI writes NOTHING: it prints to stdout, opens no socket, sends no SQL of its own,
 // mutates no public state, and grants no authority beyond one local read-only synthetic
@@ -312,6 +322,29 @@ async function runNegative() {
       resultSha256: journey.resultSha256,
     }),
   })));
+  // AC02 — the claim's OWN material identities must name the ACTUAL observed read: a valid
+  // revision string or a well-formed digest is not enough.  Each gate changes exactly ONE
+  // identity field away from the observed value.
+  record(codes, 'evidence-claim-source-revision-stale', () => buildReadOnlyResultLineage(input({
+    evidenceClaim: loadEvidenceClaim({
+      schemaVersion: RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
+      issue: 'KS-EVO-02',
+      sourceRevision: expectation.supersededEvidence[0].sourceRevision,
+      sourceByteSha256: journey.binding.sourceSha256,
+      canonicalHoldoutSha256: journey.binding.canonicalHoldoutSha256,
+      resultSha256: journey.resultSha256,
+    }),
+  })));
+  record(codes, 'evidence-claim-result-digest-mismatch', () => buildReadOnlyResultLineage(input({
+    evidenceClaim: loadEvidenceClaim({
+      schemaVersion: RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
+      issue: 'KS-EVO-02',
+      sourceRevision: journey.binding.sourceRevision,
+      sourceByteSha256: journey.binding.sourceSha256,
+      canonicalHoldoutSha256: journey.binding.canonicalHoldoutSha256,
+      resultSha256: '0'.repeat(64),
+    }),
+  })));
   record(codes, 'contract-substituted', () => buildReadOnlyResultLineage(input({
     metricContractBytes: mutatedJson(metricContractBytes, (contract) => { contract.currency.code = 'CHF'; }),
   })));
@@ -421,6 +454,11 @@ if (args.includes('--negative')) {
     summary.note = 'The proposal is not caller-confirmed, so nothing is read and no lineage is built.';
     process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
   } else {
+    // The journey actually returned by the retained composition, kept OUTSIDE the try so a
+    // refusal that happens AFTER the awaited read cannot erase the fact that the read
+    // completed.  `null` means no read was observed at all (EOF, or a refusal before the
+    // read), which is a different fact from "the read completed and the lineage refused".
+    let observedJourney = null;
     try {
       const callerKindDecisionBytes = kindDecisionsPath === null ? undefined : readFileSync(kindDecisionsPath);
       const callerBusinessSemanticBytes = businessSemanticsPath === null ? undefined : readFileSync(businessSemanticsPath);
@@ -431,7 +469,7 @@ if (args.includes('--negative')) {
         businessSemanticBytes: callerBusinessSemanticBytes,
         sourceRevision: sourceRevisionOption,
       });
-      const journey = await runUnfamiliarMetricJourney({
+      observedJourney = await runUnfamiliarMetricJourney({
         proposal,
         sourceBytes,
         kindDecisionBytes: callerKindDecisionBytes,
@@ -443,7 +481,7 @@ if (args.includes('--negative')) {
         authority: AUTHORITY,
         ...(goalOption === null ? {} : { semanticGoal: goalOption }),
       });
-      const rendered = renderLineage(lineageInput(journey), formatOption);
+      const rendered = renderLineage(lineageInput(observedJourney), formatOption);
       process.stdout.write(rendered.text);
       if (formatOption !== 'JSON') {
         // The machine receipt accompanies a human rendering so the same run stays checkable.
@@ -451,7 +489,7 @@ if (args.includes('--negative')) {
           entryPoint: summary.entryPoint,
           format: formatOption,
           lineageSha256: rendered.lineage.lineageSha256,
-          sourceMode: journey.sourceMode,
+          sourceMode: observedJourney.sourceMode,
           observationKind: rendered.lineage.observationKind,
           verifiedNumberCount: rendered.lineage.verification.verifiedNumberCount,
           unavailableFactCount: rendered.lineage.verification.unavailableFactCount,
@@ -464,14 +502,35 @@ if (args.includes('--negative')) {
         }, null, 2)}\n`);
       }
     } catch (error) {
-      summary.journeyDenial = PRE_DATABASE_DENIALS.has(error?.code)
+      const preDatabase = PRE_DATABASE_DENIALS.has(error?.code);
+      // The OBSERVED execution/completion, taken from the released receipt itself and reported
+      // separately from the verification status.  A completed read whose rendering was refused
+      // stays a completed read; only EOF and a refusal that happened BEFORE any read report
+      // executed=false.
+      const observedCompletion = observedJourney === null ? null : {
+        state: observedJourney.acceptance?.executionState ?? 'NOT_EXECUTED',
+        complete: observedJourney.executed === true
+          && observedJourney.acceptance?.executionState === 'COMPLETE',
+        resultAvailable: Boolean(observedJourney.result && typeof observedJourney.result === 'object'),
+      };
+      summary.journeyDenial = preDatabase
         ? { kind: 'journey', ...denial('journey', error) }
         : denial('journey', error);
       summary.lineage = null;
-      summary.executed = false;
-      summary.note = PRE_DATABASE_DENIALS.has(error?.code)
+      summary.executed = observedJourney !== null && observedJourney.executed === true;
+      summary.observedCompletion = observedCompletion;
+      // The verification status is its own fact: refused, with its exact reason, and no
+      // verified number emitted even though the read completed.
+      summary.verification = {
+        status: 'REFUSED',
+        reasonCode: error?.code ?? null,
+        verifiedNumberCount: 0,
+      };
+      summary.note = preDatabase
         ? 'A required caller input is missing; the journey refused before creating, seeding or reading any database.'
-        : 'The read or the lineage refused; no number is presented as verified.';
+        : observedJourney === null
+          ? 'The journey refused before any read completed; no number is presented as verified.'
+          : 'The read completed and is reported, but the lineage refused; no number is presented as verified.';
       process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
     }
   }
