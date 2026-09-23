@@ -20,6 +20,33 @@ export const OUTCOME_STATES = Object.freeze([
   'manual_review',
 ]);
 
+// KS-OPS-01 (KaleidoSphere #253) — the ONLY way a READ FAILURE may establish absence.
+// A transport, timeout or permission fault says nothing about whether the action happened, so the
+// adapter must say so with an EXPLICITLY TYPED observation.  The exported class carries both the
+// code and the typed flag; the code string ALONE is not authority (see readStateForError), so a
+// coincidental or hand-forged `code` cannot mint an absence.
+export const OUTCOME_READ_NOT_FOUND_CODE = 'OUTCOME_READ_NOT_FOUND';
+
+// A read that RESOLVES to an untyped empty value (null/undefined) is not an authoritative absence
+// either — AC02 admits only the explicitly typed observation above.  The result is bound UNKNOWN and
+// tagged with this code so the evidence records WHY the read did not resolve to a value.
+export const OUTCOME_READ_UNTYPED_ABSENCE_CODE = 'READBACK_UNTYPED_ABSENCE';
+
+export class OutcomeAuthoritativeNotFoundError extends Error {
+  constructor() {
+    super(OUTCOME_READ_NOT_FOUND_CODE);
+    this.name = 'OutcomeAuthoritativeNotFoundError';
+    this.code = OUTCOME_READ_NOT_FOUND_CODE;
+    this.authoritativeNotFound = true;
+  }
+}
+
+// Read states bound into the journal evidence: an OBSERVED read, an EXPLICITLY TYPED authoritative
+// absence, or an unresolved UNKNOWN.  Only the first two may inform a reconciliation decision.
+const READ_STATE_OBSERVED = 'observed';
+const READ_STATE_AUTHORITATIVE_NOT_FOUND = 'authoritative_not_found';
+const READ_STATE_UNKNOWN = 'unknown';
+
 const START = '__start__';
 const ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
@@ -59,6 +86,9 @@ const TRANSITIONS = Object.freeze({
     reconcile_owned_partial: 'partial',
     reconcile_diverged: 'diverged',
     reconcile_manual_review: 'manual_review',
+    // KS-OPS-01 (#253): a faulted read PRESERVES outcome_unknown instead of minting absence, so a
+    // later read can still resolve the case and no committed / safe-retry decision is fabricated.
+    reconcile_unknown_unresolved: 'outcome_unknown',
   }),
   unchanged_safe_to_retry: Object.freeze({ fresh_retry_authorized: 'not_dispatched' }),
   partial: Object.freeze({ manual_review_opened: 'manual_review' }),
@@ -348,10 +378,29 @@ export async function recoverUnknownOutcomeFromFile({ filePath, leasePath = `${f
   }});
 }
 
-function relationForObserved({ observed, action, missingCode }) {
-  if (missingCode && action.before === null) return 'before';
-  if (missingCode && action.after === null) return 'after';
-  if (missingCode) return 'missing';
+// KS-OPS-01 (#253): classify the READ itself before classifying the observed relation.
+//   observed                — the adapter RESOLVED to the current asset value (a real JSON value);
+//   authoritative_not_found — the adapter raised the EXPLICITLY TYPED absence observation
+//                             (OutcomeAuthoritativeNotFoundError) — the ONLY way absence is minted;
+//   unknown                 — anything else (timeout, permission denied, transport cut, a bare
+//                             failure, a THROWN null/undefined, or a RESOLVED null/undefined that was
+//                             never typed) is UNKNOWN and may never be read as absence.
+function readStateForError(error) {
+  // A THROWN null/undefined (or any other untyped value) is an untyped FAULT, not an observation:
+  // it is bound UNKNOWN and can never establish absence (it also must not reach the digest below).
+  if (error === null || error === undefined) return READ_STATE_UNKNOWN;
+  return error.authoritativeNotFound === true && error.code === OUTCOME_READ_NOT_FOUND_CODE
+    ? READ_STATE_AUTHORITATIVE_NOT_FOUND
+    : READ_STATE_UNKNOWN;
+}
+
+function relationForObserved({ observed, action, readState }) {
+  if (readState === READ_STATE_UNKNOWN) return 'unknown';
+  if (readState === READ_STATE_AUTHORITATIVE_NOT_FOUND) {
+    if (action.before === null) return 'before';
+    if (action.after === null) return 'after';
+    return 'missing';
+  }
   if (same(observed, action.after)) return 'after';
   if (same(observed, action.before)) return 'before';
   return 'diverged';
@@ -385,22 +434,33 @@ export async function reconcileUnknownOutcome({ journal, plan, adapter, target, 
   for (const actionId of plan.applyOrder) {
     const action = byId.get(actionId);
     let observed;
-    let missingCode = null;
+    let readState = READ_STATE_OBSERVED;
+    let readErrorCode = null;
     try {
       observed = await adapter.read(action);
+      // A RESOLVED but untyped empty value is not an authoritative absence (AC02): null/undefined
+      // may not authorize a retry or a committed classification, so it is bound UNKNOWN.  Keeping
+      // the raw value is safe because the observed digest is only taken for real observations.
+      if (observed === null || observed === undefined) {
+        readState = READ_STATE_UNKNOWN;
+        readErrorCode = OUTCOME_READ_UNTYPED_ABSENCE_CODE;
+      }
     } catch (error) {
-      missingCode = error.code ?? 'READBACK_FAILED';
+      readState = readStateForError(error);
+      readErrorCode = String(error?.code ?? 'READBACK_FAILED').slice(0, 96);
     }
-    const relation = relationForObserved({ observed, action, missingCode });
+    const relation = relationForObserved({ observed, action, readState });
     readback.push({
       actionId,
       relation,
-      observedDigest: missingCode ? null : sha256Digest(observed),
-      readErrorCode: missingCode,
+      readState,
+      observedDigest: readState === READ_STATE_OBSERVED ? sha256Digest(observed) : null,
+      readErrorCode,
       owner: ownership[actionId] ?? 'owned',
     });
   }
   const relations = new Set(readback.map((item) => item.relation));
+  const unknownActions = readback.filter((item) => item.relation === 'unknown').map((item) => item.actionId);
   const afterCount = readback.filter((item) => item.relation === 'after').length;
   const beforeCount = readback.filter((item) => item.relation === 'before').length;
   const foreignCommitted = readback.some((item) => item.relation === 'after' && item.owner !== 'owned');
@@ -408,7 +468,15 @@ export async function reconcileUnknownOutcome({ journal, plan, adapter, target, 
   let classification;
   let retryAllowed = false;
   let compensationAllowed = false;
-  if (foreignCommitted) {
+  if (unknownActions.length > 0) {
+    // KS-OPS-01 (#253): at least one action could NOT be read, so its outcome is UNKNOWN — never
+    // absence.  The state is PRESERVED as outcome_unknown (a later read may still resolve it) and
+    // NO committed / safe-retry / compensation decision is minted.  manual_review is deliberately
+    // not entered here: it is terminal, and an unreadable action is not evidence to freeze the
+    // case permanently.  The per-action readState/readErrorCode remain in the evidence readback.
+    eventType = 'reconcile_unknown_unresolved';
+    classification = 'outcome_unknown';
+  } else if (foreignCommitted) {
     eventType = 'reconcile_manual_review';
     classification = 'manual_review';
   } else if (afterCount === readback.length) {
