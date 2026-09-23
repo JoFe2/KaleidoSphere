@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/result-lineage-explanation/v1",
+  "issue": "KS-EVO-02",
+  "authoredInput": true,
+  "assertions": [
+    {
+      "assertionId": "narrative-what-was-read",
+      "kind": "DESCRIPTIVE",
+      "text": "The read covered the authored synthetic pay-feed relation for two declared months; the net figures are integer EUR minor units."
+    },
+    {
+      "assertionId": "hypothesis-mix-shift",
+      "kind": "CAUSAL",
+      "text": "The higher current-period net is consistent with a mix shift toward larger sale rows; this is an interpretation offered for a reader, not a verified cause."
+    },
+    {
+      "assertionId": "open-question-segment-attribution",
+      "kind": "DESCRIPTIVE",
+      "text": "Segment attribution for the delta is not available from this read and is not asserted here."
+    }
+  ]
+}

@@ -136,6 +136,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // suite above, reachable through this parent exactly once so the exactly-one-route
   // invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/unfamiliar-schema-metric-journey.test.mjs' },
+  // KS247 (#247) read-only result lineage: the read-path separation successor of the KS246
+  // journey suite above, reachable through this parent exactly once so the
+  // exactly-one-route-per-suite invariant is preserved rather than weakened.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/result-lineage-readonly.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',

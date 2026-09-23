@@ -38,6 +38,11 @@ import './unfamiliar-schema-proposal.test.mjs';
 // imported-suite route so the byte-bound canonical command and the exactly-one-route-per-
 // suite invariant are both preserved.
 import './unfamiliar-schema-metric-journey.test.mjs';
+// KS247 (#247) read-only result lineage: the read-path separation SUCCESSOR of the KS246
+// journey above (it consumes that journey's released result and compares it against an
+// independently maintained expectation).  It follows the same imported-suite route so the
+// byte-bound canonical command and the exactly-one-route-per-suite invariant are preserved.
+import './result-lineage-readonly.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
