@@ -23,9 +23,11 @@
 // production, comprehension, admission or publication claim, and AC05 stays parent-owned.
 
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
@@ -95,6 +97,11 @@ const clone = (value) => JSON.parse(JSON.stringify(value));
 const AUTHORITY = Object.freeze({
   localSyntheticReadOnly: true, mutationAuthority: false, publicWrites: false,
 });
+const CALLER_ARGS = Object.freeze([
+  '--kind-decisions', KIND_DECISIONS_PATH,
+  '--business-semantics', BUSINESS_SEMANTICS_PATH,
+  '--source-revision', SOURCE_REVISION,
+]);
 const CONFIRMED_ANSWERS = Object.freeze([
   'synth_x.pay_feed.pf_id', 'synth_x.pay_feed.val_dt', 'MINOR_UNITS',
   'synth_x.pay_feed.amt_a', 'EUR', 'R', 'V',
@@ -174,6 +181,36 @@ function explanationFrom(assertions) {
     issue: 'KS-EVO-02',
     assertions,
   });
+}
+
+function cli(args, script = CLI_PATH) {
+  const result = spawnSync(process.execPath, [script, ...args], { cwd: ROOT, encoding: 'utf8' });
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+}
+
+// TABLE/HTML runs print a rendering followed by a machine receipt; JSON runs print the
+// lineage document.  `summary` is the parsed JSON receipt of a JSON run, and `receipt` is the
+// trailing machine receipt of a rendering run.
+function cliWithAnswers(answers, extraArgs = [], script = CLI_PATH) {
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-lineage-'));
+  try {
+    const answersPath = join(scratch, 'answers.txt');
+    writeFileSync(answersPath, `${answers.join('\n')}\n`);
+    const out = cli(['--answers', answersPath, ...extraArgs], script);
+    const trimmed = out.stdout.trimStart();
+    const summary = trimmed.startsWith('{') ? JSON.parse(out.stdout) : null;
+    const receipt = summary === null ? null : summary;
+    return { ...out, summary, receipt };
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+}
+
+// The trailing JSON machine receipt of a TABLE/HTML run (the rendering precedes it).
+function trailingReceipt(stdout) {
+  const index = stdout.lastIndexOf('\n{');
+  assert.ok(index > 0, 'a TABLE/HTML run must carry its machine receipt');
+  return JSON.parse(stdout.slice(index + 1));
 }
 
 // ---------------------------------------------------------------------------------
@@ -841,6 +878,142 @@ test('RED/GREEN: a variant with the verified-marking gate removed presents prose
   assert.equal(await denialOf(() => buildReadOnlyResultLineage(lineageInput(journey, {
     explanation: causality,
   }))), 'KS247_LINEAGE_DENIED:UNSUPPORTED_CAUSAL_ASSERTION');
+});
+
+// ---------------------------------------------------------------------------------
+// The real CLI entry point.
+// ---------------------------------------------------------------------------------
+test('the CLI --negative mode reports its exact rejection codes and accepts nothing', () => {
+  const out = cli(['--negative']);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.stderr, '');
+  const report = JSON.parse(out.stdout);
+  assert.equal(report.mode, 'negative');
+  const codes = Object.fromEntries(report.codes.map((entry) => entry.split('=')));
+  for (const [label, code] of Object.entries(codes)) {
+    assert.doesNotMatch(code, /UNEXPECTEDLY_ACCEPTED/, `${label} must be refused`);
+  }
+  assert.equal(codes['wrong-number'], 'KS247_LINEAGE_DENIED:WRONG_NUMBER');
+  assert.equal(codes['wrong-unit'], 'KS247_LINEAGE_DENIED:WRONG_UNIT');
+  assert.equal(codes['wrong-period'], 'KS247_LINEAGE_DENIED:WRONG_PERIOD');
+  assert.equal(codes['source-substitution-with-recomputed-digest'], 'KS247_LINEAGE_DENIED:SOURCE_SUBSTITUTED');
+  assert.equal(codes['stale-evidence'], 'KS247_LINEAGE_DENIED:STALE_EVIDENCE');
+  assert.equal(codes['evidence-not-current'], 'KS247_LINEAGE_DENIED:EVIDENCE_NOT_CURRENT');
+  assert.equal(codes['contract-substituted'], 'KS247_LINEAGE_DENIED:CONTRACT_SUBSTITUTED');
+  assert.equal(codes['causal-assertion-presented-as-verified'], 'KS247_LINEAGE_DENIED:UNSUPPORTED_CAUSAL_ASSERTION');
+  assert.equal(codes['completion-assertion-presented-as-verified'], 'KS247_LINEAGE_DENIED:UNSUPPORTED_COMPLETION_ASSERTION');
+  assert.equal(codes['unavailable-fact-asserted'], 'KS247_LINEAGE_DENIED:UNAVAILABLE_FACT_ASSERTED');
+  assert.equal(codes['fabricated-effect-journal'], 'KS247_LINEAGE_DENIED:FABRICATED_EFFECT_JOURNAL');
+  assert.equal(codes['effect-status-not-separately-confirmed'],
+    'KS247_EFFECT_STATUS_DENIED:EFFECT_STATUS_NOT_SEPARATELY_CONFIRMED');
+  assert.equal(codes['read-only-effect-claim'], 'KS247_EFFECT_STATUS_DENIED:READ_ONLY_EFFECT_CLAIM_DENIED');
+  assert.equal(codes['resealed-source-refused-by-released-confinement'],
+    'KS246_JOURNEY_DENIED:SOURCE_NOT_COHERENT_WITH_RELEASED_HOLDOUT');
+});
+
+test('the CLI on EOF builds no lineage, and a missing caller input refuses before the read', () => {
+  const eof = cli([]);
+  assert.equal(eof.status, 0, eof.stderr);
+  const eofSummary = JSON.parse(eof.stdout);
+  assert.equal(eofSummary.mode, 'eof');
+  assert.equal(eofSummary.lineage, null);
+  assert.equal(eofSummary.executed, false);
+  assert.equal(eofSummary.sharedReadPurposeBinding, 'NOT_INTEGRATED');
+  assert.equal(eofSummary.ac05, 'PARENT_OWNED_OPEN');
+
+  const missing = cliWithAnswers(CONFIRMED_ANSWERS, ['--business-semantics', BUSINESS_SEMANTICS_PATH,
+    '--source-revision', SOURCE_REVISION]);
+  assert.equal(missing.status, 0, missing.stderr);
+  assert.equal(missing.summary.lineage, null);
+  assert.equal(missing.summary.executed, false);
+  assert.equal(missing.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT');
+});
+
+test('the CLI renders the four separated facts in JSON, TABLE and HTML', () => {
+  const json = cliWithAnswers(CONFIRMED_ANSWERS,
+    [...CALLER_ARGS, '--explanation', EXPLANATION_PATH, '--effect-status', EFFECT_STATUS_PATH, '--format', 'JSON']);
+  assert.equal(json.status, 0, json.stderr);
+  const lineage = json.summary;
+  assert.equal(lineage.schemaVersion, RESULT_LINEAGE_SCHEMA);
+  assert.equal(lineage.observationKind, 'COMPLETE_READ_ONLY_OBSERVATION');
+  assert.equal(lineage.verification.verifiedNumberCount, 24);
+  assert.equal(lineage.verification.unavailableFactCount, 4);
+  assert.equal(lineage.verification.explanationCount, 3);
+  assert.equal(lineage.sections.completion.complete, true);
+  assert.equal(lineage.verification.effectJournal, 'NOT_INVENTED_READ_ONLY_JOURNEY');
+  assert.equal(lineage.promotionBoundaries.sharedReadPurposeBinding, 'NOT_INTEGRATED');
+  assert.equal(lineage.authority.publicationAuthority, 'NONE');
+
+  for (const format of ['TABLE', 'HTML']) {
+    const rendered = cliWithAnswers(CONFIRMED_ANSWERS,
+      [...CALLER_ARGS, '--explanation', EXPLANATION_PATH, '--effect-status', EFFECT_STATUS_PATH,
+        '--format', format]);
+    assert.equal(rendered.status, 0, rendered.stderr);
+    assert.match(rendered.stdout, /UNVERIFIED/);
+    assert.match(rendered.stdout, /UNAVAILABLE/);
+    assert.match(rendered.stdout, /100059/);
+    assert.match(rendered.stdout, /70059/);
+    const receipt = trailingReceipt(rendered.stdout);
+    assert.equal(receipt.format, format);
+    assert.equal(receipt.verifiedNumberCount, 24);
+    assert.equal(receipt.unavailableFactCount, 4);
+    assert.equal(receipt.explanationCount, 3);
+    assert.equal(receipt.effectJournal, 'NOT_INVENTED_READ_ONLY_JOURNEY');
+    assert.equal(receipt.complete, true);
+    assert.equal(receipt.existingCompletion, undefined);
+    assert.equal(receipt.sharedReadPurposeBinding, 'NOT_INTEGRATED');
+    assert.equal(receipt.lineageSha256, lineage.lineageSha256, 'the rendering is the same lineage');
+  }
+  // An unsupported format is refused without reading anything.
+  const badFormat = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--format', 'XML']);
+  assert.equal(badFormat.status, 0, badFormat.stderr);
+  assert.equal(badFormat.summary.cliDenial.code, 'KS247_CLI_FORMAT_DENIED');
+});
+
+test('the CLI refuses a caller-recomputed evidence claim for substituted bytes, end to end', () => {
+  const journey = cliWithAnswers(CONFIRMED_ANSWERS, CALLER_ARGS);
+  assert.equal(journey.status, 0, journey.stderr);
+  assert.equal(journey.summary.bindingSha256, undefined, 'the JSON receipt is the lineage document');
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-claim-'));
+  try {
+    const claimPath = join(scratch, 'claim.json');
+    writeFileSync(claimPath, JSON.stringify({
+      schemaVersion: RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
+      issue: 'KS-EVO-02',
+      sourceRevision: SOURCE_REVISION,
+      sourceByteSha256: sha256(Buffer.from('substituted synthetic bytes', 'utf8')),
+      canonicalHoldoutSha256: journey.summary.verification.evidence.canonicalHoldoutSha256,
+      resultSha256: journey.summary.verification.evidence.resultSha256,
+      recomputedByCaller: true,
+    }));
+    const out = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--evidence-claim', claimPath]);
+    assert.equal(out.status, 0, out.stderr);
+    assert.equal(out.summary.lineage, null);
+    assert.equal(out.summary.executed, false);
+    assert.equal(out.summary.journeyDenial.code, 'KS247_LINEAGE_DENIED:SOURCE_SUBSTITUTED');
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
+  // Counterpart: the CLI's own observed-evidence claim is accepted.
+  assert.equal(journey.summary.verification.evidence.recomputedByCaller, false);
+  assert.equal(journey.summary.verification.verifiedNumberCount, 24);
+});
+
+test('the CLI reports a retained-composition refusal with no number presented as verified', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'ks247-resealed-'));
+  try {
+    const resealed = join(scratch, 'resealed.json');
+    const copy = clone(sourceFixture);
+    copy.rows[0].amt_a = 999999;
+    writeFileSync(resealed, JSON.stringify(copy));
+    const out = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--source', resealed]);
+    assert.equal(out.status, 0, out.stderr);
+    assert.equal(out.summary.lineage, null);
+    assert.equal(out.summary.executed, false);
+    assert.equal(out.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:SOURCE_NOT_COHERENT_WITH_RELEASED_HOLDOUT');
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 // ---------------------------------------------------------------------------------
