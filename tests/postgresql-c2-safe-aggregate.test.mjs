@@ -965,14 +965,14 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   // package.json must still be byte-identical from integration through current HEAD.
   assertC2CorrectionScope();
   // Preserve the historical full-history correction exactly. The current workflow
-  // adds pinned PGlite connected and guided journey tests without relaxing retained gates.
+  // adds pinned PGlite connected, guided and result-lineage tests without relaxing retained gates.
   assert.equal(
     fileSha256(Buffer.from(`${git('show', `${C2_CORRECTION_COMMIT}:.github/workflows/ci.yml`)}\n`)),
     '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
-    'e80a398ac72a59f159ffdd5f1e3cbef35a7c7d3041b637d3ce4b101c01dd0837',
+    'a91ab312484e8475ff05ee71d2d8c02455b540244bcdb27222af336e84083a7f',
   );
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
   assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);

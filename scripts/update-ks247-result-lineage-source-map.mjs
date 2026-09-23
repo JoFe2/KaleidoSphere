@@ -17,6 +17,7 @@ const sourceMapPath = resolve(root, 'SOURCE-MAP.json');
 
 const authoredFiles = [
   '.github/workflows/ci.yml',
+  'tests/postgresql-c2-safe-aggregate.test.mjs',
   // The registration surface: the imported-parent route in tests/source-map.test.mjs and the
   // topology declaration in tests/canonical-test-topology.test.mjs.
   'tests/source-map.test.mjs',
