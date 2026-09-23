@@ -62,6 +62,7 @@ import {
   RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
   RESULT_LINEAGE_FORMATS,
   buildReadOnlyResultLineage,
+  formatLineageDenial,
   loadConfirmedEffectStatus,
   loadEvidenceClaim,
   loadFreeExplanation,
@@ -156,7 +157,7 @@ async function makeDatabase() {
   return buildPgliteJourneyDatabase(new PGlite());
 }
 
-const denial = (kind, error) => ({ kind, code: error?.code ?? null, message: String(error?.message ?? error) });
+const denial = (kind, error) => ({ kind, code: error?.code ?? null, message: formatLineageDenial(error) });
 
 // The evidence claim the CLI states when the caller names none: the ACTUAL digests it
 // observed.  It is a statement of fact, not an authority, and it is still compared against

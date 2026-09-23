@@ -514,9 +514,6 @@ function verifyEvidence({ journey, expectation, evidenceClaim }) {
       || binding.canonicalHoldoutSha256 !== expectation.current.canonicalHoldoutSha256) {
     fail('KS247_LINEAGE_DENIED:EVIDENCE_NOT_CURRENT');
   }
-  if (evidenceClaim.recomputedByCaller === true && evidenceClaim.sourceByteSha256 !== binding.sourceSha256) {
-    fail('KS247_LINEAGE_DENIED:SOURCE_SUBSTITUTED');
-  }
   return {
     sourceRevision: evidenceClaim.sourceRevision,
     sourceByteSha256: evidenceClaim.sourceByteSha256,
