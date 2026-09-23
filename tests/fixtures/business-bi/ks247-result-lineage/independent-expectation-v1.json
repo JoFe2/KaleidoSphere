@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/result-lineage-expectation/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "KS-EVO-02",
+  "metricId": "bi-ks-01-net-revenue",
+  "maintenance": {
+    "author": "ks247-independent-expectation-fixture",
+    "derivedFrom": "hand-derived integer minor units of the released synthetic oracle plus content-addressed digests of the frozen KS246 fixtures",
+    "statement": "Maintained outside every run: the expected integers and digests are authored here and are never read back out of a receipt, an adapter or a rendering."
+  },
+  "current": {
+    "sourceRevision": "synthetic-unfamiliar-source-v1",
+    "sourceByteSha256": "56724bfa95e66d8b61a837e82098aeee67ad430434794da944d033d61dd9737e",
+    "canonicalHoldoutSha256": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "canonicalRowCount": 17
+  },
+  "supersededEvidence": [
+    {
+      "sourceRevision": "synthetic-unfamiliar-v1",
+      "subject": "synth_x.pay_feed.discovery-metadata",
+      "evidenceSha256": "cf1ff08cf85b67f6d57d9f92a4b04e3583b4a666c18f4affbd107c44a7168f6b"
+    },
+    {
+      "sourceRevision": "synthetic-unfamiliar-v1",
+      "subject": "synth_x.pay_feed.discovery-aggregate-profile",
+      "evidenceSha256": "c757b886163ac9a5158343c25d2aa6cc43ab458440662a7539ee13c88e2cab9e"
+    }
+  ],
+  "unit": {
+    "id": "EUR_MINOR_UNITS",
+    "currency": "EUR",
+    "minorUnitsPerMajorUnit": 100,
+    "amountUnit": "MINOR_UNITS"
+  },
+  "periods": {
+    "current": {
+      "label": "2026-07",
+      "start": "2026-07-01",
+      "end": "2026-07-31",
+      "boundary": "inclusive-both-ends"
+    },
+    "comparison": {
+      "label": "2026-06",
+      "start": "2026-06-01",
+      "end": "2026-06-30",
+      "boundary": "inclusive-both-ends"
+    }
+  },
+  "expectedNumbers": {
+    "deltaMinorUnits": 70059,
+    "excludedOutOfScopeCount": 3,
+    "periods.current.netMinorUnits": 100059,
+    "periods.current.saleMinorUnits": 141293,
+    "periods.current.creditMinorUnits": 41234,
+    "periods.current.cancelCount": 1,
+    "periods.current.rowCount": 6,
+    "periods.current.unknown.count": 1,
+    "periods.current.unknown.quantifiedAmountMinorUnits": 0,
+    "periods.current.unknown.unquantifiedCount": 1,
+    "periods.comparison.netMinorUnits": 30000,
+    "periods.comparison.saleMinorUnits": 35500,
+    "periods.comparison.creditMinorUnits": 5500,
+    "periods.comparison.cancelCount": 1,
+    "periods.comparison.rowCount": 7,
+    "periods.comparison.unknown.count": 2,
+    "periods.comparison.unknown.quantifiedAmountMinorUnits": 777,
+    "periods.comparison.unknown.unquantifiedCount": 1,
+    "unknown.count": 4,
+    "unknown.quantifiedAmountMinorUnits": 1977,
+    "unknown.unquantifiedCount": 2,
+    "unknown.unassigned.count": 1,
+    "unknown.unassigned.quantifiedAmountMinorUnits": 1200,
+    "unknown.unassigned.unquantifiedCount": 0
+  },
+  "unavailableFacts": [
+    {
+      "subject": "order_intake",
+      "reasonCode": "NOT_IN_THE_RELEASED_NET_REVENUE_CONTRACT"
+    },
+    {
+      "subject": "gross_margin",
+      "reasonCode": "NOT_IN_THE_RELEASED_NET_REVENUE_CONTRACT"
+    },
+    {
+      "subject": "customer_segment_attribution",
+      "reasonCode": "NO_VERIFIED_SEGMENT_SOURCE_IN_THIS_READ_ONLY_JOURNEY"
+    },
+    {
+      "subject": "causal_reason_for_delta",
+      "reasonCode": "NO_VERIFIED_CAUSAL_SOURCE_THIS_SURFACE_IS_READ_ONLY"
+    }
+  ]
+}
