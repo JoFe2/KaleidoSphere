@@ -372,6 +372,44 @@ async function runNegative() {
       { state: result.state, code: result.code });
   }
 
+  // N12 — an EXPORTED release override cannot mint PUBLIC_RELEASED_SOURCE against itself:
+  // the expected identity is pinned independently, so a forged release record is refused even
+  // though the located module carries the genuine released bytes.
+  {
+    const moduleFile = PRODUCER_MODULE
+      ?? path.join(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+    const result = qualifyReleasedOrderSourceBinding({
+      moduleFile,
+      release: {
+        ...PAN_ORDER_SOURCE_RELEASE,
+        mainCommit: '0'.repeat(40),
+        releaseClass: 'PRODUCTION',
+        compiledClosurePublished: true,
+      },
+    });
+    record('N12_EXPORTED_RELEASE_OVERRIDE_DENIED',
+      result.ok === false && result.state === 'DENIED'
+        && result.code === 'PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED'
+        && result.releaseBinding === null,
+      { state: result.state, code: result.code, releaseBinding: result.releaseBinding ?? null });
+  }
+
+  // N13 — metadata-only proof inflation in a claimed release is refused: a class/gate/asset
+  // upgrade is not evidence of a publication.
+  {
+    const moduleFile = PRODUCER_MODULE
+      ?? path.join(root, 'dependencies/pansphaira/src/ks238/order-source-handoff.mjs');
+    const result = qualifyReleasedOrderSourceBinding({
+      moduleFile,
+      claimed: { releaseClass: 'PRODUCTION', compiledClosurePublished: true, attachedAssets: 1 },
+    });
+    record('N13_METADATA_PROOF_INFLATION_DENIED',
+      result.ok === false && result.state === 'DENIED'
+        && result.code === 'PAN_ORDER_SOURCE_RELEASE_CLAIM_DENIED'
+        && result.releaseBinding === null,
+      { state: result.state, code: result.code, releaseBinding: result.releaseBinding ?? null });
+  }
+
   return {
     stage: 'NEGATIVE',
     allRefused: results.every((r) => r.refused),

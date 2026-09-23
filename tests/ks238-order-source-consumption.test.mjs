@@ -1043,3 +1043,161 @@ test('KS238-R negative: a CHANGED CLOSURE is refused by the released-source bind
   assert.equal(result.state, 'DENIED');
   assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED');
 });
+
+// ------------------------------------------------ exported qualification authority
+//
+// The correction: `qualifyReleasedOrderSourceBinding` is EXPORTED, so a caller could hand it
+// its own `release`/`dependency` expectation record and have that record be the very thing
+// the genuine bytes were "verified" against -- minting PUBLIC_RELEASED_SOURCE out of a forged
+// identity. Expected identities are now pinned INDEPENDENTLY (module-level
+// PAN_ORDER_SOURCE_RELEASE / PAN_ORDER_SOURCE_DEPENDENCY); a contradicting override is
+// refused with PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED, and the claimed surface is checked
+// across class/proof/gate/assets/publication too. Every negative below was confirmed RED
+// against 56b0b84 (pre-correction) and GREEN here.
+
+test('KS238-R negative: an EXPORTED release override cannot establish PUBLIC_RELEASED_SOURCE against itself', () => {
+  // The parent's exact repro: genuine module bytes, but a forged release record (wrong Main,
+  // upgraded class, claimed published closure). The authority is pinned independently, so this
+  // is an exact refusal -- not ok:true/QUALIFIED.
+  const forged = {
+    ...PAN_ORDER_SOURCE_RELEASE,
+    mainCommit: '0'.repeat(40),
+    releaseClass: 'PRODUCTION',
+    compiledClosurePublished: true,
+  };
+  const result = qualifyReleasedOrderSourceBinding({ moduleFile: PRODUCER_MODULE_FILE, release: forged });
+  assert.equal(result.ok, false);
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED');
+  assert.equal(result.releaseBinding, null);
+  assert.deepEqual(
+    result.overrideDivergence.map((d) => d.field).sort(),
+    ['compiledClosurePublished', 'mainCommit', 'releaseClass']);
+  assert.ok(result.overrideDivergence.every((d) => d.source === 'release'));
+});
+
+test('KS238-R negative: a forged release override WITH a matching claimed identity is still refused', () => {
+  const forged = {
+    ...PAN_ORDER_SOURCE_RELEASE,
+    mainCommit: '0'.repeat(40),
+    releaseClass: 'PRODUCTION',
+    proofClass: 'RELEASE_PROOF',
+  };
+  const result = qualifyReleasedOrderSourceBinding({
+    moduleFile: PRODUCER_MODULE_FILE,
+    release: forged,
+    // The claim agrees with the forgery, so a check that trusted the caller's record would
+    // see no contradiction at all.
+    claimed: {
+      releaseId: forged.releaseId,
+      tag: forged.tag,
+      mainCommit: forged.mainCommit,
+      releaseClass: forged.releaseClass,
+      proofClass: forged.proofClass,
+    },
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED');
+  assert.equal(result.releaseBinding, null);
+});
+
+test('KS238-R negative: substituted source bytes with mutually agreeing overrides are refused', async () => {
+  const os = await import('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ks238-rel-sub-'));
+  fs.mkdirSync(path.join(dir, 'src', 'ks238'), { recursive: true });
+  const genuine = fs.readFileSync(PRODUCER_MODULE_FILE, 'utf8');
+  const changed = genuine.replace('KS238_QUANTITY_UNAVAILABLE_V1', 'KS238_QUANTITY_AVAILABLE_V1');
+  assert.notEqual(changed, genuine, 'the probe must actually change the module bytes');
+  const substituted = path.join(dir, 'src', 'ks238', 'order-source-handoff.mjs');
+  fs.writeFileSync(substituted, changed);
+  const substitutedSha = sha256(fs.readFileSync(substituted));
+  assert.notEqual(substitutedSha, PAN_ORDER_SOURCE_RELEASE.moduleSha256);
+  // The genuine closure is copied beside it, so the ONLY substituted bytes are the module.
+  fs.cpSync(path.join(PRODUCER_MODULE_ROOT, 'dist', 'packages', 'contracts', 'src'),
+    path.join(dir, 'dist', 'packages', 'contracts', 'src'), { recursive: true });
+  // A forged release AND a forged dependency that AGREE with each other on the substituted
+  // digest, plus a claim that agrees too: without an independent pin this qualifies.
+  const result = qualifyReleasedOrderSourceBinding({
+    moduleFile: substituted,
+    release: { ...PAN_ORDER_SOURCE_RELEASE, moduleSha256: substitutedSha },
+    dependency: { ...PAN_ORDER_SOURCE_DEPENDENCY, expectedModuleSha256: substitutedSha },
+    claimed: {
+      moduleSha256: substitutedSha,
+      runtimeClosureSha256: PAN_ORDER_SOURCE_RELEASE.runtimeClosureSha256,
+    },
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED');
+  assert.equal(result.releaseBinding, null);
+  assert.ok(result.overrideDivergence.some((d) => d.source === 'release' && d.field === 'moduleSha256'));
+  assert.ok(result.overrideDivergence.some((d) => d.source === 'dependency' && d.field === 'expectedModuleSha256'));
+});
+
+test('KS238-R negative: metadata-only proof inflation in a claimed release is refused', () => {
+  const inflated = [
+    { field: 'releaseClass', value: 'PRODUCTION' },
+    { field: 'proofClass', value: 'RELEASE_PROOF' },
+    { field: 'gate', value: 'SIGNED_RELEASE' },
+    { field: 'attachedAssets', value: 1 },
+    { field: 'compiledClosurePublished', value: true },
+  ];
+  for (const { field, value } of inflated) {
+    const result = qualifyReleasedOrderSourceBinding({
+      moduleFile: PRODUCER_MODULE_FILE,
+      claimed: { [field]: value },
+    });
+    assert.equal(result.ok, false, field);
+    assert.equal(result.state, 'DENIED', field);
+    assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_CLAIM_DENIED', `${field}: ${result.code}`);
+    assert.equal(result.releaseBinding, null, field);
+    assert.ok(result.claimMismatch.some((m) => m.field === field), field);
+  }
+  // An identity-surface contradiction (a different host/repository) is refused as identity.
+  const identity = qualifyReleasedOrderSourceBinding({
+    moduleFile: PRODUCER_MODULE_FILE,
+    claimed: { host: 'gitlab', repository: 'attacker/fork' },
+  });
+  assert.equal(identity.ok, false);
+  assert.equal(identity.code, 'PAN_ORDER_SOURCE_RELEASE_IDENTITY_DENIED');
+  assert.equal(identity.releaseBinding, null);
+});
+
+test('KS238-R negative: a dependency pin override that contradicts the pin is refused', () => {
+  const result = qualifyReleasedOrderSourceBinding({
+    moduleFile: PRODUCER_MODULE_FILE,
+    dependency: { ...PAN_ORDER_SOURCE_DEPENDENCY, expectedModuleSha256: 'f'.repeat(64) },
+  });
+  assert.equal(result.ok, false);
+  assert.equal(result.state, 'DENIED');
+  assert.equal(result.code, 'PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED');
+  assert.equal(result.releaseBinding, null);
+  assert.equal(result.overrideDivergence[0].source, 'dependency');
+});
+
+test('KS238-R: a caller may only RESTATE the pinned identity; the genuine restatement qualifies', () => {
+  const result = qualifyReleasedOrderSourceBinding({
+    moduleFile: PRODUCER_MODULE_FILE,
+    release: { ...PAN_ORDER_SOURCE_RELEASE },
+    dependency: { ...PAN_ORDER_SOURCE_DEPENDENCY },
+    claimed: {
+      host: PAN_ORDER_SOURCE_RELEASE.host,
+      repository: PAN_ORDER_SOURCE_RELEASE.repository,
+      releaseId: PAN_ORDER_SOURCE_RELEASE.releaseId,
+      tag: PAN_ORDER_SOURCE_RELEASE.tag,
+      mainCommit: PAN_ORDER_SOURCE_RELEASE.mainCommit,
+      publishedAt: PAN_ORDER_SOURCE_RELEASE.publishedAt,
+      releaseClass: PAN_ORDER_SOURCE_RELEASE.releaseClass,
+      proofClass: PAN_ORDER_SOURCE_RELEASE.proofClass,
+      gate: PAN_ORDER_SOURCE_RELEASE.gate,
+      attachedAssets: PAN_ORDER_SOURCE_RELEASE.attachedAssets,
+      compiledClosurePublished: PAN_ORDER_SOURCE_RELEASE.compiledClosurePublished,
+      moduleSha256: PAN_ORDER_SOURCE_RELEASE.moduleSha256,
+      runtimeClosureSha256: PAN_ORDER_SOURCE_RELEASE.runtimeClosureSha256,
+    },
+  });
+  assert.equal(result.ok, true, result.code);
+  assert.equal(result.state, 'QUALIFIED');
+  assert.equal(result.releaseBinding, 'PUBLIC_RELEASED_SOURCE');
+});

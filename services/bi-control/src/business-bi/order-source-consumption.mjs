@@ -172,6 +172,62 @@ export const PAN_ORDER_SOURCE_RELEASE = Object.freeze({
   ]),
 });
 
+// The AUTHORITATIVE expected identities, and the field surface a caller may only RESTATE.
+//
+// Expected values used by the exported qualification helpers come ONLY from the pinned
+// module-level constants below (`PAN_ORDER_SOURCE_RELEASE`, `PAN_ORDER_SOURCE_DEPENDENCY`).
+// A caller-supplied `release`/`dependency` is accepted only as a REDUNDANT restatement of
+// those pins; any field that contradicts them is an AUTHORITY SUBSTITUTION and is refused
+// explicitly, rather than being adopted as the expectation the caller is then "verified"
+// against. This is what stops an exported caller from minting PUBLIC_RELEASED_SOURCE out of
+// its own forged release/dependency record.
+const RELEASE_PIN_FIELDS = Object.freeze([
+  'host', 'repository', 'releaseId', 'tag', 'mainCommit', 'publishedAt',
+  'releaseClass', 'proofClass', 'gate', 'attachedAssets', 'compiledClosurePublished',
+  'module', 'moduleSha256', 'buildCommand', 'runtimeClosureRoot',
+  'runtimeClosureSha256', 'runtimeClosureFileCount', 'historicalCandidateCommits',
+]);
+const DEPENDENCY_PIN_FIELDS = Object.freeze([
+  'module', 'expectedModuleSha256', 'runtimeClosureRoot',
+  'expectedRuntimeClosureSha256', 'expectedRuntimeClosureFileCount',
+]);
+const RELEASE_CLAIM_IDENTITY_FIELDS = Object.freeze([
+  'host', 'repository', 'releaseId', 'tag', 'mainCommit', 'publishedAt',
+]);
+const RELEASE_CLAIM_PUBLICATION_FIELDS = Object.freeze([
+  'releaseClass', 'proofClass', 'gate', 'attachedAssets', 'compiledClosurePublished',
+]);
+
+const sameValue = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+// A caller-supplied release record that disagrees with the pinned release identity.
+function releaseOverrideDivergence(release) {
+  if (release === null || release === undefined) return [];
+  return RELEASE_PIN_FIELDS
+    .filter((field) => release[field] !== undefined
+      && !sameValue(release[field], PAN_ORDER_SOURCE_RELEASE[field]))
+    .map((field) => ({
+      source: 'release',
+      field,
+      supplied: release[field],
+      authoritative: PAN_ORDER_SOURCE_RELEASE[field],
+    }));
+}
+
+// A caller-supplied dependency record that disagrees with the consumer pin.
+function dependencyOverrideDivergence(dependency) {
+  if (dependency === null || dependency === undefined) return [];
+  return DEPENDENCY_PIN_FIELDS
+    .filter((field) => dependency[field] !== undefined
+      && !sameValue(dependency[field], PAN_ORDER_SOURCE_DEPENDENCY[field]))
+    .map((field) => ({
+      source: 'dependency',
+      field,
+      supplied: dependency[field],
+      authoritative: PAN_ORDER_SOURCE_DEPENDENCY[field],
+    }));
+}
+
 export const ORDER_SOURCE_CONSUMPTION_NONCLAIMS = Object.freeze([
   'This is a RECEIVER of the PAN order/source handoff. It is not a second order-management module and it does not re-read, re-decode or re-bind the source.',
   'The synthetic ORDER/source export and the synthetic REVENUE ledger are DISTINCT datasets. Their published numbers are reported side by side and are never added, netted, reconciled or claimed to be causally related.',
@@ -203,12 +259,20 @@ const sha256Hex = (value) => createHash('sha256').update(value).digest('hex');
  * e.g. an unbuilt checkout), never a silent pass.
  */
 export function computeRuntimeClosureSha256({ moduleFile, dependency = PAN_ORDER_SOURCE_DEPENDENCY } = {}) {
+  // The expected closure identity is the pinned consumer pin, NEVER a caller-supplied
+  // expectation: a `dependency` that contradicts the pin is an authority substitution and
+  // is refused here instead of being measured against itself.
+  const dependencyDivergence = dependencyOverrideDivergence(dependency);
+  if (dependencyDivergence.length > 0) {
+    return { ok: false, state: 'DENIED', code: 'PAN_ORDER_SOURCE_DEPENDENCY_OVERRIDE_DENIED', dependencyDivergence };
+  }
+  const pin = PAN_ORDER_SOURCE_DEPENDENCY;
   // The wrapper lives at <producerRoot>/src/ks238/order-source-handoff.mjs and imports
   // '../../dist/...'. Walk up from the wrapper's own directory to that producer root, so
   // the closure is measured beside the ACTUAL resolved module rather than from any other
   // repository a caller happens to name.
   const producerRoot = path.resolve(path.dirname(moduleFile), '..', '..');
-  const closureRoot = path.resolve(producerRoot, dependency.runtimeClosureRoot);
+  const closureRoot = path.resolve(producerRoot, pin.runtimeClosureRoot);
   if (!existsSync(closureRoot)) {
     return { ok: false, state: 'UNAVAILABLE', code: 'PAN_ORDER_SOURCE_RUNTIME_CLOSURE_MISSING', closureRoot };
   }
@@ -232,14 +296,14 @@ export function computeRuntimeClosureSha256({ moduleFile, dependency = PAN_ORDER
     const rel = path.relative(producerRoot, file).split(path.sep).join('/');
     const digest = sha256Hex(readFileSync(file));
     partials[rel] = digest;
-    const criticalName = Object.keys(dependency.runtimeCriticalFiles ?? {})
-      .find((name) => rel === `${dependency.runtimeClosureRoot}/${name}`);
-    if (criticalName !== undefined && digest !== dependency.runtimeCriticalFiles[criticalName]) {
-      criticalMismatch = { file: rel, actual: digest, expected: dependency.runtimeCriticalFiles[criticalName] };
+    const criticalName = Object.keys(pin.runtimeCriticalFiles ?? {})
+      .find((name) => rel === `${pin.runtimeClosureRoot}/${name}`);
+    if (criticalName !== undefined && digest !== pin.runtimeCriticalFiles[criticalName]) {
+      criticalMismatch = { file: rel, actual: digest, expected: pin.runtimeCriticalFiles[criticalName] };
     }
   }
   const closureSha256 = sha256Hex(JSON.stringify(partials));
-  const expected = dependency.expectedRuntimeClosureSha256;
+  const expected = pin.expectedRuntimeClosureSha256;
   return {
     ok: closureSha256 === expected && criticalMismatch === null,
     state: closureSha256 === expected && criticalMismatch === null ? 'AVAILABLE' : 'DENIED',
@@ -270,11 +334,14 @@ export function computeRuntimeClosureSha256({ moduleFile, dependency = PAN_ORDER
  * and it refuses when the bytes are not the released ones — it never upgrades a source-only
  * release into a compiled publication.
  *
- * Expected values come ONLY from the pinned released identity (`release`, defaulting to
- * PAN_ORDER_SOURCE_RELEASE) and the consumer pin (`dependency`). A caller may pass `claimed`
- * to have its own declaration checked, and any disagreement is a DENIAL: an unverified
- * release id is not an identity. Naming a HISTORICAL CANDIDATE commit as the release is the
- * wrong-release-identity case and is refused the same way.
+ * AUTHORITY: expected values come ONLY from the pinned module-level identities
+ * (`PAN_ORDER_SOURCE_RELEASE` and `PAN_ORDER_SOURCE_DEPENDENCY`). A caller-supplied `release`
+ * or `dependency` is accepted only as a REDUNDANT RESTATEMENT of those pins; a contradicting
+ * override is refused with `PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED` and can NEVER establish
+ * `PUBLIC_RELEASED_SOURCE` against itself. A caller may pass `claimed` to have its own
+ * declaration checked against the pinned release: an identity/class/gate/asset contradiction
+ * is a DENIAL, because an unverified release id or an inflated class is not an identity.
+ * Naming a HISTORICAL CANDIDATE commit as the release is the wrong-release-identity case.
  *
  * A missing module is an honest UNAVAILABLE, never a pass.
  */
@@ -284,22 +351,26 @@ export function qualifyReleasedOrderSourceBinding({
   release = PAN_ORDER_SOURCE_RELEASE,
   claimed = null,
 } = {}) {
+  // The independent, pinned authority. Everything expected below is read from these two
+  // records and from the ACTUAL bytes -- never from a caller-supplied expectation.
+  const authority = PAN_ORDER_SOURCE_RELEASE;
+  const pin = PAN_ORDER_SOURCE_DEPENDENCY;
   const base = {
     release: {
-      host: release.host,
-      repository: release.repository,
-      releaseId: release.releaseId,
-      tag: release.tag,
-      mainCommit: release.mainCommit,
-      publishedAt: release.publishedAt,
-      releaseClass: release.releaseClass,
-      proofClass: release.proofClass,
-      gate: release.gate,
-      attachedAssets: release.attachedAssets,
-      compiledClosurePublished: release.compiledClosurePublished,
+      host: authority.host,
+      repository: authority.repository,
+      releaseId: authority.releaseId,
+      tag: authority.tag,
+      mainCommit: authority.mainCommit,
+      publishedAt: authority.publishedAt,
+      releaseClass: authority.releaseClass,
+      proofClass: authority.proofClass,
+      gate: authority.gate,
+      attachedAssets: authority.attachedAssets,
+      compiledClosurePublished: authority.compiledClosurePublished,
     },
     historicalCandidate: {
-      commits: [...release.historicalCandidateCommits],
+      commits: [...authority.historicalCandidateCommits],
       isTheRelease: false,
       state: 'NOT_THE_RELEASE',
     },
@@ -313,29 +384,46 @@ export function qualifyReleasedOrderSourceBinding({
     ok: false, state: 'UNAVAILABLE', code, ...base, ...detail, releaseBinding: null,
   });
 
-  // 0. The two pins must agree with each other before either is used as an expectation.
-  //    A silent divergence here would let the consumer verify one identity while reporting
+  // 0. An externally supplied `release`/`dependency` may only RESTATE the authoritative pins.
+  //    Any contradicting field is an authority substitution: the function refuses it instead
+  //    of adopting it as the expectation against which the caller is then "verified". This is
+  //    the correction that stops a forged release record from minting PUBLIC_RELEASED_SOURCE.
+  const overrideDivergence = [
+    ...releaseOverrideDivergence(release),
+    ...dependencyOverrideDivergence(dependency),
+  ];
+  if (overrideDivergence.length > 0) {
+    return deny('PAN_ORDER_SOURCE_RELEASE_OVERRIDE_DENIED', {
+      overrideDivergence,
+      reason: 'Externally supplied release/dependency expectations contradict the authoritative '
+        + 'pinned public release identity. Expected identities are pinned independently; an '
+        + 'override is never verified against itself.',
+    });
+  }
+
+  // 1. The two pins must agree with each other before either is used as an expectation. A
+  //    silent divergence here would let the consumer verify one identity while reporting
   //    another, so it is a DENIAL rather than a warning.
   const pinDivergence = [];
-  if (dependency.expectedModuleSha256 !== release.moduleSha256) pinDivergence.push('moduleSha256');
-  if (dependency.expectedRuntimeClosureSha256 !== release.runtimeClosureSha256) pinDivergence.push('runtimeClosureSha256');
-  if (dependency.expectedRuntimeClosureFileCount !== release.runtimeClosureFileCount) pinDivergence.push('runtimeClosureFileCount');
+  if (pin.expectedModuleSha256 !== authority.moduleSha256) pinDivergence.push('moduleSha256');
+  if (pin.expectedRuntimeClosureSha256 !== authority.runtimeClosureSha256) pinDivergence.push('runtimeClosureSha256');
+  if (pin.expectedRuntimeClosureFileCount !== authority.runtimeClosureFileCount) pinDivergence.push('runtimeClosureFileCount');
   if (pinDivergence.length > 0) {
     return deny('PAN_ORDER_SOURCE_RELEASE_PIN_DIVERGENCE', { pinDivergence });
   }
 
-  // 1. A caller's own release declaration, when supplied, must match the pinned release.
-  //    This is the "wrong release identity" boundary: it distinguishes the release from the
-  //    historical candidate commits, which carry the same module bytes.
+  // 2. A caller's own release declaration, when supplied, must match the pinned release across
+  //    the WHOLE claimed surface -- identity, module, closure AND the class/proof/gate/asset/
+  //    publication fields. Metadata alone is never proof: an inflated class or a claimed
+  //    published bundle is refused, not silently accepted.
   if (claimed !== null && claimed !== undefined) {
     const claim = claimed ?? {};
-    const identityFields = ['releaseId', 'tag', 'mainCommit'];
-    const identityMismatch = identityFields
-      .filter((field) => claim[field] !== undefined && claim[field] !== release[field])
-      .map((field) => ({ field, claimed: claim[field], expected: release[field] }));
+    const identityMismatch = RELEASE_CLAIM_IDENTITY_FIELDS
+      .filter((field) => claim[field] !== undefined && claim[field] !== authority[field])
+      .map((field) => ({ field, claimed: claim[field], expected: authority[field] }));
     if (identityMismatch.length > 0) {
       const namesHistoricalCandidate = identityMismatch.some((m) => (
-        release.historicalCandidateCommits.includes(m.claimed)
+        authority.historicalCandidateCommits.includes(m.claimed)
       ));
       return deny('PAN_ORDER_SOURCE_RELEASE_IDENTITY_DENIED', {
         identityMismatch,
@@ -346,24 +434,43 @@ export function qualifyReleasedOrderSourceBinding({
           : 'The claimed release identity is not the pinned public release identity.',
       });
     }
-    if (claim.moduleSha256 !== undefined && claim.moduleSha256 !== release.moduleSha256) {
-      return deny('PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED', {
-        claimed: { moduleSha256: claim.moduleSha256 },
-        actual: { moduleSha256: release.moduleSha256 },
-        reason: 'The claimed released module bytes are not the pinned released module bytes.',
+    const publicationMismatch = RELEASE_CLAIM_PUBLICATION_FIELDS
+      .filter((field) => claim[field] !== undefined && claim[field] !== authority[field])
+      .map((field) => ({ field, claimed: claim[field], expected: authority[field] }));
+    if (publicationMismatch.length > 0) {
+      return deny('PAN_ORDER_SOURCE_RELEASE_CLAIM_DENIED', {
+        claimMismatch: publicationMismatch,
+        reason: 'A claimed release class / proof class / gate / attached-asset count / '
+          + 'publication flag contradicts the pinned SOURCE_EVIDENCE_ONLY release. Metadata '
+          + 'inflation is not evidence of a publication.',
       });
     }
-    if (claim.runtimeClosureSha256 !== undefined
-      && claim.runtimeClosureSha256 !== release.runtimeClosureSha256) {
+    if ((claim.module !== undefined && claim.module !== authority.module)
+      || (claim.moduleSha256 !== undefined && claim.moduleSha256 !== authority.moduleSha256)) {
+      return deny('PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED', {
+        claimed: { module: claim.module, moduleSha256: claim.moduleSha256 },
+        actual: { module: authority.module, moduleSha256: authority.moduleSha256 },
+        reason: 'The claimed released module is not the pinned released module.',
+      });
+    }
+    if ((claim.runtimeClosureRoot !== undefined && claim.runtimeClosureRoot !== authority.runtimeClosureRoot)
+      || (claim.runtimeClosureSha256 !== undefined && claim.runtimeClosureSha256 !== authority.runtimeClosureSha256)
+      || (claim.runtimeClosureFileCount !== undefined && claim.runtimeClosureFileCount !== authority.runtimeClosureFileCount)) {
       return deny('PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED', {
-        claimed: { runtimeClosureSha256: claim.runtimeClosureSha256 },
-        actual: { runtimeClosureSha256: release.runtimeClosureSha256 },
-        reason: 'The claimed released closure bytes are not the pinned released closure bytes.',
+        claimed: {
+          runtimeClosureSha256: claim.runtimeClosureSha256,
+          runtimeClosureFileCount: claim.runtimeClosureFileCount,
+        },
+        actual: {
+          runtimeClosureSha256: authority.runtimeClosureSha256,
+          runtimeClosureFileCount: authority.runtimeClosureFileCount,
+        },
+        reason: 'The claimed released closure is not the pinned released closure.',
       });
     }
   }
 
-  // 2. Measure the ACTUAL bytes. Nothing below is taken from the caller.
+  // 3. Measure the ACTUAL bytes. Nothing below is taken from the caller.
   if (typeof moduleFile !== 'string' || moduleFile.length === 0) {
     return unavailable('PAN_ORDER_SOURCE_RELEASE_MODULE_MISSING', { moduleFile: moduleFile ?? null });
   }
@@ -372,20 +479,20 @@ export function qualifyReleasedOrderSourceBinding({
   }
   const moduleBytes = readFileSync(moduleFile);
   const moduleSha256 = sha256Hex(moduleBytes);
-  if (moduleSha256 !== release.moduleSha256) {
+  if (moduleSha256 !== authority.moduleSha256) {
     return deny('PAN_ORDER_SOURCE_RELEASE_MODULE_DENIED', {
       moduleFile,
       actual: { moduleSha256 },
-      expected: { moduleSha256: release.moduleSha256 },
+      expected: { moduleSha256: authority.moduleSha256 },
       reason: 'The located module bytes are not the bytes of the public released source.',
     });
   }
-  const runtimeClosure = computeRuntimeClosureSha256({ moduleFile, dependency });
+  const runtimeClosure = computeRuntimeClosureSha256({ moduleFile, dependency: pin });
   if (!runtimeClosure.ok) {
     return deny('PAN_ORDER_SOURCE_RELEASE_CLOSURE_DENIED', {
       moduleFile,
       runtimeClosure,
-      expected: { runtimeClosureSha256: release.runtimeClosureSha256, fileCount: release.runtimeClosureFileCount },
+      expected: { runtimeClosureSha256: authority.runtimeClosureSha256, fileCount: authority.runtimeClosureFileCount },
       reason: 'The compiled closure beside the located module is not the closure of the released source.',
     });
   }
@@ -397,9 +504,9 @@ export function qualifyReleasedOrderSourceBinding({
     releaseBinding: 'PUBLIC_RELEASED_SOURCE',
     ...base,
     publicReleasedSource: {
-      module: release.module,
+      module: authority.module,
       moduleSha256,
-      expectedModuleSha256: release.moduleSha256,
+      expectedModuleSha256: authority.moduleSha256,
       state: 'MATCH',
       // SOURCE_EVIDENCE_ONLY: the released artifact IS the source module.
       compiledAssetsPublished: false,
@@ -408,15 +515,15 @@ export function qualifyReleasedOrderSourceBinding({
       closureRoot: runtimeClosure.closureRoot,
       fileCount: runtimeClosure.fileCount,
       closureSha256: runtimeClosure.closureSha256,
-      expectedClosureSha256: release.runtimeClosureSha256,
+      expectedClosureSha256: authority.runtimeClosureSha256,
       // Byte-identical to the closure the released source compiles to, under the locked
       // local build. Reproducible from the released bytes -- and NOT a published asset.
       state: 'BYTE_IDENTICAL_TO_RELEASED_SOURCE_BUILD',
-      buildCommand: release.buildCommand,
+      buildCommand: authority.buildCommand,
       publishedAsReleaseAsset: false,
     },
     historicalCandidate: {
-      commits: [...release.historicalCandidateCommits],
+      commits: [...authority.historicalCandidateCommits],
       isTheRelease: false,
       state: 'NOT_THE_RELEASE',
       // Recorded: the candidate commits carry the same module bytes, so bytes alone cannot
