@@ -122,7 +122,7 @@ node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> \
     --kind-decisions <file> --business-semantics <file>
     # exit 0 — journeyDenial KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING (C2)
 node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> --kind-decisions <file> \
-    --business-semantics <file> --source-revision <rev> --source-revision synthetic-unfamiliar-v1
+    --business-semantics <file> --source-revision synthetic-unfamiliar-v1
     # exit 0 — journeyDenial KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE (stale-after-load knowledge refused)
 node scripts/run-unfamiliar-schema-metric-journey.mjs --negative
     # exit 0 — 27 gates, each printing its exact rejection code
