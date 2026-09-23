@@ -128,6 +128,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // consumes a real user's answers instead of a fixed synthetic orchestration — reachable
   // through this parent exactly once, preserving the exactly-one-route invariant.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-guided-journey.test.mjs' },
+  // KS246 (#246) unfamiliar-schema proposal/clarification: a new suite must not become a
+  // second direct root because the canonical command is byte-bound to the released C1
+  // certificate's package.json digest, so it rides the same parent exactly once.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/unfamiliar-schema-proposal.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',

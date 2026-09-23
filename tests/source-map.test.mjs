@@ -27,6 +27,11 @@ import './net-revenue-connected-journey.test.mjs';
 // so it rides this parent rather than becoming a second direct package.json root — the
 // topology kernel still proves exactly one route per suite.
 import './net-revenue-guided-journey.test.mjs';
+// KS246 (#246) unfamiliar-schema proposal/clarification follows the same imported-suite
+// route.  The canonical command is byte-bound to the released C1 certificate's live
+// package.json digest, so a new direct root would break that frozen binding; riding this
+// parent keeps exactly one route per suite and mutates no package.json.
+import './unfamiliar-schema-proposal.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/unfamiliar-schema-aggregate-profile/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "KS246",
+  "sourceRevision": "synthetic-unfamiliar-v1",
+  "accessMode": "BOUNDED_AGGREGATE_ONLY",
+  "provenance": "repository-authored bounded aggregate counts over the synthetic unfamiliar schema; counts only, no row material",
+  "relationProfiles": [
+    {
+      "relation": "synth_x.pay_feed",
+      "rowCount": 12,
+      "columns": [
+        { "name": "pf_id", "nonNullCount": 12, "distinctCount": 12, "minInteger": 1, "maxInteger": 12 },
+        { "name": "bk_ts", "nonNullCount": 10, "distinctCount": 10, "minDate": "2026-06-03", "maxDate": "2026-07-28" },
+        { "name": "val_dt", "nonNullCount": 12, "distinctCount": 12, "minDate": "2026-06-01", "maxDate": "2026-07-31" },
+        { "name": "ev_typ", "nonNullCount": 12, "distinctCount": 4, "valueCounts": { "P": 7, "R": 2, "V": 1, "U": 2 } },
+        { "name": "amt_a", "nonNullCount": 11, "distinctCount": 9, "minInteger": 0, "maxInteger": 105000 },
+        { "name": "amt_b", "nonNullCount": 12, "distinctCount": 10, "minInteger": 0, "maxInteger": 1290 },
+        { "name": "ccy", "nonNullCount": 12, "distinctCount": 2, "valueCounts": { "EUR": 10, "CHF": 2 } },
+        { "name": "note", "nonNullCount": 3, "distinctCount": 3 }
+      ]
+    },
+    {
+      "relation": "synth_x.pay_adj",
+      "rowCount": 5,
+      "columns": [
+        { "name": "pf_id", "nonNullCount": 5, "distinctCount": 3, "minInteger": 2, "maxInteger": 9 },
+        { "name": "adj_amt", "nonNullCount": 5, "distinctCount": 4, "minInteger": -400, "maxInteger": 900 },
+        { "name": "posted_ts", "nonNullCount": 5, "distinctCount": 5, "minDate": "2026-06-05", "maxDate": "2026-08-02" }
+      ]
+    },
+    {
+      "relation": "synth_x.tx_meta",
+      "rowCount": 4,
+      "columns": [
+        { "name": "pf_id", "nonNullCount": 4, "distinctCount": 4, "minInteger": 1, "maxInteger": 11 },
+        { "name": "amount", "nonNullCount": 4, "distinctCount": 4, "valueCounts": { "12.90": 1, "1050.00": 1, "not-a-number": 1, "": 1 } },
+        { "name": "label", "nonNullCount": 2, "distinctCount": 2 }
+      ]
+    }
+  ],
+  "joinCandidateProfiles": [
+    {
+      "source": { "relation": "synth_x.pay_feed", "column": "pf_id" },
+      "target": { "relation": "synth_x.pay_adj", "column": "pf_id" },
+      "sourceNonNullCount": 12,
+      "sourceDistinctCount": 12,
+      "targetNonNullCount": 5,
+      "targetDistinctCount": 3,
+      "matchedDistinctCount": 3
+    },
+    {
+      "source": { "relation": "synth_x.tx_meta", "column": "pf_id" },
+      "target": { "relation": "synth_x.pay_feed", "column": "pf_id" },
+      "sourceNonNullCount": 4,
+      "sourceDistinctCount": 4,
+      "targetNonNullCount": 12,
+      "targetDistinctCount": 12,
+      "matchedDistinctCount": 4
+    }
+  ]
+}
