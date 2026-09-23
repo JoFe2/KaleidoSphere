@@ -4,7 +4,14 @@ Authority: public issue #246 (KS-EVO-01), order `/workspace/AUFTRAG.md`.
 Discovery base `860a8624dc0812ea7cbb19a369a8120b415ba0bb`; the corrected AC01/AC02
 proposal (`d8f494e9104c84441772303525040d502f956110`, preserved here) is the predecessor of
 this slice and is **unchanged**. Both slices are **local-only**: no public state, no HTTP
-route, no production, customer or real-source claim, and no writes at all.
+route, no production, customer or real-source claim, and no public writes.
+
+This revision carries the **parent-directed correction of C1-C3** from
+`/workspace/PARENT-COMPOSITION-CORRECTIONS.md`: the CLI no longer supplies the caller's
+record-kind decisions (C1) or the source revision (C2) itself, and the composition now
+refuses an actual incompatible/unresolved **amount business meaning** through a closed,
+source-bound confirmation (C3). The corrected candidate is preserved; the released proposal
+and the integration base are untouched by this worker.
 
 ## What was built (and reused)
 
@@ -12,6 +19,7 @@ route, no production, customer or real-source claim, and no writes at all.
 |---|---|
 | Executable source fixture (separately identified) | `tests/fixtures/business-bi/ks246-unfamiliar-schema/source-pay-feed-v1.json` |
 | Caller record-kind decision input (authored) | `tests/fixtures/business-bi/ks246-unfamiliar-schema/kind-decisions-v1.json` |
+| Caller amount business-meaning confirmation (authored, closed, source-bound) | `tests/fixtures/business-bi/ks246-unfamiliar-schema/business-semantics-v1.json` |
 | Composition module (layout profile + binding + local DB seam) | `services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs` |
 | Runnable CLI journey | `scripts/run-unfamiliar-schema-metric-journey.mjs` |
 | Focused suite | `tests/unfamiliar-schema-metric-journey.test.mjs` |
@@ -37,7 +45,18 @@ engine or mapping vocabulary is introduced.
    source column is either a role column or an explicitly classified non-role column;
 4. the caller's authored decision input supplies every record-kind value the reviewed
    handoff left **explicitly unresolved** — the reviewed surface never infers a sale, and
-   neither does this one: an undecided or contradictory value is DENIED by name;
+   neither does this one: an undecided or contradictory value is DENIED by name. Both this
+   input and the source revision below are **required explicitly**: the CLI has no default,
+   no fallback and no fixture adoption on the caller path, and a missing one DENIES before
+   any database is created, seeded or read;
+4b. the caller's **closed, source-bound** confirmation of the admitted amount column's
+   business meaning is required: only `NET_SALES_REVENUE` authorizes the released
+   net-revenue operation. A confirmed `NOT_NET_SALES_REVENUE` or `UNRESOLVED`, a token
+   outside the closed vocabulary, a subject that is not the caller's own confirmed amount
+   column, or a stale source revision all DENY — and a free-text business meaning
+   **recorded** in the proposal interview that disagrees with the closed confirmation (or is
+   `UNRESOLVED`) is preserved as an unresolved/contradictory condition and DENIES pending
+   clarification. Numeric holdout equality is never treated as semantic authorization;
 5. the unfamiliar relation is seeded into the injected local database
    (a real in-process PGlite in a clean-room; a labelled synthetic adapter otherwise),
    read back through **one confined SELECT** of exactly the role columns, mapped to the
@@ -93,12 +112,20 @@ expectation and with the released independent oracle.
 ```
 node scripts/run-unfamiliar-schema-metric-journey.mjs
     # exit 0 — EOF: PROPOSED, 0 confirmed, handoffDenial UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS, executed=false
-node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file>
+node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> \
+    --kind-decisions <file> --business-semantics <file> --source-revision <rev>
     # exit 0 — CONFIRMED + executed=true, COMPLETE, deltaMinorUnits=70059, oracleEquality=EXACT
-node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> --source-revision synthetic-unfamiliar-v1
+node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> \
+    --business-semantics <file> --source-revision <rev>
+    # exit 0 — journeyDenial KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT (C1)
+node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> \
+    --kind-decisions <file> --business-semantics <file>
+    # exit 0 — journeyDenial KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING (C2)
+node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> --kind-decisions <file> \
+    --business-semantics <file> --source-revision <rev> --source-revision synthetic-unfamiliar-v1
     # exit 0 — journeyDenial KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE (stale-after-load knowledge refused)
 node scripts/run-unfamiliar-schema-metric-journey.mjs --negative
-    # exit 0 — 17 gates, each printing its exact rejection code
+    # exit 0 — 27 gates, each printing its exact rejection code
 node --test tests/unfamiliar-schema-metric-journey.test.mjs
 node --test tests/unfamiliar-schema-proposal.test.mjs
 node --test tests/canonical-test-topology.test.mjs
@@ -114,12 +141,22 @@ eof-handoff=UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS
 unconfirmed-proposal=UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS
 unsupported-units=UNFAMILIAR_HANDOFF_DENIED:ARITHMETIC_UNIT_NOT_RELEASED
 unsupported-currency=UNFAMILIAR_HANDOFF_DENIED:CURRENCY_NOT_RELEASED
+missing-kind-decision-input=KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT
+missing-business-semantic-confirmation=KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION
+missing-source-revision-binding=KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING
 missing-authority=KS246_JOURNEY_DENIED:MISSING_AUTHORITY
 incompatible-semantic-goal=KS246_JOURNEY_DENIED:INCOMPATIBLE_SEMANTIC_GOAL
 stale-source-revision=KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE
 missing-kind-decision=KS246_JOURNEY_DENIED:MISSING_KIND_DECISION:P
 kind-decision-conflict=KS246_JOURNEY_DENIED:KIND_DECISION_CONFLICT:credit
 unsupported-kind=KS246_JOURNEY_DENIED:UNSUPPORTED_KIND:refund
+incompatible-amount-business-meaning=KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING
+unresolved-amount-business-meaning=KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING
+business-meaning-subject-mismatch=KS246_JOURNEY_DENIED:BUSINESS_MEANING_SUBJECT_NOT_CONFIRMED_AMOUNT
+stale-business-semantics-revision=KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE
+unknown-amount-business-meaning-token=KS246_BUSINESS_SEMANTICS_DENIED:MEANING
+recorded-incompatible-amount-meaning=KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING
+recorded-unresolved-amount-meaning=KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING
 wrong-field-binding=KS246_JOURNEY_DENIED:ROLE_BINDING_NOT_CONFIRMED:amountField
 resealed-source-substitution=KS246_JOURNEY_DENIED:SOURCE_NOT_COHERENT_WITH_RELEASED_HOLDOUT
 substituted-database-rows=KS246_SOURCE_TABLE_SUBSTITUTED
@@ -144,8 +181,10 @@ exactly-one-route-per-suite invariant. No `package.json` byte changed. The whole
 
 - implementation interval: layout profile, binding gates, database seam, CLI, fixtures.
 - self-check interval: focused suite (positive, one negative per gate, an independent
-  expectation, and RED/GREEN on TWO disposable broken variants — the undecided-kind
-  inference and the dropped-column forwarding).
+  expectation, and RED/GREEN on disposable broken variants — the undecided-kind inference,
+  the dropped-column forwarding, and, for the C1-C3 correction, three further variants
+  driven through the REAL CLI: a CLI that re-adopts the kind-decision fixture, a CLI that
+  manufactures the source revision, and a module without the business-meaning gate).
 - test-wait interval: canonical `npm test`, build/manifest, topology and source-map gates.
 - unknown stays unknown: no external wait is claimed; AC05 is parent-owned.
 
@@ -153,6 +192,14 @@ exactly-one-route-per-suite invariant. No `package.json` byte changed. The whole
 
 - One authored synthetic unfamiliar case is a local proof, **not** a measured blind or
   generalization result.
+- C1/C2/C3 boundaries: the caller path defaults nothing; the admitted business meaning is a
+  closed vocabulary confirmed by the caller and bound to the source revision, not inferred
+  from prose. An incompatible or unresolved meaning is preserved and denied pending
+  clarification, never silently executed.
+- Real-PGlite mode runs only through the injected `--pglite <absolute dist/index.js>` path;
+  the live positive in this environment used `@electric-sql/pglite@0.5.8` from a scratch
+  runtime outside the repository (the dependency is deliberately not added to
+  `package.json`).
 - The executable source is authored to the admitted holdout semantics because the released
   core is byte-bound to it. This is a genuine limit of the released confinement, and it is
   stated here rather than worked around.

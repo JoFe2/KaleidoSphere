@@ -46,7 +46,7 @@ import { createHash } from 'node:crypto';
 
 import { canonicalJson } from '../canonical-json.js';
 import { serializeHoldout } from '../db-analyzer/postgresql-safe-analysis.mjs';
-import { buildMetricHandoff } from './unfamiliar-schema-proposal.mjs';
+import { UNRESOLVED_TOKEN, buildMetricHandoff } from './unfamiliar-schema-proposal.mjs';
 import {
   ADMITTED_HOLDOUT_SHA256,
   compileNetRevenuePlan,
@@ -61,6 +61,17 @@ export const UNFAMILIAR_SOURCE_SCHEMA =
   'kaleidosphere.business-bi/unfamiliar-schema-source-rows/v1';
 export const UNFAMILIAR_KIND_DECISIONS_SCHEMA =
   'kaleidosphere.business-bi/unfamiliar-kind-decisions/v1';
+export const UNFAMILIAR_BUSINESS_SEMANTICS_SCHEMA =
+  'kaleidosphere.business-bi/unfamiliar-business-semantics/v1';
+
+// The CLOSED business-meaning vocabulary for the admitted amount column.  The released core
+// computes NET SALES REVENUE; a confirmation of any other meaning, or of an explicitly
+// unresolved one, is not authorization to run it.  This is a fixed set, never free prose:
+// the composition does NOT interpret arbitrary text as semantic authority.
+export const UNFAMILIAR_AMOUNT_BUSINESS_MEANINGS = Object.freeze([
+  'NET_SALES_REVENUE', 'NOT_NET_SALES_REVENUE', UNRESOLVED_TOKEN,
+]);
+export const ADMITTED_AMOUNT_BUSINESS_MEANING = 'NET_SALES_REVENUE';
 
 export const UNFAMILIAR_SOURCE_ACCESS_MODE = 'BOUNDED_READ_ONLY';
 const SYNTHETIC_CLASSIFICATION = 'SYNTHETIC_NON_CUSTOMER_BYTES';
@@ -243,9 +254,51 @@ export function loadKindDecisions(bytesOrObject) {
 }
 
 // ---------------------------------------------------------------------------------
+// The caller's CLOSED, SOURCE-BOUND confirmation of the admitted amount column's business
+// meaning.  Like the record-kind decision input it is an authored declaration (never a
+// human-participation record), it names the exact source revision and the exact confirmed
+// subject, and it can only confirm one of the closed vocabulary values.
+// ---------------------------------------------------------------------------------
+export function loadBusinessSemanticConfirmation(bytesOrObject) {
+  const code = 'KS246_BUSINESS_SEMANTICS_DENIED';
+  const raw = parseBoundJson(bytesOrObject, code);
+  exactKeys(raw, ['schemaVersion', 'issue', 'sourceRevision', 'subject', 'confirmedMeaning', 'authoredInput'],
+    ['schemaVersion', 'issue', 'sourceRevision', 'subject', 'confirmedMeaning'], `${code}:SHAPE`);
+  if (raw.schemaVersion !== UNFAMILIAR_BUSINESS_SEMANTICS_SCHEMA) fail(`${code}:SCHEMA`);
+  if (typeof raw.sourceRevision !== 'string' || raw.sourceRevision.length === 0) fail(`${code}:REVISION`);
+  if (typeof raw.subject !== 'string' || raw.subject.lastIndexOf('.') <= 0) fail(`${code}:SUBJECT`);
+  if (!UNFAMILIAR_AMOUNT_BUSINESS_MEANINGS.includes(raw.confirmedMeaning)) fail(`${code}:MEANING`);
+  const body = {
+    schemaVersion: UNFAMILIAR_BUSINESS_SEMANTICS_SCHEMA,
+    issue: raw.issue,
+    sourceRevision: raw.sourceRevision,
+    subject: raw.subject,
+    confirmedMeaning: raw.confirmedMeaning,
+    authoredInput: raw.authoredInput === true,
+  };
+  return Object.freeze({ ...body, confirmationSha256: sha256(canonicalJson(body)) });
+}
+
+// ---------------------------------------------------------------------------------
 // AC03/AC04 binding.  Every gate below is a refusal BY NAME, and each refusal is owed a
 // negative in the focused suite.
 // ---------------------------------------------------------------------------------
+// The caller must supply its OWN decision input, its OWN business-meaning confirmation and
+// its OWN source-revision assertion.  There is NO default, NO fallback and NO fixture
+// adoption on the caller path: a missing input is refused BEFORE any database is created,
+// seeded or read.  A fixture may be adopted only when the CALLER names it explicitly.
+export function requireJourneyCallerBindings({ kindDecisionBytes, businessSemanticBytes, sourceRevision }) {
+  if (kindDecisionBytes === undefined || kindDecisionBytes === null) {
+    fail('KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT');
+  }
+  if (businessSemanticBytes === undefined || businessSemanticBytes === null) {
+    fail('KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION');
+  }
+  if (typeof sourceRevision !== 'string' || sourceRevision.length === 0) {
+    fail('KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING');
+  }
+}
+
 function assertDatabaseShape(database) {
   if (!isPlainObject(database)
       || typeof database.exec !== 'function'
@@ -264,7 +317,7 @@ function confirmedRoleSource(handoff, role) {
 }
 
 export function bindUnfamiliarMetricJourney({
-  proposal, source, kindDecisions, metricContractBytes, sourceRevision,
+  proposal, source, kindDecisions, businessSemantics, metricContractBytes, sourceRevision,
 }) {
   if (typeof sourceRevision !== 'string' || sourceRevision.length === 0) {
     fail('KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING');
@@ -366,6 +419,46 @@ export function bindUnfamiliarMetricJourney({
   const residualKindValues = Object.keys(decisions)
     .filter((value) => decisions[value] !== 'credit' && decisions[value] !== 'cancel').sort();
 
+  // (6b) The CLOSED, SOURCE-BOUND business meaning of the admitted amount column.  The
+  // released core computes net sales revenue; a caller-confirmed meaning of any other kind,
+  // or an explicitly unresolved one, is DENIED rather than silently mapped onto the metric.
+  // This is a closed confirmation, never free-text interpretation, and it never authorizes
+  // anything by numeric holdout equality: the coherence check below stays a confinement
+  // check, not a semantic grant.
+  if (!isPlainObject(businessSemantics)) {
+    fail('KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION');
+  }
+  const amountSource = handoff.canonicalRowBinding.amountField.source;
+  if (businessSemantics.sourceRevision !== source.sourceRevision) {
+    fail('KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE');
+  }
+  if (businessSemantics.subject !== amountSource
+      || amountSource !== `${profile.relation}.${amountRole.column}`) {
+    fail('KS246_JOURNEY_DENIED:BUSINESS_MEANING_SUBJECT_NOT_CONFIRMED_AMOUNT');
+  }
+  if (businessSemantics.confirmedMeaning === UNRESOLVED_TOKEN) {
+    fail('KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING');
+  }
+  if (businessSemantics.confirmedMeaning !== ADMITTED_AMOUNT_BUSINESS_MEANING) {
+    fail('KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');
+  }
+  // The caller may ALSO have recorded a free-text business meaning for the same amount
+  // column in the proposal interview.  Free text cannot be mechanically reconciled, so an
+  // explicitly unresolved meaning, or any recorded meaning that is not the closed confirmed
+  // token, is preserved as an unresolved/contradictory condition and DENIES execution
+  // pending clarification.  It is never overwritten by, and never overrides, the closed
+  // confirmation.
+  const recordedMeaning = Object.values(proposal.clarification?.confirmed ?? {})
+    .find((entry) => entry.kind === 'MISSING_DEFINITION' && entry.subject === amountSource) ?? null;
+  if (recordedMeaning !== null) {
+    if (recordedMeaning.value === UNRESOLVED_TOKEN) {
+      fail('KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING');
+    }
+    if (recordedMeaning.value !== businessSemantics.confirmedMeaning) {
+      fail('KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');
+    }
+  }
+
   // (7) The executable source must be coherent with the released core's byte-bound
   // admitted holdout.  This STATES the confinement instead of quietly widening it.
   const mapping = { profile, decisions, currency: confirmedCurrency };
@@ -404,6 +497,17 @@ export function bindUnfamiliarMetricJourney({
     residualKindValues,
     decisionsSha256: kindDecisions.decisionsSha256,
     kindMapping: Object.fromEntries(Object.entries(decisions).sort(([l], [r]) => l.localeCompare(r))),
+    amountBusinessMeaning: {
+      subject: businessSemantics.subject,
+      confirmedMeaning: businessSemantics.confirmedMeaning,
+      admittedMeaning: ADMITTED_AMOUNT_BUSINESS_MEANING,
+      vocabulary: [...UNFAMILIAR_AMOUNT_BUSINESS_MEANINGS],
+      recordedMeaning: recordedMeaning === null ? null : recordedMeaning.value,
+      recordedMeaningReconciled: recordedMeaning === null
+        || recordedMeaning.value === businessSemantics.confirmedMeaning,
+      confirmationSha256: businessSemantics.confirmationSha256,
+      authority: 'CLOSED_SOURCE_BOUND_CALLER_CONFIRMATION',
+    },
     roleBinding: {
       idField: profile.idField,
       dateField: profile.dateField,
@@ -657,6 +761,7 @@ export const UNFAMILIAR_JOURNEY_NONCLAIMS = Object.freeze([
   'No second metric, currency, date role or mapping engine: the released core and its byte-bound holdout confinement are reused unchanged.',
   'No automatic runtime activation and no admission consumer: this executes one local synthetic example.',
   'No identifier invention: the reviewed proposal is the authority for every role, and a declaration that disagrees with the caller is refused.',
+  'No implicit business-meaning approval: the admitted amount column requires a CLOSED, source-bound caller confirmation of NET_SALES_REVENUE, and a recorded unresolved or incompatible business meaning is refused pending clarification.',
   'No full AC03/AC04 closure: the separately owned PAN452 common task handle stays NOT integrated, and AC05 stays parent-owned.',
 ]);
 
@@ -665,12 +770,18 @@ export const UNFAMILIAR_JOURNEY_NONCLAIMS = Object.freeze([
 // ---------------------------------------------------------------------------------
 export async function runUnfamiliarMetricJourney(input) {
   exactKeys(input, [
-    'proposal', 'sourceBytes', 'kindDecisionBytes', 'metricContractBytes', 'oracleBytes',
-    'database', 'sourceRevision', 'authority', 'semanticGoal',
+    'proposal', 'sourceBytes', 'kindDecisionBytes', 'businessSemanticBytes',
+    'metricContractBytes', 'oracleBytes', 'database', 'sourceRevision', 'authority',
+    'semanticGoal',
   ], [
-    'proposal', 'sourceBytes', 'kindDecisionBytes', 'metricContractBytes', 'oracleBytes',
-    'database', 'sourceRevision', 'authority',
+    'proposal', 'sourceBytes', 'kindDecisionBytes', 'businessSemanticBytes',
+    'metricContractBytes', 'oracleBytes', 'database', 'sourceRevision', 'authority',
   ], 'KS246_JOURNEY_DENIED:INPUT');
+
+  // Caller-input completeness is refused FIRST, before the semantic goal, the authority and
+  // any database work: a caller that supplies no decision input, no business-meaning
+  // confirmation or no source revision is never given an implicit one.
+  requireJourneyCallerBindings(input);
 
   // The released operation request IS the semantic goal.  A caller asking for any other
   // goal (gross margin, order intake, ...) is refused instead of being mapped onto the
@@ -693,10 +804,12 @@ export async function runUnfamiliarMetricJourney(input) {
 
   const source = loadUnfamiliarSource(input.sourceBytes);
   const kindDecisions = loadKindDecisions(input.kindDecisionBytes);
+  const businessSemantics = loadBusinessSemanticConfirmation(input.businessSemanticBytes);
   const binding = bindUnfamiliarMetricJourney({
     proposal: input.proposal,
     source,
     kindDecisions,
+    businessSemantics,
     metricContractBytes: input.metricContractBytes,
     sourceRevision: input.sourceRevision,
   });
@@ -760,6 +873,8 @@ export async function runUnfamiliarMetricJourney(input) {
       releasedContractSha256: binding.releasedContractSha256,
       decisionsSha256: binding.decisionsSha256,
       kindMapping: binding.kindMapping,
+      amountBusinessMeaning: binding.amountBusinessMeaning.confirmedMeaning,
+      amountBusinessMeaningSha256: binding.amountBusinessMeaning.confirmationSha256,
       canonicalHoldoutSha256: binding.canonicalHoldoutSha256,
       bindingSha256: binding.bindingSha256,
     },
@@ -784,6 +899,7 @@ export async function runUnfamiliarMetricJourney(input) {
       `The executable source fixture declares its own revision ${binding.sourceRevision} with ${binding.revisionBinding.executableSourceRowCount} authored rows; the reviewed proposal was loaded against the discovery revision ${binding.proposalDiscoveryRevision}.`,
       'The executable source is authored to the admitted synthetic holdout semantics because the released metric core is byte-bound to that holdout; nothing here widens the released confinement.',
       'Residual record-kind values are decided by the caller in an authored decision input; the reviewed handoff left them explicitly unresolved and this module never infers them as sales.',
+      `The admitted amount column ${binding.amountBusinessMeaning.subject} is authorized ONLY by the caller's closed, source-bound confirmation of ${binding.amountBusinessMeaning.admittedMeaning}; an unresolved or incompatible recorded business meaning denies execution pending clarification.`,
       'The identifier column is declared in the s-NNN synthetic identifier namespace; the discovery metadata integer declaration is preserved unchanged.',
     ],
     nonclaims: [...UNFAMILIAR_JOURNEY_NONCLAIMS],

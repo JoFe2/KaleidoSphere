@@ -29,16 +29,20 @@ import {
   runUnfamiliarSchemaProposalEntryPoint,
 } from '../services/bi-control/src/business-bi/unfamiliar-schema-proposal.mjs';
 import {
+  ADMITTED_AMOUNT_BUSINESS_MEANING,
+  UNFAMILIAR_AMOUNT_BUSINESS_MEANINGS,
   UNFAMILIAR_JOURNEY_EXPECTED,
   UNFAMILIAR_LAYOUT_PROFILE,
   UNFAMILIAR_SOURCE_SELECT,
   bindUnfamiliarMetricJourney,
   buildUnfamiliarMetricRead,
   buildUnfamiliarSyntheticDatabase,
+  loadBusinessSemanticConfirmation,
   loadKindDecisions,
   loadUnfamiliarSource,
   mapUnfamiliarRowsToCanonical,
   readUnfamiliarSourceRows,
+  requireJourneyCallerBindings,
   runUnfamiliarMetricJourney,
   seedUnfamiliarDatabase,
 } from '../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
@@ -55,6 +59,7 @@ const METADATA_PATH = `${FD}/metadata-v1.json`;
 const AGGREGATE_PATH = `${FD}/aggregate-profile-v1.json`;
 const SOURCE_PATH = `${FD}/source-pay-feed-v1.json`;
 const KIND_DECISIONS_PATH = `${FD}/kind-decisions-v1.json`;
+const BUSINESS_SEMANTICS_PATH = `${FD}/business-semantics-v1.json`;
 const CONTRACT_PATH = 'contracts/business-bi/v1/net-revenue.metric.json';
 const ORACLE_PATH = 'tests/fixtures/business-bi/net-revenue-oracle-v1.json';
 const MODULE_PATH = 'services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
@@ -65,6 +70,7 @@ const metadataBytes = readFileSync(METADATA_PATH);
 const aggregateBytes = readFileSync(AGGREGATE_PATH);
 const sourceBytes = readFileSync(SOURCE_PATH);
 const kindDecisionBytes = readFileSync(KIND_DECISIONS_PATH);
+const businessSemanticBytes = readFileSync(BUSINESS_SEMANTICS_PATH);
 const contractBytes = readFileSync(CONTRACT_PATH);
 const oracleBytes = readFileSync(ORACLE_PATH);
 const oracle = JSON.parse(oracleBytes.toString('utf8'));
@@ -104,6 +110,7 @@ function journeyInput(overrides = {}) {
     proposal,
     sourceBytes,
     kindDecisionBytes,
+    businessSemanticBytes,
     metricContractBytes: contractBytes,
     oracleBytes,
     database: buildUnfamiliarSyntheticDatabase(),
@@ -126,6 +133,29 @@ function mutateDecisions(mutate) {
   mutate(copy);
   return Buffer.from(JSON.stringify(copy), 'utf8');
 }
+
+const businessSemanticsFixture = JSON.parse(businessSemanticBytes.toString('utf8'));
+
+function mutateSemantics(mutate) {
+  const copy = clone(businessSemanticsFixture);
+  mutate(copy);
+  return Buffer.from(JSON.stringify(copy), 'utf8');
+}
+
+// The admitted amount column's MISSING_DEFINITION question is the 13th interview position
+// (the seven required role answers, then fanout, misleading name and four definitions before
+// it).  This mirrors exactly what a caller would type on the CLI.
+function answersWithAmountMeaning(meaning) {
+  return [...CONFIRMED_ANSWERS, 'none', 'none', 'none', 'none', 'none', meaning];
+}
+
+// The caller's own required inputs for this journey.  They are never defaulted: omitting one
+// of them must deny before any database is created.
+const CALLER_ARGS = Object.freeze([
+  '--kind-decisions', KIND_DECISIONS_PATH,
+  '--business-semantics', BUSINESS_SEMANTICS_PATH,
+  '--source-revision', SOURCE_REVISION,
+]);
 
 async function denialOf(run) {
   try {
@@ -166,17 +196,17 @@ function independentExpectedResult() {
   };
 }
 
-function cli(args) {
-  const result = spawnSync(process.execPath, [CLI_PATH, ...args], { cwd: ROOT, encoding: 'utf8' });
+function cli(args, script = CLI_PATH) {
+  const result = spawnSync(process.execPath, [script, ...args], { cwd: ROOT, encoding: 'utf8' });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
-function cliWithAnswers(answers, extraArgs = []) {
+function cliWithAnswers(answers, extraArgs = [], script = CLI_PATH) {
   const scratch = mkdtempSync(join(tmpdir(), 'ks246-journey-'));
   try {
     const answersPath = join(scratch, 'answers.txt');
     writeFileSync(answersPath, `${answers.join('\n')}\n`);
-    const out = cli(['--answers', answersPath, ...extraArgs]);
+    const out = cli(['--answers', answersPath, ...extraArgs], script);
     return { ...out, summary: out.stdout === '' ? null : JSON.parse(out.stdout) };
   } finally {
     rmSync(scratch, { recursive: true, force: true });
@@ -225,6 +255,7 @@ test('AC04 the executed receipt round-trips through the released verifier (not a
     proposal,
     source,
     kindDecisions: loadKindDecisions(kindDecisionBytes),
+    businessSemantics: loadBusinessSemanticConfirmation(businessSemanticBytes),
     metricContractBytes: contractBytes,
     sourceRevision: SOURCE_REVISION,
   });
@@ -461,8 +492,8 @@ test('AC04 the bounded source surface denies row-less, SQL, credential, executab
 test('the journey issues exactly one confined SELECT and exposes no SQL authority', async () => {
   const journeyInputKeys = Object.keys(journeyInput());
   assert.deepEqual(journeyInputKeys.sort(), [
-    'authority', 'database', 'kindDecisionBytes', 'metricContractBytes', 'oracleBytes',
-    'proposal', 'sourceBytes', 'sourceRevision',
+    'authority', 'businessSemanticBytes', 'database', 'kindDecisionBytes',
+    'metricContractBytes', 'oracleBytes', 'proposal', 'sourceBytes', 'sourceRevision',
   ]);
   for (const forbidden of ['sql', 'query', 'statement', 'statements']) {
     assert.equal(journeyInputKeys.includes(forbidden), false, forbidden);
@@ -518,6 +549,7 @@ test('no full AC03/AC04 closure and no PAN452 handling are claimed', async () =>
     proposal,
     source: loadUnfamiliarSource(sourceBytes),
     kindDecisions: loadKindDecisions(kindDecisionBytes),
+    businessSemantics: loadBusinessSemanticConfirmation(businessSemanticBytes),
     metricContractBytes: contractBytes,
     sourceRevision: SOURCE_REVISION,
   }).handoff;
@@ -592,6 +624,86 @@ test('a disposable variant that maps the DROPPED sibling amount slips through RE
   assert.equal(real.result.deltaMinorUnits, UNFAMILIAR_JOURNEY_EXPECTED.deltaMinorUnits);
 });
 
+
+// ---------------------------------------------------------------------------------
+// AC04/C1/C2 — the caller's OWN required inputs: no default, no fixture adoption.
+// ---------------------------------------------------------------------------------
+test('C1/C2 a missing caller input is refused BEFORE any database is created, seeded or read', async () => {
+  const buildSpy = () => {
+    const state = { touched: false };
+    const database = buildUnfamiliarSyntheticDatabase();
+    database.exec = async () => { state.touched = true; return { rows: [] }; };
+    database.query = async () => { state.touched = true; return { rows: [] }; };
+    return { state, database };
+  };
+  for (const [overrides, code] of [
+    [{ kindDecisionBytes: undefined }, 'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT'],
+    [{ businessSemanticBytes: undefined }, 'KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION'],
+    [{ sourceRevision: undefined }, 'KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING'],
+    [{ sourceRevision: '' }, 'KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING'],
+  ]) {
+    const { state, database } = buildSpy();
+    assert.equal(await denialOf(() => runJourney({ ...overrides, database })), code);
+    assert.equal(state.touched, false, `${code} must not touch the database`);
+  }
+  // Positive counterpart: the guard passes for the caller's complete, explicit inputs.
+  assert.equal(requireJourneyCallerBindings({
+    kindDecisionBytes, businessSemanticBytes, sourceRevision: SOURCE_REVISION,
+  }), undefined);
+});
+
+test('AC04 the admitted amount column requires a CLOSED, SOURCE-BOUND caller confirmation', async () => {
+  const journey = await runJourney();
+  assert.equal(journey.binding.amountBusinessMeaning, ADMITTED_AMOUNT_BUSINESS_MEANING);
+  assert.deepEqual([...UNFAMILIAR_AMOUNT_BUSINESS_MEANINGS],
+    ['NET_SALES_REVENUE', 'NOT_NET_SALES_REVENUE', 'UNRESOLVED']);
+  // The frozen confirmation names exactly the caller's confirmed amount column.
+  assert.equal(businessSemanticsFixture.subject, proposal.metricCandidate.units.amountColumn);
+  // The confirmation must BIND the caller's confirmed subject and source revision.
+  assert.equal(await denialOf(() => runJourney({
+    businessSemanticBytes: mutateSemantics((b) => { b.subject = 'synth_x.pay_feed.amt_b'; }),
+  })), 'KS246_JOURNEY_DENIED:BUSINESS_MEANING_SUBJECT_NOT_CONFIRMED_AMOUNT');
+  assert.equal(await denialOf(() => runJourney({
+    businessSemanticBytes: mutateSemantics((b) => { b.sourceRevision = 'synthetic-unfamiliar-v1'; }),
+  })), 'KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE');
+  // An incompatible or explicitly unresolved confirmed meaning is refused, never mapped on.
+  assert.equal(await denialOf(() => runJourney({
+    businessSemanticBytes: mutateSemantics((b) => { b.confirmedMeaning = 'NOT_NET_SALES_REVENUE'; }),
+  })), 'KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');
+  assert.equal(await denialOf(() => runJourney({
+    businessSemanticBytes: mutateSemantics((b) => { b.confirmedMeaning = 'UNRESOLVED'; }),
+  })), 'KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING');
+  // A token outside the CLOSED vocabulary is refused by the loader, not interpreted.
+  assert.throws(() => loadBusinessSemanticConfirmation(
+    mutateSemantics((b) => { b.confirmedMeaning = 'SHAREHOLDER_EQUITY'; }),
+  ), (error) => error.code === 'KS246_BUSINESS_SEMANTICS_DENIED:MEANING');
+  // Positive counterpart: the frozen fixture loads with its own identity.
+  const loaded = loadBusinessSemanticConfirmation(businessSemanticBytes);
+  assert.equal(loaded.confirmedMeaning, ADMITTED_AMOUNT_BUSINESS_MEANING);
+  assert.equal(loaded.sourceRevision, SOURCE_REVISION);
+  assert.match(loaded.confirmationSha256, /^[a-f0-9]{64}$/);
+});
+
+test('AC04 a RECORDED free-text amount business meaning is never reconciled by interpretation', async () => {
+  // The reviewed proposal API legitimately RECORDS a caller free-text meaning; the NEW
+  // boundary under test is that turning it into an EXECUTED business metric refuses an
+  // incompatible or unresolved meaning instead of running anyway.
+  const incompatible = proposalFor(answersWithAmountMeaning('warehouse inventory replacement cost; not sales revenue'));
+  assert.equal(incompatible.metricCandidate.status, 'CONFIRMED');
+  assert.equal(await denialOf(() => runJourney({ proposal: incompatible })),
+    'KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');
+  const unresolved = proposalFor(answersWithAmountMeaning('UNRESOLVED'));
+  assert.equal(unresolved.metricCandidate.status, 'CONFIRMED');
+  assert.equal(await denialOf(() => runJourney({ proposal: unresolved })),
+    'KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING');
+  // Positive counterpart: an ABSENT recorded meaning keeps the closed confirmation as the
+  // authorization, and a recorded meaning that IS the confirmed token reconciles.
+  assert.equal((await runJourney()).binding.amountBusinessMeaning, ADMITTED_AMOUNT_BUSINESS_MEANING);
+  const agreeing = proposalFor(answersWithAmountMeaning(ADMITTED_AMOUNT_BUSINESS_MEANING));
+  assert.equal((await runJourney({ proposal: agreeing })).binding.amountBusinessMeaning,
+    ADMITTED_AMOUNT_BUSINESS_MEANING);
+});
+
 // ---------------------------------------------------------------------------------
 // The delivered CLI, exercised as a PROCESS.
 // ---------------------------------------------------------------------------------
@@ -610,7 +722,7 @@ test('the CLI runs the ACTUAL entry point on EOF and reports the exact denial wi
 });
 
 test('the CLI executes the supported positive example and prints its independently expected result', () => {
-  const positive = cliWithAnswers(CONFIRMED_ANSWERS);
+  const positive = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS]);
   assert.equal(positive.status, 0, positive.stderr);
   assert.equal(positive.summary.proposal.status, 'CONFIRMED');
   assert.equal(positive.summary.executed, true);
@@ -620,20 +732,138 @@ test('the CLI executes the supported positive example and prints its independent
   assert.equal(positive.summary.sourceRevision, SOURCE_REVISION);
   assert.equal(positive.summary.proposalDiscoveryRevision, 'synthetic-unfamiliar-v1');
   assert.deepEqual(positive.summary.residualKindValues, ['P', 'U']);
+  assert.equal(positive.summary.amountBusinessMeaning, ADMITTED_AMOUNT_BUSINESS_MEANING);
+  assert.match(positive.summary.amountBusinessMeaningSha256, /^[a-f0-9]{64}$/);
   assert.equal(positive.summary.authority.sharedTaskHandle, 'NOT_INTEGRATED');
   // The CLI honours the caller's explicit source-revision assertion: a STALE assertion is
   // reported as an exact denial, and nothing is executed.
-  const stale = cliWithAnswers(CONFIRMED_ANSWERS, ['--source-revision', 'synthetic-unfamiliar-v1']);
+  const stale = cliWithAnswers(CONFIRMED_ANSWERS,
+    ['--kind-decisions', KIND_DECISIONS_PATH, '--business-semantics', BUSINESS_SEMANTICS_PATH,
+      '--source-revision', 'synthetic-unfamiliar-v1']);
   assert.equal(stale.status, 0, stale.stderr);
   assert.equal(stale.summary.executed, false);
   assert.equal(stale.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE');
   // ... and the correct revision executes.
-  const asserted = cliWithAnswers(CONFIRMED_ANSWERS, ['--source-revision', SOURCE_REVISION]);
+  const asserted = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS]);
   assert.equal(asserted.summary.executed, true);
   assert.equal(asserted.summary.acceptance.executionState, 'COMPLETE');
   // An incompatible semantic goal is refused with its exact code through the same CLI.
-  const wrongGoal = cliWithAnswers(CONFIRMED_ANSWERS, ['--goal', 'GROSS_MARGIN']);
+  const wrongGoal = cliWithAnswers(CONFIRMED_ANSWERS, [...CALLER_ARGS, '--goal', 'GROSS_MARGIN']);
   assert.equal(wrongGoal.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:INCOMPATIBLE_SEMANTIC_GOAL');
+});
+
+test('C1 the real CLI refuses a missing caller kind-decision input before any database work', () => {
+  const out = cliWithAnswers(CONFIRMED_ANSWERS,
+    ['--business-semantics', BUSINESS_SEMANTICS_PATH, '--source-revision', SOURCE_REVISION]);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.summary.executed, false);
+  assert.equal(out.summary.sourceMode, undefined);
+  assert.equal(out.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT');
+  assert.match(out.summary.note, /before creating, seeding or reading any database/);
+});
+
+test('C2 the real CLI refuses a missing source-revision assertion instead of manufacturing one', () => {
+  const out = cliWithAnswers(CONFIRMED_ANSWERS,
+    ['--kind-decisions', KIND_DECISIONS_PATH, '--business-semantics', BUSINESS_SEMANTICS_PATH]);
+  assert.equal(out.status, 0, out.stderr);
+  assert.equal(out.summary.executed, false);
+  assert.equal(out.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING');
+});
+
+test('C3 the real CLI refuses a missing business-semantics confirmation and an incompatible recorded meaning', () => {
+  const missing = cliWithAnswers(CONFIRMED_ANSWERS,
+    ['--kind-decisions', KIND_DECISIONS_PATH, '--source-revision', SOURCE_REVISION]);
+  assert.equal(missing.summary.executed, false);
+  assert.equal(missing.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION');
+  const incompatible = cliWithAnswers(
+    answersWithAmountMeaning('warehouse inventory replacement cost; not sales revenue'), [...CALLER_ARGS]);
+  assert.equal(incompatible.status, 0, incompatible.stderr);
+  assert.equal(incompatible.summary.executed, false);
+  assert.equal(incompatible.summary.journeyDenial.code,
+    'KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');
+  const unresolved = cliWithAnswers(answersWithAmountMeaning('UNRESOLVED'), [...CALLER_ARGS]);
+  assert.equal(unresolved.summary.executed, false);
+  assert.equal(unresolved.summary.journeyDenial.code,
+    'KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING');
+});
+
+test('C1 RED/GREEN through the real CLI: a variant that defaults kind decisions executes; the real CLI refuses', () => {
+  const source = readFileSync(CLI_PATH, 'utf8');
+  const guardCall = '      requireJourneyCallerBindings({\n'
+    + '        kindDecisionBytes: callerKindDecisionBytes,\n'
+    + '        businessSemanticBytes: callerBusinessSemanticBytes,\n'
+    + '        sourceRevision: sourceRevisionOption,\n'
+    + '      });\n';
+  const broken = source
+    .replace("const callerKindDecisionBytes = kindDecisionsPath === null ? undefined : readFileSync(kindDecisionsPath);",
+      'const callerKindDecisionBytes = kindDecisionsPath === null ? readFileSync(KIND_DECISIONS_PATH) : readFileSync(kindDecisionsPath);')
+    .replace(guardCall, '');
+  assert.notEqual(broken, source, 'the C1 sabotage must actually change the CLI');
+  const variantPath = 'scripts/.ks246-variant-cli-default-kind-decisions.mjs';
+  writeFileSync(variantPath, broken);
+  try {
+    const red = cliWithAnswers(CONFIRMED_ANSWERS,
+      ['--business-semantics', BUSINESS_SEMANTICS_PATH, '--source-revision', SOURCE_REVISION], variantPath);
+    // RED: with the guard removed and the fixture re-adopted, an omission EXECUTES.
+    assert.equal(red.summary.executed, true);
+    assert.equal(red.summary.acceptance.executionState, 'COMPLETE');
+  } finally {
+    rmSync(variantPath, { force: true });
+  }
+  // GREEN: the real CLI refuses the exact same omission, before any database work.
+  const green = cliWithAnswers(CONFIRMED_ANSWERS,
+    ['--business-semantics', BUSINESS_SEMANTICS_PATH, '--source-revision', SOURCE_REVISION]);
+  assert.equal(green.summary.executed, false);
+  assert.equal(green.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT');
+});
+
+test('C2 RED/GREEN through the real CLI: a variant that manufactures the revision executes; the real CLI refuses', () => {
+  const source = readFileSync(CLI_PATH, 'utf8');
+  const broken = source.replace(
+    "const sourceRevisionOption = optionOf('--source-revision');",
+    "const sourceRevisionOption = optionOf('--source-revision') ?? SOURCE_REVISION;");
+  assert.notEqual(broken, source, 'the C2 sabotage must actually change the CLI');
+  const variantPath = 'scripts/.ks246-variant-cli-default-source-revision.mjs';
+  writeFileSync(variantPath, broken);
+  try {
+    const red = cliWithAnswers(CONFIRMED_ANSWERS,
+      ['--kind-decisions', KIND_DECISIONS_PATH, '--business-semantics', BUSINESS_SEMANTICS_PATH], variantPath);
+    assert.equal(red.summary.executed, true);
+    assert.equal(red.summary.acceptance.executionState, 'COMPLETE');
+  } finally {
+    rmSync(variantPath, { force: true });
+  }
+  const green = cliWithAnswers(CONFIRMED_ANSWERS,
+    ['--kind-decisions', KIND_DECISIONS_PATH, '--business-semantics', BUSINESS_SEMANTICS_PATH]);
+  assert.equal(green.summary.executed, false);
+  assert.equal(green.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING');
+});
+
+test('C3 RED/GREEN through the real CLI: a variant without the business-meaning gate executes; the real CLI refuses', () => {
+  const moduleSource = readFileSync(MODULE_PATH, 'utf8');
+  const brokenModule = moduleSource
+    .split("fail('KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');").join('void 0;')
+    .split("fail('KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING');").join('void 0;');
+  assert.notEqual(brokenModule, moduleSource, 'the C3 sabotage must actually change the module');
+  const variantModulePath = 'services/bi-control/src/business-bi/.ks246-variant-no-business-meaning.mjs';
+  const variantCliPath = 'scripts/.ks246-variant-cli-no-business-meaning.mjs';
+  writeFileSync(variantModulePath, brokenModule);
+  writeFileSync(variantCliPath, readFileSync(CLI_PATH, 'utf8').replace(
+    "'../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs'",
+    "'../services/bi-control/src/business-bi/.ks246-variant-no-business-meaning.mjs'"));
+  const answers = answersWithAmountMeaning('warehouse inventory replacement cost; not sales revenue');
+  try {
+    const red = cliWithAnswers(answers, [...CALLER_ARGS], variantCliPath);
+    assert.equal(red.summary.executed, true);
+    assert.equal(red.summary.acceptance.executionState, 'COMPLETE');
+    assert.equal(red.summary.acceptance.actualResult.deltaMinorUnits, UNFAMILIAR_JOURNEY_EXPECTED.deltaMinorUnits);
+  } finally {
+    rmSync(variantModulePath, { force: true });
+    rmSync(variantCliPath, { force: true });
+  }
+  const green = cliWithAnswers(answers, [...CALLER_ARGS]);
+  assert.equal(green.summary.executed, false);
+  assert.equal(green.summary.journeyDenial.code, 'KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING');
 });
 
 test('the CLI --negative gate reports only the exact intended rejection codes', () => {
@@ -645,12 +875,22 @@ test('the CLI --negative gate reports only the exact intended rejection codes', 
     'unconfirmed-proposal': 'UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS',
     'unsupported-units': 'UNFAMILIAR_HANDOFF_DENIED:ARITHMETIC_UNIT_NOT_RELEASED',
     'unsupported-currency': 'UNFAMILIAR_HANDOFF_DENIED:CURRENCY_NOT_RELEASED',
+    'missing-kind-decision-input': 'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT',
+    'missing-business-semantic-confirmation': 'KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION',
+    'missing-source-revision-binding': 'KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING',
     'missing-authority': 'KS246_JOURNEY_DENIED:MISSING_AUTHORITY',
     'incompatible-semantic-goal': 'KS246_JOURNEY_DENIED:INCOMPATIBLE_SEMANTIC_GOAL',
     'stale-source-revision': 'KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE',
     'missing-kind-decision': 'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION:P',
     'kind-decision-conflict': 'KS246_JOURNEY_DENIED:KIND_DECISION_CONFLICT:credit',
     'unsupported-kind': 'KS246_JOURNEY_DENIED:UNSUPPORTED_KIND:refund',
+    'incompatible-amount-business-meaning': 'KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING',
+    'unresolved-amount-business-meaning': 'KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING',
+    'business-meaning-subject-mismatch': 'KS246_JOURNEY_DENIED:BUSINESS_MEANING_SUBJECT_NOT_CONFIRMED_AMOUNT',
+    'stale-business-semantics-revision': 'KS246_JOURNEY_DENIED:SOURCE_REVISION_STALE',
+    'unknown-amount-business-meaning-token': 'KS246_BUSINESS_SEMANTICS_DENIED:MEANING',
+    'recorded-incompatible-amount-meaning': 'KS246_JOURNEY_DENIED:INCOMPATIBLE_AMOUNT_BUSINESS_MEANING',
+    'recorded-unresolved-amount-meaning': 'KS246_JOURNEY_DENIED:UNRESOLVED_AMOUNT_BUSINESS_MEANING',
     'wrong-field-binding': 'KS246_JOURNEY_DENIED:ROLE_BINDING_NOT_CONFIRMED:amountField',
     'resealed-source-substitution': 'KS246_JOURNEY_DENIED:SOURCE_NOT_COHERENT_WITH_RELEASED_HOLDOUT',
     'substituted-database-rows': 'KS246_SOURCE_TABLE_SUBSTITUTED',
@@ -679,6 +919,7 @@ test('the KS246 metric-journey family is content-addressed in SOURCE-MAP.json an
   const family = [
     SOURCE_PATH,
     KIND_DECISIONS_PATH,
+    BUSINESS_SEMANTICS_PATH,
     MODULE_PATH,
     CLI_PATH,
     'tests/unfamiliar-schema-metric-journey.test.mjs',

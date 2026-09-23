@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/unfamiliar-business-semantics/v1",
+  "issue": "KS246",
+  "sourceRevision": "synthetic-unfamiliar-source-v1",
+  "subject": "synth_x.pay_feed.amt_a",
+  "confirmedMeaning": "NET_SALES_REVENUE",
+  "authoredInput": true
+}

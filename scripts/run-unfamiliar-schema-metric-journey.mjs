@@ -8,17 +8,32 @@
 //       question stays ABSENT, the candidate stays PROPOSED, and the AC03 handoff is
 //       DENIED with its exact code.  Nothing is executed.
 //   node scripts/run-unfamiliar-schema-metric-journey.mjs --answers <file> \
-//       --kind-decisions <file> --source-revision <rev> [--source <path>] \
-//       [--pglite <absolute dist/index.js path>] [--goal <name>]
+//       --kind-decisions <file> --business-semantics <file> --source-revision <rev> \
+//       [--source <path>] [--pglite <absolute dist/index.js path>] [--goal <name>]
 //       one answer per line, in the printed interview order; 'none' refuses a question.
+//
+//       --kind-decisions, --business-semantics and --source-revision are REQUIRED to
+//       execute.  There is NO default and NO fixture fallback on this path: omitting any
+//       one of them DENIES with its exact code BEFORE any database is created, seeded or
+//       read.  To adopt an authored fixture, the CALLER must name it explicitly — the
+//       script never adopts it for them.
 //       --kind-decisions is the caller's authored decision input for the record-kind
 //       values the reviewed handoff leaves explicitly UNRESOLVED (never inferred here).
+//       --business-semantics is the caller's CLOSED, SOURCE-BOUND confirmation of the
+//       admitted amount column's business meaning.  Only NET_SALES_REVENUE authorizes the
+//       net-revenue operation; an unresolved meaning, an incompatible meaning, a different
+//       subject or a stale source revision all deny — and a free-text business meaning
+//       RECORDED in the proposal interview that disagrees with the closed confirmation is
+//       preserved as an unresolved/contradictory condition and denies pending
+//       clarification.  Nothing interprets arbitrary prose as semantic authorization.
 //       --source-revision is the caller's explicit assertion of WHICH source revision the
 //       supplied bytes are (there is no default: stale knowledge is refused by name).
 //       Without --pglite the journey runs against a clearly-labelled synthetic adapter;
 //       with it, against a real in-process PGlite supplied by the caller.
 //   node scripts/run-unfamiliar-schema-metric-journey.mjs --negative
-//       execute the bounded negative gates and print their exact rejection codes.
+//       execute the bounded negative gates and print their exact rejection codes.  This
+//       mode constructs its own authored gate inputs; it is a gate SELF-TEST, never a
+//       caller confirmation, and it adopts no fixture on the caller path.
 //
 // This CLI writes NOTHING: it prints a JSON receipt to stdout, opens no socket, sends no
 // SQL of its own, mutates no public state and grants no execution authority beyond one
@@ -37,6 +52,7 @@ import {
 import {
   UNFAMILIAR_JOURNEY_EXPECTED,
   buildUnfamiliarSyntheticDatabase,
+  requireJourneyCallerBindings,
   runUnfamiliarMetricJourney,
 } from '../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
 import { buildPgliteJourneyDatabase } from '../services/bi-control/src/business-bi/net-revenue-journey.mjs';
@@ -46,6 +62,7 @@ const METADATA_PATH = `${FD}/metadata-v1.json`;
 const AGGREGATE_PATH = `${FD}/aggregate-profile-v1.json`;
 const SOURCE_PATH = `${FD}/source-pay-feed-v1.json`;
 const KIND_DECISIONS_PATH = `${FD}/kind-decisions-v1.json`;
+const BUSINESS_SEMANTICS_PATH = `${FD}/business-semantics-v1.json`;
 const CONTRACT_PATH = 'contracts/business-bi/v1/net-revenue.metric.json';
 const ORACLE_PATH = 'tests/fixtures/business-bi/net-revenue-oracle-v1.json';
 const SOURCE_REVISION = 'synthetic-unfamiliar-source-v1';
@@ -59,11 +76,23 @@ const optionOf = (name) => {
 const metadataBytes = readFileSync(METADATA_PATH);
 const aggregateBytes = readFileSync(AGGREGATE_PATH);
 const sourceBytes = readFileSync(optionOf('--source') ?? SOURCE_PATH);
-const kindDecisionBytes = optionOf('--kind-decisions') === null
-  ? readFileSync(KIND_DECISIONS_PATH)
-  : readFileSync(optionOf('--kind-decisions'));
 const metricContractBytes = readFileSync(CONTRACT_PATH);
 const oracleBytes = readFileSync(ORACLE_PATH);
+
+// The caller's OWN options.  Nothing is defaulted here: a missing option stays missing.
+const answersPath = optionOf('--answers');
+const kindDecisionsPath = optionOf('--kind-decisions');
+const businessSemanticsPath = optionOf('--business-semantics');
+const sourceRevisionOption = optionOf('--source-revision');
+const goalOption = optionOf('--goal');
+
+// The caller inputs that must be supplied BEFORE any database work happens.  Kept in one
+// place so the pre-database refusal below and the journey's own guard agree exactly.
+const PRE_DATABASE_DENIALS = new Set([
+  'KS246_JOURNEY_DENIED:MISSING_KIND_DECISION_INPUT',
+  'KS246_JOURNEY_DENIED:MISSING_BUSINESS_SEMANTIC_CONFIRMATION',
+  'KS246_JOURNEY_DENIED:MISSING_SOURCE_REVISION_BINDING',
+]);
 
 const AUTHORITY = Object.freeze({
   localSyntheticReadOnly: true,
@@ -104,18 +133,10 @@ async function makeDatabase() {
   return buildPgliteJourneyDatabase(new PGlite());
 }
 
-async function journeyFor(proposal, options = {}) {
-  return runUnfamiliarMetricJourney({
-    proposal,
-    sourceBytes: options.sourceBytes ?? sourceBytes,
-    kindDecisionBytes: options.kindDecisionBytes ?? kindDecisionBytes,
-    metricContractBytes,
-    oracleBytes,
-    database: options.database ?? await makeDatabase(),
-    sourceRevision: options.sourceRevision ?? SOURCE_REVISION,
-    authority: options.authority ?? AUTHORITY,
-    ...(options.semanticGoal === undefined ? {} : { semanticGoal: options.semanticGoal }),
-  });
+function mutatedJson(bytes, mutate) {
+  const copy = JSON.parse(bytes.toString('utf8'));
+  mutate(copy);
+  return Buffer.from(JSON.stringify(copy), 'utf8');
 }
 
 // Every gate below reports the EXACT intended rejection: a thrown code, or a fail-closed
@@ -138,21 +159,44 @@ async function recordAsync(codes, label, run) {
   }
 }
 
-function mutated(source, mutate) {
-  const copy = JSON.parse(source.toString('utf8'));
-  mutate(copy);
-  return Buffer.from(JSON.stringify(copy), 'utf8');
-}
-
-function mutatedDecisions(mutate) {
-  const copy = JSON.parse(kindDecisionBytes.toString('utf8'));
-  mutate(copy);
-  return Buffer.from(JSON.stringify(copy), 'utf8');
+// The proposal interview is positional: the seven required role answers, then the
+// non-blocking relationship/name/meaning questions.  The admitted amount column's
+// MISSING_DEFINITION question is the 13th (index 12).
+function answersWithAmountMeaning(meaning) {
+  return [
+    ...CONFIRMED_ANSWERS,
+    'none', // fanout
+    'none', // misleading name
+    'none', // definition: synth_x.pay_adj.adj_amt
+    'none', // definition: synth_x.pay_adj.pf_id
+    'none', // definition: synth_x.pay_adj.posted_ts
+    meaning, // definition: synth_x.pay_feed.amt_a
+  ];
 }
 
 async function runNegative() {
   const codes = [];
   const confirmed = proposalFor(CONFIRMED_ANSWERS);
+
+  // THIS SCRIPT'S OWN authored gate-construction inputs.  They are NOT caller
+  // confirmation: they exist only to build the exact contradicting cases each gate must
+  // refuse, and they are never used on the caller path below.
+  const fixtureKindDecisions = readFileSync(KIND_DECISIONS_PATH);
+  const fixtureBusinessSemantics = readFileSync(BUSINESS_SEMANTICS_PATH);
+  const negativeJourney = (proposal, options = {}) => runUnfamiliarMetricJourney({
+    proposal,
+    sourceBytes,
+    kindDecisionBytes: fixtureKindDecisions,
+    businessSemanticBytes: fixtureBusinessSemantics,
+    metricContractBytes,
+    oracleBytes,
+    database: buildUnfamiliarSyntheticDatabase(),
+    sourceRevision: SOURCE_REVISION,
+    authority: AUTHORITY,
+    ...options,
+  });
+  const mutatedDecisions = (mutate) => mutatedJson(fixtureKindDecisions, mutate);
+  const mutatedSemantics = (mutate) => mutatedJson(fixtureBusinessSemantics, mutate);
 
   // AC03 handoff gates (the reviewed proposal surface does the refusing).
   const eof = proposalFor(undefined);
@@ -174,54 +218,89 @@ async function runNegative() {
     proposal: chf, metricContractBytes,
   }));
 
+  // Caller-input completeness gates (refused BEFORE any database work).
+  await recordAsync(codes, 'missing-kind-decision-input', () => negativeJourney(confirmed, {
+    kindDecisionBytes: undefined,
+  }));
+  await recordAsync(codes, 'missing-business-semantic-confirmation', () => negativeJourney(confirmed, {
+    businessSemanticBytes: undefined,
+  }));
+  await recordAsync(codes, 'missing-source-revision-binding', () => negativeJourney(confirmed, {
+    sourceRevision: '',
+  }));
+
   // Journey gates.
-  await recordAsync(codes, 'missing-authority', () => journeyFor(confirmed, {
+  await recordAsync(codes, 'missing-authority', () => negativeJourney(confirmed, {
     authority: { localSyntheticReadOnly: true, mutationAuthority: true, publicWrites: false },
   }));
-  await recordAsync(codes, 'incompatible-semantic-goal', () => journeyFor(confirmed, {
+  await recordAsync(codes, 'incompatible-semantic-goal', () => negativeJourney(confirmed, {
     semanticGoal: 'GROSS_MARGIN',
   }));
-  await recordAsync(codes, 'stale-source-revision', () => journeyFor(confirmed, {
+  await recordAsync(codes, 'stale-source-revision', () => negativeJourney(confirmed, {
     sourceRevision: 'synthetic-unfamiliar-v1',
   }));
-  await recordAsync(codes, 'missing-kind-decision', () => journeyFor(confirmed, {
+  await recordAsync(codes, 'missing-kind-decision', () => negativeJourney(confirmed, {
     kindDecisionBytes: mutatedDecisions((d) => { delete d.decisions.P; }),
   }));
-  await recordAsync(codes, 'kind-decision-conflict', () => journeyFor(confirmed, {
+  await recordAsync(codes, 'kind-decision-conflict', () => negativeJourney(confirmed, {
     kindDecisionBytes: mutatedDecisions((d) => { d.decisions.R = 'sale'; }),
   }));
-  await recordAsync(codes, 'unsupported-kind', () => journeyFor(confirmed, {
+  await recordAsync(codes, 'unsupported-kind', () => negativeJourney(confirmed, {
     kindDecisionBytes: mutatedDecisions((d) => { d.decisions.P = 'refund'; }),
   }));
+
+  // Business-meaning gates: closed, source-bound confirmation of the admitted amount.
+  await recordAsync(codes, 'incompatible-amount-business-meaning', () => negativeJourney(confirmed, {
+    businessSemanticBytes: mutatedSemantics((b) => { b.confirmedMeaning = 'NOT_NET_SALES_REVENUE'; }),
+  }));
+  await recordAsync(codes, 'unresolved-amount-business-meaning', () => negativeJourney(confirmed, {
+    businessSemanticBytes: mutatedSemantics((b) => { b.confirmedMeaning = 'UNRESOLVED'; }),
+  }));
+  await recordAsync(codes, 'business-meaning-subject-mismatch', () => negativeJourney(confirmed, {
+    businessSemanticBytes: mutatedSemantics((b) => { b.subject = 'synth_x.pay_feed.amt_b'; }),
+  }));
+  await recordAsync(codes, 'stale-business-semantics-revision', () => negativeJourney(confirmed, {
+    businessSemanticBytes: mutatedSemantics((b) => { b.sourceRevision = 'synthetic-unfamiliar-v1'; }),
+  }));
+  await recordAsync(codes, 'unknown-amount-business-meaning-token', () => negativeJourney(confirmed, {
+    businessSemanticBytes: mutatedSemantics((b) => { b.confirmedMeaning = 'SHAREHOLDER_EQUITY'; }),
+  }));
+  // A free-text business meaning RECORDED in the proposal interview is never reconciled by
+  // interpretation: an incompatible or explicitly unresolved record denies.
+  const mismatched = proposalFor(answersWithAmountMeaning('warehouse inventory replacement cost; not sales revenue'));
+  await recordAsync(codes, 'recorded-incompatible-amount-meaning', () => negativeJourney(mismatched));
+  const unresolvedMeaning = proposalFor(answersWithAmountMeaning('UNRESOLVED'));
+  await recordAsync(codes, 'recorded-unresolved-amount-meaning', () => negativeJourney(unresolvedMeaning));
+
   const wrongField = proposalFor(['synth_x.pay_feed.pf_id', 'synth_x.pay_feed.val_dt', 'MINOR_UNITS',
     'synth_x.pay_feed.amt_b', 'EUR', 'R', 'V']);
-  await recordAsync(codes, 'wrong-field-binding', () => journeyFor(wrongField));
-  await recordAsync(codes, 'resealed-source-substitution', () => journeyFor(confirmed, {
-    sourceBytes: mutated(sourceBytes, (s) => { s.rows[0].amt_a = 999999; }),
+  await recordAsync(codes, 'wrong-field-binding', () => negativeJourney(wrongField));
+  await recordAsync(codes, 'resealed-source-substitution', () => negativeJourney(confirmed, {
+    sourceBytes: mutatedJson(sourceBytes, (s) => { s.rows[0].amt_a = 999999; }),
   }));
-  await recordAsync(codes, 'substituted-database-rows', async () => {
+  await recordAsync(codes, 'substituted-database-rows', () => {
     const database = buildUnfamiliarSyntheticDatabase();
     database.query = async () => ({ rows: [{
       pf_id: 's-001', val_dt: '2026-06-01', ev_typ: 'P', amt_a: 999999, ccy: 'EUR',
     }] });
-    return journeyFor(confirmed, { database });
+    return negativeJourney(confirmed, { database });
   });
-  await recordAsync(codes, 'ambiguous-date-role', () => journeyFor(confirmed, {
-    sourceBytes: mutated(sourceBytes, (s) => {
+  await recordAsync(codes, 'ambiguous-date-role', () => negativeJourney(confirmed, {
+    sourceBytes: mutatedJson(sourceBytes, (s) => {
       s.columns.find((column) => column.name === 'note').dataType = 'timestamp';
     }),
   }));
-  await recordAsync(codes, 'unclassified-source-column', () => journeyFor(confirmed, {
-    sourceBytes: mutated(sourceBytes, (s) => {
+  await recordAsync(codes, 'unclassified-source-column', () => negativeJourney(confirmed, {
+    sourceBytes: mutatedJson(sourceBytes, (s) => {
       s.columns.push({ name: 'extra', dataType: 'text', nullable: true, declaredMeaning: null });
       for (const row of s.rows) row.extra = null;
     }),
   }));
-  await recordAsync(codes, 'unsupported-source-access-mode', () => journeyFor(confirmed, {
-    sourceBytes: mutated(sourceBytes, (s) => { s.accessMode = 'FULL_ROW_ACCESS'; }),
+  await recordAsync(codes, 'unsupported-source-access-mode', () => negativeJourney(confirmed, {
+    sourceBytes: mutatedJson(sourceBytes, (s) => { s.accessMode = 'FULL_ROW_ACCESS'; }),
   }));
-  await recordAsync(codes, 'source-sql-authority', () => journeyFor(confirmed, {
-    sourceBytes: mutated(sourceBytes, (s) => { s.sql = 'select * from synth_x.pay_feed'; }),
+  await recordAsync(codes, 'source-sql-authority', () => negativeJourney(confirmed, {
+    sourceBytes: mutatedJson(sourceBytes, (s) => { s.sql = 'select * from synth_x.pay_feed'; }),
   }));
 
   return {
@@ -234,7 +313,6 @@ async function runNegative() {
 if (args.includes('--negative')) {
   process.stdout.write(`${JSON.stringify(await runNegative(), null, 2)}\n`);
 } else {
-  const answersPath = optionOf('--answers');
   const proposal = proposalFor(answersFrom(answersPath));
   const summary = {
     entryPoint: 'run-unfamiliar-schema-metric-journey',
@@ -274,14 +352,34 @@ if (args.includes('--negative')) {
   } else {
     let journey = null;
     try {
-      journey = await journeyFor(proposal, {
-        ...(optionOf('--source-revision') === null ? {} : { sourceRevision: optionOf('--source-revision') }),
-        ...(optionOf('--goal') === null ? {} : { semanticGoal: optionOf('--goal') }),
+      // The caller's OWN inputs — never defaulted, never substituted with a fixture.
+      const callerKindDecisionBytes = kindDecisionsPath === null ? undefined : readFileSync(kindDecisionsPath);
+      const callerBusinessSemanticBytes = businessSemanticsPath === null ? undefined : readFileSync(businessSemanticsPath);
+      // Refuses BEFORE makeDatabase(): a missing caller input must not create, seed or read
+      // any database.
+      requireJourneyCallerBindings({
+        kindDecisionBytes: callerKindDecisionBytes,
+        businessSemanticBytes: callerBusinessSemanticBytes,
+        sourceRevision: sourceRevisionOption,
+      });
+      journey = await runUnfamiliarMetricJourney({
+        proposal,
+        sourceBytes,
+        kindDecisionBytes: callerKindDecisionBytes,
+        businessSemanticBytes: callerBusinessSemanticBytes,
+        metricContractBytes,
+        oracleBytes,
+        database: await makeDatabase(),
+        sourceRevision: sourceRevisionOption,
+        authority: AUTHORITY,
+        ...(goalOption === null ? {} : { semanticGoal: goalOption }),
       });
     } catch (error) {
       summary.journeyDenial = denial('journey', error);
       summary.executed = false;
-      summary.note = 'The binding refused the journey; nothing was executed.';
+      summary.note = PRE_DATABASE_DENIALS.has(error?.code)
+        ? 'A required caller input is missing; the journey refused before creating, seeding or reading any database.'
+        : 'The binding refused the journey; nothing was executed.';
     }
     if (journey === null) {
       process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
@@ -292,6 +390,8 @@ if (args.includes('--negative')) {
       summary.proposalDiscoveryRevision = journey.binding.proposalDiscoveryRevision;
       summary.revisionBinding = journey.binding.revisionBinding;
       summary.kindMapping = journey.binding.kindMapping;
+      summary.amountBusinessMeaning = journey.binding.amountBusinessMeaning;
+      summary.amountBusinessMeaningSha256 = journey.binding.amountBusinessMeaningSha256;
       summary.residualKindValues = Object.keys(journey.binding.kindMapping)
         .filter((value) => !['credit', 'cancel'].includes(journey.binding.kindMapping[value]))
         .sort();
