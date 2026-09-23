@@ -43,6 +43,11 @@ import './unfamiliar-schema-metric-journey.test.mjs';
 // independently maintained expectation).  It follows the same imported-suite route so the
 // byte-bound canonical command and the exactly-one-route-per-suite invariant are preserved.
 import './result-lineage-readonly.test.mjs';
+// KS256 (JoFe2/KaleidoSphere#256) project lifecycle and transfer status: a READ-ONLY status
+// projection over the released readback/attestation surface and authored, bound local
+// synthetic declarations.  It follows the same imported-suite route so the byte-bound
+// canonical command and the exactly-one-route-per-suite invariant are both preserved.
+import './project-lifecycle-transfer-status.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

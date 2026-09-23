@@ -1,0 +1,14 @@
+{
+  "sourceArchive": {
+    "artifactId": "artifact:ks256-source-archive-v1",
+    "role": "SOURCE_ARCHIVE",
+    "path": "tests/fixtures/business-bi/net-revenue-segment-v1.json",
+    "declaredSha256": "01d30c53aa6e27cf218497e55d2cd816116d1289a68df59e6a153b843780392d"
+  },
+  "target": {
+    "artifactId": "artifact:ks256-transfer-target-v1",
+    "role": "IMAGE",
+    "declaredDigest": "4bc661307c01601e5637159f0aeac30c4fc70945cb6913e1aea95de851de9d4c",
+    "observedDigest": "4bc661307c01601e5637159f0aeac30c4fc70945cb6913e1aea95de851de9d4c"
+  }
+}

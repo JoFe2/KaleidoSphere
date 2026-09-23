@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/project-lifecycle-transfer-status-quarantine/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "entries": [
+    {
+      "itemId": "scope:quarantined-legacy",
+      "reason": "retained legacy evidence superseded by an unreviewed revision",
+      "retainedEvidenceSha256": "7a548de21c7a6470f14e625ff0e25f0ca13fac98c1ce210ac61a76c884179a13",
+      "ownerRole": "DELIVERY_OWNER"
+    }
+  ]
+}

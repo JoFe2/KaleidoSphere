@@ -140,6 +140,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // journey suite above, reachable through this parent exactly once so the
   // exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/result-lineage-readonly.test.mjs' },
+  // KS256 (#256) project lifecycle and transfer status: a read-only status projection over the
+  // released readback/attestation surface, reachable through this parent exactly once so the
+  // exactly-one-route-per-suite invariant is preserved rather than weakened.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/project-lifecycle-transfer-status.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
