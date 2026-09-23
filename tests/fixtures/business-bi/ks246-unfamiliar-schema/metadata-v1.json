@@ -1,0 +1,59 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/unfamiliar-schema-metadata/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "KS246",
+  "sourceRevision": "synthetic-unfamiliar-v1",
+  "accessMode": "BOUNDED_METADATA_ONLY",
+  "provenance": "repository-authored synthetic unfamiliar schema; names are deliberately not the admitted holdout or ledger layout names",
+  "relations": [
+    {
+      "schemaName": "synth_x",
+      "relationName": "pay_feed",
+      "relationKind": "SYNTHETIC_TABLE",
+      "columns": [
+        { "name": "pf_id", "dataType": "integer", "nullable": false, "declaredMeaning": null },
+        { "name": "bk_ts", "dataType": "timestamp", "nullable": true, "declaredMeaning": null },
+        { "name": "val_dt", "dataType": "date", "nullable": true, "declaredMeaning": "value date (calendar day)" },
+        { "name": "ev_typ", "dataType": "text", "nullable": false, "declaredMeaning": null },
+        { "name": "amt_a", "dataType": "integer", "nullable": true, "declaredMeaning": null },
+        { "name": "amt_b", "dataType": "integer", "nullable": true, "declaredMeaning": "amount in cents" },
+        { "name": "ccy", "dataType": "text", "nullable": false, "declaredMeaning": null },
+        { "name": "note", "dataType": "text", "nullable": true, "declaredMeaning": null }
+      ],
+      "declaredKeys": [
+        { "name": "pay_feed_pkey", "kind": "PRIMARY_KEY", "columns": ["pf_id"] }
+      ],
+      "declaredForeignKeys": []
+    },
+    {
+      "schemaName": "synth_x",
+      "relationName": "pay_adj",
+      "relationKind": "SYNTHETIC_TABLE",
+      "columns": [
+        { "name": "pf_id", "dataType": "integer", "nullable": false, "declaredMeaning": null },
+        { "name": "adj_amt", "dataType": "integer", "nullable": true, "declaredMeaning": null },
+        { "name": "posted_ts", "dataType": "timestamp", "nullable": true, "declaredMeaning": null }
+      ],
+      "declaredKeys": [
+        { "name": "pay_adj_pkey", "kind": "PRIMARY_KEY", "columns": ["pf_id"] }
+      ],
+      "declaredForeignKeys": []
+    },
+    {
+      "schemaName": "synth_x",
+      "relationName": "tx_meta",
+      "relationKind": "SYNTHETIC_TABLE",
+      "columns": [
+        { "name": "pf_id", "dataType": "integer", "nullable": false, "declaredMeaning": null },
+        { "name": "amount", "dataType": "text", "nullable": true, "declaredMeaning": null },
+        { "name": "label", "dataType": "text", "nullable": true, "declaredMeaning": null }
+      ],
+      "declaredKeys": [
+        { "name": "tx_meta_pkey", "kind": "PRIMARY_KEY", "columns": ["pf_id"] }
+      ],
+      "declaredForeignKeys": []
+    }
+  ],
+  "unitDeclaration": null,
+  "currencyDeclaration": null
+}
