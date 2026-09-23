@@ -34,12 +34,42 @@ metric, currency, date role or mapping engine is introduced.
 ## Exact local execution (commands, exits, counts)
 
 ```
-node scripts/run-unfamiliar-schema-proposal.mjs               # exit 0 — EOF run, status PROPOSED, 21 questions, 0 confirmed
+node scripts/run-unfamiliar-schema-proposal.mjs               # exit 0 — EOF run: PROPOSED, 21 questions, 0 confirmed, blockingConfirmed=false
 node scripts/run-unfamiliar-schema-proposal.mjs --negative    # exit 0 — 8 gates, each with its exact denial code
-node scripts/run-unfamiliar-schema-proposal.mjs --answers <file> --handoff
-node --test tests/unfamiliar-schema-proposal.test.mjs         # 25 tests, 0 fail
-npm test                                                      # canonical suite
+node scripts/run-unfamiliar-schema-proposal.mjs --answers <file> --handoff   # exit 0 — CONFIRMED candidate + AC03 local handoff
+node --test tests/unfamiliar-schema-proposal.test.mjs         # exit 0 — 25 tests, 25 pass, 0 fail
+node scripts/check-canonical-test-topology.mjs                # exit 0
+node scripts/build-consumer-support-manifest.mjs --check      # exit 0 — VERIFIED
+npm run dist:agent-skill                                      # exit 0
+npm test                                                      # exit 0 — 1434 tests, 1419 pass, 0 fail, 15 skipped
 ```
+
+Negative gate codes as executed: `rows=UNFAMILIAR_SCHEMA_DENIED:ROW_MATERIAL`,
+`sql=UNFAMILIAR_SCHEMA_DENIED:SQL_AUTHORITY`, `credentials=UNFAMILIAR_SCHEMA_DENIED:CREDENTIALS`,
+`classification=UNFAMILIAR_SCHEMA_METADATA_DENIED:CLASSIFICATION`,
+`access-mode=UNFAMILIAR_SCHEMA_METADATA_DENIED:ACCESS_MODE`,
+`surface=UNFAMILIAR_SCHEMA_METADATA_DENIED:SURFACE`,
+`aggregate-rows=UNFAMILIAR_SCHEMA_DENIED:ROW_MATERIAL`,
+`eof-handoff=UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS`.
+
+## Canonical registration and integrity migration
+
+The suite is canonically reachable but is deliberately NOT a direct `package.json#scripts.test`
+root: the canonical command is byte-bound to the released C1 certificate's live `package.json`
+digest, so a new root would break that frozen binding. The suite therefore rides the established
+imported-parent route in `tests/source-map.test.mjs`, declared to the topology kernel in
+`tests/canonical-test-topology.test.mjs`, preserving the exactly-one-route-per-suite invariant.
+No `package.json` byte changed. The new family is content-addressed in `SOURCE-MAP.json`
+(`scripts/update-ks246-unfamiliar-schema-source-map.mjs`).
+
+## Intervals
+
+- implementation interval: fixture + module authoring.
+- self-check interval: focused suite, positive counterpart per negative, RED on a disposable
+  broken variant (the fan-out rule) and GREEN on the real regression.
+- test-wait interval: canonical `npm test`, build/manifest, topology, legacy-identity and C1
+  certification gates.
+- unknown stays unknown: no external wait is claimed here; AC05 is parent-owned.
 
 Observed ambiguity census on the frozen fixture (rule outcomes, not semantic truth):
 `AMBIGUOUS_JOIN_FANOUT 1`, `MISLEADING_NAME 2`, `AMBIGUOUS_UNITS 3`, `AMBIGUOUS_CURRENCY 1`,
