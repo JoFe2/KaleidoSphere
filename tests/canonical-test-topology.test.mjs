@@ -140,6 +140,9 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // journey suite above, reachable through this parent exactly once so the
   // exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/result-lineage-readonly.test.mjs' },
+  // KS248 (#248) access-mode journey comparison: reachable through this parent exactly once so
+  // the exactly-one-route-per-suite invariant is preserved rather than weakened.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/access-mode-journey-comparison.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
