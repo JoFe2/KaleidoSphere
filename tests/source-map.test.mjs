@@ -32,6 +32,12 @@ import './net-revenue-guided-journey.test.mjs';
 // package.json digest, so a new direct root would break that frozen binding; riding this
 // parent keeps exactly one route per suite and mutates no package.json.
 import './unfamiliar-schema-proposal.test.mjs';
+// KS246 (#246) AC03/AC04 metric journey: the LOCAL composition successor of the proposal
+// suite above (it consumes that proposal's confirmed candidate and carries it into the
+// released core and a real local synthetic database execution).  It follows the same
+// imported-suite route so the byte-bound canonical command and the exactly-one-route-per-
+// suite invariant are both preserved.
+import './unfamiliar-schema-metric-journey.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

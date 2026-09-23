@@ -25,6 +25,18 @@ const authoredFiles = [
   'tests/fixtures/business-bi/ks246-unfamiliar-schema/aggregate-profile-v1.json',
   'tests/fixtures/business-bi/ks246-unfamiliar-schema/metadata-v1.json',
   'tests/unfamiliar-schema-proposal.test.mjs',
+  // KS246 AC03/AC04 metric journey (the local composition successor): the separately
+  // identified executable source fixture, the caller's authored record-kind decision
+  // input, the composition module, its CLI, its focused suite and its evidence record.
+  'services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs',
+  'scripts/run-unfamiliar-schema-metric-journey.mjs',
+  'tests/fixtures/business-bi/ks246-unfamiliar-schema/source-pay-feed-v1.json',
+  'tests/fixtures/business-bi/ks246-unfamiliar-schema/kind-decisions-v1.json',
+  // The caller's CLOSED, SOURCE-BOUND confirmation of the admitted amount column's business
+  // meaning (KS246 C3 correction): a separate authored input, never adopted implicitly.
+  'tests/fixtures/business-bi/ks246-unfamiliar-schema/business-semantics-v1.json',
+  'tests/unfamiliar-schema-metric-journey.test.mjs',
+  'docs/evidence/ks246-unfamiliar-metric-journey-v1.md',
 ];
 
 const sourceMap = JSON.parse(await readFile(sourceMapPath, 'utf8'));

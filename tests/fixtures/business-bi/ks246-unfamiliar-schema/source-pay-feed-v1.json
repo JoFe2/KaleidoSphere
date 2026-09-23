@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/unfamiliar-schema-source-rows/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "issue": "KS246",
+  "sourceRevision": "synthetic-unfamiliar-source-v1",
+  "relation": "synth_x.pay_feed",
+  "accessMode": "BOUNDED_READ_ONLY",
+  "identifierNamespace": "s-NNN synthetic identifier namespace (authored; never a customer or production identifier)",
+  "provenance": "SEPARATELY IDENTIFIED executable source fixture for the KS246 unfamiliar case: the authored row material of synth_x.pay_feed, declared with its own source revision 'synthetic-unfamiliar-source-v1'. It is NOT the bounded aggregate observation in aggregate-profile-v1.json and it is NOT a read of any database: the discovery aggregate counts (12 / 5 / 4 rows) are AUTHORED bounded observations about the discovery slice and were never produced by this fixture or by the local synthetic database. The executable rows are authored to the admitted synthetic holdout semantics so the released metric core, which is byte-bound to that holdout, can execute them.",
+  "columnDisclosure": "pf_id is declared here in the s-NNN synthetic identifier namespace (text) because the canonical admitted relation's identifier namespace is exactly that text namespace; the discovery metadata-v1.json declaration of an integer pf_id is PRESERVED UNCHANGED and remains the AC01/AC02 discovery observation. The divergence is stated, not silently resolved.",
+  "columns": [
+    { "name": "pf_id", "dataType": "text", "nullable": false, "declaredMeaning": "synthetic row identifier in the s-NNN namespace" },
+    { "name": "val_dt", "dataType": "date", "nullable": true, "declaredMeaning": "value date (calendar day)" },
+    { "name": "ev_typ", "dataType": "text", "nullable": false, "declaredMeaning": null },
+    { "name": "amt_a", "dataType": "integer", "nullable": true, "declaredMeaning": null },
+    { "name": "amt_b", "dataType": "integer", "nullable": true, "declaredMeaning": "amount in cents" },
+    { "name": "bk_ts", "dataType": "timestamp", "nullable": true, "declaredMeaning": null },
+    { "name": "ccy", "dataType": "text", "nullable": false, "declaredMeaning": null },
+    { "name": "note", "dataType": "text", "nullable": true, "declaredMeaning": null }
+  ],
+  "rows": [
+    { "pf_id": "s-001", "val_dt": "2026-06-01", "ev_typ": "P", "amt_a": 10000,  "amt_b": null,  "bk_ts": "2026-06-01T08:00:00Z", "ccy": "EUR", "note": null },
+    { "pf_id": "s-002", "val_dt": "2026-06-15", "ev_typ": "P", "amt_a": 25500,  "amt_b": null,  "bk_ts": "2026-06-15T09:30:00Z", "ccy": "EUR", "note": null },
+    { "pf_id": "s-003", "val_dt": "2026-06-30", "ev_typ": "R", "amt_a": 5500,   "amt_b": null,  "bk_ts": "2026-06-30T17:45:00Z", "ccy": "EUR", "note": "credit note" },
+    { "pf_id": "s-004", "val_dt": "2026-06-10", "ev_typ": "V", "amt_a": 0,      "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-005", "val_dt": "2026-06-20", "ev_typ": "U", "amt_a": 777,    "amt_b": 1290,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-006", "val_dt": "2026-06-12", "ev_typ": "P", "amt_a": null,   "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-007", "val_dt": null,         "ev_typ": "R", "amt_a": 1200,   "amt_b": 100,   "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-008", "val_dt": "2026-06-18", "ev_typ": "P", "amt_a": 0,      "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-009", "val_dt": "2026-07-01", "ev_typ": "P", "amt_a": 41234,  "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-010", "val_dt": "2026-07-31", "ev_typ": "R", "amt_a": 41234,  "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-011", "val_dt": "2026-07-15", "ev_typ": "P", "amt_a": 99999,  "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-012", "val_dt": "2026-07-22", "ev_typ": "V", "amt_a": 0,      "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-013", "val_dt": "2026-07-25", "ev_typ": "U", "amt_a": null,   "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-014", "val_dt": "2026-07-28", "ev_typ": "P", "amt_a": 60,     "amt_b": 1050,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-015", "val_dt": "2026-05-31", "ev_typ": "P", "amt_a": 500000, "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": "outside both metric windows" },
+    { "pf_id": "s-016", "val_dt": "2026-08-01", "ev_typ": "P", "amt_a": 500000, "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null },
+    { "pf_id": "s-017", "val_dt": "2026-08-02", "ev_typ": "R", "amt_a": 1,      "amt_b": null,  "bk_ts": null, "ccy": "EUR", "note": null }
+  ]
+}
