@@ -132,6 +132,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // second direct root because the canonical command is byte-bound to the released C1
   // certificate's package.json digest, so it rides the same parent exactly once.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/unfamiliar-schema-proposal.test.mjs' },
+  // KS246 (#246) AC03/AC04 metric journey: the compositional successor of the proposal
+  // suite above, reachable through this parent exactly once so the exactly-one-route
+  // invariant is preserved rather than weakened.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/unfamiliar-schema-metric-journey.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
