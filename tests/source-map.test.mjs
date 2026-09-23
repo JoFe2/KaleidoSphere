@@ -43,6 +43,11 @@ import './unfamiliar-schema-metric-journey.test.mjs';
 // independently maintained expectation).  It follows the same imported-suite route so the
 // byte-bound canonical command and the exactly-one-route-per-suite invariant are preserved.
 import './result-lineage-readonly.test.mjs';
+/**
+ * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
+ * decision ride the same tracked-file check.
+ */
+import './metric-compiler-adapter.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

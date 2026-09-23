@@ -140,6 +140,9 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // journey suite above, reachable through this parent exactly once so the
   // exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/result-lineage-readonly.test.mjs' },
+  // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
+  // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
