@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "chimpmaera.connector/erp-supported-export/v1", "exportId": "export:synthetic-erp-001", "tenantId": "tenant:synthetic-zoo", "generatedAt": "2026-08-10T08:00:00Z", "expiresAt": "2026-08-10T09:00:00Z",
+  "lineage": { "sourceSystem": "SYNTHETIC_ERP", "sourceDatasetId": "dataset:zoo-bi-m1", "extractionMode": "SUPPORTED_EXPORT", "sourceDigest": "01b2e51e8953a24d37462db2b6205e41e03faf6522fbf017338bf495f5007044" },
+  "batches": [
+    { "batchId": "batch:erp-customers-001", "entity": "customers", "sequence": 1, "complete": true, "records": [
+      { "recordMetadata": { "sourceRecordId": "erp-record:customer-001", "sourceUpdatedAt": "2026-08-10T07:40:00Z", "lineageSequence": 1 }, "facts": { "customerId": "customer:zoo-001", "customerStatus": "ACTIVE" } },
+      { "recordMetadata": { "sourceRecordId": "erp-record:customer-002", "sourceUpdatedAt": "2026-08-10T07:41:00Z", "lineageSequence": 2 }, "facts": { "customerId": "customer:zoo-002", "customerStatus": "ON_HOLD" } }
+    ] },
+    { "batchId": "batch:erp-orders-001", "entity": "orders", "sequence": 2, "complete": true, "records": [
+      { "recordMetadata": { "sourceRecordId": "erp-record:order-001", "sourceUpdatedAt": "2026-08-10T07:45:00Z", "lineageSequence": 1 }, "facts": { "orderId": "order:synthetic-001", "customerId": "customer:zoo-001", "orderStatus": "FULFILLED", "orderDate": "2026-08-01", "totalMinor": 4200000, "currency": "EUR" } },
+      { "recordMetadata": { "sourceRecordId": "erp-record:order-002", "sourceUpdatedAt": "2026-08-10T07:46:00Z", "lineageSequence": 2 }, "facts": { "orderId": "order:synthetic-002", "customerId": "customer:zoo-002", "orderStatus": "OPEN", "orderDate": "2026-08-05", "totalMinor": 1800000, "currency": "EUR" } },
+      { "recordMetadata": { "sourceRecordId": "erp-record:order-003", "sourceUpdatedAt": "2026-08-10T07:47:00Z", "lineageSequence": 3 }, "facts": { "orderId": "order:synthetic-003", "customerId": "customer:zoo-001", "orderStatus": "OPEN", "orderDate": "2026-08-08", "totalMinor": 2750000, "currency": "EUR" } }
+    ] },
+    { "batchId": "batch:erp-invoices-001", "entity": "invoices", "sequence": 3, "complete": true, "records": [
+      { "recordMetadata": { "sourceRecordId": "erp-record:invoice-001", "sourceUpdatedAt": "2026-08-10T07:50:00Z", "lineageSequence": 1 }, "facts": { "invoiceId": "invoice:synthetic-001", "orderId": "order:synthetic-001", "customerId": "customer:zoo-001", "invoiceStatus": "PAID", "issueDate": "2026-08-02", "dueDate": "2026-08-16", "totalMinor": 4200000, "currency": "EUR" } },
+      { "recordMetadata": { "sourceRecordId": "erp-record:invoice-002", "sourceUpdatedAt": "2026-08-10T07:51:00Z", "lineageSequence": 2 }, "facts": { "invoiceId": "invoice:synthetic-002", "orderId": "order:synthetic-002", "customerId": "customer:zoo-002", "invoiceStatus": "OPEN", "issueDate": "2026-08-06", "dueDate": "2026-08-20", "totalMinor": 1800000, "currency": "EUR" } }
+    ] }
+  ]
+}

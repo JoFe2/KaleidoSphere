@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "chimpmaera.connector/erp-read/v1", "contractVersion": "1.0.0", "connectorId": "connector:synthetic-erp-bi-v1", "defaultEnabled": false,
+  "adapter": "SUPPORTED_EXPORT_API_SHAPED", "evidenceClass": "LOCAL_SYNTHETIC", "tenantId": "tenant:synthetic-zoo",
+  "identity": { "principalId": "principal:bi-m1-reader", "scopes": ["erp.synthetic.bi.read"], "credentialSource": "EXPLICIT_REFERENCE_ONLY" },
+  "operations": ["LIST_CUSTOMERS", "LIST_ORDERS", "LIST_INVOICES", "READ_SOURCE_FACTS"],
+  "fields": { "customers": ["customerId", "customerStatus"], "orders": ["orderId", "customerId", "orderStatus", "orderDate", "totalMinor", "currency"], "invoices": ["invoiceId", "orderId", "customerId", "invoiceStatus", "issueDate", "dueDate", "totalMinor", "currency"] },
+  "policy": { "maxPageSize": 2, "maxAgeSeconds": 3600, "writesAllowed": false, "approvalsAllowed": false, "adminAllowed": false, "broadDatabaseAccessAllowed": false, "unknownFieldsAllowed": false },
+  "contractDigest": "442ce8b615fd2da4ecae167f7015344084ca83d328385a6248093918712138ea"
+}

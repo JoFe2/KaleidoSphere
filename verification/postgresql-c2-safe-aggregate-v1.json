@@ -5,8 +5,8 @@
   "profileId": "kaleidosphere-postgresql-c2-v1",
   "boundTo": {
     "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
-    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
-    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "c1CertificateSha256": "779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb",
+    "c1CertificateIdentitySha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b",
     "c1FrozenState": "BLOCKED_EXTERNAL",
     "c1DeclaresC2NonCapability": true
   },
@@ -84,8 +84,8 @@
   },
   "c1Lifecycle": {
     "c1ProfileSha256": "3faea403a4e81732719ef141c9dd4027bb257654126ea65dd57576e558a0c6e1",
-    "c1CertificateSha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
-    "c1CertificateIdentitySha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868",
+    "c1CertificateSha256": "779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb",
+    "c1CertificateIdentitySha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b",
     "c1LiveMatrixSha256": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
     "c1LiveMatrixProvenanceRawSha256": "40b6d1ae6a249b51d0deb964c37ecbf0fb1e8b16a1703a03ab416b699060c529",
     "c1LiveMatrixProvenanceIdentitySha256": "05014aaf1ec4100aa9b770fc55ab1ca1ed80ce5ca4d1d4ba5f3b9bc5f18da406",
@@ -110,7 +110,7 @@
     "C2 is a separately-versioned capability layered on the certified C1 profile; it is not a C1 scope widening and C1 structural certification does not imply C2 safe-aggregate capability.",
     "The source-local C2 certificate records the real-disposable-PostgreSQL clean-room as BLOCKED_EXTERNAL; the real positive/negative clean-room (loopback-only, SCRAM, least-privilege, zero-residue) is separate parent-executed evidence.",
     "No arbitrary SQL, no second metric, no grouping widening, and no production/customer/HA/scale/all-versions claim; synthetic_bi.orders is synthetic non-customer data only.",
-    "C2 issuance/revocation never modifies or rewrites the frozen C1 bytes (profile 3faea403..., certificate 859970ca..., live matrix 90866c86..., provenance 05014aaf...): the C1 lifecycle regression pins all of them byte-identical."
+    "C2 issuance/revocation never modifies or rewrites the frozen C1 bytes (profile 3faea403..., certificate 779831c6..., live matrix 90866c86..., provenance 05014aaf...): the C1 lifecycle regression pins all of them byte-identical."
   ],
-  "certificateSha256": "959874725fd49aebd5d3b72a029f87e2ac0e46afd1e256f4a8dc14244f9cc496"
+  "certificateSha256": "ea335bbc0d0d18dd145420e733954bd57b6877aedce8739b17f97a407f634e76"
 }

@@ -13,8 +13,8 @@
     },
     "frozenC1Certificate": {
       "path": "verification/postgresql/postgresql-c1-evidence-v1.json",
-      "sha256": "859970ca6e4ac23b0c2e11da5289b6b2865d4b8643e8c0492998fb608f543bc6",
-      "certificateSha256": "31e72dbff59103ed5814ea268f909a9bf06b0295f1fdd3078b7f714cfe710868"
+      "sha256": "779831c6626f0f2fb3a7cd02e2a89abf118752dd77f5c10a6c1a4da91ad0cadb",
+      "certificateSha256": "9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b"
     }
   },
   "bindings": {
