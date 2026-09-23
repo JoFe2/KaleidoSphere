@@ -1245,7 +1245,6 @@ async function resolvePgliteEntry() {
     process.env.PGLITE_CORE_PATH,
     `${ROOT}/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js`,
     '/workspace/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js',
-    '/tmp/ks246-pglite/node_modules/@electric-sql/pglite/dist/index.js',
   ].filter(Boolean);
   for (const candidate of candidates) {
     try { await readFile(candidate); return candidate; } catch { /* next candidate */ }

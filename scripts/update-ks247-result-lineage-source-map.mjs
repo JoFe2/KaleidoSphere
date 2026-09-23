@@ -16,6 +16,7 @@ const root = resolve(process.cwd());
 const sourceMapPath = resolve(root, 'SOURCE-MAP.json');
 
 const authoredFiles = [
+  '.github/workflows/ci.yml',
   // The registration surface: the imported-parent route in tests/source-map.test.mjs and the
   // topology declaration in tests/canonical-test-topology.test.mjs.
   'tests/source-map.test.mjs',

@@ -1,7 +1,7 @@
 # KS247 — read-only result lineage on the existing CLI/TABLE/HTML read path
 
 Authority: public issue #247 (KS-EVO-02), order `/workspace/result-lineage/AUFTRAG.md`.
-Current authenticated Main `58b3d30d98f5379e07c68110d7a58d11f7858161`; the retained accepted
+Historical implementation Main `58b3d30d98f5379e07c68110d7a58d11f7858161`; the retained accepted
 KS246 candidate is consumed UNCHANGED as `dependency/ks246` =
 `37cf8718edb8aa25d86a42dac3c81a3faf94d6eb`.
 
@@ -58,7 +58,7 @@ presented as unavailable — an empty verified section, never a fabricated zero.
 | KS-EVO-02-AC02 | DEMONSTRATED LOCALLY | Every verified number is compared with the independently maintained expectation; the expectation is itself checked against this suite's own loop and against the released hand-derived oracle.  A substituted source is refused **even when the caller declares it recomputed its own digest** (`KS247_LINEAGE_DENIED:SOURCE_SUBSTITUTED`).  Wrong number / unit / period, a substituted contract, stale evidence and non-current evidence each have their own code, and the claim's OWN material identities are compared with the actual observed read, so a claim attributed to another source revision (`EVIDENCE_SOURCE_REVISION_STALE`) or resting on a result digest the read did not produce (`EVIDENCE_RESULT_DIGEST_MISMATCH`) is refused by name. |
 | KS-EVO-02-AC03 | DEMONSTRATED LOCALLY | Verified numbers, free-form explanation, unavailable facts and completion are four separate sections with their own line classes; an explanation carries no numeric field and is rendered `UNVERIFIED`, and marking an explanation / causal / completion assertion as verified is refused by name. |
 | KS-EVO-02-AC04 | DEMONSTRATED LOCALLY for the read-only journey | Completion is the released receipt's state; no effect journal is invented; a synthetic effect shown without a separately confirmed status is refused (`FABRICATED_EFFECT_JOURNAL`), and an effect-status input claiming mutation authority is refused (`READ_ONLY_EFFECT_CLAIM_DENIED`).  Source/journey promotion boundaries are preserved and stated.  On a refusal the CLI summary preserves the OBSERVED execution/completion (`executed`, `observedCompletion`) separately from the verification status (`verification.status: REFUSED`, `lineage: null`), so a completed read whose rendering was refused is never falsely reported as unexecuted. |
-| KS-EVO-02-AC01 | NOT_INTEGRATED (parent-owned) | The shared PAN452 read-purpose contract binding is separately Qwen-owned and not accepted.  This slice does not design, stub, mint or duplicate its handles; it states `NOT_INTEGRATED` and reports the exact seam to the parent. |
+| KS-EVO-02-AC01 | NOT_INTEGRATED (parent-owned) | The released PAN452 order fixture does not establish the shared KS read-purpose contract binding.  This slice does not design, stub, mint or duplicate its handles; it states `NOT_INTEGRATED` and reports the exact seam to the parent. |
 | KS-EVO-02-AC05 | NOT CLAIMED | Parent `e2e345eb187a` owns independent review, canonical CI, current-Main integration, merge, release and public readback. |
 
 ## Exact local execution (commands, exits, counts)
@@ -79,7 +79,7 @@ node scripts/run-result-lineage-journey.mjs --answers <file> \
     # exit 0 — the same lineage rendered as TABLE / HTML, with a trailing machine receipt
 node scripts/run-result-lineage-journey.mjs --answers <file> \
     --kind-decisions <file> --business-semantics <file> --source-revision <rev> \
-    --pglite /tmp/ks246-pglite/node_modules/@electric-sql/pglite/dist/index.js --format TABLE
+    --pglite "$PGLITE_CORE_PATH" --format TABLE
     # exit 0 — the same separation over a REAL in-process PGlite read (REAL_POSTGRESQL)
 node scripts/run-result-lineage-journey.mjs --answers <file> \
     --business-semantics <file> --source-revision <rev>
@@ -220,16 +220,14 @@ external effect is claimed to be proven.
 - The `UNAVAILABLE_FACT` set is a maintained declaration about the released contract and this
   read-only journey; it is not a discovery of every fact the source could someday carry.
 - Real-PGlite mode runs only through the injected `--pglite <absolute dist/index.js>` path; the
-  dependency is deliberately not added to `package.json`.  In this worker sandbox the runtime
-  identity used was `@electric-sql/pglite` at
-  `/tmp/ks246-pglite/node_modules/@electric-sql/pglite/dist/index.js` (resolved by the focused
-  suite's own candidate list); this is a SANDBOX path and is deliberately never written into
-  product bytes.  The parent host did not have this runtime available; its absence there is an
-  environment limit, not a product failure.
+  dependency is deliberately not added to `package.json`. The worker used PGlite 0.5.8;
+  CI provisions PGlite 0.3.14 and runs this focused suite with `PGLITE_CORE_PATH`.
+  The disposable worker-specific runtime fallback was removed during integration.
+  Missing optional local runtime is an environment skip, not a database-path pass.
 - The executable source is authored to the admitted holdout semantics because the released
   core is byte-bound to it.  This is a genuine limit of the released confinement, stated here
   rather than worked around.
-- The PAN452 read-purpose contract is separately Qwen-owned and **not accepted**:
+- The released PAN452 order fixture does not establish the KS read-purpose contract:
   `sharedReadPurposeBinding: NOT_INTEGRATED`.  Full AC01 closure requires that exact shared
   contract and is therefore **not claimed**.
 - AC05 (independent review, current-Main integration, merge, release, public readback) is
