@@ -16,15 +16,19 @@
 // fixture).  A known authored synthetic case is a local proof, not a measured blind result.
 
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 
 import {
+  NO_OBSERVED_VALUE_TOKEN,
   REFUSAL_TOKEN,
   UNFAMILIAR_AMBIGUITY_KINDS,
+  UNFAMILIAR_INCONSISTENCY_KINDS,
   UNFAMILIAR_RULES,
   UNRESOLVED_TOKEN,
   buildMetricHandoff,
@@ -35,6 +39,7 @@ import {
   proposeUnfamiliarSchemaCandidate,
   runUnfamiliarSchemaProposalEntryPoint,
 } from '../services/bi-control/src/business-bi/unfamiliar-schema-proposal.mjs';
+import { canonicalJson } from '../services/bi-control/src/canonical-json.js';
 
 const ROOT = process.cwd();
 const FIXTURE_DIR = 'tests/fixtures/business-bi/ks246-unfamiliar-schema';
@@ -68,8 +73,68 @@ const BLOCKING_ANSWERS = Object.freeze([
   'V', // cancel value
 ]);
 
+// A caller-driven run over explicit fixture BYTES: used where a negative case needs an altered
+// observation (a different revision, a contradictory join profile) instead of the frozen bytes.
+const runOn = (lines, metadata, aggregates) => runUnfamiliarSchemaProposalEntryPoint({
+  metadataBytes: metadata,
+  aggregateBytes: aggregates,
+  answerSource: lines === undefined ? undefined : createListAnswerSource(lines),
+});
+
+// A caller stream whose chosen grain is observed NON-UNIQUE and whose roles span the relation the
+// caller then DENIES: the retired defect confirmed this as a coherent proposal.
+const NONUNIQUE_GRAIN_ANSWERS = Object.freeze([
+  'synth_x.pay_adj.pf_id', // grain observed 5 non-null / 3 distinct
+  'synth_x.pay_feed.val_dt', // period from ANOTHER relation
+  'MINOR_UNITS',
+  'synth_x.pay_feed.amt_a', // amount from ANOTHER relation
+  'EUR',
+  'R',
+  'V',
+  'NOT_A_RELATIONSHIP',
+]);
+
+// A caller stream that affirms a minor-unit declaration while declaring BASE units.
+const UNIT_DECLARATION_CONFLICT_ANSWERS = Object.freeze([
+  'synth_x.pay_feed.pf_id',
+  'synth_x.pay_feed.val_dt',
+  'BASE_UNITS',
+  'synth_x.pay_feed.amt_b',
+  'EUR',
+  'R',
+  'V',
+  'NOT_A_RELATIONSHIP',
+  'DECLARED_MEANING_IS_CORRECT',
+]);
+
 function questionsFor(result) {
   return Object.fromEntries(result.questions.map((q) => [q.questionId, q]));
+}
+
+function inconsistencyKinds(result) {
+  return result.metricCandidate.inconsistencies.map(({ kind }) => kind).sort();
+}
+
+// The real local CLI is exercised as a PROCESS, so the delivered entry point is verified through
+// its actual stdout rather than through the module API alone.
+function runCli({ answers, args = [] } = {}) {
+  let answersPath = null;
+  let scratch = null;
+  if (answers) {
+    scratch = mkdtempSync(join(tmpdir(), 'ks246-cli-'));
+    answersPath = join(scratch, 'answers.txt');
+    writeFileSync(answersPath, `${answers.join('\n')}\n`);
+  }
+  try {
+    const result = spawnSync(process.execPath, [
+      'scripts/run-unfamiliar-schema-proposal.mjs',
+      ...(answersPath === null ? [] : ['--answers', answersPath]),
+      ...args,
+    ], { cwd: ROOT, encoding: 'utf8' });
+    return { status: result.status, stdout: result.stdout, stderr: result.stderr, summary: JSON.parse(result.stdout) };
+  } finally {
+    if (scratch !== null) rmSync(scratch, { recursive: true, force: true });
+  }
 }
 
 function ambiguity(result, kind) {
@@ -279,8 +344,11 @@ test('AC02 credit and cancellation semantics are asked, never inferred, with the
   const result = run(BLOCKING_ANSWERS);
   const credit = questionsFor(result)['ks246-q-credit-0'];
   const cancel = questionsFor(result)['ks246-q-cancel-0'];
-  assert.deepEqual(credit.answerDomain.values, [...observedValues, 'NONE'].sort());
-  assert.deepEqual(cancel.answerDomain.values, [...observedValues, 'NONE'].sort());
+  // The closed domain is the OBSERVED values plus one reserved ABSENCE selection: the schema
+  // never offers a synthetic observed value, and the absence selection is never a record value.
+  assert.deepEqual(credit.answerDomain.values, [...observedValues, NO_OBSERVED_VALUE_TOKEN].sort());
+  assert.deepEqual(cancel.answerDomain.values, [...observedValues, NO_OBSERVED_VALUE_TOKEN].sort());
+  assert.equal(credit.answerDomain.values.includes('NONE'), false);
   assert.equal(credit.subject, 'synth_x.pay_feed.ev_typ');
   assert.equal(cancel.subject, 'synth_x.pay_feed.ev_typ');
   assert.ok(ambiguity(result, 'CREDIT_SEMANTICS_UNRESOLVED').length > 0);
@@ -294,6 +362,40 @@ test('AC02 credit and cancellation semantics are asked, never inferred, with the
   const decision = rejected.clarification.dispositions.find(({ questionId }) => questionId === 'ks246-q-credit-0');
   assert.equal(decision.disposition, 'REJECTED');
   assert.equal(decision.outcomeCode, 'UNFAMILIAR_CLARIFICATION_REJECTED:CREDIT');
+});
+
+test('F3 the reserved absence selection never becomes a fabricated observed record value', () => {
+  // The former sentinel was an in-domain answer whose meaning the implementation changed into a
+  // synthetic observed value.  It is now simply out of domain, and absence is carried as absence.
+  const legacy = run([...BLOCKING_ANSWERS.slice(0, 5), 'NONE', 'NONE']);
+  const legacyDecision = legacy.clarification.dispositions.find(({ questionId }) => questionId === 'ks246-q-credit-0');
+  assert.equal(legacyDecision.disposition, 'REJECTED');
+  assert.equal(legacyDecision.outcomeCode, 'UNFAMILIAR_CLARIFICATION_REJECTED:CREDIT');
+  assert.equal(legacy.metricCandidate.recordKind.mapping, null);
+  assert.equal(Object.hasOwn(legacy.metricCandidate.recordKind.mapping ?? {}, 'NONE'), false);
+
+  // Positive representation of absence: an explicit in-domain absence declaration that creates NO
+  // mapping entry and NO synthetic record value...
+  const absence = run([...BLOCKING_ANSWERS.slice(0, 5), NO_OBSERVED_VALUE_TOKEN, 'V']);
+  assert.equal(absence.clarification.dispositions.find(({ questionId }) => questionId === 'ks246-q-credit-0').disposition, 'CONFIRMED');
+  assert.deepEqual(absence.metricCandidate.recordKind.absenceDeclarations, [NO_OBSERVED_VALUE_TOKEN]);
+  assert.equal(absence.metricCandidate.recordKind.creditValue, null);
+  assert.deepEqual(absence.metricCandidate.recordKind.mapping, { V: 'cancel' });
+  assert.equal(Object.hasOwn(absence.metricCandidate.recordKind.mapping, NO_OBSERVED_VALUE_TOKEN), false);
+  // ... and the observed values that hold no role stay explicitly unresolved rather than sales.
+  assert.deepEqual(absence.metricCandidate.unresolvedMeaning
+    .filter(({ kind }) => kind === 'KIND_VALUE_UNRESOLVED')
+    .map(({ subject }) => subject).sort(),
+  ['synth_x.pay_feed.ev_typ=P', 'synth_x.pay_feed.ev_typ=R', 'synth_x.pay_feed.ev_typ=U']);
+  // ... and no absence can be handed off as credit semantics.
+  assert.throws(() => buildMetricHandoff({ proposal: absence, metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_KIND_SEMANTICS');
+  // A reserved token appearing as a fixture OBSERVED value is refused instead of offered.
+  const poisoned = JSON.parse(aggregateBytes.toString('utf8'));
+  poisoned.relationProfiles.find(({ relation }) => relation === 'synth_x.pay_feed')
+    .columns.find(({ name }) => name === 'ev_typ').valueCounts[NO_OBSERVED_VALUE_TOKEN] = 1;
+  assert.throws(() => runOn([], metadataBytes, Buffer.from(JSON.stringify(poisoned))),
+    (error) => error.code === 'UNFAMILIAR_CLARIFICATION_DENIED:RESERVED_TOKEN');
 });
 
 test('AC02 an ambiguous period role (two date-like columns) becomes an explicit choice', () => {
@@ -424,21 +526,74 @@ test('the proposal is deterministic and the same inputs produce byte-identical d
   assert.equal(first.computed.ambiguities.ambiguityEvidenceSha256, second.computed.ambiguities.ambiguityEvidenceSha256);
 });
 
-test('detection is evidence-driven: the same rule over mutated aggregate bytes changes the outcome', () => {
+test('detection is evidence-driven: a COHERENT mutation of the observed evidence changes the outcome', () => {
   const fixture = JSON.parse(aggregateBytes.toString('utf8'));
-  // A disposable mutation of the OBSERVED evidence (not of the implementation): a unique
-  // target means no fan-out is reported, which is the positive counterpart of the fan-out rule.
+  // A disposable but INTERNALLY COHERENT mutation of the OBSERVED evidence (not of the
+  // implementation): a key-unique target in BOTH bounded reads means no fan-out is reported,
+  // which is the positive counterpart of the fan-out rule.  Mutating only the join candidate
+  // would contradict the endpoint relation profile and is covered as a negative below.
   const mutated = clone(fixture);
   mutated.joinCandidateProfiles[0].targetNonNullCount = 3;
-  const result = runUnfamiliarSchemaProposalEntryPoint({
-    metadataBytes,
-    aggregateBytes: Buffer.from(JSON.stringify(mutated)),
-    answerSource: createListAnswerSource(BLOCKING_ANSWERS),
-  });
+  mutated.relationProfiles.find(({ relation }) => relation === 'synth_x.pay_adj')
+    .columns.find(({ name }) => name === 'pf_id').nonNullCount = 3;
+  const result = runOn(BLOCKING_ANSWERS, metadataBytes, Buffer.from(JSON.stringify(mutated)));
   assert.equal(result.computed.ambiguities.byKind.AMBIGUOUS_JOIN_FANOUT, 0);
+  assert.deepEqual(result.computed.ambiguities.evidenceInconsistencies, []);
   assert.equal(result.inferred.relationships.find(({ source }) => source === 'synth_x.pay_feed.pf_id').fanOutRisk, false);
+  assert.equal(result.metricCandidate.status, 'CONFIRMED');
   // The unmutated fixture still reports exactly one fan-out.
   assert.equal(run(BLOCKING_ANSWERS).computed.ambiguities.byKind.AMBIGUOUS_JOIN_FANOUT, 1);
+});
+
+// ---------------------------------------------------------------------------------
+// F4 — contradictory overlapping join counts are retained, never silently erased.
+// ---------------------------------------------------------------------------------
+test('F4 a join candidate contradicting its endpoint relation profile keeps the fan-out and is marked', () => {
+  const fixture = JSON.parse(aggregateBytes.toString('utf8'));
+  const mutated = clone(fixture);
+  // The retired defect: the join target is made key-unique while the endpoint relation profile
+  // still observes 5 non-null / 3 distinct.  The fan-out must NOT silently disappear.
+  mutated.joinCandidateProfiles[0].targetNonNullCount = 3;
+  const result = runOn(BLOCKING_ANSWERS, metadataBytes, Buffer.from(JSON.stringify(mutated)));
+  const fanout = result.computed.ambiguities.facts.filter(({ kind }) => kind === 'AMBIGUOUS_JOIN_FANOUT');
+  assert.equal(fanout.length, 1, 'the endpoint profile still shows a non-unique target');
+  assert.deepEqual(result.computed.ambiguities.evidenceInconsistencies.map(({ kind }) => kind), ['INCONSISTENT_JOIN_PROFILE']);
+  assert.ok(result.computed.ambiguities.blindSpots.some((spot) => /INCONSISTENT_JOIN_PROFILE/.test(spot)));
+  assert.equal(result.inferred.relationships.find(({ source }) => source === 'synth_x.pay_feed.pf_id').fanOutRisk, true);
+  assert.equal(result.inferred.relationships.find(({ source }) => source === 'synth_x.pay_feed.pf_id').observedEvidenceConsistent, false);
+  // The contradiction propagates into the candidate and is never confirmed or handed off.
+  assert.equal(inconsistencyKinds(result).includes('INCONSISTENT_JOIN_PROFILE'), true);
+  assert.equal(result.metricCandidate.status, 'INCONSISTENT');
+  assert.equal(result.metricCandidate.coherent, false);
+  assert.throws(() => buildMetricHandoff({ proposal: result, metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
+});
+
+test('F4 the two bounded reads must not be combined under one source revision without disclosure', () => {
+  const fixture = JSON.parse(metadataBytes.toString('utf8'));
+  const aggregate = JSON.parse(aggregateBytes.toString('utf8'));
+  // Positive counterpart: the frozen fixture declares the SAME revision on both reads.
+  const coherent = run(BLOCKING_ANSWERS);
+  assert.equal(coherent.source.sourceRevision, coherent.source.aggregateSourceRevision);
+  assert.equal(coherent.source.sourceRevisionMismatch, false);
+  assert.deepEqual(coherent.computed.ambiguities.evidenceInconsistencies, []);
+  assert.equal(coherent.metricCandidate.status, 'CONFIRMED');
+  assert.ok(buildMetricHandoff({ proposal: coherent, metricContractBytes: contractBytes }).handoffSha256);
+  // Negative: an aggregate read claiming another revision is neither silently merged under the
+  // metadata revision nor usable as a confirmed proposal or handoff.
+  const substituted = Buffer.from(JSON.stringify({ ...aggregate, sourceRevision: 'unrelated-revision' }));
+  assert.equal(fixture.sourceRevision, coherent.source.sourceRevision);
+  const result = runOn(BLOCKING_ANSWERS, metadataBytes, substituted);
+  assert.equal(result.source.sourceRevision, 'synthetic-unfamiliar-v1');
+  assert.equal(result.source.aggregateSourceRevision, 'unrelated-revision');
+  assert.equal(result.source.sourceRevisionMismatch, true);
+  assert.ok(result.computed.ambiguities.blindSpots.some((spot) => /SOURCE_REVISION_MISMATCH/.test(spot)));
+  assert.deepEqual(result.computed.ambiguities.evidenceInconsistencies.map(({ kind }) => kind), ['SOURCE_REVISION_MISMATCH']);
+  assert.equal(inconsistencyKinds(result).includes('SOURCE_REVISION_MISMATCH'), true);
+  assert.notEqual(result.metricCandidate.status, 'CONFIRMED');
+  assert.equal(result.metricCandidate.status, 'INCONSISTENT');
+  assert.throws(() => buildMetricHandoff({ proposal: result, metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
 });
 
 // ---------------------------------------------------------------------------------
@@ -446,15 +601,14 @@ test('detection is evidence-driven: the same rule over mutated aggregate bytes c
 // ---------------------------------------------------------------------------------
 test('a disposable broken variant loses the fan-out detection (RED) while the real module keeps it (GREEN)', async () => {
   const source = await readFile(MODULE_PATH, 'utf8');
-  const broken = source.replaceAll(
-    'candidate.targetNonNullCount > candidate.targetDistinctCount',
-    'false',
-  );
+  const broken = source
+    .replaceAll('candidate.targetNonNullCount > candidate.targetDistinctCount', 'false')
+    .replaceAll('targetProfile.nonNullCount > targetProfile.distinctCount', 'false');
   assert.notEqual(broken, source, 'the sabotage must actually change the source');
-  const variantPath = join(ROOT, 'services/bi-control/src/business-bi/.ks246-variant.test.mjs');
+  const variantPath = join(ROOT, 'services/bi-control/src/business-bi/.ks246-variant-fanout.test.mjs');
   writeFileSync(variantPath, broken);
   try {
-    const variant = await import('../services/bi-control/src/business-bi/.ks246-variant.test.mjs');
+    const variant = await import('../services/bi-control/src/business-bi/.ks246-variant-fanout.test.mjs');
     const mutated = variant.runUnfamiliarSchemaProposalEntryPoint({
       metadataBytes,
       aggregateBytes,
@@ -470,6 +624,54 @@ test('a disposable broken variant loses the fan-out detection (RED) while the re
   const real = run(BLOCKING_ANSWERS);
   assert.equal(real.computed.ambiguities.byKind.AMBIGUOUS_JOIN_FANOUT, 1);
   assert.ok(real.questions.some(({ questionId }) => questionId === 'ks246-q-fanout-0'));
+});
+
+test('a disposable variant that drops contradictions turns the F2/F4 regressions RED', async () => {
+  const source = await readFile(MODULE_PATH, 'utf8');
+  // Sabotage ONLY the new contradiction channel: the caller/evidence conflicts are collected by
+  // `contradiction(...)` and mirrored into the unresolved-meaning channel.
+  const broken = source.replaceAll(
+    `  const contradiction = (kind, detail, subjects) => inconsistencies.push({
+    kind,
+    detail,
+    subjects: [...new Set(subjects.filter((subject) => typeof subject === 'string'))].sort(),
+  });`,
+    '  const contradiction = () => {};',
+  );
+  assert.notEqual(broken, source, 'the sabotage must actually change the source');
+  const variantPath = join(ROOT, 'services/bi-control/src/business-bi/.ks246-variant-contradiction.test.mjs');
+  writeFileSync(variantPath, broken);
+  try {
+    const variant = await import('../services/bi-control/src/business-bi/.ks246-variant-contradiction.test.mjs');
+    const variantResult = variant.runUnfamiliarSchemaProposalEntryPoint({
+      metadataBytes,
+      aggregateBytes,
+      answerSource: variant.createListAnswerSource(NONUNIQUE_GRAIN_ANSWERS),
+    });
+    // RED: with the contradiction channel broken the non-unique-grain / denied-relationship case
+    // is (wrongly) labelled CONFIRMED and is handed off — the new regression assertions fail.
+    assert.equal(variantResult.metricCandidate.status, 'CONFIRMED');
+    assert.deepEqual(variantResult.metricCandidate.inconsistencies, []);
+    assert.ok(variant.buildMetricHandoff({ proposal: variantResult, metricContractBytes: contractBytes }).handoffSha256);
+    // RED for the F4 revision disclosure as well: the mismatch is still recorded by
+    // detectAmbiguities, but it no longer degrades the candidate.
+    const variantAggregate = JSON.parse(aggregateBytes.toString('utf8'));
+    const variantMismatch = variant.runUnfamiliarSchemaProposalEntryPoint({
+      metadataBytes,
+      aggregateBytes: Buffer.from(JSON.stringify({ ...variantAggregate, sourceRevision: 'unrelated-revision' })),
+      answerSource: variant.createListAnswerSource(BLOCKING_ANSWERS),
+    });
+    assert.equal(variantMismatch.metricCandidate.status, 'CONFIRMED');
+  } finally {
+    rmSync(variantPath, { force: true });
+  }
+  // GREEN: the real module keeps the intended boundary — contradiction means INCONSISTENT.
+  const real = run(NONUNIQUE_GRAIN_ANSWERS);
+  assert.equal(real.metricCandidate.status, 'INCONSISTENT');
+  assert.deepEqual(inconsistencyKinds(real),
+    ['DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES', 'GRAIN_KEY_NOT_OBSERVED_UNIQUE']);
+  assert.throws(() => buildMetricHandoff({ proposal: real, metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
 });
 
 // ---------------------------------------------------------------------------------
@@ -573,4 +775,195 @@ test('the KS246 slice introduces no legacy technical identity and no second metr
   // re-declares the metric contract's arithmetic.
   assert.match(moduleSource, /NET_REVENUE_OPERATION_REQUEST/);
   assert.doesNotMatch(moduleSource, /minorUnitsPerMajorUnit\s*=\s*100/);
+});
+
+// ---------------------------------------------------------------------------------
+// F1 — the DELIVERED CLI must expose a real clarification conversation.
+// ---------------------------------------------------------------------------------
+test('F1 the actual CLI prints the real question text, allowed answers, subject and stable order', () => {
+  const eof = runCli();
+  assert.equal(eof.status, 0, eof.stderr);
+  const module = run();
+  assert.equal(eof.summary.metricCandidate.status, 'PROPOSED');
+  assert.equal(eof.summary.clarification.confirmedCount, 0);
+  assert.equal(eof.summary.questions.length, module.questions.length);
+  // Stable, printed interview order (the order a caller answers positionally).
+  assert.deepEqual(eof.summary.questions.map(({ questionId }) => questionId),
+    module.questions.map(({ questionId }) => questionId));
+  for (const [index, question] of eof.summary.questions.entries()) {
+    const asked = module.questions[index];
+    assert.equal(question.index, index);
+    assert.equal(question.kind, asked.kind);
+    assert.equal(question.subject, asked.subject);
+    assert.equal(question.questionSha256, asked.questionSha256);
+    assert.equal(question.text, asked.text);
+    assert.equal(typeof question.text, 'string');
+    assert.ok(question.text.length > 0, 'the caller must see the actual question');
+    assert.ok(question.answerDomain && typeof question.answerDomain.type === 'string');
+    assert.deepEqual(question.answerDomain, asked.answerDomain);
+    assert.ok(Array.isArray(question.evidenceRefs) && question.evidenceRefs.length > 0,
+      'the question must name the evidence/subject it is owed by');
+  }
+  // Every blocking answer the test supplies positionally is visibly supported by the printout.
+  for (const [index, answer] of BLOCKING_ANSWERS.entries()) {
+    const question = eof.summary.questions[index];
+    assert.equal(question.blocking, true, question.questionId);
+    assert.equal(question.answerDomain.type, 'CLOSED_SET');
+    assert.ok(question.answerDomain.values.includes(answer), `${question.questionId} must offer ${answer}`);
+  }
+});
+
+test('F1 the CLI answers are real ones: a positional answer file confirms and hands off honestly', () => {
+  const positive = runCli({ answers: BLOCKING_ANSWERS, args: ['--handoff'] });
+  assert.equal(positive.status, 0, positive.stderr);
+  assert.equal(positive.summary.metricCandidate.status, 'CONFIRMED');
+  assert.equal(positive.summary.metricCandidate.coherent, true);
+  assert.equal(positive.summary.metricCandidate.grain, 'synth_x.pay_feed.pf_id');
+  assert.deepEqual(positive.summary.metricCandidate.recordKindMapping, { R: 'credit', V: 'cancel' });
+  assert.equal(positive.summary.clarification.blockingConfirmed, true);
+  assert.equal(positive.summary.handoff.ownerEntryPoint, 'compileNetRevenuePlan');
+  assert.equal(positive.summary.handoff.authority.executionAuthority, 'NONE');
+  assert.equal(positive.summary.handoff.authority.admissionAuthority, 'NONE');
+  assert.equal(positive.summary.handoff.authority.metricExecution, 'NOT_PERFORMED');
+  assert.equal(positive.summary.handoff.authority.sharedTaskHandle, 'NOT_INTEGRATED');
+  assert.equal(positive.summary.handoff.identity.contractIdentity, 'RELEASED_ADMITTED_CONTRACT_DIGEST_MATCHED');
+  assert.equal(positive.summary.handoff.identity.admissionConsumerImplemented, false);
+  // A refusal through the CLI stays a refusal, not a default.
+  const refusal = runCli({ answers: [REFUSAL_TOKEN] });
+  assert.equal(refusal.status, 0);
+  assert.equal(refusal.summary.clarification.refusedCount, 1);
+  assert.equal(refusal.summary.metricCandidate.status, 'PROPOSED');
+});
+
+test('F1 the CLI reports a contradictory run as INCONSISTENT with the exact denial, without crashing', () => {
+  const inconsistent = runCli({ answers: NONUNIQUE_GRAIN_ANSWERS, args: ['--handoff'] });
+  assert.equal(inconsistent.status, 0, inconsistent.stderr);
+  assert.equal(inconsistent.summary.metricCandidate.status, 'INCONSISTENT');
+  assert.equal(inconsistent.summary.metricCandidate.coherent, false);
+  assert.deepEqual(inconsistent.summary.metricCandidate.inconsistencyKinds,
+    ['GRAIN_KEY_NOT_OBSERVED_UNIQUE', 'DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES']);
+  assert.equal(inconsistent.summary.handoff, null);
+  assert.equal(inconsistent.summary.handoffDenial.code, 'UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
+});
+
+// ---------------------------------------------------------------------------------
+// F2 — contradiction between the caller's decisions and the observed evidence.
+// ---------------------------------------------------------------------------------
+test('F2 a non-unique grain with roles across a DENIED relationship is marked, never confirmed', () => {
+  assert.ok(UNFAMILIAR_INCONSISTENCY_KINDS.includes('GRAIN_KEY_NOT_OBSERVED_UNIQUE'));
+  assert.ok(UNFAMILIAR_INCONSISTENCY_KINDS.includes('DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES'));
+  const result = run(NONUNIQUE_GRAIN_ANSWERS);
+  assert.deepEqual(inconsistencyKinds(result),
+    ['DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES', 'GRAIN_KEY_NOT_OBSERVED_UNIQUE']);
+  assert.equal(result.metricCandidate.coherent, false);
+  assert.notEqual(result.metricCandidate.status, 'CONFIRMED');
+  assert.equal(result.metricCandidate.status, 'INCONSISTENT');
+  // The contradictions are also carried in the unresolved-meaning channel with exact kinds.
+  const mirrored = result.metricCandidate.unresolvedMeaning
+    .filter(({ kind }) => UNFAMILIAR_INCONSISTENCY_KINDS.includes(kind))
+    .map(({ kind }) => kind).sort();
+  assert.deepEqual(mirrored, ['DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES', 'GRAIN_KEY_NOT_OBSERVED_UNIQUE']);
+  // The caller's answers remain the caller's DATA — they are still recorded verbatim...
+  assert.equal(result.confirmed['ks246-q-grain'].value, 'synth_x.pay_adj.pf_id');
+  assert.equal(result.confirmed['ks246-q-fanout-0'].value, 'NOT_A_RELATIONSHIP');
+  // ... but the candidate is not semantically confirmed and never hands off.
+  assert.throws(() => buildMetricHandoff({ proposal: result, metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
+  // Positive coherent counterpart: the same denial over a UNIQUE grain within ONE relation is a
+  // recorded decision and hands off unchanged.
+  const coherent = run([...BLOCKING_ANSWERS, 'NOT_A_RELATIONSHIP']);
+  assert.equal(coherent.metricCandidate.status, 'CONFIRMED');
+  assert.deepEqual(coherent.metricCandidate.inconsistencies, []);
+  assert.equal(coherent.confirmed['ks246-q-fanout-0'].value, 'NOT_A_RELATIONSHIP');
+  assert.match(buildMetricHandoff({ proposal: coherent, metricContractBytes: contractBytes }).handoffSha256, /^[a-f0-9]{64}$/);
+});
+
+test('F2 a contradictory unit declaration is marked as a conflict, never as a coherent confirmation', () => {
+  const result = run(UNIT_DECLARATION_CONFLICT_ANSWERS);
+  assert.deepEqual(inconsistencyKinds(result), ['UNITS_DECLARATION_CONFLICT']);
+  assert.equal(result.metricCandidate.status, 'INCONSISTENT');
+  assert.equal(result.metricCandidate.coherent, false);
+  assert.equal(result.metricCandidate.units.selected, 'BASE_UNITS');
+  assert.equal(result.confirmed['ks246-q-misleading-0'].value, 'DECLARED_MEANING_IS_CORRECT');
+  assert.ok(result.metricCandidate.unresolvedMeaning.some(({ kind }) => kind === 'UNITS_DECLARATION_CONFLICT'));
+  assert.throws(() => buildMetricHandoff({ proposal: result, metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
+  // Positive coherent counterpart: affirming the declared minor-unit meaning WITH minor units,
+  // and selecting that same declared column, is coherent and hands off.
+  const coherent = run(['synth_x.pay_feed.pf_id', 'synth_x.pay_feed.val_dt', 'MINOR_UNITS',
+    'synth_x.pay_feed.amt_b', 'EUR', 'R', 'V', 'NOT_A_RELATIONSHIP', 'DECLARED_MEANING_IS_CORRECT']);
+  assert.deepEqual(coherent.metricCandidate.inconsistencies, []);
+  assert.equal(coherent.metricCandidate.status, 'CONFIRMED');
+  assert.equal(coherent.metricCandidate.units.amountColumn, 'synth_x.pay_feed.amt_b');
+  const handoff = buildMetricHandoff({ proposal: coherent, metricContractBytes: contractBytes });
+  assert.equal(handoff.canonicalRowBinding.amountField.source, 'synth_x.pay_feed.amt_b');
+  assert.equal(handoff.canonicalRowBinding.amountField.unitScale, 'MINOR_UNITS');
+});
+
+// ---------------------------------------------------------------------------------
+// Local-support claim accuracy — identity is verified, not copied; admission is not claimed.
+// ---------------------------------------------------------------------------------
+const identityDigest = (body) => sha256(Buffer.from(canonicalJson(body), 'utf8'));
+// Deliberately REFORGE a self-consistent identity around an invented role: this is the case a
+// digest-only check would miss, so the declared-candidate catalog must deny it independently.
+const withRole = (proposal, role) => {
+  const reforged = clone(proposal);
+  reforged.metricCandidate.grain.selected = role;
+  const { candidateSha256, ...candidateBody } = reforged.metricCandidate;
+  reforged.metricCandidate.candidateSha256 = identityDigest(candidateBody);
+  const { entryPointSha256, ...rest } = reforged;
+  reforged.entryPointSha256 = identityDigest(rest);
+  return reforged;
+};
+
+test('local support: a proposal whose declared identity does not reproduce is denied', () => {
+  const base = run(BLOCKING_ANSWERS);
+  const forgedSourceRevision = clone(base);
+  forgedSourceRevision.source.sourceRevision = 'substituted-source';
+  const forgedDigest = clone(base);
+  forgedDigest.entryPointSha256 = '0'.repeat(64);
+  const forgedCandidateDigest = clone(base);
+  forgedCandidateDigest.metricCandidate.candidateSha256 = '0'.repeat(64);
+  const forgedGrain = clone(base);
+  forgedGrain.metricCandidate.grain.selected = 'nonexistent.relation.fake';
+  for (const [label, forged] of [
+    ['source revision', forgedSourceRevision],
+    ['proposal digest', forgedDigest],
+    ['candidate digest', forgedCandidateDigest],
+    ['invented grain', forgedGrain],
+  ]) {
+    assert.throws(() => buildMetricHandoff({ proposal: forged, metricContractBytes: contractBytes }),
+      (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:PROPOSAL_IDENTITY', label);
+  }
+  // ... and an invented role is denied by the candidate catalog even when the identity is
+  // deliberately reforged to reproduce self-consistently.
+  assert.throws(() => buildMetricHandoff({ proposal: withRole(base, 'nonexistent.relation.fake'), metricContractBytes: contractBytes }),
+    (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:ROLE_NOT_IN_INFERRED_CANDIDATES:grain');
+});
+
+test('local support: the contract is bound to the released admitted digest, not to key presence', () => {
+  const changedSemantics = clone(JSON.parse(contractBytes.toString('utf8')));
+  changedSemantics.recordRules.credit.contribution = 'add_instead_of_subtract';
+  assert.throws(() => buildMetricHandoff({
+    proposal: run(BLOCKING_ANSWERS),
+    metricContractBytes: Buffer.from(JSON.stringify(changedSemantics)),
+  }), (error) => error.code === 'UNFAMILIAR_HANDOFF_DENIED:CONTRACT_DIGEST_NOT_RELEASED');
+  // Positive counterpart: the coherent proposal over the released bytes verifies and states its
+  // own limits instead of claiming admission, execution or a shared handle.
+  const handoff = buildMetricHandoff({ proposal: run(BLOCKING_ANSWERS), metricContractBytes: contractBytes });
+  assert.equal(handoff.releasedContractSha256, sha256(contractBytes));
+  assert.deepEqual(handoff.identity, {
+    proposalIdentity: 'RECOMPUTED_FROM_LOCAL_BODY',
+    proposalDigestField: 'entryPointSha256',
+    candidateIdentity: 'RECOMPUTED_FROM_LOCAL_BODY',
+    selectedRoles: 'ALL_SELECTED_ROLES_ARE_DECLARED_INFERRED_CANDIDATES',
+    contractIdentity: 'RELEASED_ADMITTED_CONTRACT_DIGEST_MATCHED',
+    admissionConsumerImplemented: false,
+  });
+  assert.equal(handoff.authority.metricExecution, 'NOT_PERFORMED');
+  assert.equal(handoff.authority.admissionConsumer, 'NOT_IMPLEMENTED');
+  assert.equal(handoff.authority.admissionAuthority, 'NONE');
+  assert.equal(handoff.authority.sharedTaskHandle, 'NOT_INTEGRATED');
+  assert.equal(handoff.ownerEntryPoint, 'compileNetRevenuePlan');
+  assert.ok(handoff.nonclaims.some((claim) => /executes no metric, provides no trusted admission/.test(claim)));
 });

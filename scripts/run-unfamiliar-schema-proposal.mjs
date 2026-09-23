@@ -65,7 +65,21 @@ if (args.includes('--negative')) {
     sourceRevision: result.source.sourceRevision,
     observedRelations: result.observed.relations.length,
     ambiguityByKind: result.computed.ambiguities.byKind,
-    questions: result.questions.map(({ questionId, kind, blocking }) => ({ questionId, kind, blocking })),
+    // F1 — the clarification conversation is exposed as the ACTUAL question text, its closed
+    // answer domain, the subject/evidence it is owed by and its stable interview order, so a
+    // caller can answer positionally without inspecting the module source.
+    questions: result.questions.map((question, index) => ({
+      index,
+      questionId: question.questionId,
+      kind: question.kind,
+      code: question.code,
+      blocking: question.blocking,
+      subject: question.subject,
+      text: question.text,
+      answerDomain: question.answerDomain,
+      evidenceRefs: question.evidenceRefs,
+      questionSha256: question.questionSha256,
+    })),
     clarification: {
       confirmedCount: result.clarification.confirmedCount,
       absentCount: result.clarification.absentCount,
@@ -81,6 +95,11 @@ if (args.includes('--negative')) {
       periodColumn: result.metricCandidate.period.selected,
       currency: result.metricCandidate.currency.selected,
       recordKindMapping: result.metricCandidate.recordKind.mapping,
+      creditValue: result.metricCandidate.recordKind.creditValue,
+      cancelValue: result.metricCandidate.recordKind.cancelValue,
+      absenceDeclarations: result.metricCandidate.recordKind.absenceDeclarations,
+      coherent: result.metricCandidate.coherent,
+      inconsistencyKinds: result.metricCandidate.inconsistencies.map(({ kind }) => kind),
       unresolvedMeaningCount: result.metricCandidate.unresolvedMeaning.length,
     },
     reviewState: result.reviewState,
@@ -89,15 +108,23 @@ if (args.includes('--negative')) {
     entryPointSha256: result.entryPointSha256,
   };
   if (args.includes('--handoff')) {
-    const handoff = buildMetricHandoff({ proposal: result, metricContractBytes: readFileSync(CONTRACT_PATH) });
-    summary.handoff = {
-      ownerEntryPoint: handoff.ownerEntryPoint,
-      releasedRoleVocabulary: handoff.releasedRoleVocabulary,
-      releasedKindVocabulary: handoff.releasedKindVocabulary,
-      canonicalRowBinding: handoff.canonicalRowBinding,
-      authority: handoff.authority,
-      handoffSha256: handoff.handoffSha256,
-    };
+    // A denied handoff is REPORTED (exit 0, like the --negative gates) rather than crashing the
+    // CLI: the denial code is the evidence, and the candidate stays non-confirmed.
+    try {
+      const handoff = buildMetricHandoff({ proposal: result, metricContractBytes: readFileSync(CONTRACT_PATH) });
+      summary.handoff = {
+        ownerEntryPoint: handoff.ownerEntryPoint,
+        releasedRoleVocabulary: handoff.releasedRoleVocabulary,
+        releasedKindVocabulary: handoff.releasedKindVocabulary,
+        canonicalRowBinding: handoff.canonicalRowBinding,
+        identity: handoff.identity,
+        authority: handoff.authority,
+        handoffSha256: handoff.handoffSha256,
+      };
+    } catch (error) {
+      summary.handoff = null;
+      summary.handoffDenial = { code: error.code ?? null, message: error.message };
+    }
   }
   process.stdout.write(`${JSON.stringify(summary, null, 2)}\n`);
 }

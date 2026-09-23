@@ -29,16 +29,21 @@
 //   - A CONFIRMED value exists ONLY because a CALLER supplied it through the clarification
 //     entry point.  EOF, an empty line, or an explicit refusal leaves the question ABSENT /
 //     REFUSED and the meaning UNRESOLVED; no code path here ever supplies an answer.
-//   - The metric handoff is DIRECTLY DEMONSTRATED LOCAL SUPPORT ONLY.  AC03's shared task
-//     handle remains separately owned and is NOT integrated; the handoff grants no
-//     execution, admission, production or mutation authority.
+//   - The metric handoff is DIRECTLY DEMONSTRATED LOCAL SUPPORT ONLY.  It re-derives the
+//     proposal's own digests from the local body, binds the caller's contract to the released
+//     core's admitted contract digest, and refuses inconsistent proposals; it executes no
+//     metric, provides no trusted admission, implements no admission consumer, and AC03's
+//     shared task handle remains separately owned and NOT integrated.
 //   - This is a bounded local surface on one authored synthetic case, not a measured
 //     generalization, not a universal schema-understanding engine, and not a second metric.
 
 import { createHash } from 'node:crypto';
 
 import { canonicalJson } from '../canonical-json.js';
-import { NET_REVENUE_OPERATION_REQUEST } from './net-revenue-plan.mjs';
+import {
+  ADMITTED_METRIC_CONTRACT_SHA256,
+  NET_REVENUE_OPERATION_REQUEST,
+} from './net-revenue-plan.mjs';
 
 export const UNFAMILIAR_SCHEMA_METADATA_SCHEMA = 'kaleidosphere.business-bi/unfamiliar-schema-metadata/v1';
 export const UNFAMILIAR_SCHEMA_AGGREGATE_PROFILE_SCHEMA = 'kaleidosphere.business-bi/unfamiliar-schema-aggregate-profile/v1';
@@ -73,8 +78,26 @@ export const UNFAMILIAR_AMBIGUITY_KINDS = Object.freeze([
   'MISSING_DEFINITION',
 ]);
 
+// F2/F4 — a CONTRADICTION between the caller's decisions and the observed evidence (or between
+// two observed reads).  It is carried explicitly and degrades the candidate out of CONFIRMED;
+// closed-domain validity alone is never treated as coherent business confirmation.
+export const UNFAMILIAR_INCONSISTENCY_KINDS = Object.freeze([
+  'UNITS_DECLARATION_CONFLICT',
+  'GRAIN_KEY_NOT_OBSERVED_UNIQUE',
+  'GRAIN_SELECTION_NOT_DECLARED_CANDIDATE',
+  'DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES',
+  'KIND_VALUE_CONFLICT',
+  'SOURCE_REVISION_MISMATCH',
+  'INCONSISTENT_JOIN_PROFILE',
+]);
+
 export const REFUSAL_TOKEN = 'none';
 export const UNRESOLVED_TOKEN = 'UNRESOLVED';
+// A RESERVED ABSENCE selection in a credit/cancel answer domain.  It is deliberately not an
+// observed source value: answering it records that the caller decided NO observed value holds
+// that role.  It never becomes a record-kind mapping entry, so absence is represented
+// separately instead of being manufactured into a synthetic observed value (F3).
+export const NO_OBSERVED_VALUE_TOKEN = 'NO_OBSERVED_VALUE';
 
 const DATA_TYPES = new Set(['integer', 'text', 'date', 'timestamp', 'boolean', 'numeric', 'decimal']);
 const KEY_KINDS = new Set(['PRIMARY_KEY', 'UNIQUE']);
@@ -326,9 +349,49 @@ function columnAggregate(aggregates, relation, columnName) {
   return profile?.columns.find((column) => column.name === columnName) ?? null;
 }
 
+function columnAggregateByRelationKey(aggregates, relation, columnName) {
+  const profile = aggregates.relationProfiles.find((candidate) => candidate.relation === relation) ?? null;
+  return profile?.columns.find((column) => column.name === columnName) ?? null;
+}
+
+// F4 — a join candidate's own endpoint counts must agree with the relation profile of the same
+// endpoints.  A disagreement is INTERNALLY CONTRADICTORY overlapping evidence: it is retained
+// explicitly and never silently removes a fan-out that the other observation still shows.
+export function joinEvidence(aggregates, candidate) {
+  const sourceProfile = columnAggregateByRelationKey(aggregates, candidate.source.relation, candidate.source.column);
+  const targetProfile = columnAggregateByRelationKey(aggregates, candidate.target.relation, candidate.target.column);
+  const disagreements = [];
+  const compare = (label, profile, nonNullCount, distinctCount) => {
+    if (!profile) return;
+    if (profile.nonNullCount !== nonNullCount || profile.distinctCount !== distinctCount) {
+      disagreements.push(`${label} says ${nonNullCount} non-null / ${distinctCount} distinct while the endpoint relation profile observes ${profile.nonNullCount} non-null / ${profile.distinctCount} distinct`);
+    }
+  };
+  compare('join target', targetProfile, candidate.targetNonNullCount, candidate.targetDistinctCount);
+  compare('join source', sourceProfile, candidate.sourceNonNullCount, candidate.sourceDistinctCount);
+  const targetNotKeyUnique = candidate.targetNonNullCount > candidate.targetDistinctCount
+    || (targetProfile ? targetProfile.nonNullCount > targetProfile.distinctCount : false);
+  return {
+    fanOut: targetNotKeyUnique,
+    targetNotKeyUnique,
+    disagreements,
+    consistent: disagreements.length === 0,
+    targetProfile,
+    sourceProfile,
+  };
+}
+
 export function detectAmbiguities(metadata, aggregates) {
   const facts = [];
   const blindSpots = [];
+  // F4 — observations that disagree with each other are retained as explicit evidence
+  // inconsistencies instead of being averaged away, and they are also recorded in the
+  // blind-spot channel so nothing is silently dropped.
+  const evidenceInconsistencies = [];
+  const recordInconsistency = (kind, detail, subjects) => {
+    evidenceInconsistencies.push({ kind, detail, subjects: [...subjects].sort() });
+    blindSpots.push(`${kind}:${detail}`);
+  };
   const push = (kind, ruleId, detail, evidenceRefs) => {
     const body = {
       factKind: 'UNFAMILIAR_SCHEMA_AMBIGUITY',
@@ -341,6 +404,15 @@ export function detectAmbiguities(metadata, aggregates) {
     };
     facts.push({ ...body, factSha256: identitySha256(body) });
   };
+
+  if (metadata.sourceRevision !== aggregates.sourceRevision) {
+    // F4 — the two bounded reads claim different source identities; combining them under one
+    // revision would conflate observations from different sources, so the mismatch is retained
+    // explicitly and is never silently labelled with the metadata revision.
+    recordInconsistency('SOURCE_REVISION_MISMATCH',
+      `metadata declares source revision ${metadata.sourceRevision} while the bounded aggregate profile declares ${aggregates.sourceRevision}`,
+      [metadata.sourceRevision, aggregates.sourceRevision]);
+  }
 
   for (const relation of metadata.relations) {
     const key = relationKey(relation);
@@ -436,11 +508,24 @@ export function detectAmbiguities(metadata, aggregates) {
     }
   }
 
-  // R_FANOUT — a join candidate whose TARGET has duplicate key values multiplies rows.
+  // R_FANOUT — a join candidate whose TARGET has duplicate key values multiplies rows.  The
+  // determination is taken over BOTH bounded reads: a contradictory join candidate can no
+  // longer erase a fan-out that the endpoint relation profile still observes.
   for (const candidate of aggregates.joinCandidateProfiles) {
-    if (candidate.targetNonNullCount > candidate.targetDistinctCount) {
+    const evidence = joinEvidence(aggregates, candidate);
+    const endpoints = `${candidate.source.relation}.${candidate.source.column} -> ${candidate.target.relation}.${candidate.target.column}`;
+    if (!evidence.consistent) {
+      recordInconsistency('INCONSISTENT_JOIN_PROFILE',
+        `${endpoints}: ${evidence.disagreements.join('; ')}`,
+        [`${candidate.source.relation}.${candidate.source.column}`, `${candidate.target.relation}.${candidate.target.column}`]);
+    }
+    if (evidence.targetNotKeyUnique) {
+      const profileBasis = evidence.targetProfile
+        && evidence.targetProfile.nonNullCount !== candidate.targetNonNullCount
+        ? `; the target's own relation profile observes ${evidence.targetProfile.nonNullCount} non-null / ${evidence.targetProfile.distinctCount} distinct`
+        : '';
       push('AMBIGUOUS_JOIN_FANOUT', UNFAMILIAR_RULES.FANOUT,
-        `join ${candidate.source.relation}.${candidate.source.column} -> ${candidate.target.relation}.${candidate.target.column} is not key-unique on the target (${candidate.targetNonNullCount} non-null / ${candidate.targetDistinctCount} distinct), so it fans out.`,
+        `join ${endpoints} is not key-unique on the target (${candidate.targetNonNullCount} non-null / ${candidate.targetDistinctCount} distinct${profileBasis}), so it fans out.`,
         [`${candidate.source.relation}.${candidate.source.column}`, `${candidate.target.relation}.${candidate.target.column}`]);
     } else if (candidate.matchedDistinctCount < candidate.sourceDistinctCount) {
       blindSpots.push(`PARTIAL_JOIN_OVERLAP:${candidate.source.relation}.${candidate.source.column}`);
@@ -460,6 +545,7 @@ export function detectAmbiguities(metadata, aggregates) {
     kinds: [...UNFAMILIAR_AMBIGUITY_KINDS],
     byKind,
     facts,
+    evidenceInconsistencies,
     blindSpots: blindSpots.sort(),
     limitations: [
       'SYNTHETIC_FIXTURE_ONLY',
@@ -495,6 +581,8 @@ function inferRoles(metadata, aggregates, ambiguities) {
           keyColumn: declaredKey.columns[0],
           keyKind: declaredKey.kind,
           uniqueObserved: unique,
+          nonNullCount: aggregate?.nonNullCount ?? null,
+          distinctCount: aggregate?.distinctCount ?? null,
           ruleId: 'KS246_R_GRAIN_DECLARED_SINGLE_KEY@1',
           confidence: declaredKey.kind === 'PRIMARY_KEY' && unique ? 'MEDIUM' : 'LOW',
           observationKind: 'INFERRED',
@@ -554,7 +642,8 @@ function inferRoles(metadata, aggregates, ambiguities) {
   }
 
   for (const candidate of aggregates.joinCandidateProfiles) {
-    const fanOut = candidate.targetNonNullCount > candidate.targetDistinctCount;
+    const evidence = joinEvidence(aggregates, candidate);
+    const fanOut = evidence.fanOut;
     const overlapBasisPoints = candidate.sourceDistinctCount === 0
       ? 0
       : Math.floor((candidate.matchedDistinctCount * 10000) / candidate.sourceDistinctCount);
@@ -568,8 +657,9 @@ function inferRoles(metadata, aggregates, ambiguities) {
       executionAuthority: 'NONE',
       fanOutRisk: fanOut,
       fanOutReason: fanOut
-        ? `target has ${candidate.targetNonNullCount} non-null / ${candidate.targetDistinctCount} distinct key values, so each source row can match several target rows`
+        ? `target has ${candidate.targetNonNullCount} non-null / ${candidate.targetDistinctCount} distinct key values${evidence.consistent ? '' : ' (a contradictory endpoint profile is also retained)'}, so each source row can match several target rows`
         : null,
+      observedEvidenceConsistent: evidence.consistent,
       overlapBasisPoints,
       ruleId: 'KS246_R_EXACT_NAME_TYPE_OVERLAP@1',
       confidence: fanOut ? 'LOW' : overlapBasisPoints >= 9500 ? 'HIGH' : 'MEDIUM',
@@ -692,11 +782,16 @@ export function buildClarificationQuestions(inferred) {
   }
 
   for (const [index, candidate] of inferred.recordKind.candidates.entries()) {
-    const values = [...candidate.observedValues, 'NONE'].sort();
+    // F3 — the closed domain is the OBSERVED values plus one reserved ABSENCE selection.  No
+    // synthetic observed value is offered, and the absence selection never becomes a mapping.
+    if (candidate.observedValues.includes(NO_OBSERVED_VALUE_TOKEN)) {
+      fail('UNFAMILIAR_CLARIFICATION_DENIED:RESERVED_TOKEN');
+    }
+    const values = [...candidate.observedValues, NO_OBSERVED_VALUE_TOKEN].sort();
     questions.push(question(
       'CREDIT',
       `ks246-q-credit-${index}`,
-      `${candidate.relation}.${candidate.column} values ${candidate.observedValues.join(', ')} have no declared meaning. Which value is a CREDIT (subtracted from the total)?`,
+      `${candidate.relation}.${candidate.column} values ${candidate.observedValues.join(', ')} have no declared meaning. Which value is a CREDIT (subtracted from the total), or ${NO_OBSERVED_VALUE_TOKEN} if none of the observed values is a credit?`,
       { type: 'CLOSED_SET', values },
       [`${candidate.relation}.${candidate.column}`],
       `${candidate.relation}.${candidate.column}`,
@@ -704,7 +799,7 @@ export function buildClarificationQuestions(inferred) {
     questions.push(question(
       'CANCEL',
       `ks246-q-cancel-${index}`,
-      `${candidate.relation}.${candidate.column} values ${candidate.observedValues.join(', ')} have no declared meaning. Which value is a CANCELLATION (contributes 0)?`,
+      `${candidate.relation}.${candidate.column} values ${candidate.observedValues.join(', ')} have no declared meaning. Which value is a CANCELLATION (contributes 0), or ${NO_OBSERVED_VALUE_TOKEN} if none of the observed values is a cancellation?`,
       { type: 'CLOSED_SET', values },
       [`${candidate.relation}.${candidate.column}`],
       `${candidate.relation}.${candidate.column}`,
@@ -903,13 +998,26 @@ function resolveCandidate(skeleton, clarification) {
   const creditAnswer = find('CREDIT')[0] ?? null;
   const cancelAnswer = find('CANCEL')[0] ?? null;
 
+  const decisionFor = (questionId) => clarification.dispositions
+    .find(({ questionId: candidate }) => candidate === questionId) ?? null;
+  const relationOfSubject = (subject) => (typeof subject === 'string' && subject.lastIndexOf('.') > 0
+    ? subject.slice(0, subject.lastIndexOf('.'))
+    : null);
+
+  // F3 — the reserved ABSENCE selection is NOT an observed value: it is carried as an explicit
+  // absence declaration and never becomes a record-kind mapping entry.
+  const creditSelection = creditAnswer ? creditAnswer.value : null;
+  const cancelSelection = cancelAnswer ? cancelAnswer.value : null;
+  const creditValue = creditSelection === NO_OBSERVED_VALUE_TOKEN ? null : creditSelection;
+  const cancelValue = cancelSelection === NO_OBSERVED_VALUE_TOKEN ? null : cancelSelection;
+
   const recordKindMapping = {};
-  for (const entry of find('CREDIT')) recordKindMapping[entry.value] = 'credit';
-  for (const entry of find('CANCEL')) recordKindMapping[entry.value] = 'cancel';
+  if (creditValue !== null) recordKindMapping[creditValue] = 'credit';
+  if (cancelValue !== null) recordKindMapping[cancelValue] = 'cancel';
 
   const unresolved = [];
   for (const q of skeleton.questions) {
-    const decision = clarification.dispositions.find(({ questionId }) => questionId === q.questionId);
+    const decision = decisionFor(q.questionId);
     const outstanding = decision.disposition !== 'CONFIRMED'
       || (q.kind === 'MISSING_DEFINITION' && decision.answer === UNRESOLVED_TOKEN);
     if (outstanding && q.kind !== 'CREDIT' && q.kind !== 'CANCEL') {
@@ -931,18 +1039,105 @@ function resolveCandidate(skeleton, clarification) {
       }
     }
   }
-  if (creditAnswer && cancelAnswer && creditAnswer.value === cancelAnswer.value) {
+
+  // ---------------------------------------------------------------------------------
+  // F2/F4 — explicit contradictions.  Each is carried with its own kind and subjects; a
+  // candidate that carries one is NEVER labelled CONFIRMED and never hands off.
+  // ---------------------------------------------------------------------------------
+  const inconsistencies = [];
+  const contradiction = (kind, detail, subjects) => inconsistencies.push({
+    kind,
+    detail,
+    subjects: [...new Set(subjects.filter((subject) => typeof subject === 'string'))].sort(),
+  });
+
+  // (1) A selected grain whose declared key is observed non-unique: the confirmed grain is
+  // not key-unique, so the selected row grain is not a grain.
+  if (grainAnswer) {
+    const grainCandidate = skeleton.inferred.grain
+      .find(({ relation, keyColumn }) => `${relation}.${keyColumn}` === grainAnswer.value) ?? null;
+    if (grainCandidate === null) {
+      contradiction('GRAIN_SELECTION_NOT_DECLARED_CANDIDATE',
+        `${grainAnswer.value} was selected as the metric grain but is not one of the declared key candidates of this schema.`,
+        [grainAnswer.value]);
+    } else if (grainCandidate.uniqueObserved === false) {
+      contradiction('GRAIN_KEY_NOT_OBSERVED_UNIQUE',
+        `${grainAnswer.value} is declared ${grainCandidate.keyKind} but the bounded aggregates observe it non-unique (${grainCandidate.nonNullCount} non-null / ${grainCandidate.distinctCount} distinct), so the selected grain does not identify one row.`,
+        [grainAnswer.value]);
+    }
+  }
+
+  // (2) A caller decision that affirms a declared minor-unit meaning while declaring the
+  // arithmetic unit to be base units.
+  const affirmedDeclaredMeanings = skeleton.questions
+    .filter(({ kind }) => kind === 'MISLEADING_NAME')
+    .map((q) => ({ q, decision: decisionFor(q.questionId) }))
+    .filter(({ decision }) => decision.disposition === 'CONFIRMED'
+      && decision.answer === 'DECLARED_MEANING_IS_CORRECT')
+    .map(({ q }) => skeleton.inferred.units.amountColumns
+      .find(({ relation, column }) => `${relation}.${column}` === q.subject) ?? null)
+    .filter((candidate) => candidate !== null && candidate.declaredMeaning !== null)
+    .filter(({ declaredMeaning }) => /\bcents?\b|\bminor unit/i.test(declaredMeaning));
+  if (unitsAnswer && unitsAnswer.value === 'BASE_UNITS' && affirmedDeclaredMeanings.length > 0) {
+    for (const candidate of affirmedDeclaredMeanings) {
+      contradiction('UNITS_DECLARATION_CONFLICT',
+        `the caller declared the arithmetic unit to be BASE_UNITS while also confirming that ${candidate.relation}.${candidate.column} declares "${candidate.declaredMeaning}"; a minor-unit declaration and a base-unit arithmetic unit cannot both hold.`,
+        [`${candidate.relation}.${candidate.column}`, 'ks246-q-units']);
+    }
+  }
+
+  // (3) Roles that span more than one relation while the caller DENIED the relationship that
+  // connects them: the selected metric cannot be computed across a denied relation.
+  const selectedRoleSubjects = [grainAnswer?.value, periodAnswer?.value, amountAnswer?.value, creditAnswer?.subject]
+    .filter((subject) => typeof subject === 'string');
+  const selectedRelations = new Set(selectedRoleSubjects.map(relationOfSubject).filter((relation) => relation !== null));
+  const deniedRelationships = skeleton.questions
+    .filter(({ kind }) => kind === 'FANOUT')
+    .filter((q) => decisionFor(q.questionId).disposition === 'CONFIRMED'
+      && decisionFor(q.questionId).answer === 'NOT_A_RELATIONSHIP');
+  if (selectedRelations.size > 1) {
+    for (const q of deniedRelationships) {
+      const [sourceSubject, targetSubject] = String(q.subject).split('->');
+      const sourceRelation = relationOfSubject(sourceSubject);
+      const targetRelation = relationOfSubject(targetSubject);
+      if (selectedRelations.has(sourceRelation) && selectedRelations.has(targetRelation)) {
+        contradiction('DENIED_RELATIONSHIP_WITH_CROSS_RELATION_ROLES',
+          `the selected metric roles span ${[...selectedRelations].sort().join(' and ')} while the caller denied the relationship ${q.subject}; roles spread over a denied relationship cannot form one computable metric.`,
+          [...selectedRoleSubjects, q.subject]);
+      }
+    }
+  }
+
+  // (4) The two bounded reads claiming different source identities (F4).
+  for (const inconsistency of skeleton.computed.ambiguities.evidenceInconsistencies ?? []) {
+    contradiction(inconsistency.kind, inconsistency.detail, inconsistency.subjects);
+  }
+
+  if (creditValue !== null && cancelValue !== null && creditValue === cancelValue) {
+    contradiction('KIND_VALUE_CONFLICT',
+      `${creditValue} is claimed as both credit and cancellation`,
+      [creditValue]);
+  }
+  // Every contradiction is ALSO carried in the unresolved-meaning channel: a contradiction is
+  // not a resolved business rule, so the two lists can never disagree about it.
+  for (const inconsistency of inconsistencies) {
     unresolved.push({
       questionId: null,
-      kind: 'KIND_VALUE_CONFLICT',
-      disposition: 'REJECTED',
-      subject: `${creditAnswer.value} is claimed as both credit and cancellation`,
+      kind: inconsistency.kind,
+      disposition: 'CONFLICTING',
+      subject: inconsistency.detail,
     });
   }
 
-  const status = clarification.blockingConfirmed
-    ? 'CONFIRMED'
-    : clarification.confirmedCount > 0 ? 'PARTIALLY_CONFIRMED' : 'PROPOSED';
+  const byCanonicalJson = (left, right) => Buffer.compare(
+    Buffer.from(canonicalJson(left), 'utf8'),
+    Buffer.from(canonicalJson(right), 'utf8'),
+  );
+  const answersRecorded = clarification.confirmedCount > 0;
+  const status = inconsistencies.length > 0
+    ? 'INCONSISTENT'
+    : clarification.blockingConfirmed ? 'CONFIRMED'
+      : answersRecorded ? 'PARTIALLY_CONFIRMED' : 'PROPOSED';
 
   const body = {
     grain: grainAnswer
@@ -966,13 +1161,18 @@ function resolveCandidate(skeleton, clarification) {
     relationships: skeleton.inferred.relationships,
     recordKind: {
       column: creditAnswer?.subject ?? cancelAnswer?.subject ?? null,
+      creditValue,
+      cancelValue,
+      absenceDeclarations: [creditSelection, cancelSelection]
+        .filter((selection) => selection === NO_OBSERVED_VALUE_TOKEN)
+        .slice()
+        .sort(),
       mapping: Object.keys(recordKindMapping).length > 0 ? recordKindMapping : null,
       candidates: skeleton.inferred.recordKind.candidates,
     },
-    unresolvedMeaning: unresolved.sort((left, right) => Buffer.compare(
-      Buffer.from(canonicalJson(left), 'utf8'),
-      Buffer.from(canonicalJson(right), 'utf8'),
-    )),
+    unresolvedMeaning: unresolved.sort(byCanonicalJson),
+    inconsistencies: inconsistencies.sort(byCanonicalJson),
+    coherent: inconsistencies.length === 0,
     status,
     reviewState: 'REVIEW_REQUIRED',
     observationKind: 'INFERRED',
@@ -993,6 +1193,11 @@ export function buildUnfamiliarSchemaProposalSkeleton(metadata, aggregates) {
     issue: 'KS246',
     source: {
       sourceRevision: metadata.sourceRevision,
+      // F4 — the aggregate read's own revision is DISCLOSED next to the metadata revision, so
+      // observations from two different source identities can never be silently merged under
+      // one revision.
+      aggregateSourceRevision: aggregates.sourceRevision,
+      sourceRevisionMismatch: metadata.sourceRevision !== aggregates.sourceRevision,
       metadataSha256: metadata.metadataSha256,
       aggregateProfileSha256: aggregates.aggregateProfileSha256,
       accessMode: metadata.accessMode,
@@ -1072,23 +1277,30 @@ export function runUnfamiliarSchemaProposalEntryPoint({ metadataBytes, aggregate
 }
 
 // ---------------------------------------------------------------------------------
-// AC03 — DIRECTLY DEMONSTRATED LOCAL SUPPORT ONLY.
-//
-// The accepted proposal is bound to its source revision and the caller's decisions and
-// handed to the existing metric entry point by NAME, using the released metric core as
-// the single authority for the canonical row roles and the closed record-kind vocabulary:
-//   * the row roles are READ from the released `NET_REVENUE_OPERATION_REQUEST` and the
-//     supplied released metric contract (never re-declared here);
-//   * the kind vocabulary is READ from the contract's `recordRules` keys.
-// A handoff grants NO admission: the shared task handle is separately owned and is
-// explicitly NOT integrated (see `sharedTaskHandle`).
 // ---------------------------------------------------------------------------------
+// AC03 — DIRECTLY DEMONSTRATED LOCAL SUPPORT ONLY (claims narrowed to what is executed).
+//
+// This local handoff:
+//   * re-derives the proposal's own digests from the local body it is handed and refuses a
+//     proposal whose declared identity does not reproduce (so a copied digest is not trusted);
+//   * requires every selected role to be one of the proposal's OWN inferred candidates;
+//   * binds the caller's contract bytes to the released metric core's admitted contract digest
+//     (ADMITTED_METRIC_CONTRACT_SHA256), so a contract with changed semantics is refused;
+//   * refuses an INCONSISTENT proposal and any credit/cancel conflict;
+//   * hands the accepted proposal to the existing metric entry point by NAME only.
+// It does NOT execute a metric, does NOT provide trusted admission, and no admission consumer
+// is implemented.  AC03's shared task handle is separately owned and explicitly NOT integrated
+// (`sharedTaskHandle: 'NOT_INTEGRATED'`); AC04 admitted execution stays open.
+// ---------------------------------------------------------------------------------
+function assertReproducedIdentity(body, digestField, code) {
+  if (!isPlainObject(body)) fail(code);
+  const { [digestField]: declared, ...rest } = body;
+  if (typeof declared !== 'string' || declared !== identitySha256(rest)) fail(code);
+}
+
 export function buildMetricHandoff({ proposal, metricContractBytes }) {
   if (!isPlainObject(proposal) || !isPlainObject(proposal.metricCandidate)) {
     fail('UNFAMILIAR_HANDOFF_DENIED:PROPOSAL');
-  }
-  if (proposal.metricCandidate.status !== 'CONFIRMED') {
-    fail('UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS');
   }
   const contract = parseBoundJson(metricContractBytes, 'UNFAMILIAR_HANDOFF_DENIED:CONTRACT');
   const operation = NET_REVENUE_OPERATION_REQUEST;
@@ -1121,8 +1333,63 @@ export function buildMetricHandoff({ proposal, metricContractBytes }) {
   if (!releasedKindVocabulary.includes('credit') || !releasedKindVocabulary.includes('cancel')) {
     fail('UNFAMILIAR_HANDOFF_DENIED:KIND_NOT_IN_RELEASED_CONTRACT');
   }
+  // Whole-contract identity: the released metric core is the single authority for its own
+  // contract digest, so a contract whose SEMANTICS were changed is refused rather than
+  // accepted on a key-presence comparison.
+  const contractBytes = bytesOf(metricContractBytes, 'UNFAMILIAR_HANDOFF_DENIED:CONTRACT');
+  if (sha256(contractBytes) !== ADMITTED_METRIC_CONTRACT_SHA256) {
+    fail('UNFAMILIAR_HANDOFF_DENIED:CONTRACT_DIGEST_NOT_RELEASED');
+  }
 
+  // Local identity: the proposal's own digests must REPRODUCE from the body being handed.
+  // A copied hash field, a substituted source revision or an invented role is denied here.
   const candidate = proposal.metricCandidate;
+  const proposalIdentityCode = 'UNFAMILIAR_HANDOFF_DENIED:PROPOSAL_IDENTITY';
+  assertReproducedIdentity(candidate, 'candidateSha256', proposalIdentityCode);
+  if (typeof proposal.entryPointSha256 === 'string') {
+    assertReproducedIdentity(proposal, 'entryPointSha256', proposalIdentityCode);
+  } else if (typeof proposal.proposalSha256 === 'string') {
+    assertReproducedIdentity(proposal, 'proposalSha256', proposalIdentityCode);
+  } else {
+    fail(proposalIdentityCode);
+  }
+  assertReproducedIdentity(proposal.clarification, 'clarificationSha256', proposalIdentityCode);
+  const inferred = proposal.inferred;
+  if (!isPlainObject(inferred)) fail('UNFAMILIAR_HANDOFF_DENIED:PROPOSAL');
+  const grainCatalog = new Set(inferred.grain.map(({ relation, keyColumn }) => `${relation}.${keyColumn}`));
+  const periodCatalog = new Set(inferred.period.map(({ relation, column }) => `${relation}.${column}`));
+  const amountCatalog = new Set(inferred.units.amountColumns.map(({ relation, column }) => `${relation}.${column}`));
+  const currencyCatalog = new Set(inferred.currency.candidates.flatMap(({ observedValues }) => observedValues));
+  // Every SELECTED role must be one of the proposal's own inferred candidates.  An unselected
+  // role is not a substitute check: it is simply not answered yet (denied further below).
+  const selectedRoles = [
+    ['grain', candidate.grain.selected, grainCatalog],
+    ['period', candidate.period.selected, periodCatalog],
+    ['amountColumn', candidate.units.amountColumn, amountCatalog],
+    ['currency', candidate.currency.selected, currencyCatalog],
+  ];
+  for (const [role, value, catalog] of selectedRoles) {
+    if (typeof value === 'string' && !catalog.has(value)) {
+      fail(`UNFAMILIAR_HANDOFF_DENIED:ROLE_NOT_IN_INFERRED_CANDIDATES:${role}`);
+    }
+  }
+
+  // F3 — absence and contradiction are never mapped into a record value.
+  const credit = candidate.recordKind?.creditValue ?? null;
+  const cancel = candidate.recordKind?.cancelValue ?? null;
+  if (credit !== null && cancel !== null && credit === cancel) {
+    fail('UNFAMILIAR_HANDOFF_DENIED:KIND_CONFLICT');
+  }
+  // F2/F4 — a contradictory proposal is never handed off, and never labelled confirmed.
+  if (candidate.status === 'INCONSISTENT' || (candidate.inconsistencies?.length ?? 0) > 0) {
+    fail('UNFAMILIAR_HANDOFF_DENIED:INCONSISTENT_PROPOSAL');
+  }
+  if (candidate.status !== 'CONFIRMED') {
+    fail('UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_QUESTIONS');
+  }
+  if (credit === null || cancel === null) {
+    fail('UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_KIND_SEMANTICS');
+  }
   // Reuse gates on the RELEASED metric core's own declarations: the released arithmetic is
   // integer MINOR units of one currency.  A caller may legitimately answer otherwise, but
   // such a decision is not an admissible handoff and is denied by name here.
@@ -1132,14 +1399,8 @@ export function buildMetricHandoff({ proposal, metricContractBytes }) {
   if (candidate.currency.selected !== operation.source.currency.code) {
     fail('UNFAMILIAR_HANDOFF_DENIED:CURRENCY_NOT_RELEASED');
   }
-  const confirmed = proposal.confirmed;
-  const byKind = (kind) => Object.values(confirmed).filter((entry) => entry.kind === kind);
-  const credit = byKind('CREDIT')[0] ?? null;
-  const cancel = byKind('CANCEL')[0] ?? null;
-  if (!credit || !cancel) fail('UNFAMILIAR_HANDOFF_DENIED:UNCONFIRMED_KIND_SEMANTICS');
-  if (credit.value === cancel.value) fail('UNFAMILIAR_HANDOFF_DENIED:KIND_CONFLICT');
 
-  const kindMapping = { [credit.value]: 'credit', [cancel.value]: 'cancel' };
+  const kindMapping = { [credit]: 'credit', [cancel]: 'cancel' };
   for (const [value, kind] of Object.entries(kindMapping)) {
     if (!releasedKindVocabulary.includes(kind)) fail('UNFAMILIAR_HANDOFF_DENIED:KIND_NOT_IN_RELEASED_CONTRACT');
     if (typeof value !== 'string') fail('UNFAMILIAR_HANDOFF_DENIED:KIND_VALUE');
@@ -1158,9 +1419,17 @@ export function buildMetricHandoff({ proposal, metricContractBytes }) {
     clarificationSha256: proposal.clarification.clarificationSha256,
     decisionsSha256: identitySha256(proposal.confirmed),
     releasedOperationId: operation.operationId,
-    releasedContractSha256: sha256(bytesOf(metricContractBytes, 'UNFAMILIAR_HANDOFF_DENIED:CONTRACT')),
+    releasedContractSha256: sha256(contractBytes),
     releasedRoleVocabulary,
     releasedKindVocabulary,
+    identity: {
+      proposalIdentity: 'RECOMPUTED_FROM_LOCAL_BODY',
+      proposalDigestField: typeof proposal.entryPointSha256 === 'string' ? 'entryPointSha256' : 'proposalSha256',
+      candidateIdentity: 'RECOMPUTED_FROM_LOCAL_BODY',
+      selectedRoles: 'ALL_SELECTED_ROLES_ARE_DECLARED_INFERRED_CANDIDATES',
+      contractIdentity: 'RELEASED_ADMITTED_CONTRACT_DIGEST_MATCHED',
+      admissionConsumerImplemented: false,
+    },
     canonicalRowBinding: {
       idField: { role: releasedRoleVocabulary.idField, source: candidate.grain.selected },
       dateField: { role: releasedRoleVocabulary.dateField, source: candidate.period.selected },
@@ -1169,6 +1438,7 @@ export function buildMetricHandoff({ proposal, metricContractBytes }) {
         source: candidate.recordKind.column,
         confirmedMapping: kindMapping,
         residualKindValues,
+        absenceDeclarations: candidate.recordKind.absenceDeclarations,
       },
       amountField: {
         role: releasedRoleVocabulary.amountField,
@@ -1183,6 +1453,8 @@ export function buildMetricHandoff({ proposal, metricContractBytes }) {
       executionAuthority: 'NONE',
       admissionAuthority: 'NONE',
       mutationAuthority: 'NONE',
+      metricExecution: 'NOT_PERFORMED',
+      admissionConsumer: 'NOT_IMPLEMENTED',
       arbitrarySql: false,
       // AC03's shared task handle is separately owned; this local handoff does NOT
       // pretend to be it.
@@ -1192,8 +1464,9 @@ export function buildMetricHandoff({ proposal, metricContractBytes }) {
     unresolvedMeaning: candidate.unresolvedMeaning,
     nonclaims: [
       ...UNFAMILIAR_SCHEMA_NONCLAIMS,
-      'The handoff is a bound proposal, not admission: the shared task contract is separately owned and not integrated.',
+      'The handoff is a locally verified bound proposal, not admission: it executes no metric, provides no trusted admission, and no admission consumer is implemented.',
       'Residual kind values are neither credit, cancel nor silently sale; they stay explicitly unresolved.',
+      'Absence (no observed value holds a role) is carried as an absence declaration, never as a fabricated record value.',
     ],
   };
   return deepFreeze({ ...body, handoffSha256: identitySha256(body) });
