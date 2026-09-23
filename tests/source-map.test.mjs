@@ -43,6 +43,11 @@ import './unfamiliar-schema-metric-journey.test.mjs';
 // independently maintained expectation).  It follows the same imported-suite route so the
 // byte-bound canonical command and the exactly-one-route-per-suite invariant are preserved.
 import './result-lineage-readonly.test.mjs';
+/**
+ * KS250 (KS-EVO-05) parity: the credential-free read-only metric pilot protocol and its
+ * synthetic rehearsal ride the same tracked-file check.
+ */
+import './read-only-metric-pilot.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
