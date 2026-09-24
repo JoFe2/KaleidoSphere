@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/metric-compiler-channels/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "channels": [
+    {
+      "channelId": "channel:denied:customer-detail",
+      "kind": "DENIED",
+      "reason": "row-level customer detail is not granted to this metric; the denial is carried, never collapsed to an empty value"
+    }
+  ]
+}

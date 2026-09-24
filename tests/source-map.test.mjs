@@ -58,6 +58,11 @@ import './access-mode-journey-comparison.test.mjs';
  * synthetic rehearsal ride the same tracked-file check.
  */
 import './read-only-metric-pilot.test.mjs';
+/**
+ * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
+ * decision ride the same tracked-file check.
+ */
+import './metric-compiler-adapter.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

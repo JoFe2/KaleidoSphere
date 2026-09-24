@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/metric-compiler-applicability/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "applicability": [
+    {
+      "lawId": "CANON-1",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-2",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-3",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-4",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-5",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-6",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-7",
+      "applicability": "APPLICABLE"
+    },
+    {
+      "lawId": "CANON-8",
+      "applicability": "NOT_APPLICABLE"
+    },
+    {
+      "lawId": "CANON-99",
+      "applicability": "UNASSESSED"
+    }
+  ]
+}

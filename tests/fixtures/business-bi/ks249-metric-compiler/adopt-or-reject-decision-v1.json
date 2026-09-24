@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/metric-compiler-adopt-or-reject-decision/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "decisionId": "decision:ks249-metric-compiler-adapter-v1",
+  "decidedAt": "2026-09-23",
+  "demonstratedNeed": "metric compilation: the released metric contract exists as a versioned JSON document, but no executable component compiles it into a bounded, channel-preserving plan for the released read path. Exactly one concrete reuse gap, no catalog platform and no second dashboard engine.",
+  "candidates": [
+    {
+      "candidateId": "in-repo-bounded-metric-ir-adapter",
+      "kind": "IN_REPO_BOUNDED",
+      "version": "kaleidosphere-metric-ir/v1",
+      "license": "repository license (no new license introduced)",
+      "dependencySet": {
+        "newRuntimeDependencies": 0,
+        "newDevDependencies": 0,
+        "note": "no new dependency; the adapter imports only the released read-path module"
+      },
+      "integrationCost": {
+        "filesAdded": 5,
+        "newRuntimeDependencies": 0
+      },
+      "verdict": "ADOPT",
+      "reason": "it compiles the released contract without a new dependency, preserves every bounded channel, refuses every unsupported dialect by name and round-trips losslessly"
+    },
+    {
+      "candidateId": "cubejs-server",
+      "kind": "EXTERNAL_COMPONENT",
+      "package": "@cubejs-backend/server",
+      "version": "1.7.43",
+      "license": "Apache-2.0",
+      "dependencySet": {
+        "directDependencies": 19,
+        "unpackedSizeBytes": 95908
+      },
+      "vendorCompatibilityActuallyTested": false,
+      "verdict": "REJECT",
+      "reason": "a server-shaped semantic layer with 19 direct dependencies, a cubestore driver and an >=20 engine range against a legacy runtime is not adoptable for ONE synthetic integer-cent metric without a fair executed comparison; it was never installed or executed here, so vendor compatibility is unverified and is not assumed"
+    },
+    {
+      "candidateId": "malloy",
+      "kind": "EXTERNAL_COMPONENT",
+      "package": "@malloydata/malloy",
+      "version": "0.0.434",
+      "license": "MIT",
+      "dependencySet": {
+        "directDependencies": 10,
+        "unpackedSizeBytes": 4116990
+      },
+      "vendorCompatibilityActuallyTested": false,
+      "verdict": "REJECT",
+      "reason": "a language compiler whose grammar and numeric semantics differ from the contract arithmetic would need a fair executed comparison and a stable license/version decision; it was never installed or executed here, so compatibility is unverified and is not assumed"
+    }
+  ],
+  "driftPolicy": "Source drift is detected against the pinned contract digest and refuses rather than silently recompiling.",
+  "positiveCases": [
+    "integer minor units with no floating point anywhere in the contract",
+    "cancel rows contribute exactly zero and are validated first",
+    "UNKNOWN, DENIED and observed-ABSENCE channels carried as first-class entries",
+    "unsupported dialects refused by name with their exact reason"
+  ],
+  "falsifyingCases": [
+    "a one-cent contract change is DRIFT_DETECTED, not recompiled",
+    "a non-integer literal is REFUSED_FLOATING_POINT",
+    "a dialect outside the supported set is UNSUPPORTED_DIALECT",
+    "a channel without a count, period or reason is CHANNEL_COLLAPSED"
+  ],
+  "rollbackAndMigration": {
+    "rollback": "delete the adapter module, its CLI, its suite and its fixtures; no dependency, lockfile, schema migration, data migration or runtime change is involved, so rollback is a plain revert",
+    "migrationToAnExternalCompiler": "deferred, not preapproved: it would require an installed and actually executed comparison, a pinned version and license decision, and a channel-preservation proof before any adoption"
+  },
+  "observability": {
+    "observedMetadataFile": "registry-observations-v1.json",
+    "boundByDigest": true
+  },
+  "verdict": "ADOPT the in-repo bounded metric-IR adapter for this one reuse gap; REJECT both observed external components as unverified and unmeasured for this scope.",
+  "nonclaims": [
+    "No vendor adoption, installation or compatibility claim.",
+    "No general compiler, catalog or dashboard capability claim.",
+    "A rejection here is a decision with evidence, not an implemented capability and not a claim that the rejected component is defective."
+  ],
+  "observationsDigest": "1f258c4f19957eaab9daf53cbc7cd3b442cd90de6721f357fbcb134b6602b5cb"
+}

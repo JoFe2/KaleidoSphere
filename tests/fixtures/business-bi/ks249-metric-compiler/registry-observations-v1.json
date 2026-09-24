@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/metric-compiler-registry-observations/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "observedAt": "2026-09-23",
+  "observedBy": "LOCAL_READ_ONLY_REGISTRY_GET",
+  "observationMethod": "HTTPS GET of the public npm registry document for each package name; no package was installed and no source archive was fetched",
+  "alternatives": [
+    {
+      "package": "@cubejs-backend/server",
+      "httpStatus": 200,
+      "distTagLatest": "1.7.43",
+      "license": "Apache-2.0",
+      "directDependencyCount": 19,
+      "unpackedSizeBytes": 95908,
+      "enginesNode": ">=20.0.0",
+      "publishedAt": "2026-09-21T15:34:33.346Z",
+      "integrity": "sha512-QxraEUS24QysU6LA0LTFFTOA3VMJveqvAnpHQXHuFt6PH4H3W5rvoLGVjB46b0bb+5SXm6BxGg3uw8iYBNM90w==",
+      "deprecated": null
+    },
+    {
+      "package": "@malloydata/malloy",
+      "httpStatus": 200,
+      "distTagLatest": "0.0.434",
+      "license": "MIT",
+      "directDependencyCount": 10,
+      "unpackedSizeBytes": 4116990,
+      "enginesNode": ">=20",
+      "publishedAt": "2026-09-18T17:31:07.342Z",
+      "integrity": "sha512-evARlyO5R9UxaxQ+OPGHO51yeTdRIQyXUllJ3WYNcUsAMY7BMCGdW89QB1Kb0dOWxsd3X1RffoQ4wAs1X2AfhQ==",
+      "deprecated": null
+    }
+  ],
+  "digest": "1f258c4f19957eaab9daf53cbc7cd3b442cd90de6721f357fbcb134b6602b5cb"
+}
