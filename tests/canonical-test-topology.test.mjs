@@ -147,6 +147,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // KS248 (#248) access-mode journey comparison: reachable through this parent exactly once so
   // the exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/access-mode-journey-comparison.test.mjs' },
+  // KS250 (#250) credential-free read-only metric pilot: the pilot protocol and its synthetic
+  // rehearsal are a new suite and must not become a second direct root, so it rides the same
+  // parent exactly once, preserving the exactly-one-route-per-suite invariant.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/read-only-metric-pilot.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',

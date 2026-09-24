@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/read-only-metric-pilot-contexts/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "contexts": [
+    {
+      "contextId": "context:first-read-only-source",
+      "label": "First declared read-only context (SYNTHETIC AUTHORIZATION FIXTURE)",
+      "permission": {
+        "state": "GRANTED",
+        "permissionId": "permission:ks250-synthetic-authorization-first",
+        "grantedAt": "2026-09-23T00:00:00.000Z",
+        "scopeNote": "SYNTHETIC_AUTHORIZATION_FIXTURE_NOT_A_REAL_SOURCE_PERMISSION: exercises the protocol contract only"
+      },
+      "sourceIdentity": {
+        "sourceLabel": "synthetic-ks250-pilot-source-first",
+        "sourceBytesSha256": "09825a6fb604ff4b9b45d60b5c2e54f56cd8459a76450fe0a92dd50c5aeddf0c",
+        "retained": true
+      }
+    },
+    {
+      "contextId": "context:second-read-only-source",
+      "label": "Second declared read-only context (SYNTHETIC AUTHORIZATION FIXTURE)",
+      "permission": {
+        "state": "GRANTED",
+        "permissionId": "permission:ks250-synthetic-authorization-second",
+        "grantedAt": "2026-09-23T00:00:00.000Z",
+        "scopeNote": "SYNTHETIC_AUTHORIZATION_FIXTURE_NOT_A_REAL_SOURCE_PERMISSION: exercises the protocol contract only"
+      },
+      "sourceIdentity": {
+        "sourceLabel": "synthetic-ks250-pilot-source-second",
+        "sourceBytesSha256": "09825a6fb604ff4b9b45d60b5c2e54f56cd8459a76450fe0a92dd50c5aeddf0c",
+        "retained": true
+      }
+    }
+  ]
+}

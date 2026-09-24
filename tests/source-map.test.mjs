@@ -53,6 +53,11 @@ import './project-lifecycle-transfer-status.test.mjs';
 // reference and a blind holdout.  It follows the same imported-suite route so the byte-bound
 // canonical command and the exactly-one-route-per-suite invariant are both preserved.
 import './access-mode-journey-comparison.test.mjs';
+/**
+ * KS250 (KS-EVO-05) parity: the credential-free read-only metric pilot protocol and its
+ * synthetic rehearsal ride the same tracked-file check.
+ */
+import './read-only-metric-pilot.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',
