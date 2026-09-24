@@ -48,6 +48,11 @@ import './result-lineage-readonly.test.mjs';
 // synthetic declarations.  It follows the same imported-suite route so the byte-bound
 // canonical command and the exactly-one-route-per-suite invariant are both preserved.
 import './project-lifecycle-transfer-status.test.mjs';
+// KS248 (#248) access-mode journey comparison: an evaluator-owned frozen comparison of the
+// composed journey under declared information rights, against an independent deterministic
+// reference and a blind holdout.  It follows the same imported-suite route so the byte-bound
+// canonical command and the exactly-one-route-per-suite invariant are both preserved.
+import './access-mode-journey-comparison.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

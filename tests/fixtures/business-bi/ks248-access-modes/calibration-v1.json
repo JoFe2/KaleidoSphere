@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/access-mode-holdout/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "evaluationId": "ks248-public-calibration-v1",
+  "blind": false,
+  "expectations": [
+    {
+      "caseId": "case:metadata-net-delta",
+      "expectedOutcome": "ABSTAINED",
+      "expectedNetRevenue": null
+    },
+    {
+      "caseId": "case:full-fx-required",
+      "expectedOutcome": "REFUSED_DENIED_FX",
+      "expectedNetRevenue": null
+    },
+    {
+      "caseId": "case:full-boundary-unspecified",
+      "expectedOutcome": "ABSTAINED",
+      "expectedNetRevenue": null
+    }
+  ],
+  "digest": "491bfc073f359fa00633ed0e7b8f13e1cf4291194d2f3631a8936afbdcc6da4e"
+}
