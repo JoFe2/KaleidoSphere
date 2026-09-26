@@ -3,6 +3,11 @@
 !.secrets/.gitkeep
 .runtime/*
 !.runtime/.gitkeep
+# KS255 (KS-OPS-03) repository-owned runtime dependency root, installed by
+# scripts/provision-ks255-journey-runtime.mjs --install. The installed artifact closure is
+# never committed: only the pinned binding (dependencies/ks-journey-runtime/package.json +
+# package-lock.json) and the artifact manifest (contracts/dependencies/) are tracked.
+.ks-journey-runtime/
 node_modules/
 npm-debug.log*
 *.tar
