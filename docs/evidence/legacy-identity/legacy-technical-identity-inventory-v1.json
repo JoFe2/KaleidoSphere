@@ -32,6 +32,34 @@
         "dependencies/pansphaira/dist/packages/contracts/src/voice-local-ptt.js"
       ],
       "note": "The KS238 receiving-side increment tracked the pinned PANSPHAIRA producer artifact provision (dependencies/pansphaira/**: the wrapper plus the 156-file runtime closure declared by contracts/dependencies/pansphaira-order-source-v1.json). Four of those closure files carry legacy CM_* environment identities, so the tracked tree contained identities the census had never registered. They are registered here additively, not by relaxing the census: the census enumerates the tracked bytes of THIS repository regardless of which project authored them, so a pinned producer artifact is in scope exactly like consumer-authored source. No dependency path is excluded from the scanner, no pinned artifact byte was rewritten (the declared runtime closure digest a4db88ea0b8d... is unchanged), and the compatibility plan environment adapter and its negative probes apply to these occurrences unchanged."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "29d3883cc5a7a641c7ab5e31126a85c692c04928",
+      "predecessorOccurrences": 1062,
+      "predecessorInventorySha256": "628ec521a3092cc4dd9cb5402da1a040637fd593e8c25f9944a5e0fed3d39e19",
+      "addedOccurrences": 5,
+      "removedOccurrences": 0,
+      "occurrences": 1067,
+      "addedIdentityClasses": [
+        "schemaIdentity"
+      ],
+      "origin": "KS254_CRASH_SAFE_GENERATION_SURFACE",
+      "addedValues": [
+        "chimpmaera.bi/analysis-receipt/v1",
+        "chimpmaera.bi/generation-store/v1",
+        "chimpmaera.bi/ks254-generation-safety-evidence/v1",
+        "chimpmaera.bi/order-source-provisioning/v1",
+        "chimpmaera.bi/projection-generation/v1"
+      ],
+      "addedPaths": [
+        "scripts/run-ks254-generation-safety-evidence.mjs",
+        "services/bi-control/src/business-bi/order-source-provisioning.mjs",
+        "services/bi-control/src/generation-store.mjs",
+        "services/bi-control/src/projection-generation.mjs",
+        "tests/helpers/ks254-generation-runner.mjs"
+      ],
+      "note": "KS254 (JoFe2/KaleidoSphere#254) added the crash-safe generation surface: the shared generation store, the projection/receipt generation module, the order-source provisioning module, the interruption probe runner and the evidence runner. Each declares its own versioned schema identity, so the tracked tree now carries five schema identities the census had never registered. They are registered here additively, not by relaxing the census: no path is excluded from the scanner and no previously registered occurrence was removed or rewritten."
     }
   ],
   "occurrences": [
@@ -1208,6 +1236,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/helpers/ks254-generation-runner.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
       "path": "tests/promotion-bundle-revision-safeint.test.mjs"
     },
     {
@@ -1617,6 +1650,16 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
+      "path": "services/bi-control/src/generation-store.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ks254-generation-safety-evidence/v1",
+      "path": "scripts/run-ks254-generation-safety-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/local-technical-catalog/v1",
       "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
     },
@@ -1842,6 +1885,11 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/order-source-provisioning/v1",
+      "path": "services/bi-control/src/business-bi/order-source-provisioning.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/persistent-asset-revision-proposal/v1",
       "path": "contracts/assistant-foundation/v1/control-and-ui.schema.json"
     },
@@ -1919,6 +1967,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/progressive-discovery/v1",
       "path": "services/bi-control/src/bi-specialist/progressive-discovery.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v1",
+      "path": "services/bi-control/src/projection-generation.mjs"
     },
     {
       "identityClass": "schemaIdentity",

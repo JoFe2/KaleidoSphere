@@ -105,6 +105,13 @@ export const PAN_ORDER_SOURCE_DEPENDENCY = Object.freeze({
     // (PAN_ORDER_SOURCE_RELEASE below), so canonical qualification needs NEITHER the
     // sibling NOR any private history: the released source bytes are the identity.
     '../PANSPHAIRA-source/src/ks238/order-source-handoff.mjs',
+    // KS254 (#254): the crash-safe provisioned generation, resolved through the ONE active
+    // pointer flipped atomically by scripts/provision-ks238-order-source-dependency.mjs. When
+    // no provisioning run has activated a generation the pointer is absent, so this candidate
+    // simply does not exist and resolution continues to the pinned in-repository tree below.
+    // It is integrity-checked against the SAME module and runtime-closure pins, so an active
+    // pointer is a first-class identity and never a weaker fallback.
+    'dependencies/.ks254-generations/active/src/ks238/order-source-handoff.mjs',
     'dependencies/pansphaira/src/ks238/order-source-handoff.mjs',
   ]),
   scanBases: Object.freeze([
