@@ -60,6 +60,29 @@
         "tests/helpers/ks254-generation-runner.mjs"
       ],
       "note": "KS254 (JoFe2/KaleidoSphere#254) added the crash-safe generation surface: the shared generation store, the projection/receipt generation module, the order-source provisioning module, the interruption probe runner and the evidence runner. Each declares its own versioned schema identity, so the tracked tree now carries five schema identities the census had never registered. They are registered here additively, not by relaxing the census: no path is excluded from the scanner and no previously registered occurrence was removed or rewritten."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "070fdad531e216fef1a12820f77ffb34fb15a34d",
+      "predecessorOccurrences": 1067,
+      "predecessorInventorySha256": "c3a50cbc86b9b92a38074a5b33312200ff35799336c41c4a0ba87dd9602a4590",
+      "addedOccurrences": 3,
+      "removedOccurrences": 0,
+      "occurrences": 1070,
+      "addedIdentityClasses": [
+        "schemaIdentity"
+      ],
+      "origin": "KS254_HTTP_QUALIFICATION",
+      "addedValues": [
+        "chimpmaera.bi/analysis-receipt/v1",
+        "chimpmaera.bi/ks254-http-qualification-evidence/v1",
+        "chimpmaera.bi/readback/v1"
+      ],
+      "addedPaths": [
+        "scripts/run-ks254-http-qualification-evidence.mjs",
+        "tests/ks254-http-qualification.test.mjs"
+      ],
+      "note": "KS254 (JoFe2/KaleidoSphere#254) HTTP qualification leg added the loopback HTTP qualification suite (which asserts the exact analysis-receipt and readback schema identities answered over HTTP) and the evidence runner that carries its own versioned schema identity. Three schema identities therefore appear at two paths the census had never registered. They are registered here additively, not by relaxing the census: no path is excluded from the scanner, no previously registered occurrence was removed or rewritten, and no pinned artifact byte changed."
     }
   ],
   "occurrences": [
@@ -1241,6 +1264,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "tests/ks254-http-qualification.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
       "path": "tests/promotion-bundle-revision-safeint.test.mjs"
     },
     {
@@ -1660,6 +1688,11 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ks254-http-qualification-evidence/v1",
+      "path": "scripts/run-ks254-http-qualification-evidence.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/local-technical-catalog/v1",
       "path": "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md"
     },
@@ -1982,6 +2015,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/readback/v1",
       "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/ks254-http-qualification.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",

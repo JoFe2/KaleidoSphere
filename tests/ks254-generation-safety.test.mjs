@@ -30,9 +30,9 @@ import { DatabaseSync } from 'node:sqlite';
 import test from 'node:test';
 
 import {
-  GENERATION_MANIFEST_FILE, OWNED_STAGING_DIRECTORY, OWNED_STORE_DIRECTORY,
+  GENERATION_STORE_CONTRACT, GENERATION_MANIFEST_FILE, OWNED_STAGING_DIRECTORY, OWNED_STORE_DIRECTORY,
   activateGeneration, cleanupGenerationStore, inspectGenerationStore, readActiveGeneration,
-  recoverGenerationStore, stageGeneration,
+  recoverGenerationStore, stageGeneration, verifyGenerationManifest,
 } from '../services/bi-control/src/generation-store.mjs';
 import {
   cleanupProjectionStore, projectionMirrorStatus, readActiveProjectionGeneration,
@@ -618,4 +618,22 @@ test('KS254 AC03 a crashed generation build leaves no published generation and n
   assert.deepEqual(recovered.activated, []);
   assert.equal(recovered.discarded.length, 1);
   assert.equal(inspectGenerationStore(root).staging.length, 0);
+});
+
+// Independent delivery review: never follow a forged manifest traversal or a
+// symlinked entry to a file outside the owned generation directory.
+test('KS254 review: unsafe manifest paths and symlinked artifacts are refused', () => {
+  const root = tempRoot('ks254-untrusted-');
+  const digest = sha256(Buffer.from('outside\n'));
+  writeFileSync(path.join(root, 'outside.txt'), 'outside\n');
+  const base = { contract: GENERATION_STORE_CONTRACT, generationId: 'a'.repeat(64), label: 'synthetic' };
+  for (const rel of ['../outside.txt', '/outside.txt', 'child/../outside.txt', 'child//outside.txt']) {
+    const result = verifyGenerationManifest(root, { ...base, files: [{ path: rel, sha256: digest }] });
+    assert.equal(result.ok, false);
+    assert.equal(result.code, 'GENERATION_MANIFEST_INVALID');
+  }
+  symlinkSync(path.join(root, 'outside.txt'), path.join(root, 'linked.txt'));
+  const linked = verifyGenerationManifest(root, { ...base, files: [{ path: 'linked.txt', sha256: digest }] });
+  assert.equal(linked.ok, false);
+  assert.equal(linked.code, 'GENERATION_INCOMPLETE');
 });

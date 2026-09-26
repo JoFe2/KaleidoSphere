@@ -3,7 +3,6 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import sql from 'mssql';
 
 import { answerCatalogQuestion, searchCatalog } from './catalog.mjs';
 import {
@@ -23,7 +22,13 @@ const port = Number(process.env.PORT ?? 18089);
 const receiptDir = process.env.RECEIPT_DIR ?? '/var/lib/chimpmaera-bi/receipts';
 const projectionDb = process.env.PROJECTION_DB ?? '/var/lib/chimpmaera-bi/projection/analytics.db';
 const repositoryRoot = process.env.REPOSITORY_ROOT ?? '/app';
-const supersetFingerprintFixture = '/app/fixtures/superset-fingerprint-runtime-v1.json';
+// The shipped image copies the authored fixtures beside the query packs under /app, so the
+// fixture directory is derived from the same repository root by default; a checkout runs the
+// server from services/bi-control, where the identical fixtures already live. BI_FIXTURE_DIR
+// stays overridable so the real server can be started (and its HTTP routes qualified) from
+// either layout, while an unset variable keeps the deployed image behaviour unchanged.
+const fixtureDir = process.env.BI_FIXTURE_DIR ?? path.join(repositoryRoot, 'fixtures');
+const supersetFingerprintFixture = path.join(fixtureDir, 'superset-fingerprint-runtime-v1.json');
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 const engine = selectedEngine();
 
@@ -55,6 +60,10 @@ async function bodyJson(request) {
 }
 
 async function assertLivePrincipalReadOnly(profile, password) {
+  // The MSSQL driver is only needed by this live read-only-principal probe. It is resolved
+  // lazily here exactly as the db-analyzer workflow does, so the control server starts (and
+  // its fixture/synthetic HTTP routes are usable) in a checkout where no driver is installed.
+  const { default: sql } = await import('mssql');
   const pool = await sql.connect({
     server: profile.adapter.host, port: profile.adapter.port, user: profile.adapter.user, password,
     database: profile.scope.database, connectionTimeout: profile.policy.maxQueryTimeoutMs,
@@ -91,7 +100,7 @@ async function analyze() {
   try {
     if (sourceMode === 'fixture') {
       if (engine !== 'mssql') throw coded('DB_ANALYZE_SOURCE_MODE_DENIED');
-      profileFile = '/app/fixtures/mssql-profile-v1.json';
+      profileFile = path.join(fixtureDir, 'mssql-profile-v1.json');
       readOnlyEvidence = {database: 'CM_BI_FIXTURE', databaseUpdateability: 'FIXTURE', principalDmlDdlPermissions: false, readOnlyIntent: true};
     } else if (sourceMode === 'live') {
       const descriptor = selectProductDescriptor(engine);

@@ -28,10 +28,16 @@ const authoredFiles = [
   'tests/ks254-generation-safety.test.mjs',
   'tests/helpers/ks254-generation-runner.mjs',
   'scripts/run-ks254-generation-safety-evidence.mjs',
+  // The native HTTP qualification leg: its suite, its loopback server harness and the
+  // evidence runner that drives the real product server over actual routes.
+  'tests/ks254-http-qualification.test.mjs',
+  'tests/helpers/ks254-http-harness.mjs',
+  'scripts/run-ks254-http-qualification-evidence.mjs',
   // The registration and self-integrity bytes this migration touches.
   'tests/source-map.test.mjs',
   'tests/canonical-test-topology.test.mjs',
   'scripts/update-ks254-generation-source-map.mjs',
+  'docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json',
 ];
 
 const sourceMap = JSON.parse(await readFile(sourceMapPath, 'utf8'));

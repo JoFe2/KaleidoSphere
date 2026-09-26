@@ -25,7 +25,7 @@
 
 import { createHash, randomBytes } from 'node:crypto';
 import {
-  existsSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync,
+  existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync,
   statSync, symlinkSync, writeFileSync,
 } from 'node:fs';
 import path from 'node:path';
@@ -99,10 +99,23 @@ export function verifyGenerationManifest(directory, manifest) {
   if (!Array.isArray(manifest.files) || manifest.files.length === 0) {
     return { ok: false, code: 'GENERATION_MANIFEST_INVALID', mismatches: [{ path: GENERATION_MANIFEST_FILE, reason: 'files' }] };
   }
+  const seenPaths = new Set();
   for (const entry of manifest.files) {
-    const target = path.join(directory, entry.path);
-    if (!existsSync(target) || !statSync(target).isFile()) {
-      mismatches.push({ path: entry.path, reason: 'missing' });
+    const relative = entry?.path;
+    if (typeof relative !== 'string' || !/^[A-Za-z0-9._/-]+$/.test(relative)
+      || relative.split('/').some((part) => part === '' || part === '.' || part === '..')
+      || seenPaths.has(relative) || !/^[0-9a-f]{64}$/.test(entry?.sha256 ?? '')) {
+      return { ok: false, code: 'GENERATION_MANIFEST_INVALID', mismatches: [{ path: relative ?? null, reason: 'unsafe file declaration' }] };
+    }
+    seenPaths.add(relative);
+    let target = directory;
+    let safe = true;
+    for (const part of relative.split('/')) {
+      target = path.join(target, part);
+      if (!existsSync(target) || lstatSync(target).isSymbolicLink()) { safe = false; break; }
+    }
+    if (!safe || !lstatSync(target).isFile()) {
+      mismatches.push({ path: relative, reason: 'missing or unsafe file' });
       continue;
     }
     const actual = fileDigest(target);
