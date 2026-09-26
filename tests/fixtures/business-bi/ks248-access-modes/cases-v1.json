@@ -1,0 +1,87 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/access-mode-cases/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "casesVersion": "ks248-cases-v1",
+  "cases": [
+    {
+      "caseId": "case:full-net-delta",
+      "accessMode": "PERMITTED_FULL_DATA",
+      "question": "NET_REVENUE_DELTA",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": false,
+      "requiresCredits": true,
+      "requiresJoinResolution": false,
+      "blind": true
+    },
+    {
+      "caseId": "case:aggregate-net-delta",
+      "accessMode": "PERMITTED_AGGREGATES",
+      "question": "NET_REVENUE_DELTA",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": false,
+      "requiresCredits": true,
+      "requiresJoinResolution": false,
+      "blind": true
+    },
+    {
+      "caseId": "case:metadata-net-delta",
+      "accessMode": "METADATA_ONLY",
+      "question": "NET_REVENUE_DELTA",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": false,
+      "requiresCredits": true,
+      "requiresJoinResolution": false,
+      "blind": false
+    },
+    {
+      "caseId": "case:aggregate-order-status",
+      "accessMode": "PERMITTED_AGGREGATES",
+      "question": "ORDER_STATUS_DETAIL",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": false,
+      "requiresCredits": false,
+      "requiresJoinResolution": false,
+      "blind": true
+    },
+    {
+      "caseId": "case:full-fx-required",
+      "accessMode": "PERMITTED_FULL_DATA",
+      "question": "NET_REVENUE_DELTA",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": true,
+      "requiresCredits": false,
+      "requiresJoinResolution": false,
+      "blind": false
+    },
+    {
+      "caseId": "case:full-boundary-unspecified",
+      "accessMode": "PERMITTED_FULL_DATA",
+      "question": "NET_REVENUE_DELTA",
+      "boundaryRule": "UNSPECIFIED",
+      "requiresFxConversion": false,
+      "requiresCredits": false,
+      "requiresJoinResolution": false,
+      "blind": false
+    },
+    {
+      "caseId": "case:full-segment-net-totals",
+      "accessMode": "PERMITTED_FULL_DATA",
+      "question": "SEGMENT_NET_TOTALS",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": false,
+      "requiresCredits": false,
+      "requiresJoinResolution": false,
+      "blind": true
+    },
+    {
+      "caseId": "case:ambiguous-join-net-delta",
+      "accessMode": "PERMITTED_FULL_DATA",
+      "question": "NET_REVENUE_DELTA",
+      "boundaryRule": "INCLUDE_BOUNDARY_DATES",
+      "requiresFxConversion": false,
+      "requiresCredits": false,
+      "requiresJoinResolution": true,
+      "blind": true
+    }
+  ]
+}

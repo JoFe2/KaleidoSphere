@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/access-mode-holdout/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "evaluationId": "ks248-blind-holdout-denied-credits-v1",
+  "blind": true,
+  "expectations": [
+    {
+      "caseId": "case:full-net-delta",
+      "expectedOutcome": "REFUSED_DENIED_CREDITS",
+      "expectedNetRevenue": null
+    },
+    {
+      "caseId": "case:aggregate-net-delta",
+      "expectedOutcome": "REFUSED_DENIED_CREDITS",
+      "expectedNetRevenue": null
+    },
+    {
+      "caseId": "case:aggregate-order-status",
+      "expectedOutcome": "ABSTAINED",
+      "expectedNetRevenue": null
+    },
+    {
+      "caseId": "case:full-segment-net-totals",
+      "expectedOutcome": "ACCEPTED",
+      "expectedNetRevenue": {
+        "comparisonNetMinorUnits": 50000,
+        "currentNetMinorUnits": 72000,
+        "deltaNetMinorUnits": 22000
+      }
+    },
+    {
+      "caseId": "case:ambiguous-join-net-delta",
+      "expectedOutcome": "REFUSED_AMBIGUOUS_JOIN",
+      "expectedNetRevenue": null
+    }
+  ],
+  "digest": "65a617b389f131fe22b318a57dbb14912ed43187bd0e4bf824e2ac4f20a361a0"
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/project-lifecycle-transfer-status-declaration/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "projectId": "project:ks256-local-status-v1",
+  "projectLabel": "KS256 local synthetic lifecycle and transfer status",
+  "denominatorUnit": "declared-work-item",
+  "ownedScope": [
+    {
+      "scopeId": "scope:release-archive",
+      "label": "Declared source archive bytes",
+      "ownerRole": "SOURCE_OWNER",
+      "requiredCount": 3
+    },
+    {
+      "scopeId": "scope:transfer-target",
+      "label": "Declared transfer target generation",
+      "ownerRole": "PLATFORM_OPERATOR",
+      "requiredCount": 2
+    },
+    {
+      "scopeId": "scope:verified-readback",
+      "label": "Released verified readback facet",
+      "ownerRole": "INDEPENDENT_REVIEWER",
+      "requiredCount": 1
+    },
+    {
+      "scopeId": "scope:denied-partner-feed",
+      "label": "Partner feed visibility",
+      "ownerRole": "SOURCE_OWNER",
+      "requiredCount": 2
+    },
+    {
+      "scopeId": "scope:absent-legacy-snapshot",
+      "label": "Legacy snapshot presence",
+      "ownerRole": "RELEASE_OWNER",
+      "requiredCount": 1
+    },
+    {
+      "scopeId": "scope:quarantined-legacy",
+      "label": "Quarantined legacy evidence",
+      "ownerRole": "DELIVERY_OWNER",
+      "requiredCount": 4
+    }
+  ]
+}

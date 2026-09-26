@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/metric-compiler-contract-pin/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "contractPath": "contracts/business-bi/v1/net-revenue.metric.json",
+  "pinnedContractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+  "dialect": "kaleidosphere-metric-ir/v1",
+  "evidenceRevision": "ks249-compiler-observation-v1"
+}
