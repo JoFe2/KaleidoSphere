@@ -172,6 +172,31 @@ test('AC01 negatives: free SQL, alternate scope, unbounded period, grouping, wri
   }), assertCode('BUSINESS_BI_COMPILE_INPUT_DENIED'));
 });
 
+test('KS263 request-admission regression: exact closed request preserves permitted counterparts and typed denials', () => {
+  const categories = [
+    ['SQL expression field', (request) => { request.source.sql = 'SELECT amount_minor_units FROM synthetic_bi.orders'; }, 'BUSINESS_BI_OPERATION_DENIED'],
+    ['SQL predicate expression', (request) => { request.aggregate.where = '1=1'; }, 'BUSINESS_BI_OPERATION_DENIED'],
+    ['mutation field', (request) => { request.controls.mutationAuthority = true; }, 'BUSINESS_BI_OPERATION_DENIED'],
+    ['mutation operation', (request) => { request.source.update = { amount_minor_units: 1 }; }, 'BUSINESS_BI_OPERATION_DENIED'],
+    ['unsupported request interface version', (request) => { request.schemaVersion = 'kaleidosphere.business-bi/net-revenue-operation-request/v2'; }, 'BUSINESS_BI_OPERATION_DENIED'],
+    ['unsupported metric profile version', (request) => { request.metric.schemaVersion = 'kaleidosphere.business-bi/net-revenue-metric/v2'; }, 'BUSINESS_BI_OPERATION_DENIED'],
+    ['unexpected request field', (request) => { request.aggregate.extra = true; }, 'BUSINESS_BI_OPERATION_DENIED'],
+  ];
+  for (const [name, mutate, code] of categories) {
+    const candidate = mutatedRequest(mutate);
+    assert.throws(() => compile(candidate), assertCode(code), name);
+    // Each rejected category retains the independently admitted counterpart.
+    assert.deepStrictEqual(compile(createNetRevenueOperationRequest()), plan, `${name}: permitted counterpart`);
+  }
+  assert.throws(() => compileNetRevenuePlan({
+    request: createNetRevenueOperationRequest(), metricContractBytes, oracleBytes,
+    unexpected: true,
+  }), assertCode('BUSINESS_BI_COMPILE_INPUT_DENIED'));
+  assert.deepStrictEqual(compile(createNetRevenueOperationRequest()), plan);
+  // No string blocklist: the actual compiler compares a closed typed request,
+  // and validates independently bound bytes only after that admission check.
+});
+
 test('AC01 negatives: contract, oracle, plan, and holdout identity substitutions fail closed', async () => {
   const changedContract = Buffer.from(metricContractBytes);
   changedContract[changedContract.length - 2] ^= 1;
