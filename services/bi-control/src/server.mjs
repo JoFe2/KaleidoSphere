@@ -1,11 +1,14 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import sql from 'mssql';
 
-import { answerCatalogQuestion, ingestCatalogReceipt, searchCatalog } from './catalog.mjs';
+import { answerCatalogQuestion, searchCatalog } from './catalog.mjs';
+import {
+  activateProjectionGeneration, projectionMirrorStatus, readActiveProjectionGeneration,
+  stageProjectionGeneration,
+} from './projection-generation.mjs';
 import { handleDiscovery } from './discovery.mjs';
 import { RealBiSpecialist } from './bi-specialist/specialist-agent.mjs';
 import { selectPlanningPolicy } from './bi-specialist/planning-policy.mjs';
@@ -19,7 +22,13 @@ const port = Number(process.env.PORT ?? 18089);
 const receiptDir = process.env.RECEIPT_DIR ?? '/var/lib/chimpmaera-bi/receipts';
 const projectionDb = process.env.PROJECTION_DB ?? '/var/lib/chimpmaera-bi/projection/analytics.db';
 const repositoryRoot = process.env.REPOSITORY_ROOT ?? '/app';
-const supersetFingerprintFixture = '/app/fixtures/superset-fingerprint-runtime-v1.json';
+// The shipped image copies the authored fixtures beside the query packs under /app, so the
+// fixture directory is derived from the same repository root by default; a checkout runs the
+// server from services/bi-control, where the identical fixtures already live. BI_FIXTURE_DIR
+// stays overridable so the real server can be started (and its HTTP routes qualified) from
+// either layout, while an unset variable keeps the deployed image behaviour unchanged.
+const fixtureDir = process.env.BI_FIXTURE_DIR ?? path.join(repositoryRoot, 'fixtures');
+const supersetFingerprintFixture = path.join(fixtureDir, 'superset-fingerprint-runtime-v1.json');
 const sha256 = (value) => createHash('sha256').update(value).digest('hex');
 const engine = selectedEngine();
 
@@ -51,6 +60,10 @@ async function bodyJson(request) {
 }
 
 async function assertLivePrincipalReadOnly(profile, password) {
+  // The MSSQL driver is only needed by this live read-only-principal probe. It is resolved
+  // lazily here exactly as the db-analyzer workflow does, so the control server starts (and
+  // its fixture/synthetic HTTP routes are usable) in a checkout where no driver is installed.
+  const { default: sql } = await import('mssql');
   const pool = await sql.connect({
     server: profile.adapter.host, port: profile.adapter.port, user: profile.adapter.user, password,
     database: profile.scope.database, connectionTimeout: profile.policy.maxQueryTimeoutMs,
@@ -79,47 +92,6 @@ function extractRows(evidence, queryId) {
   return evidence.extracts.find((entry) => entry.queryId === queryId)?.rows ?? [];
 }
 
-async function writeProjection(receipt) {
-  await mkdir(path.dirname(projectionDb), {recursive: true});
-  const temporary = `${projectionDb}.${process.pid}.tmp`;
-  const db = new DatabaseSync(temporary);
-  try {
-    db.exec(`PRAGMA journal_mode=DELETE; PRAGMA synchronous=FULL;
-      CREATE TABLE bi_analysis_summary (
-        receipt_id TEXT PRIMARY KEY, source_engine TEXT NOT NULL, source_database TEXT NOT NULL, source_mode TEXT NOT NULL,
-        runtime_validation TEXT NOT NULL, status TEXT NOT NULL, analyzed_at TEXT NOT NULL,
-        relation_count INTEGER NOT NULL, column_count INTEGER NOT NULL,
-        constraint_count INTEGER NOT NULL, index_count INTEGER NOT NULL,
-        snapshot_sha256 TEXT NOT NULL UNIQUE, source_read_only INTEGER NOT NULL CHECK(source_read_only=1)
-      );
-      CREATE TABLE bi_analysis_detail (
-        row_id TEXT PRIMARY KEY, receipt_id TEXT NOT NULL, schema_name TEXT NOT NULL,
-        relation_name TEXT NOT NULL, relation_kind TEXT NOT NULL, column_name TEXT NOT NULL,
-        data_type TEXT NOT NULL, ordinal_position INTEGER NOT NULL, is_nullable INTEGER NOT NULL,
-        FOREIGN KEY(receipt_id) REFERENCES bi_analysis_summary(receipt_id)
-      );`);
-    const relations = extractRows(receipt.analysis, `${receipt.engine}.structure.relations`);
-    const columns = extractRows(receipt.analysis, `${receipt.engine}.structure.columns`);
-    const constraints = extractRows(receipt.analysis, `${receipt.engine}.structure.constraints`);
-    const indexes = extractRows(receipt.analysis, `${receipt.engine}.structure.indexes`);
-    db.prepare(`INSERT INTO bi_analysis_summary VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`)
-      .run(receipt.receiptId, receipt.engine, receipt.scope.database, receipt.sourceMode, receipt.analysis.runtimeValidation,
-        receipt.status, receipt.analyzedAt, relations.length, columns.length, constraints.length, indexes.length,
-        receipt.analysis.snapshotSha256, 1);
-    const relationKinds = new Map(relations.map((row) => [`${row.schema_name}.${row.relation_name}`, row.relation_kind]));
-    const statement = db.prepare(`INSERT INTO bi_analysis_detail VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
-    for (const column of columns) {
-      const rowId = sha256(`${receipt.receiptId}:${column.schema_name}:${column.relation_name}:${column.column_name}`);
-      statement.run(rowId, receipt.receiptId, column.schema_name, column.relation_name,
-        relationKinds.get(`${column.schema_name}.${column.relation_name}`) ?? column.relation_kind ?? 'UNKNOWN',
-        column.column_name, column.data_type, Number(column.ordinal_position), column.is_nullable ? 1 : 0);
-    }
-    ingestCatalogReceipt(db, receipt);
-  } finally { db.close(); }
-  await rename(temporary, projectionDb);
-  return sha256(await readFile(projectionDb));
-}
-
 async function analyze() {
   await mkdir(receiptDir, {recursive: true});
   const sourceMode = process.env.BI_SOURCE_MODE ?? 'fixture';
@@ -128,7 +100,7 @@ async function analyze() {
   try {
     if (sourceMode === 'fixture') {
       if (engine !== 'mssql') throw coded('DB_ANALYZE_SOURCE_MODE_DENIED');
-      profileFile = '/app/fixtures/mssql-profile-v1.json';
+      profileFile = path.join(fixtureDir, 'mssql-profile-v1.json');
       readOnlyEvidence = {database: 'CM_BI_FIXTURE', databaseUpdateability: 'FIXTURE', principalDmlDdlPermissions: false, readOnlyIntent: true};
     } else if (sourceMode === 'live') {
       const descriptor = selectProductDescriptor(engine);
@@ -149,12 +121,9 @@ async function analyze() {
       sourceMode, engine, scope: analysis.profile.scope,
       safety: {queryPackSelectOnly: true, rowSamples: false, ...readOnlyEvidence}, analysis,
     };
-    const projectionSha256 = await writeProjection(receipt);
-    receipt.projection = {path: 'analytics.db', sha256: projectionSha256, tables: ['bi_analysis_summary', 'bi_analysis_detail']};
-    const rendered = `${JSON.stringify(receipt, null, 2)}\n`;
-    await writeFile(path.join(receiptDir, `${receiptId}.json`), rendered, {mode: 0o600});
-    await writeFile(path.join(receiptDir, 'latest.json'), rendered, {mode: 0o600});
-    return receipt;
+    const staged = stageProjectionGeneration({receiptDir, receipt});
+    const activated = activateProjectionGeneration({receiptDir, staged, projectionDb});
+    return activated.receipt;
   } finally {
     delete process.env.CM_MSSQL_PASSWORD;
     delete process.env.CM_ORACLE_PASSWORD;
@@ -179,11 +148,19 @@ async function liveReadOnlyEvidence(descriptor, profile, password) {
 }
 
 async function latestReceipt() {
-  return JSON.parse(await readFile(path.join(receiptDir, 'latest.json'), 'utf8').catch(() => { throw coded('ANALYSIS_RECEIPT_MISSING'); }));
+  // The receipt and its projection are ONE generation: resolve the single active pointer and
+  // re-verify the pair, rather than reading a separately written pointer file.
+  const active = readActiveProjectionGeneration({receiptDir});
+  if (!active.ok) throw coded(active.code === 'GENERATION_POINTER_ABSENT' ? 'ANALYSIS_RECEIPT_MISSING' : active.code);
+  return active.receipt;
 }
 
 async function publish() {
   const receipt = await latestReceipt();
+  // The digest-bound materializer reads the fixed projection path. Publishing a receipt whose
+  // declared projection digest does not match that path would either bind mixed evidence or
+  // fail closed inside Superset; refuse it here instead, before any request is sent.
+  if (!projectionMirrorStatus(projectionDb, receipt.projection.sha256).inSync) throw coded('PROJECTION_MIRROR_NOT_ACTIVE');
   const token = await secret('CONTROL_TOKEN_FILE', 'CONTROL_TOKEN_MISSING');
   const response = await fetch(process.env.SUPERSET_MATERIALIZER_URL, {
     method: 'POST', headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
@@ -222,11 +199,14 @@ async function supersetPlanningGate(body) {
 }
 
 async function readback() {
-  const [receipt, publication] = await Promise.all([
-    latestReceipt(),
+  const [active, publication] = await Promise.all([
+    Promise.resolve(readActiveProjectionGeneration({receiptDir})),
     readFile(path.join(receiptDir, 'latest-publish.json'), 'utf8').then(JSON.parse).catch(() => null),
   ]);
-  const db = new DatabaseSync(projectionDb, {readOnly: true});
+  if (!active.ok) throw coded(active.code === 'GENERATION_POINTER_ABSENT' ? 'ANALYSIS_RECEIPT_MISSING' : active.code);
+  const receipt = active.receipt;
+  const projectionMirror = projectionMirrorStatus(projectionDb, receipt.projection.sha256);
+  const db = new DatabaseSync(active.projectionPath, {readOnly: true});
   try {
     const summary = db.prepare('SELECT * FROM bi_analysis_summary WHERE receipt_id=?').get(receipt.receiptId);
     const detailCount = db.prepare('SELECT COUNT(*) AS count FROM bi_analysis_detail WHERE receipt_id=?').get(receipt.receiptId).count;
@@ -240,7 +220,8 @@ async function readback() {
     };
     if (!summary || summary.snapshot_sha256 !== receipt.analysis.snapshotSha256) throw coded('PROJECTION_READBACK_MISMATCH');
     if (!catalogSnapshot || catalogSnapshot.receipt_id !== receipt.receiptId) throw coded('CATALOG_READBACK_MISMATCH');
-    return {schemaVersion: 'chimpmaera.bi/readback/v1', receiptId: receipt.receiptId, summary, detailCount, catalogSnapshot, technicalOverview, publication};
+    return {schemaVersion: 'chimpmaera.bi/readback/v1', receiptId: receipt.receiptId, generationId: active.generationId,
+      summary, detailCount, catalogSnapshot, technicalOverview, publication, projectionMirror};
   } finally { db.close(); }
 }
 
@@ -333,10 +314,12 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'GET' && request.url === '/healthz') return send(response, 200, {status: 'ok'});
     if (!authorized(request, token)) throw coded('CONTROL_AUTH_DENIED');
     if (request.method === 'GET' && request.url === '/v1/status') {
-      const latest = await readFile(path.join(receiptDir, 'latest.json'), 'utf8').then(JSON.parse).catch(() => null);
+      const active = readActiveProjectionGeneration({receiptDir, verifyProjection: false});
+      const latest = active.ok ? active.receipt : null;
       return send(response, 200, {status: 'READY', engine, sourceMode: process.env.BI_SOURCE_MODE ?? 'fixture',
         latestReceiptId: latest?.receiptId ?? null, scope: latest?.scope ?? null,
-        catalogReady: latest?.analysis?.snapshotSha256 ? true : false});
+        catalogReady: latest?.analysis?.snapshotSha256 ? true : false,
+        generation: {state: active.state, generationId: active.generationId ?? null, code: active.code}});
     }
     if (request.method !== 'POST') throw coded('CONTROL_ROUTE_DENIED');
     const body = await bodyJson(request);
