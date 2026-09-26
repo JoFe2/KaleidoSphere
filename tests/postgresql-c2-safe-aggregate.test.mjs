@@ -964,15 +964,19 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   // descend from integration and remain an ancestor of HEAD; every bound path and
   // package.json must still be byte-identical from integration through current HEAD.
   assertC2CorrectionScope();
-  // Preserve the historical full-history correction exactly. The current workflow
-  // adds pinned PGlite connected, guided and result-lineage tests without relaxing retained gates.
+  // Preserve the historical full-history correction exactly: the workflow bytes delivered at
+  // the recorded C2 correction endpoint stay at their frozen digest. The CURRENT workflow is a
+  // later, independently bound generation: it consumes the committed pinned provisioner
+  // (scripts/provision-ks255-journey-runtime.mjs) and executes every required SQL suite over the
+  // provisioned closure, without relaxing any retained gate. Only the current hash binding moves;
+  // the historical original above is immutable.
   assert.equal(
     fileSha256(Buffer.from(`${git('show', `${C2_CORRECTION_COMMIT}:.github/workflows/ci.yml`)}\n`)),
     '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
-    'a91ab312484e8475ff05ee71d2d8c02455b540244bcdb27222af336e84083a7f',
+    '80f817587610957bba849e036e81f95a8a7901d25c6fa6394ac2e706251d48cc',
   );
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
   assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);

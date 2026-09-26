@@ -1,0 +1,9 @@
+{
+  "name": "ks-journey-runtime",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Repository-owned pinned SQL runtime dependency root for the net-revenue journey suites.",
+  "dependencies": {
+    "@electric-sql/pglite": "0.3.14"
+  }
+}
