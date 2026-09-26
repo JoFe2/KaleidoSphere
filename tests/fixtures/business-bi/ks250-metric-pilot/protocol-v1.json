@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/read-only-metric-pilot-protocol/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "protocolId": "protocol:ks250-read-only-metric-pilot-v1",
+  "metric": {
+    "metricId": "metric:bi-ks-01-net-revenue",
+    "contractPath": "contracts/business-bi/v1/net-revenue.metric.json",
+    "contractSha256": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70"
+  },
+  "dataMinimization": {
+    "allowedFieldKinds": [
+      "METRIC_AGGREGATE",
+      "PERIOD",
+      "SEGMENT",
+      "ORDER_COUNT"
+    ],
+    "forbiddenFieldKinds": [
+      "PERSON",
+      "CONTACT",
+      "CREDENTIAL",
+      "FREE_TEXT"
+    ],
+    "rowLevelPermitted": false
+  },
+  "credentialPolicy": {
+    "credentialFree": true,
+    "allowedAuthentication": [
+      "NONE"
+    ]
+  },
+  "digest": "8a88fa8067effe9367e98e9fbbad99f0218419af3cc39342d426c8616bc9c04a"
+}

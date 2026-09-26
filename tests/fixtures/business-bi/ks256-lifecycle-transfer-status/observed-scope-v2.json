@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/project-lifecycle-transfer-status-observed-scope/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "observedRevision": "ks256-status-observation-v2",
+  "scope": [
+    {
+      "scopeId": "scope:release-archive",
+      "state": "AVAILABLE",
+      "completedCount": 3
+    },
+    {
+      "scopeId": "scope:transfer-target",
+      "state": "AVAILABLE",
+      "completedCount": 2
+    },
+    {
+      "scopeId": "scope:verified-readback",
+      "state": "AVAILABLE",
+      "completedCount": 1
+    },
+    {
+      "scopeId": "scope:denied-partner-feed",
+      "state": "AVAILABLE",
+      "completedCount": 2
+    },
+    {
+      "scopeId": "scope:absent-legacy-snapshot",
+      "state": "AVAILABLE",
+      "completedCount": 1
+    },
+    {
+      "scopeId": "scope:quarantined-legacy",
+      "state": "AVAILABLE",
+      "completedCount": 4
+    }
+  ],
+  "evidenceSha256": "95a9ed38f3fadbad6411d2ca5867d5e6d2987020fc25902d2a5eed4e615da427"
+}

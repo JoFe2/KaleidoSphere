@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/read-only-metric-pilot-explanations/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "explanations": []
+}

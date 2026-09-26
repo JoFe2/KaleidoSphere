@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/read-only-metric-pilot-contexts/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "contexts": [
+    {
+      "contextId": "context:first-read-only-source",
+      "label": "First declared read-only context (no permission obtained)",
+      "permission": {
+        "state": "MISSING",
+        "permissionId": null,
+        "grantedAt": null,
+        "scopeNote": null
+      },
+      "sourceIdentity": {
+        "sourceLabel": "synthetic-ks250-pilot-source-first",
+        "sourceBytesSha256": "09825a6fb604ff4b9b45d60b5c2e54f56cd8459a76450fe0a92dd50c5aeddf0c",
+        "retained": true
+      }
+    },
+    {
+      "contextId": "context:second-read-only-source",
+      "label": "Second declared read-only context (no permission obtained)",
+      "permission": {
+        "state": "MISSING",
+        "permissionId": null,
+        "grantedAt": null,
+        "scopeNote": null
+      },
+      "sourceIdentity": {
+        "sourceLabel": "synthetic-ks250-pilot-source-second",
+        "sourceBytesSha256": "09825a6fb604ff4b9b45d60b5c2e54f56cd8459a76450fe0a92dd50c5aeddf0c",
+        "retained": true
+      }
+    }
+  ]
+}
