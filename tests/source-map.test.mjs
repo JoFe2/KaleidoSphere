@@ -48,6 +48,9 @@ import './ks255-journey-runtime-binding.test.mjs';
 // KS254 crash-safe generation + native HTTP proof retain the byte-bound canonical root.
 import './ks254-generation-safety.test.mjs';
 import './ks254-http-qualification.test.mjs';
+// KS254 (#254) remainder: the staged install/recovery surface of the owned Superset runtime
+// (services/superset/runtime/init.sh) rides the same imported-parent route.
+import './ks254-superset-init-recovery.test.mjs';
 // KS256 (JoFe2/KaleidoSphere#256) project lifecycle and transfer status: a READ-ONLY status
 // projection over the released readback/attestation surface and authored, bound local
 // synthetic declarations.  It follows the same imported-suite route so the byte-bound

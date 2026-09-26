@@ -3,8 +3,13 @@ from pathlib import Path
 
 from superset.app import create_app
 
+# KS254 (JoFe2/KaleidoSphere#254): the secret root is the container's read-only secret mount
+# by default. CHIMPMAERA_BI_SECRET_ROOT relocates it for the isolated install harness only;
+# with no override set the production path is byte-for-byte /run/secrets as before.
+SECRET_ROOT = Path(os.environ.get("CHIMPMAERA_BI_SECRET_ROOT") or "/run/secrets")
+
 def secret(name):
-    value = Path(f"/run/secrets/{name}").read_text(encoding="utf-8").strip()
+    value = (SECRET_ROOT / name).read_text(encoding="utf-8").strip()
     if not value:
         raise RuntimeError(f"{name.upper()}_MISSING")
     return value
