@@ -424,6 +424,28 @@ test('KS254 AC01 fail-closed: with the pinned prerequisite unavailable the REAL 
   }
 });
 
+// ---------------------------------------------------------------- native tamper refusal (independent acceptance)
+
+test('KS254 AC02: native verify refuses a tampered active receipt without trusting its live working copy',
+  { skip: NATIVE_SKIP }, () => {
+    const root = tempRoot();
+    const secrets = syntheticSecretRoot();
+    const installed = runInit('install', { root, secretRoot: secrets });
+    assert.equal(installed.status, 0, installed.stderr);
+    const before = readState(root);
+    assert.equal(before.active.ok, true);
+    const receiptPath = path.join(before.active.generationPath, INSTALL_RECEIPT_FILE);
+    writeFileSync(receiptPath, `${readFileSync(receiptPath, 'utf8')}tampered\n`);
+    const refused = runInit('verify', { root, secretRoot: secrets });
+    assert.equal(refused.status, 1, refused.stdout);
+    assert.match(refused.stderr, /INSTALL-DENIED GENERATION_INCOMPLETE/);
+    assert.equal(refused.stdout, '', 'no success report on incomplete evidence');
+    const after = readState(root);
+    assert.equal(after.active.ok, false);
+    assert.equal(after.active.state, 'INCOMPLETE');
+    assert.equal(after.live.ok, true, 'verification never mutates the still-complete live copy');
+  });
+
 // ---------------------------------------------------------------- RED arm: pre-fix boundary
 
 // The pre-fix one-shot entry point, replayed: it runs the three provisioning commands straight
