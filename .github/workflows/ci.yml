@@ -16,7 +16,7 @@ jobs:
   test:
     name: test
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       # Full history is required by the retained integration-provenance tests
       # (e.g. tests/postgresql-c2-safe-aggregate.test.mjs), which resolve the
@@ -29,14 +29,42 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+      # The released SQL suites resolve the injected PostgreSQL engine from the repository-owned
+      # `.ks-journey-runtime` root or from their declared `/workspace/.ks-journey-runtime`
+      # fallback, so the declared fallback parent is created before provisioning.
+      - name: Prepare the declared runtime roots
+        run: |
+          sudo mkdir -p /workspace
+          sudo chown "$(id -u):$(id -g)" /workspace
+      # Provision and verify the minimal runtime dependency closure from the committed binding
+      # (dependencies/ks-journey-runtime/package-lock.json) and the pinned artifact manifest
+      # (contracts/dependencies/ks255-journey-runtime-v1.json). KS255_PINNED_SPECIFIER states the
+      # specifier this workflow provisions; the provisioner refuses a declaration that disagrees
+      # with the pin (WORKFLOW_PIN_DISAGREES_WITH_MANIFEST), and --require-resolved /
+      # --require-verified refuse an unresolved or unverified required suite.
+      - name: Provision the pinned journey runtime (committed locked closure)
+        env:
+          KS255_PINNED_SPECIFIER: '@electric-sql/pglite@0.3.14'
+        run: |
+          node scripts/provision-ks255-journey-runtime.mjs --install
+          node scripts/provision-ks255-journey-runtime.mjs --verify
+          node scripts/provision-ks255-journey-runtime.mjs --measure --require-resolved --require-verified
       - run: npm run dist:agent-skill
       - run: npm test
-      - name: Provision pinned embedded PostgreSQL for connected journey
-        run: npm install --prefix "$RUNNER_TEMP/ks-connected-runtime" --ignore-scripts --no-audit --no-fund @electric-sql/pglite@0.3.14
-      - name: Execute connected SQL paths and exact CLI negative
+      # Every suite whose real-SQL legs require the pinned closure is executed explicitly over
+      # the provisioned roots, including net-revenue-journey and net-revenue-ledger-mapping,
+      # which read only the declared `/workspace/.ks-journey-runtime` fallback.
+      - name: Execute every required SQL suite over the pinned closure
         run: |
-          export PGLITE_CORE_PATH="$RUNNER_TEMP/ks-connected-runtime/node_modules/@electric-sql/pglite/dist/index.js"
-          node --test tests/net-revenue-connected-journey.test.mjs tests/net-revenue-guided-journey.test.mjs tests/result-lineage-readonly.test.mjs
+          node --test tests/net-revenue-connected-journey.test.mjs \
+                    tests/net-revenue-f4-composition.test.mjs \
+                    tests/net-revenue-guided-journey.test.mjs \
+                    tests/net-revenue-journey.test.mjs \
+                    tests/net-revenue-ledger-mapping.test.mjs \
+                    tests/result-lineage-readonly.test.mjs
+      - name: Execute the connected SQL path and the exact CLI negative
+        run: |
+          export PGLITE_CORE_PATH="$PWD/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js"
           node scripts/run-connected-net-revenue-journey.mjs --pglite "$PGLITE_CORE_PATH" --negative > "$RUNNER_TEMP/ks-connected-real-cli.json"
       - name: Validate Docker Compose
         run: docker compose --env-file .env.example --file compose.yaml config --quiet

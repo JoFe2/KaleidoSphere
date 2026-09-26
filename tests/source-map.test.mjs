@@ -43,6 +43,8 @@ import './unfamiliar-schema-metric-journey.test.mjs';
 // independently maintained expectation).  It follows the same imported-suite route so the
 // byte-bound canonical command and the exactly-one-route-per-suite invariant are preserved.
 import './result-lineage-readonly.test.mjs';
+// KS255 pinned runtime binding: preserve the canonical root and import once.
+import './ks255-journey-runtime-binding.test.mjs';
 // KS256 (JoFe2/KaleidoSphere#256) project lifecycle and transfer status: a READ-ONLY status
 // projection over the released readback/attestation surface and authored, bound local
 // synthetic declarations.  It follows the same imported-suite route so the byte-bound
@@ -385,4 +387,47 @@ test('the KS149 live-matrix evidence family is content-addressed and the histori
   const frozen = JSON.parse(await readFile(postgresqlC1Family.evidence, 'utf8'));
   assert.equal(frozen.realDisprovablePostgresql.state, 'BLOCKED_EXTERNAL');
   assert.equal(frozen.certificateSha256, '9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b');
+});
+
+// KS255 (KS-OPS-03) — the journey-runtime binding family. The pinned dependency declaration,
+// its real lockfile, the artifact manifest and the provisioner are content-addressed, and the
+// focused suite is registered exactly once through the imported-parent route above (never as a
+// second direct canonical root), so the current test root reaches it without a package.json
+// change and the frozen released C1 manifest binding is preserved.
+const ks255JourneyRuntimeFamily = Object.freeze([
+  'dependencies/ks-journey-runtime/package.json',
+  'dependencies/ks-journey-runtime/package-lock.json',
+  'contracts/dependencies/ks255-journey-runtime-v1.json',
+  'scripts/provision-ks255-journey-runtime.mjs',
+  'scripts/update-ks255-journey-runtime-source-map.mjs',
+  'scripts/update-ks255-correction-source-map.mjs',
+  'tests/ks255-journey-runtime-binding.test.mjs',
+  'docs/evidence/ks255-journey-runtime-binding-v1.md',
+]);
+const ks255Suite = Object.freeze('tests/ks255-journey-runtime-binding.test.mjs');
+const ks255Parent = Object.freeze('tests/source-map.test.mjs');
+
+test('the KS255 journey-runtime binding family is content-addressed and its suite is registered once through the imported parent', async () => {
+  const [pkg, source, sourceMap] = await Promise.all([
+    readFile('package.json', 'utf8').then(JSON.parse),
+    readFile(ks255Parent, 'utf8'),
+    readFile('SOURCE-MAP.json', 'utf8').then(JSON.parse),
+  ]);
+  for (const file of ks255JourneyRuntimeFamily) {
+    assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
+    assert.equal(sha256(await readFile(file)), sourceMap.files[file], file);
+  }
+  // Registered exactly once through the imported parent, and never as a direct canonical root.
+  assert.equal((source.match(/import '\.\/ks255-journey-runtime-binding\.test\.mjs';/g) ?? []).length, 1);
+  const canonicalTests = pkg.scripts.test.split(/\s+/).slice(2);
+  assert.equal(canonicalTests.includes(ks255Suite), false);
+  assert.equal(canonicalTests.filter((candidate) => candidate === ks255Suite).length, 0);
+  // The pinned binding is real: a resolved tarball with a sha512 integrity and a full closure.
+  const lock = JSON.parse(await readFile('dependencies/ks-journey-runtime/package-lock.json', 'utf8'));
+  const manifest = JSON.parse(await readFile('contracts/dependencies/ks255-journey-runtime-v1.json', 'utf8'));
+  const lockEntry = lock.packages[`node_modules/${manifest.dependency}`];
+  assert.equal(lockEntry.version, manifest.version);
+  assert.equal(lockEntry.integrity, manifest.artifact.integrity);
+  assert.match(lockEntry.integrity, /^sha512-/);
+  assert.equal(manifest.files.length, manifest.closureFileCount);
 });

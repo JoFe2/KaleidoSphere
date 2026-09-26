@@ -17,11 +17,26 @@
 // they are SKIPPED with an explicit "runtime unavailable" reason — a skip is never reported
 // as, nor counted as, a PASS. The binding, measurement, reachability, identity and
 // fail-closed rejection legs always run and need no runtime.
+//
+// Correction scope (KS255 targeted correction). Three defects were corrected here and in the
+// provisioner, all through the real entry points:
+//   (a) measurement ignored the environment-selected override (`PGLITE_CORE_PATH`), so an
+//       installed runtime outside both literal roots reported every required suite unresolved
+//       even though the suites really executed against it. Measurement now models each suite's
+//       OWN ordered candidate list, crediting the override only to the suites whose executable
+//       source actually reads it, so the two suites that only read a hardcoded declared root
+//       keep their precise honest UNRESOLVED result.
+//   (b) readability and verified closure are now distinct: RESOLVED means the suite would load
+//       the byte, VERIFIED additionally requires the pinned entry digest AND the pinned closure.
+//   (c) the default verifier used to demand every DECLARED root, so an explicitly installed
+//       repository runtime failed on the absent `/workspace` fallback. Verification is now
+//       qualified to the roots an invocation actually intends, while an intended root that is
+//       genuinely absent is still refused explicitly (RUNTIME_ROOT_MISSING).
 
 import assert from 'node:assert/strict';
 import {execFileSync, spawnSync} from 'node:child_process';
 import {createHash} from 'node:crypto';
-import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -41,11 +56,13 @@ const PROVISIONER = 'scripts/provision-ks255-journey-runtime.mjs';
 const MANIFEST_PATH = 'contracts/dependencies/ks255-journey-runtime-v1.json';
 const BINDING_DIR = 'dependencies/ks-journey-runtime';
 const WORKFLOW_PATH = '.github/workflows/ci.yml';
-// The exact digest of the RETAINED workflow bytes, frozen by
-// tests/postgresql-c2-safe-aggregate.test.mjs (C2 correction scope). Reading it here proves
-// this slice did not rewrite that frozen binding.
-const RETAINED_CI_SHA256 = 'a91ab312484e8475ff05ee71d2d8c02455b540244bcdb27222af336e84083a7f';
+// The exact digest of the CURRENT workflow bytes, whose current-workflow binding is asserted by
+// tests/postgresql-c2-safe-aggregate.test.mjs. The authorized correction that re-pointed CI at the
+// committed pinned provisioner moved THIS binding only; the historical C2-correction original
+// below is immutable and is never re-minted.
+const CURRENT_CI_SHA256 = '80f817587610957bba849e036e81f95a8a7901d25c6fa6394ac2e706251d48cc';
 const C2_CORRECTION_COMMIT = '4bf55758904f04369afb74b6d185a511f731c71d';
+// The recorded HISTORICAL workflow original at the C2 correction endpoint (frozen, not touched).
 const C2_CORRECTION_CI_SHA256 = '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9';
 // The recorded originals of the recovered historical evidence (never re-minted here).
 const RECORDED_ORIGINALS = Object.freeze({
@@ -73,14 +90,19 @@ const CORE_PATH_ENV = ['PGLITE', 'CORE', 'PATH'].join('_');
 const sha256 = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const readBytes = (rel) => readFileSync(path.join(ROOT, rel));
 
+// The injected-runtime override is deliberately NOT inherited from the ambient environment: a
+// probe must observe exactly the runtime it declares, never the shell it happens to run in.
+const PROBE_ENV = Object.fromEntries(
+  Object.entries(process.env).filter(([name]) => name !== CORE_PATH_ENV),
+);
 const runProvisioner = (args, options = {}) => spawnSync(
   process.execPath,
   [path.join(ROOT, PROVISIONER), ...args],
-  {cwd: options.cwd ?? ROOT, encoding: 'utf8'},
+  {cwd: options.cwd ?? ROOT, encoding: 'utf8', env: options.env ?? PROBE_ENV},
 );
 
-const measure = (args = []) => {
-  const result = runProvisioner(['--measure', '--json', ...args]);
+const measure = (args = [], options = {}) => {
+  const result = runProvisioner(['--measure', '--json', ...args], options);
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   return JSON.parse(result.stdout);
 };
@@ -168,7 +190,7 @@ test('the current test root reaches every tracked suite exactly once (the regist
 
 test('immutable historical evidence retains its exact source identity (no frozen proof binding rewritten)', () => {
   // (1) The retained CI workflow binding: unchanged bytes, and the source map agrees.
-  assert.equal(sha256(readBytes(WORKFLOW_PATH)), RETAINED_CI_SHA256, 'retained workflow bytes');
+  assert.equal(sha256(readBytes(WORKFLOW_PATH)), CURRENT_CI_SHA256, 'current workflow bytes');
   assert.equal(
     sha256(Buffer.from(`${execFileSync('git', ['show', `${C2_CORRECTION_COMMIT}:${WORKFLOW_PATH}`], {cwd: ROOT, encoding: 'utf8'}).trim()}\n`)),
     C2_CORRECTION_CI_SHA256,
@@ -177,7 +199,7 @@ test('immutable historical evidence retains its exact source identity (no frozen
   // (2) Every content-addressed source-map entry still matches on disk: the map binds the
   //     historical evidence and is never silently re-pointed at substituted bytes.
   const sourceMap = JSON.parse(readBytes('SOURCE-MAP.json').toString('utf8'));
-  assert.equal(sourceMap.files[WORKFLOW_PATH], RETAINED_CI_SHA256);
+  assert.equal(sourceMap.files[WORKFLOW_PATH], CURRENT_CI_SHA256);
   for (const [file, expected] of Object.entries(sourceMap.files)) {
     assert.equal(sha256(readBytes(file)), expected, `${file} source identity`);
   }
@@ -200,7 +222,7 @@ test('the runtime dependency closure is MEASURED from the current test root, not
   // upgrades an unresolved binding to a PASS.  (Rejection is the --require-resolved boundary,
   // exercised below on a disposable probe.)
   const report = measure();
-  assert.equal(report.schemaVersion, 'kaleidosphere.dependencies/journey-runtime-measurement/v1');
+  assert.equal(report.schemaVersion, 'kaleidosphere.dependencies/journey-runtime-measurement/v2');
   // The measurement derives the required suites from the tracked suite sources themselves.
   const liveReport = report;
   assert.deepStrictEqual(
@@ -208,6 +230,21 @@ test('the runtime dependency closure is MEASURED from the current test root, not
     [...REQUIRED_RUNTIME_SUITES],
     'the measured required-suite set must be exactly the suites that declare the runtime',
   );
+  // The measured runtime SELECTION is per-suite and honest: the four suites whose executable
+  // resolver consults the injected override do so, and the two suites that only ever read a
+  // hardcoded declared root do not — their precise honest UNRESOLVED result is preserved.
+  const HARDCODED_ROOT_SUITES = Object.freeze([
+    'tests/net-revenue-journey.test.mjs',
+    'tests/net-revenue-ledger-mapping.test.mjs',
+  ]);
+  const liveSuites = new Map(liveReport.requiredSuites.map((suite) => [suite.suite, suite]));
+  for (const suite of REQUIRED_RUNTIME_SUITES) {
+    assert.equal(
+      liveSuites.get(suite).injectedEnv,
+      !HARDCODED_ROOT_SUITES.includes(suite),
+      `${suite} runtime-selection declaration`,
+    );
+  }
   // A disposable synthetic suite declaring an unmounted root is measured as UNRESOLVED and is
   // REJECTED — the tool never reports an unresolved binding as resolved.
   const sandbox = mkdtempSync(path.join(tmpdir(), 'ks255-measure-'));
@@ -234,28 +271,131 @@ test('the runtime dependency closure is MEASURED from the current test root, not
   assert.match(report.pinnedClosureSha256, /^[a-f0-9]{64}$/);
   assert.ok(report.pinnedClosureFileCount > 100, 'the pinned closure must be a real closure');
   assert.match(report.artifactIntegrity, /^sha512-/);
-  // The workflow action pin belongs to the same closure and is measured against the manifest.
+  // The workflow action pin belongs to the same closure and is measured against the manifest:
+  // CI declares the exact specifier it provisions, and the provisioner refuses a declaration
+  // that disagrees with the pin.
   const workflowPin = JSON.parse(readBytes(MANIFEST_PATH).toString('utf8')).workflowPin;
   assert.equal(workflowPin.path, WORKFLOW_PATH);
+  const workflowSource = readBytes(WORKFLOW_PATH).toString('utf8');
   assert.match(
-    readBytes(WORKFLOW_PATH).toString('utf8'),
-    new RegExp(`${workflowPin.package.replace(/[/@.]/g, '\\$&')}@${workflowPin.version}(\\s|$)`),
+    workflowSource,
+    new RegExp(`${workflowPin.package.replace(/[/@.]/g, '\\$&')}@${workflowPin.version}(?![0-9])`),
   );
+  assert.match(workflowSource, /KS255_PINNED_SPECIFIER:/, 'CI declares the specifier it provisions');
+  const driftedPin = runProvisioner([], {env: {...PROBE_ENV, KS255_PINNED_SPECIFIER: '@electric-sql/pglite@0.0.0'}});
+  assert.equal(driftedPin.status, 1, 'a CI declaration that disagrees with the pin is refused');
+  assert.match(driftedPin.stderr, /PROVISION-DENIED WORKFLOW_PIN_DISAGREES_WITH_MANIFEST:/);
+});
+
+test('measurement credits the environment-selected override only to the suites that ACTUALLY read it, never a declaration', () => {
+  const sandbox = mkdtempSync(path.join(tmpdir(), 'ks255-env-'));
+  try {
+    // A readable but deliberately NON-pinned entry, mounted OUTSIDE every literal declared root.
+    const mountedRoot = path.join(sandbox, 'mounted-runtime');
+    const mountedEntry = path.join(mountedRoot, ENTRY_SUFFIX);
+    mkdirSync(path.dirname(mountedEntry), {recursive: true});
+    writeFileSync(mountedEntry, 'nonsense readable index.js\n');
+    const unmounted = path.join(sandbox, 'never-mounted', ENTRY_SUFFIX);
+
+    const envAware = path.join(sandbox, 'env-aware.test.mjs');
+    writeFileSync(envAware, [
+      "import test from 'node:test';",
+      `const candidates = [process.env.${CORE_PATH_ENV},`,
+      `  '${unmounted}'].filter(Boolean);`,
+      "test('probe', () => { void candidates; });",
+      '',
+    ].join('\n'));
+    const commentOnly = path.join(sandbox, 'comment-only.test.mjs');
+    writeFileSync(commentOnly, [
+      `// This suite only MENTIONS process.env.${CORE_PATH_ENV} in a comment.`,
+      "import test from 'node:test';",
+      `const candidates = ['${unmounted}'];`,
+      "test('probe', () => { void candidates; });",
+      '',
+    ].join('\n'));
+
+    // (1) Without the override, BOTH suites are unresolved: a source declaration is not a runtime.
+    const withoutEnv = measure(['--suite', envAware, '--suite', commentOnly]);
+    assert.deepStrictEqual([...withoutEnv.unresolvedSuites].sort(), [commentOnly, envAware].sort());
+    assert.equal(withoutEnv.envOverrideEntryPath, null);
+
+    // (2) With the override live, it is credited ONLY to the suite that actually reads it: the
+    //     comment-only declaration stays unresolved, which is the honest per-suite result.
+    const probeEnv = {...PROBE_ENV, [CORE_PATH_ENV]: mountedEntry};
+    const withEnv = measure(['--suite', envAware, '--suite', commentOnly], {env: probeEnv});
+    assert.equal(withEnv.envOverrideEntryPath, mountedEntry);
+    assert.deepStrictEqual(withEnv.unresolvedSuites, [commentOnly]);
+    const envSuite = withEnv.requiredSuites.find((suite) => suite.suite === envAware);
+    assert.equal(envSuite.injectedEnv, true);
+    assert.deepStrictEqual(
+      envSuite.candidates.map((candidate) => candidate.source),
+      ['env', 'declared'],
+    );
+
+    // (3) Readability and verified closure are DISTINCT facts: the readable nonsense entry
+    //     RESOLVES the suite (the suite really would load it) but is NEVER credited as the
+    //     verified pinned runtime.
+    const envCandidate = envSuite.candidates.find((candidate) => candidate.source === 'env');
+    assert.equal(envCandidate.state, 'RESOLVED');
+    assert.equal(envCandidate.verification, 'UNVERIFIED');
+    assert.equal(envSuite.verified, false);
+    const readable = runProvisioner(['--measure', '--suite', envAware, '--require-resolved'], {env: probeEnv});
+    assert.equal(readable.status, 0, readable.stderr);
+    const unverified = runProvisioner(['--measure', '--suite', envAware, '--require-verified'], {env: probeEnv});
+    assert.equal(unverified.status, 1, 'a readable nonsense entry must never satisfy the pin');
+    assert.match(unverified.stderr, /PROVISION-DENIED REQUIRED_SUITE_UNVERIFIED:/);
+  } finally {
+    rmSync(sandbox, {recursive: true, force: true});
+  }
+});
+
+test('a required suite that only reads a hardcoded declared root stays honestly UNRESOLVED when that root is not mounted', () => {
+  const sandbox = mkdtempSync(path.join(tmpdir(), 'ks255-hardcoded-'));
+  try {
+    // The override IS live and readable, but this suite never consults it: it reads one literal
+    // root only. Measurement must therefore keep the suite unresolved — exactly the observed
+    // behaviour of the two released suites that declare a hardcoded root (106 pass / 2 SKIP
+    // when only the override is mounted).
+    const mountedRoot = path.join(sandbox, 'mounted-runtime');
+    const mountedEntry = path.join(mountedRoot, ENTRY_SUFFIX);
+    mkdirSync(path.dirname(mountedEntry), {recursive: true});
+    writeFileSync(mountedEntry, 'nonsense readable index.js\n');
+    const hardcoded = path.join(sandbox, 'hardcoded-root.test.mjs');
+    writeFileSync(hardcoded, [
+      "import test from 'node:test';",
+      `const entry = '${path.join(sandbox, 'never-mounted')}/${ENTRY_SUFFIX}';`,
+      "test('probe', () => { void entry; });",
+      '',
+    ].join('\n'));
+    const probeEnv = {...PROBE_ENV, [CORE_PATH_ENV]: mountedEntry};
+    const report = measure(['--suite', hardcoded], {env: probeEnv});
+    assert.equal(report.envOverrideEntryPath, mountedEntry);
+    assert.deepStrictEqual(report.unresolvedSuites, [hardcoded]);
+    assert.deepStrictEqual(report.unverifiedSuites, [hardcoded]);
+    const denied = runProvisioner(['--measure', '--suite', hardcoded, '--require-resolved'], {env: probeEnv});
+    assert.equal(denied.status, 1);
+    assert.match(denied.stderr, /PROVISION-DENIED REQUIRED_SUITE_UNRESOLVED:/);
+  } finally {
+    rmSync(sandbox, {recursive: true, force: true});
+  }
 });
 
 test('the resolved pinned artifact is a REAL PostgreSQL engine and the released SQL path runs on it', async (t) => {
   const report = measure();
-  const resolved = report.resolution.filter((entry) => entry.state === 'RESOLVED');
-  if (resolved.length === 0) {
-    // Runtime unavailable: reported as such, never as a PASS, and never faked.
-    assert.deepStrictEqual(report.unresolvedSuites, [...REQUIRED_RUNTIME_SUITES].sort());
-    t.skip('pinned SQL runtime not installed in this checkout; real-SQL legs not exercised here');
+  const verified = report.resolution.filter((entry) => entry.verification === 'VERIFIED');
+  if (verified.length === 0) {
+    // No VERIFIED pinned runtime. A runtime-less checkout reports every required suite as
+    // UNRESOLVED, and a readable but non-pinned runtime is reported as RESOLVED-but-UNVERIFIED —
+    // neither is ever upgraded to a PASS, and neither is credited here.
+    if (report.resolution.every((entry) => entry.state !== 'RESOLVED')) {
+      assert.deepStrictEqual(report.unresolvedSuites, [...REQUIRED_RUNTIME_SUITES].sort());
+    }
+    t.skip('no verified pinned SQL runtime in this checkout; real-SQL legs not exercised here');
     return;
   }
-  const entry = resolved[0].entryPath;
-  assert.equal(resolved.every((candidate) => candidate.entrySha256 === resolved[0].entrySha256), true,
-    'every resolved candidate root carries the SAME pinned artifact');
-  assert.equal(resolved[0].entrySha256, report.pinnedEntrySha256, 'resolved entry is the pinned artifact');
+  const entry = verified[0].entryPath;
+  assert.equal(verified.every((candidate) => candidate.entrySha256 === report.pinnedEntrySha256), true,
+    'every VERIFIED candidate carries the pinned artifact entry digest');
 
   // Real SQL: the pinned artifact is an actual PostgreSQL engine, not a stub.
   const {pathToFileURL} = await import('node:url');
@@ -285,18 +425,39 @@ test('the resolved pinned artifact is a REAL PostgreSQL engine and the released 
   );
 });
 
-test('the installed artifact closure is verified byte-for-byte against the pin (runtime-gated)', (t) => {
+test('the installed artifact closure is verified byte-for-byte against the pin, for the roots this invocation intends (runtime-gated)', (t) => {
   const report = measure();
-  if (report.resolution.every((entry) => entry.state !== 'RESOLVED')) {
-    t.skip('pinned SQL runtime not installed in this checkout; installed-closure verification not exercised here');
+  const verifiedEntries = report.resolution.filter((entry) => entry.verification === 'VERIFIED');
+  if (verifiedEntries.length === 0) {
+    t.skip('no verified pinned SQL runtime in this checkout; installed-closure verification not exercised here');
     return;
   }
-  const verified = runProvisioner(['--verify']);
+  // Qualify ONLY the runtime roots this invocation actually intends: the roots that carry the
+  // pinned artifact here. The provisioner's unfiltered default also demands every DECLARED root,
+  // which a partial checkout need not mount; an intended root that is genuinely absent is still
+  // refused explicitly below, so this qualification never hides a real gap.
+  const intendedRoots = [...new Set(verifiedEntries.map((entry) => entry.runtimeRoot))].sort();
+  assert.ok(intendedRoots.length > 0 && intendedRoots.every((root) => root !== null));
+  const verified = runProvisioner(['--verify', ...intendedRoots.flatMap((root) => ['--runtime-root', root])]);
   assert.equal(verified.status, 0, verified.stderr);
   assert.match(verified.stdout, /PROVISION-VERIFIED root=/);
   const manifest = JSON.parse(readBytes(MANIFEST_PATH).toString('utf8'));
   assert.match(verified.stdout, new RegExp(`closure=${manifest.closureSha256.slice(0, 12)}`));
   assert.match(verified.stdout, new RegExp(`files=${manifest.closureFileCount}`));
+  // An intended root that is genuinely absent is refused explicitly, never silently skipped.
+  const absentSandbox = mkdtempSync(path.join(tmpdir(), 'ks255-absent-root-'));
+  try {
+    const absent = path.join(absentSandbox, 'absent-runtime');
+    const refused = runProvisioner([
+      '--verify',
+      ...intendedRoots.flatMap((root) => ['--runtime-root', root]),
+      '--runtime-root', absent,
+    ]);
+    assert.equal(refused.status, 1);
+    assert.match(refused.stderr, /PROVISION-DENIED RUNTIME_ROOT_MISSING:/);
+  } finally {
+    rmSync(absentSandbox, {recursive: true, force: true});
+  }
   // A substituted installed byte is refused, not accepted.
   const sandbox = mkdtempSync(path.join(tmpdir(), 'ks255-tamper-'));
   try {
@@ -427,6 +588,7 @@ test('the KS255 family is content-addressed in the source map and canonically re
     PROVISIONER,
     'docs/evidence/ks255-journey-runtime-binding-v1.md',
     'scripts/update-ks255-journey-runtime-source-map.mjs',
+    'scripts/update-ks255-correction-source-map.mjs',
   ]) {
     assert.match(sourceMap.files[file] ?? '', /^[a-f0-9]{64}$/, file);
     assert.equal(sha256(readBytes(file)), sourceMap.files[file], file);
@@ -435,4 +597,19 @@ test('the KS255 family is content-addressed in the source map and canonically re
   const pkg = JSON.parse(readBytes('package.json').toString('utf8'));
   assert.equal(pkg.scripts.test.split(/\s+/).includes(SUITE_PATH), false);
   assert.ok(existsSync(path.join(ROOT, SUITE_PATH)));
+});
+
+// Independent delivery review: a pinned closure must not follow a substituted link
+// into another runtime or host path, even when its target currently has the same bytes.
+test('an installed runtime symlink is denied before its target can be hashed', (t) => {
+  const sandbox = mkdtempSync(path.join(tmpdir(), 'ks255-link-'));
+  t.after(() => rmSync(sandbox, {recursive: true, force: true}));
+  const root = path.join(sandbox, 'runtime');
+  const installed = runProvisioner(['--install', '--runtime-root', root]);
+  assert.equal(installed.status, 0, installed.stderr);
+  const link = path.join(root, 'node_modules/@electric-sql/pglite', 'delivery-link');
+  symlinkSync('dist/index.js', link);
+  const denied = runProvisioner(['--verify', '--runtime-root', root]);
+  assert.equal(denied.status, 1);
+  assert.match(denied.stderr, /PROVISION-DENIED INSTALLED_SPECIAL_FILE_DENIED:/);
 });
