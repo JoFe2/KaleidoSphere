@@ -33,6 +33,20 @@ const authoredFiles = [
   'tests/ks254-http-qualification.test.mjs',
   'tests/helpers/ks254-http-harness.mjs',
   'scripts/run-ks254-http-qualification-evidence.mjs',
+  // The KS254 remainder: the native install/recovery surface of the owned Superset runtime.
+  // init.sh is the one-shot entry point; ks254_install.py stages and commits the install
+  // generation; generation_store.py is the python counterpart of the released node store that
+  // runs there (the image has no Node.js); superset_config.py and bootstrap.py are the two
+  // runtime modules whose deployment paths gained the documented overrides.
+  'services/superset/runtime/init.sh',
+  'services/superset/runtime/ks254_install.py',
+  'services/superset/runtime/generation_store.py',
+  'services/superset/runtime/superset_config.py',
+  'services/superset/runtime/bootstrap.py',
+  'tests/ks254-superset-init-recovery.test.mjs',
+  'scripts/run-ks254-superset-init-evidence.mjs',
+  // Repository ignore hygiene for the installer's bytecode cache.
+  '.gitignore',
   // The registration and self-integrity bytes this migration touches.
   'tests/source-map.test.mjs',
   'tests/canonical-test-topology.test.mjs',

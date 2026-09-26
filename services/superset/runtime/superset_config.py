@@ -1,14 +1,25 @@
 import os
 from pathlib import Path
 
+# KS254 (JoFe2/KaleidoSphere#254): the two deployment paths this module owns are bound
+# through documented environment overrides so the install surface
+# (services/superset/runtime/ks254_install.py) can provision an OWNED staging candidate and
+# can be qualified in an isolated root. Both defaults are exactly the previous production
+# behavior: no override set -> /run/secrets and /var/lib/chimpmaera-bi.
+SECRET_ROOT = Path(os.environ.get("CHIMPMAERA_BI_SECRET_ROOT") or "/run/secrets")
+RUNTIME_ROOT = Path(os.environ.get("CHIMPMAERA_BI_ROOT") or "/var/lib/chimpmaera-bi")
+
 def read_secret(name):
-    value = Path(f"/run/secrets/{name}").read_text(encoding="utf-8").strip()
+    value = (SECRET_ROOT / name).read_text(encoding="utf-8").strip()
     if not value:
         raise RuntimeError(f"{name.upper()}_MISSING")
     return value
 
 SECRET_KEY = read_secret("superset_secret_key")
-SQLALCHEMY_DATABASE_URI = "sqlite:////var/lib/chimpmaera-bi/metadata/superset.db"
+# CHIMPMAERA_BI_METADATA_DB_URI is set by the installer for the pinned `superset`/bootstrap
+# child processes only, and points at the staged candidate; otherwise the live database.
+SQLALCHEMY_DATABASE_URI = os.environ.get("CHIMPMAERA_BI_METADATA_DB_URI") or (
+    f"sqlite:///{RUNTIME_ROOT / 'metadata' / 'superset.db'}")
 WTF_CSRF_ENABLED = True
 PUBLIC_ROLE_LIKE = None
 AUTH_ROLE_PUBLIC = "Public"
@@ -19,7 +30,7 @@ SESSION_COOKIE_SAMESITE = "Strict"
 PREVENT_UNSAFE_DB_CONNECTIONS = True
 SQLLAB_CTAS_NO_LIMIT = False
 SQL_MAX_ROW = 1000
-UPLOAD_FOLDER = "/var/lib/chimpmaera-bi/metadata/uploads-denied"
+UPLOAD_FOLDER = str(RUNTIME_ROOT / "metadata" / "uploads-denied")
 ALLOWED_EXTENSIONS = set()
 # Preserve Superset 6.1's documented application-level exemptions.  Clearing
 # this list breaks the authenticated dashboard SPA: its own telemetry request

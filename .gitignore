@@ -20,3 +20,9 @@ dist/
 # than left to the global dist/ rule.
 !dependencies/pansphaira/dist/
 !dependencies/pansphaira/dist/**
+
+# KS254 (JoFe2/KaleidoSphere#254): the Superset-runtime python installer writes its bytecode
+# cache beside the runtime modules whenever it is exercised outside the image. The cache is a
+# build artifact, never source.
+__pycache__/
+*.pyc
