@@ -5,6 +5,7 @@ import { mkdtempSync, writeFileSync, rmSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
+import { DatabaseSync } from "node:sqlite";
 import { qualifyPairedReadLineage } from "../services/bi-control/src/business-bi/paired-read-lineage-qualification-v1.mjs";
 const producer = process.env.KS247_PRODUCER_CHECKOUT;
 const fixture = "tests/fixtures/business-bi/ks246-unfamiliar-schema/";
@@ -178,3 +179,74 @@ if (producer) {
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 }
+
+// KS247 second frozen source: this independent SQLite fold precedes the producer-bound read.
+const second="tests/fixtures/business-bi/ks247-second-source/";
+const secondSource=readFileSync(second+"source-pay-feed-v2.json");
+const secondDecision=JSON.parse(readFileSync(second+"kind-decisions-v2.json"));
+const secondExpectation=JSON.parse(readFileSync(second+"independent-expectation-v2.json"));
+test("second public synthetic source and explicit W decision have an independently folded 24-number expectation",()=>{
+ const source=JSON.parse(secondSource);
+ assert.equal(createHash("sha256").update(secondSource).digest("hex"),"cacd2a08d5fa5cb8603513a769362a2f7bdb700c44d700728a1fe2f1244be52e");
+ assert.equal(secondExpectation.current.sourceByteSha256,"cacd2a08d5fa5cb8603513a769362a2f7bdb700c44d700728a1fe2f1244be52e");
+ assert.equal(secondDecision.sourceRevision,source.sourceRevision);
+ assert.equal(secondDecision.decisions.W,"unknown");assert.equal(Object.hasOwn(secondDecision.decisions,"U"),false);
+ assert.equal(source.rows.filter(row=>row.ev_typ==="W").length,2);
+ const db=new DatabaseSync(":memory:");try{
+  db.exec("CREATE TABLE source(order_id TEXT PRIMARY KEY,order_date TEXT,record_kind TEXT,amount INTEGER)");
+  const add=db.prepare("INSERT INTO source VALUES (?,?,?,?)");
+  for(const row of source.rows)add.run(row.pf_id,row.val_dt,secondDecision.decisions[row.ev_typ],row.amt_a);
+  const observed={};
+  for(const [period,start,end] of [["comparison","2026-06-01","2026-06-30"],["current","2026-07-01","2026-07-31"]]){
+   const r=db.prepare("SELECT count(*) AS n,sum(CASE WHEN record_kind='sale' THEN coalesce(amount,0) ELSE 0 END) AS sale,sum(CASE WHEN record_kind='credit' THEN coalesce(amount,0) ELSE 0 END) AS credit,sum(CASE WHEN record_kind='cancel' THEN 1 ELSE 0 END) AS cancelled,sum(CASE WHEN record_kind='unknown' OR amount IS NULL THEN 1 ELSE 0 END) AS unknown,sum(CASE WHEN (record_kind='unknown' OR amount IS NULL) AND amount IS NOT NULL THEN amount ELSE 0 END) AS quantified,sum(CASE WHEN (record_kind='unknown' OR amount IS NULL) AND amount IS NULL THEN 1 ELSE 0 END) AS unquantified FROM source WHERE order_date BETWEEN ? AND ?").get(start,end);
+   const k="periods."+period+".";Object.assign(observed,{[k+"netMinorUnits"]:r.sale-r.credit,[k+"saleMinorUnits"]:r.sale,[k+"creditMinorUnits"]:r.credit,[k+"cancelCount"]:r.cancelled,[k+"rowCount"]:r.n,[k+"unknown.count"]:r.unknown,[k+"unknown.quantifiedAmountMinorUnits"]:r.quantified,[k+"unknown.unquantifiedCount"]:r.unquantified});
+  }
+  observed.deltaMinorUnits=observed["periods.current.netMinorUnits"]-observed["periods.comparison.netMinorUnits"];
+  observed.excludedOutOfScopeCount=db.prepare("SELECT count(*) AS n FROM source WHERE order_date < ? OR order_date > ?").get("2026-06-01","2026-07-31").n;
+  const unknown=db.prepare("SELECT count(*) AS n,sum(CASE WHEN amount IS NOT NULL THEN amount ELSE 0 END) AS quantified,sum(CASE WHEN amount IS NULL THEN 1 ELSE 0 END) AS unquantified FROM source WHERE record_kind='unknown' OR amount IS NULL OR order_date IS NULL").get();
+  Object.assign(observed,{"unknown.count":unknown.n,"unknown.quantifiedAmountMinorUnits":unknown.quantified,"unknown.unquantifiedCount":unknown.unquantified});
+  const unassigned=db.prepare("SELECT count(*) AS n,sum(coalesce(amount,0)) AS quantified,sum(CASE WHEN amount IS NULL THEN 1 ELSE 0 END) AS unquantified FROM source WHERE order_date IS NULL").get();
+  Object.assign(observed,{"unknown.unassigned.count":unassigned.n,"unknown.unassigned.quantifiedAmountMinorUnits":unassigned.quantified,"unknown.unassigned.unquantifiedCount":unassigned.unquantified});
+  assert.equal(Object.keys(observed).length,24);assert.deepEqual(observed,secondExpectation.expectedNumbers);
+ }finally{db.close();}
+});
+const secondProducer=process.env.KS247_V2_PRODUCER_CHECKOUT;
+if(!secondProducer)test("second producer-bound PGlite read needs exact local candidate",t=>t.skip("KS247_V2_PRODUCER_CHECKOUT not supplied"));
+else test("second actual paired SQL read verifies 24 numbers; substitutions and unsupported authority stay unverified",()=>{
+ const runtime=process.env.KS247_PGLITE_PATH;
+ assert.ok(runtime,"explicit pinned runtime needed");
+ const scratch=mkdtempSync(join(tmpdir(),"ks247-second-"));
+ const answers=join(scratch,"answers.txt");writeFileSync(answers,["synth_x.pay_feed.pf_id","synth_x.pay_feed.val_dt","MINOR_UNITS","synth_x.pay_feed.amt_a","EUR","R","V"].join("\n")+"\n");
+ const choices={"--source":second+"source-pay-feed-v2.json","--kind-decisions":second+"kind-decisions-v2.json","--business-semantics":second+"business-semantics-v2.json","--source-revision":"synthetic-unfamiliar-source-v2","--expectation":second+"independent-expectation-v2.json","--source-variant":"v2","--producer-checkout":secondProducer,"--pglite":runtime};
+ const invokeSecond=(over={})=>{
+  const args=["scripts/run-result-lineage-journey.mjs","--answers",answers,...Object.entries({...choices,...over}).flat()];
+  const out=spawnSync(process.execPath,args,{cwd:process.cwd(),encoding:"utf8",timeout:45000});
+  assert.equal(out.status,0,out.stderr+out.stdout.slice(0,500));return JSON.parse(out.stdout);
+ };
+ try{
+  const good=invokeSecond();assert.equal(good.pairedRead.status,"READ_COMPLETE");
+  assert.equal(good.pairedRead.effectStatus,"NO_EFFECT_AUTHORIZED");
+  assert.equal(good.pairedRead.task.sourceSha256,secondExpectation.current.sourceByteSha256);
+  assert.equal(good.pairedQualification.status,"VERIFIED_LOCAL_SYNTHETIC_READ_ONLY");
+  assert.equal(good.pairedQualification.externalSourceAuthority,"NOT_GRANTED");
+  assert.equal(good.lineage.verification.verifiedNumberCount,24);
+  assert.equal(good.lineage.verification.effectJournal,"NOT_INVENTED_READ_ONLY_JOURNEY");
+  assert.equal(good.lineage.authority.publicationAuthority,"NONE");
+  const deny=(caseName,over,code,afterRead=false)=>{const out=invokeSecond(over);assert.equal(out.journeyDenial?.message,code,caseName);assert.equal(out.pairedQualification,undefined,caseName);assert.equal(out.verification.verifiedNumberCount,0,caseName);assert.equal(out.executed,afterRead,caseName);};
+  const write=(name,obj)=>{const path=join(scratch,name+".json");writeFileSync(path,JSON.stringify(obj));return path;};
+  const changed=JSON.parse(secondSource);changed.rows[0].amt_a+=1;
+  deny("one-cent source substitution",{"--source":write("one-cent",changed)},"KS247_PRODUCER_SOURCE_SCOPE_DENIED");
+  const decisions=structuredClone(secondDecision);decisions.decisions.W="sale";
+  deny("unsupported residual rule",{"--kind-decisions":write("wrong-rule",decisions)},"KS246_JOURNEY_DENIED:SOURCE_NOT_COHERENT_WITH_RELEASED_HOLDOUT");
+  const period=structuredClone(secondExpectation);period.periods.current.end="2026-07-30";
+  deny("wrong period",{"--expectation":write("wrong-period",period)},"KS247_LINEAGE_DENIED:WRONG_PERIOD",true);
+  const unit=structuredClone(secondExpectation);unit.unit={...unit.unit,id:"CHF_MINOR_UNITS",currency:"CHF"};
+  deny("wrong unit",{"--expectation":write("wrong-unit",unit)},"KS247_LINEAGE_DENIED:WRONG_UNIT",true);
+  const number=structuredClone(secondExpectation);number.expectedNumbers["periods.comparison.netMinorUnits"]+=1;
+  deny("wrong number",{"--expectation":write("wrong-number",number)},"KS247_LINEAGE_DENIED:WRONG_NUMBER",true);
+  deny("stale expectation",{"--expectation":"tests/fixtures/business-bi/ks247-result-lineage/independent-expectation-v1.json"},"KS247_LINEAGE_DENIED:SOURCE_REVISION_STALE",true);
+  deny("wrong producer head",{"--producer-checkout":process.cwd()},"KS247_PRODUCER_IDENTITY_DENIED");
+  deny("wrong producer variant",{"--source-variant":"v1"},"KS247_PRODUCER_IDENTITY_DENIED");
+  deny("unpaired v2",{"--producer-checkout":""},"KS247_PRODUCER_CHECKOUT_DENIED");
+ }finally{rmSync(scratch,{recursive:true,force:true});}
+});

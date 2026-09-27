@@ -144,15 +144,19 @@ const effectStatusPath = optionOf('--effect-status');
 const goalOption = optionOf('--goal');
 const formatOption = (optionOf("--format") ?? "JSON").toUpperCase();
 const producerCheckout = optionOf("--producer-checkout");
+const producerVariant = optionOf("--source-variant") ?? "v1";
+const V2_PRODUCER_SHA = "e305a3432f7a98de83b1fdbf2a2b1d21bb719e7c";
 // Pinned to the public producer commit before KS delivery.
 const PRODUCER_SHA = "d8e78430e66a6d1b623fde26a3018089652d2112";
+const selectedProducerSha = producerVariant === "v2" ? V2_PRODUCER_SHA : PRODUCER_SHA;
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 function validatePairedCliArgs() {
-  if (!args.includes("--producer-checkout")) return;
+  if (producerVariant !== "v1" && producerVariant !== "v2") throw new Error("KS247_PAIRED_CLI_SCOPE_DENIED");
+  if (!args.includes("--producer-checkout")) { if (producerVariant !== "v1") throw new Error("KS247_PAIRED_VARIANT_REQUIRES_PRODUCER_DENIED"); return; }
   const allowed = new Set(["--answers", "--kind-decisions", "--business-semantics",
     "--source-revision", "--source", "--expectation", "--evidence-claim",
     "--explanation", "--effect-status", "--format", "--pglite",
-    "--goal", "--producer-checkout"]);
+    "--goal", "--producer-checkout", "--source-variant"]);
   const seen = new Set();
   for (let index = 0; index < args.length; index += 2) {
     const flag = args[index];
@@ -182,7 +186,7 @@ async function loadProducer() {
   const rev = execFileSync("git", ["-C", producerCheckout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
   const top = execFileSync("git", ["-C", producerCheckout, "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
   const dirty = execFileSync("git", ["-C", producerCheckout, "status", "--porcelain", "--untracked-files=all"], { encoding: "utf8" }).trim();
-  if (realpathSync(producerCheckout) !== realpathSync(top) || rev !== PRODUCER_SHA || dirty) throw new Error("KS247_PRODUCER_IDENTITY_DENIED");
+  if (realpathSync(producerCheckout) !== realpathSync(top) || rev !== selectedProducerSha || dirty) throw new Error("KS247_PRODUCER_IDENTITY_DENIED");
   return import(pathToFileURL(path.join(producerCheckout, "src/pan442/bound-task-handle.mjs")).href);
 }
 
@@ -529,7 +533,7 @@ if (args.includes('--negative')) {
       let pairedRead = null;
       if (producer === null) observedJourney = await runRead();
       else {
-        const origin = producer.syntheticMetricReadOrigin();
+        const origin = producer.syntheticMetricReadOrigin(producerVariant);
         const contract = JSON.parse(metricContractBytes.toString("utf8"));
         const periods = Object.fromEntries(["current", "comparison"].map((name) =>
           [name, { start: contract.periods[name].start, end: contract.periods[name].end }]));
@@ -556,11 +560,11 @@ if (args.includes('--negative')) {
       }
       const rendered = renderLineage(lineageInput(observedJourney), formatOption);
       const pairedQualification = pairedRead === null ? null : qualifyPairedReadLineage({
-        pairedRead, lineage: rendered.lineage, producerSha: PRODUCER_SHA,
+        pairedRead, lineage: rendered.lineage, producerSha: selectedProducerSha, variant: producerVariant,
         contractSha256: digest(metricContractBytes),
       });
       if (pairedRead !== null && formatOption === "JSON") {
-        process.stdout.write(`${JSON.stringify({ pairedRead: { producerSha: PRODUCER_SHA,
+        process.stdout.write(`${JSON.stringify({ pairedRead: { producerSha: selectedProducerSha,
           schemaVersion: pairedRead.schemaVersion, status: pairedRead.status,
           effectStatus: pairedRead.effectStatus, task: pairedRead.task },
           lineage: rendered.lineage, pairedQualification }, null, 2)}\n`);
@@ -582,7 +586,7 @@ if (args.includes('--negative')) {
           expectedNumberCount: rendered.lineage.verification.expectedNumberCount,
           sharedReadPurposeBinding: summary.sharedReadPurposeBinding,
           ...(pairedQualification === null ? {} : { pairedQualification }),
-          ...(pairedRead === null ? {} : { pairedRead: { producerSha: PRODUCER_SHA,
+          ...(pairedRead === null ? {} : { pairedRead: { producerSha: selectedProducerSha,
             schemaVersion: pairedRead.schemaVersion, status: pairedRead.status,
             effectStatus: pairedRead.effectStatus, task: pairedRead.task } }),
         }, null, 2)}\n`);
