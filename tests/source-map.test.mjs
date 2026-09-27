@@ -59,11 +59,15 @@ import './ks254-superset-init-recovery.test.mjs';
 import './project-lifecycle-transfer-status.test.mjs';
 // Optional public-source crossing uses the same immutable canonical test parent.
 import './public-producer-status-crossing.test.mjs';
+// KS256 paired display qualifies two independent public-only read crossings without target promotion.
+import './ks256-paired-status.test.mjs';
 // KS248 (#248) access-mode journey comparison: an evaluator-owned frozen comparison of the
 // composed journey under declared information rights, against an independent deterministic
 // reference and a blind holdout.  It follows the same imported-suite route so the byte-bound
 // canonical command and the exactly-one-route-per-suite invariant are both preserved.
 import './access-mode-journey-comparison.test.mjs';
+// KS248 evaluator-owned fixed-domain paired SQL holdout; not a second direct root.
+import './ks248-paired-blind-evaluator.test.mjs';
 /**
  * KS250 (KS-EVO-05) parity: the credential-free read-only metric pilot protocol and its
  * synthetic rehearsal ride the same tracked-file check.

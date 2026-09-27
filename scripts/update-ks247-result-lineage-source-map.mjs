@@ -25,6 +25,7 @@ const authoredFiles = [
   // The read-only result-lineage module and its single runnable CLI entry point.
   'services/bi-control/src/business-bi/result-lineage-v1.mjs',
   'scripts/run-result-lineage-journey.mjs',
+  'services/bi-control/src/business-bi/paired-read-lineage-qualification-v1.mjs',
   // The INDEPENDENTLY MAINTAINED expectation, the authored free-form explanation and the
   // separately confirmed effect status — all three are authored inputs, never run output.
   'tests/fixtures/business-bi/ks247-result-lineage/independent-expectation-v1.json',
