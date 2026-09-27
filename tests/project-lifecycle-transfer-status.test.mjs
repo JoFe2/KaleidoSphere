@@ -112,6 +112,18 @@ test('KS256 AC01: the board carries source/target identity, owned scope, denomin
   }
 });
 
+test('KS256: delivered producer lineage is public but not executed as a crossing', () => {
+  const status = project();
+  assert.equal(status.outcome, 'PROJECTED');
+  assert.equal(status.executionFacets.producerCrossing, 'NOT_EXECUTED');
+  assert.deepEqual(status.binding.producerReference, [
+    { surface: 'pan461/lifecycle-inventory', publicMainCommit: 'ac42e9d9fa5d6ef471d634159eb5a316464e425e', releaseTag: '2026_09_26_v3', status: 'PUBLIC_SOURCE_NOT_CONSUMED' },
+    { surface: 'pan471/capability-inventory', publicMainCommit: '1ef53c047346842e3ec5b48065a107dfbf6ddfc0', releaseTag: '2026_09_26_v2', status: 'PUBLIC_SOURCE_NOT_CONSUMED' },
+  ]);
+  assert.ok(!status.executionFacets.executed.some((facet) => /PAN461|PAN471/.test(facet)));
+  assert.match(status.executionFacets.disclosure, /not consumed/);
+});
+
 test('KS256 AC01: the source archive bytes are read by the module itself and re-derived independently by this suite', () => {
   const status = project();
   const declared = readJson(TRANSFER).sourceArchive;
