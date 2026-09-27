@@ -154,6 +154,7 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/project-lifecycle-transfer-status.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/public-producer-status-crossing.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/ks256-paired-status.test.mjs' },
   // KS248 (#248) access-mode journey comparison: reachable through this parent exactly once so
   // the exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/access-mode-journey-comparison.test.mjs' },

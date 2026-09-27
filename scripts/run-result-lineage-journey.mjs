@@ -71,6 +71,7 @@ import {
 } from '../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
 import { UNFAMILIAR_LAYOUT_PROFILE } from '../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
 import { buildPgliteJourneyDatabase } from '../services/bi-control/src/business-bi/net-revenue-journey.mjs';
+import { qualifyPairedReadLineage } from '../services/bi-control/src/business-bi/paired-read-lineage-qualification-v1.mjs';
 import {
   RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
   RESULT_LINEAGE_FORMATS,
@@ -554,11 +555,15 @@ if (args.includes('--negative')) {
         summary.sharedReadPurposeBinding = "EXECUTED_LOCAL_SYNTHETIC";
       }
       const rendered = renderLineage(lineageInput(observedJourney), formatOption);
+      const pairedQualification = pairedRead === null ? null : qualifyPairedReadLineage({
+        pairedRead, lineage: rendered.lineage, producerSha: PRODUCER_SHA,
+        contractSha256: digest(metricContractBytes),
+      });
       if (pairedRead !== null && formatOption === "JSON") {
         process.stdout.write(`${JSON.stringify({ pairedRead: { producerSha: PRODUCER_SHA,
           schemaVersion: pairedRead.schemaVersion, status: pairedRead.status,
           effectStatus: pairedRead.effectStatus, task: pairedRead.task },
-          lineage: rendered.lineage }, null, 2)}\n`);
+          lineage: rendered.lineage, pairedQualification }, null, 2)}\n`);
       } else process.stdout.write(rendered.text);
       if (formatOption !== 'JSON') {
         // The machine receipt accompanies a human rendering so the same run stays checkable.
@@ -576,6 +581,7 @@ if (args.includes('--negative')) {
           effectJournal: rendered.lineage.verification.effectJournal,
           expectedNumberCount: rendered.lineage.verification.expectedNumberCount,
           sharedReadPurposeBinding: summary.sharedReadPurposeBinding,
+          ...(pairedQualification === null ? {} : { pairedQualification }),
           ...(pairedRead === null ? {} : { pairedRead: { producerSha: PRODUCER_SHA,
             schemaVersion: pairedRead.schemaVersion, status: pairedRead.status,
             effectStatus: pairedRead.effectStatus, task: pairedRead.task } }),
