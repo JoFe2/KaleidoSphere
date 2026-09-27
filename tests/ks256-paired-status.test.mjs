@@ -29,6 +29,7 @@ if (status && read && runtime) {
     const view = out.result;
     assert.equal(view.outcome, 'PROJECTED_LOCAL_SYNTHETIC_READ_ONLY');
     assert.equal(view.source.verifiedNumberCount, 24);
+    assert.equal(view.source.question, 'bi-ks-01-net-revenue');
     assert.equal(view.source.unit, 'EUR_MINOR_UNITS');
     assert.equal(view.producerCrossing.status, 'EXECUTED_AND_REBOUND_LOCAL_SYNTHETIC');
     assert.equal(view.target.identity, 'UNKNOWN');

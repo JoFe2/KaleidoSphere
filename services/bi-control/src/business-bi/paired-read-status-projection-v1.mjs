@@ -30,7 +30,7 @@ export function projectPairedReadStatus({ read, crossing, requestedAction = 'REA
   }
   return {
     outcome: 'PROJECTED_LOCAL_SYNTHETIC_READ_ONLY',
-    source: { taskRef: qualification.taskRef, sourceRevision: qualification.sourceRevision,
+    source: { taskRef: qualification.taskRef, question: qualification.question, sourceRevision: qualification.sourceRevision,
       sourceSha256: qualification.sourceSha256, producerSha: qualification.producerSha,
       lineageSha256: qualification.lineageSha256, verifiedNumberCount: qualification.verifiedNumberCount,
       unit: qualification.units, periods: qualification.period, scope: 'FIXED_LOCAL_SYNTHETIC_READ' },
