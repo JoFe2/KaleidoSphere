@@ -8,6 +8,7 @@ const files = [
   'scripts/run-ks256-public-producer-crossing.mjs',
   'tests/public-producer-status-crossing.test.mjs',
   'tests/source-map.test.mjs',
+  'tests/canonical-test-topology.test.mjs',
   'docs/evidence/ks256-public-producer-crossing-v1.md',
   'scripts/update-ks256-public-producer-crossing-source-map.mjs',
 ];
