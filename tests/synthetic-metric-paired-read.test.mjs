@@ -14,7 +14,14 @@ function invoke(extra = []) {
   try {
     const answers = join(root, "answers.txt");
     writeFileSync(answers, ["synth_x.pay_feed.pf_id", "synth_x.pay_feed.val_dt", "MINOR_UNITS", "synth_x.pay_feed.amt_a", "EUR", "R", "V"].join("\n") + "\n");
-    const run = spawnSync(process.execPath, ["scripts/run-result-lineage-journey.mjs", "--answers", answers, ...args, ...extra], { cwd: process.cwd(), encoding: "utf8" });
+    const suppliedDecision = extra.indexOf("--kind-decisions");
+    const baseArgs = [...args];
+    const additions = [...extra];
+    if (suppliedDecision !== -1) {
+      baseArgs[baseArgs.indexOf("--kind-decisions") + 1] = additions[suppliedDecision + 1];
+      additions.splice(suppliedDecision, 2);
+    }
+    const run = spawnSync(process.execPath, ["scripts/run-result-lineage-journey.mjs", "--answers", answers, ...baseArgs, ...additions], { cwd: process.cwd(), encoding: "utf8" });
     assert.equal(run.status, 0, run.stderr);
     const boundary = extra.includes("--format") ? run.stdout.lastIndexOf("\n{") : -1;
     return JSON.parse(boundary < 0 ? run.stdout : run.stdout.slice(boundary + 1));
@@ -146,6 +153,28 @@ if (producer) {
       explanations.assertions[0] = { assertionId: "c", kind: "CAUSAL",
         text: "cause established", assertedAsVerified: true };
       check("causal", explanations, "--explanation", "KS247_LINEAGE_DENIED:UNSUPPORTED_CAUSAL_ASSERTION");
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+}
+
+if (producer) {
+  test("KS246 accepted proposal cannot silently override caller decisions in the paired producer journey", () => {
+    const root = mkdtempSync(join(tmpdir(), "ks246-paired-decisions-"));
+    try {
+      const decisions = JSON.parse(readFileSync(fixture + "kind-decisions-v1.json", "utf8"));
+      decisions.decisions.R = "sale"; // conflicts with caller-confirmed credit answer
+      const file = join(root, "contradictory-decisions.json");
+      writeFileSync(file, JSON.stringify(decisions));
+      const out = invoke(["--producer-checkout", producer, "--pglite", process.env.KS247_PGLITE_PATH,
+        "--kind-decisions", file]);
+      assert.equal(out.journeyDenial.code, "KS246_JOURNEY_DENIED:KIND_DECISION_CONFLICT:credit");
+      assert.equal(out.executed, false);
+      assert.equal(out.verification.verifiedNumberCount, 0);
+      assert.equal(out.pairedQualification, undefined);
+      // Counterpart: unchanged authored decisions reach the released producer and SQL read.
+      const accepted = invoke(["--producer-checkout", producer, "--pglite", process.env.KS247_PGLITE_PATH]);
+      assert.equal(accepted.pairedRead.status, "READ_COMPLETE");
+      assert.equal(accepted.pairedQualification.verifiedNumberCount, 24);
     } finally { rmSync(root, { recursive: true, force: true }); }
   });
 }

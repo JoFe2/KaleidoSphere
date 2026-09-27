@@ -23,3 +23,5 @@ Pure projection tests are helper-only and cannot certify the runtime. No externa
 target or customer is observed. PAN453/454 OS isolation and genuine runtime gates remain
 separate. Independent focused review, canonical CI, release and public readback are
 not claimed by this local candidate.
+
+An additional KS246 paired caller-decision negative replaces the confirmed credit rule with a contradictory sale rule through the real CLI: the released journey refuses `KIND_DECISION_CONFLICT:credit` with zero verified numbers and no paired qualification; unchanged decisions reach the SQL read. This is one fixed-source rule case, not a general decision ontology or whole AC03 closure.
