@@ -43,6 +43,7 @@ import './unfamiliar-schema-metric-journey.test.mjs';
 // independently maintained expectation).  It follows the same imported-suite route so the
 // byte-bound canonical command and the exactly-one-route-per-suite invariant are preserved.
 import './result-lineage-readonly.test.mjs';
+import './synthetic-metric-paired-read.test.mjs';
 // KS255 pinned runtime binding: preserve the canonical root and import once.
 import './ks255-journey-runtime-binding.test.mjs';
 // KS254 crash-safe generation + native HTTP proof retain the byte-bound canonical root.

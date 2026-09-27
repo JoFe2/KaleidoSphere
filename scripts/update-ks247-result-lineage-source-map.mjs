@@ -32,6 +32,8 @@ const authoredFiles = [
   'tests/fixtures/business-bi/ks247-result-lineage/effect-status-v1.json',
   // The focused suite and its evidence record.
   'tests/result-lineage-readonly.test.mjs',
+  'tests/synthetic-metric-paired-read.test.mjs',
+  'docs/evidence/ks247-synthetic-producer-paired-read-v1.md',
   'docs/evidence/ks247-read-only-result-lineage-v1.md',
   // This updater is content-addressed too, so the migration is itself tamper-evident.
   'scripts/update-ks247-result-lineage-source-map.mjs',
