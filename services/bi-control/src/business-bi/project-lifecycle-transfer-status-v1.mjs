@@ -16,15 +16,15 @@
 //     a one-cent row mutation no longer re-derives and is refused
 //     (`..._RETAINED_ROWS_DIGEST_MISMATCH`).
 //
-//   PRODUCER REFERENCE (retained LOCAL candidates, NOT public releases — cited as lineage,
+//   PRODUCER REFERENCE (publicly delivered source, NOT consumed by this projection — lineage only,
 //   deliberately NOT imported; imports outside this slice stay dependencies and are never
 //   invented here):
-//     PAN461 candidate `46922f077697c22adae8fab7204a19b9922abcd7`
+//     PAN461 public main `ac42e9d9fa5d6ef471d634159eb5a316464e425e`
 //       `src/pan461/lifecycle-inventory.mjs`
 //       -> the lifecycle-state vocabulary, the generation MATCHED/DRIFTED/UNAVAILABLE axis,
 //          the SOURCE_ARCHIVE-is-never-an-installable-target rule, the secret-VALUE refusal
 //          with a REDACTED marker, and the content-bound rebind after serialization.
-//     PAN471 candidate `90cb8d06dc642586f6b9295fbe66bce81b7b5a76`
+//     PAN471 public main `1ef53c047346842e3ec5b48065a107dfbf6ddfc0`
 //       `src/pan471/capability-inventory.mjs`
 //       -> the availability vocabulary that keeps DENIED / UNAVAILABLE / NOT_COVERED
 //          distinct (denied visibility is not deletion and not coverage), the separated
@@ -608,8 +608,8 @@ function projectStatus({
     readbackCode: readback.code,
     readbackDigest: readback.digest ?? null,
     producerReference: [
-      { surface: 'pan461/lifecycle-inventory', candidateCommit: '46922f077697c22adae8fab7204a19b9922abcd7', status: 'RETAINED_LOCAL_CANDIDATE_NOT_RELEASED' },
-      { surface: 'pan471/capability-inventory', candidateCommit: '90cb8d06dc642586f6b9295fbe66bce81b7b5a76', status: 'RETAINED_LOCAL_CANDIDATE_NOT_RELEASED' },
+      { surface: 'pan461/lifecycle-inventory', publicMainCommit: 'ac42e9d9fa5d6ef471d634159eb5a316464e425e', releaseTag: '2026_09_26_v3', status: 'PUBLIC_SOURCE_NOT_CONSUMED' },
+      { surface: 'pan471/capability-inventory', publicMainCommit: '1ef53c047346842e3ec5b48065a107dfbf6ddfc0', releaseTag: '2026_09_26_v2', status: 'PUBLIC_SOURCE_NOT_CONSUMED' },
     ],
   };
 
@@ -622,6 +622,7 @@ function projectStatus({
     trust: 'LOCAL_SYNTHETIC',
     now,
     executionFacets: {
+      producerCrossing: 'NOT_EXECUTED',
       executed: ['RELEASED_NET_REVENUE_COMPARISON_ATTESTATION'],
       authoredAndBound: [
         'PROJECT_DECLARATION',
@@ -630,7 +631,7 @@ function projectStatus({
         'TRANSFER_TARGET_DECLARATION',
         'QUARANTINE_INVENTORY',
       ],
-      disclosure: 'Only the released comparison attestation is executed. Every other facet is an AUTHORED, BOUND, LOCAL-SYNTHETIC declaration, not a product execution and not a real host probe.',
+      disclosure: 'Only the released comparison attestation is executed. Public PAN461/PAN471 source is not consumed; every other facet is an AUTHORED, BOUND, LOCAL-SYNTHETIC declaration, not a product execution and not a real host probe.',
     },
     projectIdentity: {
       projectId: declaration.projectId,

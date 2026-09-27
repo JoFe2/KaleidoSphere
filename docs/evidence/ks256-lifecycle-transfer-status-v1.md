@@ -29,7 +29,7 @@ dashboard, catalog or status framework was introduced.
 
 ## Producer dependencies
 
-The PAN461/PAN471 producer contracts are not imported or qualified by this synthetic projection.
+PAN461 is publicly delivered at main `ac42e9d9fa5d6ef471d634159eb5a316464e425e` (source-only release `2026_09_26_v3`); PAN471 at main `1ef53c047346842e3ec5b48065a107dfbf6ddfc0` (source-only release `2026_09_26_v2`). These producer contracts are NOT imported, executed or qualified as a crossing by this synthetic projection. The board binds `producerCrossing=NOT_EXECUTED` and `PUBLIC_SOURCE_NOT_CONSUMED`; source delivery does not upgrade authored lifecycle inputs to observed facts.
 Borrowed as VOCABULARY and as an authority model, never as a copied implementation: the
 lifecycle states and the closed decision table, the generation MATCHED / DRIFTED / UNAVAILABLE
 axis, SOURCE_ARCHIVE-is-never-an-installable-target, the secret-VALUE refusal with a reference
@@ -147,8 +147,8 @@ absent afterwards). The candidate is driven on the same input and is GREEN:
   **delivery-owner owned**, not claimed here.
 - The display grants no write authority and has no approval surface: no update, restore,
   migration or transfer is approved or executed by this slice.
-- PAN461/PAN471 remain retained local candidates, not public releases; no cross-repository
-  acceptance is implied.
+- PAN461/PAN471 are public source-only releases, but this board does not consume their entry points; no cross-repository
+  acceptance or real-host observation is implied. The delivery owner must execute and verify an exact producer-to-consumer crossing before #256 closure.
 
 ## Non-claims
 
