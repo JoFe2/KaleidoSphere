@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "kaleidosphere.evaluator/paired-holdout/v1",
+  "classification": "LOCAL_SYNTHETIC",
+  "sourceSha256": "56724bfa95e66d8b61a837e82098aeee67ad430434794da944d033d61dd9737e",
+  "expectations": [
+    {
+      "caseId": "blind:paired-period-net",
+      "status": "READ_COMPLETE",
+      "unit": "EUR_MINOR_UNITS",
+      "comparisonNetMinorUnits": 30000,
+      "currentNetMinorUnits": 100059,
+      "deltaMinorUnits": 70059,
+      "comparisonRows": 7,
+      "currentRows": 6,
+      "effectStatus": "NO_EFFECT_AUTHORIZED"
+    },
+    {
+      "caseId": "blind:one-cent-source-drift",
+      "status": "DENIED_BEFORE_SQL",
+      "reasonCode": "KS247_PRODUCER_SOURCE_SCOPE_DENIED"
+    }
+  ]
+}

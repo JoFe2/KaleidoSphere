@@ -30,6 +30,10 @@ const authoredFiles = [
   'tests/fixtures/business-bi/ks248-access-modes/rights-profile-a-v1.json',
   'tests/fixtures/business-bi/ks248-access-modes/rights-profile-b-v1.json',
   'tests/access-mode-journey-comparison.test.mjs',
+  'tests/ks248-paired-blind-evaluator.test.mjs',
+  'tests/fixtures/business-bi/ks248-paired-evaluator/cases-v1.json',
+  'tests/fixtures/business-bi/ks248-paired-evaluator/holdout-v1.json',
+  'docs/evidence/ks248-paired-evaluator-fixed-domain-v1.md',
   'docs/evidence/ks248-access-mode-journey-comparison-v1.md',
   'scripts/update-ks248-access-mode-source-map.mjs',
 ];

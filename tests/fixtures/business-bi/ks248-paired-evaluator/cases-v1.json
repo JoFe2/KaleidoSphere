@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "kaleidosphere.evaluator/paired-cases/v1",
+  "classification": "LOCAL_SYNTHETIC",
+  "producerSha": "d8e78430e66a6d1b623fde26a3018089652d2112",
+  "consumerBaseSha": "58dfe6d3b5c338d65082b3502e63a3d3ea3f9d79",
+  "sourceRevision": "synthetic-unfamiliar-source-v1",
+  "cases": [
+    {
+      "caseId": "calibration:unpaired-default",
+      "population": "PUBLIC_CALIBRATION",
+      "mode": "UNPAIRED_READ_ONLY",
+      "question": "NET_REVENUE_DELTA"
+    },
+    {
+      "caseId": "blind:paired-period-net",
+      "population": "BLIND_HOLDOUT",
+      "mode": "PAIRED_FULL_DATA_READ",
+      "question": "NET_REVENUE_DELTA"
+    },
+    {
+      "caseId": "blind:one-cent-source-drift",
+      "population": "BLIND_HOLDOUT",
+      "mode": "PAIRED_MUTATED_SOURCE",
+      "question": "NET_REVENUE_DELTA"
+    }
+  ]
+}
