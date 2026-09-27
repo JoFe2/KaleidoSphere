@@ -52,9 +52,11 @@
 //
 // This CLI writes NOTHING: it prints to stdout, opens no socket, sends no SQL of its own,
 // mutates no public state, and grants no authority beyond one local read-only synthetic
-// execution.  The separately owned PAN452 read-purpose binding stays NOT_INTEGRATED.
+// execution.  The optional separate synthetic read-task successor is admitted only by an exact producer checkout; default stays unpaired.
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, realpathSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { execFileSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
@@ -67,6 +69,7 @@ import {
   requireJourneyCallerBindings,
   runUnfamiliarMetricJourney,
 } from '../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
+import { UNFAMILIAR_LAYOUT_PROFILE } from '../services/bi-control/src/business-bi/net-revenue-unfamiliar-composition.mjs';
 import { buildPgliteJourneyDatabase } from '../services/bi-control/src/business-bi/net-revenue-journey.mjs';
 import {
   RESULT_LINEAGE_EVIDENCE_CLAIM_SCHEMA,
@@ -138,7 +141,50 @@ const evidenceClaimPath = optionOf('--evidence-claim');
 const explanationPath = optionOf('--explanation');
 const effectStatusPath = optionOf('--effect-status');
 const goalOption = optionOf('--goal');
-const formatOption = (optionOf('--format') ?? 'JSON').toUpperCase();
+const formatOption = (optionOf("--format") ?? "JSON").toUpperCase();
+const producerCheckout = optionOf("--producer-checkout");
+// Pinned to the public producer commit before KS delivery.
+const PRODUCER_SHA = "7b31fedaddd769ad1b89e7a121b57d2a11cc1c3d";
+const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
+function validatePairedCliArgs() {
+  if (!args.includes("--producer-checkout")) return;
+  const allowed = new Set(["--answers", "--kind-decisions", "--business-semantics",
+    "--source-revision", "--source", "--expectation", "--evidence-claim",
+    "--explanation", "--effect-status", "--format", "--pglite",
+    "--goal", "--producer-checkout"]);
+  const seen = new Set();
+  for (let index = 0; index < args.length; index += 2) {
+    const flag = args[index];
+    const value = args[index + 1];
+    if (!allowed.has(flag) || seen.has(flag) || typeof value !== "string" || value.startsWith("--")) {
+      throw new Error("KS247_PAIRED_CLI_SCOPE_DENIED");
+    }
+    seen.add(flag);
+  }
+}
+
+function requirePairedSqlRuntime() {
+  const supplied = optionOf("--pglite");
+  if (supplied === null || !path.isAbsolute(supplied)) throw new Error("KS247_PAIRED_SQL_RUNTIME_REQUIRED_DENIED");
+  const binding = JSON.parse(readFileSync("contracts/dependencies/ks255-journey-runtime-v1.json", "utf8"));
+  const allowed = binding.runtimeRoots.map((root) => path.resolve(root, binding.entryModule));
+  if (!allowed.includes(path.resolve(supplied))) throw new Error("KS247_PAIRED_SQL_RUNTIME_PATH_DENIED");
+  const selectedRoot = binding.runtimeRoots.find((root) => path.resolve(root, binding.entryModule) === path.resolve(supplied));
+  const verified = spawnSync(process.execPath, ["scripts/provision-ks255-journey-runtime.mjs", "--verify", "--runtime-root", selectedRoot],
+    { cwd: process.cwd(), encoding: "utf8" });
+  if (verified.status !== 0) throw new Error("KS247_PAIRED_SQL_RUNTIME_UNVERIFIED_DENIED");
+}
+
+async function loadProducer() {
+  if (producerCheckout === null) return null;
+  if (!path.isAbsolute(producerCheckout)) throw new Error("KS247_PRODUCER_CHECKOUT_DENIED");
+  const rev = execFileSync("git", ["-C", producerCheckout, "rev-parse", "HEAD"], { encoding: "utf8" }).trim();
+  const top = execFileSync("git", ["-C", producerCheckout, "rev-parse", "--show-toplevel"], { encoding: "utf8" }).trim();
+  const dirty = execFileSync("git", ["-C", producerCheckout, "status", "--porcelain", "--untracked-files=all"], { encoding: "utf8" }).trim();
+  if (realpathSync(producerCheckout) !== realpathSync(top) || rev !== PRODUCER_SHA || dirty) throw new Error("KS247_PRODUCER_IDENTITY_DENIED");
+  return import(pathToFileURL(path.join(producerCheckout, "src/pan442/bound-task-handle.mjs")).href);
+}
+
 
 const expectationBytes = readFileSync(expectationPath);
 const explanationBytes = explanationPath === null ? null : readFileSync(explanationPath);
@@ -443,9 +489,8 @@ if (args.includes('--negative')) {
     effectStatusPath,
     evidenceClaimPath,
     authority: AUTHORITY,
-    // The PAN452 read-purpose binding is separately owned and NOT accepted; this CLI neither
-    // designs, stubs nor duplicates its handles.
-    sharedReadPurposeBinding: 'NOT_INTEGRATED',
+    // The legacy Order operation is unchanged; this opt-in consumes the separate read task.
+    sharedReadPurposeBinding: producerCheckout === null ? 'NOT_INTEGRATED' : 'PENDING_VERIFICATION',
     ac05: 'PARENT_OWNED_OPEN',
   };
   if (proposal.metricCandidate.status !== 'CONFIRMED') {
@@ -460,6 +505,7 @@ if (args.includes('--negative')) {
     // read), which is a different fact from "the read completed and the lineage refused".
     let observedJourney = null;
     try {
+      validatePairedCliArgs();
       const callerKindDecisionBytes = kindDecisionsPath === null ? undefined : readFileSync(kindDecisionsPath);
       const callerBusinessSemanticBytes = businessSemanticsPath === null ? undefined : readFileSync(businessSemanticsPath);
       // Refuses BEFORE makeDatabase(): a missing caller input must not create, seed or read
@@ -469,20 +515,51 @@ if (args.includes('--negative')) {
         businessSemanticBytes: callerBusinessSemanticBytes,
         sourceRevision: sourceRevisionOption,
       });
-      observedJourney = await runUnfamiliarMetricJourney({
-        proposal,
-        sourceBytes,
-        kindDecisionBytes: callerKindDecisionBytes,
-        businessSemanticBytes: callerBusinessSemanticBytes,
-        metricContractBytes,
-        oracleBytes,
-        database: await makeDatabase(),
-        sourceRevision: sourceRevisionOption,
-        authority: AUTHORITY,
-        ...(goalOption === null ? {} : { semanticGoal: goalOption }),
-      });
+      const producer = await loadProducer();
+      const runRead = async () => {
+        observedJourney = await runUnfamiliarMetricJourney({
+        proposal, sourceBytes, kindDecisionBytes: callerKindDecisionBytes,
+        businessSemanticBytes: callerBusinessSemanticBytes, metricContractBytes,
+        oracleBytes, database: await makeDatabase(), sourceRevision: sourceRevisionOption,
+        authority: AUTHORITY, ...(goalOption === null ? {} : { semanticGoal: goalOption }),
+        });
+        return observedJourney;
+      };
+      let pairedRead = null;
+      if (producer === null) observedJourney = await runRead();
+      else {
+        const origin = producer.syntheticMetricReadOrigin();
+        const contract = JSON.parse(metricContractBytes.toString("utf8"));
+        const periods = Object.fromEntries(["current", "comparison"].map((name) =>
+          [name, { start: contract.periods[name].start, end: contract.periods[name].end }]));
+        // Producer-owned scope against actual fixture/contract, before any SQL work.
+        if (digest(sourceBytes) !== origin.sourceSha256 || digest(metricContractBytes) !== origin.contractSha256
+          || sourceRevisionOption !== origin.sourceRevision || contract.metric.id !== origin.question
+          || JSON.stringify(periods) !== JSON.stringify(origin.period)
+          || UNFAMILIAR_LAYOUT_PROFILE.profileId !== origin.layout
+          || `${contract.currency.code}_MINOR_UNITS` !== origin.units) {
+          throw new Error("KS247_PRODUCER_SOURCE_SCOPE_DENIED");
+        }
+        requirePairedSqlRuntime();
+        const issuer = new producer.SyntheticMetricReadIssuer({ secret: "local-synthetic-ks247-read-v1" });
+        const issued = issuer.issue({ taskRef: origin.taskRef });
+        const request = { ...origin.principal, taskRef: origin.taskRef, intent: origin.intent,
+          sourceRevision: origin.sourceRevision, sourceSha256: digest(sourceBytes),
+          contractSha256: digest(metricContractBytes), question: contract.metric.id,
+          period: periods, layout: UNFAMILIAR_LAYOUT_PROFILE.profileId,
+          units: `${contract.currency.code}_MINOR_UNITS`, authority: origin.authority };
+        pairedRead = await producer.useBoundTaskHandle({ issuer, handle: issued.handle,
+          operationInput: request, operation: { read: runRead } });
+        observedJourney = pairedRead.result;
+        summary.sharedReadPurposeBinding = "EXECUTED_LOCAL_SYNTHETIC";
+      }
       const rendered = renderLineage(lineageInput(observedJourney), formatOption);
-      process.stdout.write(rendered.text);
+      if (pairedRead !== null && formatOption === "JSON") {
+        process.stdout.write(`${JSON.stringify({ pairedRead: { producerSha: PRODUCER_SHA,
+          schemaVersion: pairedRead.schemaVersion, status: pairedRead.status,
+          effectStatus: pairedRead.effectStatus, task: pairedRead.task },
+          lineage: rendered.lineage }, null, 2)}\n`);
+      } else process.stdout.write(rendered.text);
       if (formatOption !== 'JSON') {
         // The machine receipt accompanies a human rendering so the same run stays checkable.
         process.stdout.write(`${JSON.stringify({
@@ -498,7 +575,10 @@ if (args.includes('--negative')) {
           complete: rendered.lineage.sections.completion.complete,
           effectJournal: rendered.lineage.verification.effectJournal,
           expectedNumberCount: rendered.lineage.verification.expectedNumberCount,
-          sharedReadPurposeBinding: 'NOT_INTEGRATED',
+          sharedReadPurposeBinding: summary.sharedReadPurposeBinding,
+          ...(pairedRead === null ? {} : { pairedRead: { producerSha: PRODUCER_SHA,
+            schemaVersion: pairedRead.schemaVersion, status: pairedRead.status,
+            effectStatus: pairedRead.effectStatus, task: pairedRead.task } }),
         }, null, 2)}\n`);
       }
     } catch (error) {

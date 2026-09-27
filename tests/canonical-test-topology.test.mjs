@@ -140,6 +140,7 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // journey suite above, reachable through this parent exactly once so the
   // exactly-one-route-per-suite invariant is preserved rather than weakened.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/result-lineage-readonly.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/synthetic-metric-paired-read.test.mjs' },
   // KS255 locked runtime suite is reached once through the existing source-map parent.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/ks255-journey-runtime-binding.test.mjs' },
   // KS254 generation safety and native HTTP qualification share one imported parent.
