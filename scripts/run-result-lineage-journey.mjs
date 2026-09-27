@@ -144,7 +144,7 @@ const goalOption = optionOf('--goal');
 const formatOption = (optionOf("--format") ?? "JSON").toUpperCase();
 const producerCheckout = optionOf("--producer-checkout");
 // Pinned to the public producer commit before KS delivery.
-const PRODUCER_SHA = "7b31fedaddd769ad1b89e7a121b57d2a11cc1c3d";
+const PRODUCER_SHA = "d8e78430e66a6d1b623fde26a3018089652d2112";
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 function validatePairedCliArgs() {
   if (!args.includes("--producer-checkout")) return;
