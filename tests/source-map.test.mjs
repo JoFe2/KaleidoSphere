@@ -56,6 +56,8 @@ import './ks254-superset-init-recovery.test.mjs';
 // synthetic declarations.  It follows the same imported-suite route so the byte-bound
 // canonical command and the exactly-one-route-per-suite invariant are both preserved.
 import './project-lifecycle-transfer-status.test.mjs';
+// Optional public-source crossing uses the same immutable canonical test parent.
+import './public-producer-status-crossing.test.mjs';
 // KS248 (#248) access-mode journey comparison: an evaluator-owned frozen comparison of the
 // composed journey under declared information rights, against an independent deterministic
 // reference and a blind holdout.  It follows the same imported-suite route so the byte-bound
