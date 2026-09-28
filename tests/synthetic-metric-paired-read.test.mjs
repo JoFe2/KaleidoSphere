@@ -250,3 +250,40 @@ else test("second actual paired SQL read verifies 24 numbers; substitutions and 
   deny("unpaired v2",{"--producer-checkout":""},"KS247_PRODUCER_CHECKOUT_DENIED");
  }finally{rmSync(scratch,{recursive:true,force:true});}
 });
+
+// PAN486 AC04 integration — opt-in newly pinned producer, same independent v2 source,
+// real local PGlite, no mutation/effect grant. Old v1/v2 producer pins stay intact.
+const correctedProducer = process.env.KS247_PAN486_PRODUCER_CHECKOUT;
+if (!correctedProducer) test("PAN486 corrected producer pair needs its exact local checkout", t => t.skip("KS247_PAN486_PRODUCER_CHECKOUT not supplied"));
+else test("PAN486 corrected producer completes the actual v2-source PGlite read with exact scope and no effect", () => {
+  const runtime = process.env.KS247_PGLITE_PATH;
+  assert.ok(runtime, "explicit verified PGlite runtime required");
+  const scratch = mkdtempSync(join(tmpdir(), "ks247-pan486-"));
+  const answers = join(scratch, "answers.txt");
+  writeFileSync(answers, ["synth_x.pay_feed.pf_id", "synth_x.pay_feed.val_dt", "MINOR_UNITS", "synth_x.pay_feed.amt_a", "EUR", "R", "V"].join("\n") + "\n");
+  const choices = {"--source": second + "source-pay-feed-v2.json", "--kind-decisions": second + "kind-decisions-v2.json", "--business-semantics": second + "business-semantics-v2.json", "--source-revision": "synthetic-unfamiliar-source-v2", "--expectation": second + "independent-expectation-v2.json", "--source-variant": "v3", "--producer-checkout": correctedProducer, "--pglite": runtime};
+  const invoke = (changes = {}) => {
+    const run = spawnSync(process.execPath, ["scripts/run-result-lineage-journey.mjs", "--answers", answers, ...Object.entries({...choices, ...changes}).flat()], { cwd: process.cwd(), encoding: "utf8", timeout: 45000 });
+    assert.equal(run.status, 0, run.stderr + run.stdout.slice(0, 500));
+    return JSON.parse(run.stdout);
+  };
+  try {
+    const actual = invoke();
+    assert.equal(actual.pairedRead.producerSha, "da92e10d8751f99b4103dfaa14bc5e5eb732e9dd", "exact corrected producer");
+    assert.equal(actual.pairedRead.status, "READ_COMPLETE");
+    assert.equal(actual.pairedRead.effectStatus, "NO_EFFECT_AUTHORIZED");
+    assert.equal(actual.pairedQualification.status, "VERIFIED_LOCAL_SYNTHETIC_READ_ONLY");
+    assert.equal(actual.lineage.verification.verifiedNumberCount, 24);
+    assert.equal(actual.pairedQualification.externalSourceAuthority, "NOT_GRANTED");
+    const prior = invoke({"--producer-checkout": process.env.KS247_V2_PRODUCER_CHECKOUT || process.cwd()});
+    assert.equal(prior.journeyDenial?.message, "KS247_PRODUCER_IDENTITY_DENIED");
+    assert.equal(prior.executed, false);
+    const substituted = JSON.parse(secondSource);
+    substituted.rows[0].amt_a += 1;
+    const wrong = join(scratch, "one-cent-change.json");
+    writeFileSync(wrong, JSON.stringify(substituted));
+    const denied = invoke({"--source": wrong});
+    assert.equal(denied.journeyDenial?.message, "KS247_PRODUCER_SOURCE_SCOPE_DENIED");
+    assert.equal(denied.executed, false);
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+});
