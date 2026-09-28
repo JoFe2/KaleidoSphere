@@ -1,11 +1,18 @@
 // KS247: an opt-in, read-only join of the released producer receipt and verified
 // result lineage. This is a display qualification, not a task issuer or effect grant.
-export function qualifyPairedReadLineage({ pairedRead, lineage, producerSha, contractSha256 }) {
+export function qualifyPairedReadLineage({ pairedRead, lineage, producerSha, contractSha256, variant = "v1" }) {
   const deny = (reason) => { const error = new Error(`KS247_PAIRED_LINEAGE_DENIED:${reason}`); error.code = error.message; throw error; };
+  const scope = variant === "v1"
+    ? {sha:"d8e78430e66a6d1b623fde26a3018089652d2112",origin:"LOCAL_SYNTHETIC_KS246_KS247_V1",taskRef:"ks247-net-revenue-read-v1"}
+    : variant === "v2" ? {sha:"e305a3432f7a98de83b1fdbf2a2b1d21bb719e7c",origin:"LOCAL_SYNTHETIC_KS246_KS247_V2",taskRef:"ks247-net-revenue-read-v2",sourceRevision:"synthetic-unfamiliar-source-v2",sourceSha256:"cacd2a08d5fa5cb8603513a769362a2f7bdb700c44d700728a1fe2f1244be52e"} : null;
+  if (scope === null || producerSha !== scope.sha) deny("IDENTITY_UNAVAILABLE");
   if (pairedRead?.schemaVersion !== 'pansphaira.contract/synthetic-metric-read-task/v1'
       || pairedRead.status !== 'READ_COMPLETE' || pairedRead.effectStatus !== 'NO_EFFECT_AUTHORIZED'
       || pairedRead.task?.schemaVersion !== pairedRead.schemaVersion
-      || pairedRead.task?.origin !== 'LOCAL_SYNTHETIC_KS246_KS247_V1'
+      || pairedRead.task?.origin !== scope.origin
+      || pairedRead.task?.taskRef !== scope.taskRef
+      || (scope.sourceRevision && (pairedRead.task?.sourceRevision !== scope.sourceRevision
+        || pairedRead.task?.sourceSha256 !== scope.sourceSha256))
       || pairedRead.task?.intent !== 'READ_METRIC_NO_EFFECT'
       || pairedRead.task?.authority?.readOnly !== true
       || pairedRead.task.authority.mutationAuthority !== false
