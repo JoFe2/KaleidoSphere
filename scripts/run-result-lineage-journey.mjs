@@ -146,12 +146,15 @@ const formatOption = (optionOf("--format") ?? "JSON").toUpperCase();
 const producerCheckout = optionOf("--producer-checkout");
 const producerVariant = optionOf("--source-variant") ?? "v1";
 const V2_PRODUCER_SHA = "e305a3432f7a98de83b1fdbf2a2b1d21bb719e7c";
+// Local qualification successor: corrected PAN486 producer, same frozen v2 fixture and authority.
+const PAN486_PRODUCER_SHA = "da92e10d8751f99b4103dfaa14bc5e5eb732e9dd";
 // Pinned to the public producer commit before KS delivery.
 const PRODUCER_SHA = "d8e78430e66a6d1b623fde26a3018089652d2112";
-const selectedProducerSha = producerVariant === "v2" ? V2_PRODUCER_SHA : PRODUCER_SHA;
+const selectedProducerSha = producerVariant === "v3" ? PAN486_PRODUCER_SHA
+  : producerVariant === "v2" ? V2_PRODUCER_SHA : PRODUCER_SHA;
 const digest = (bytes) => createHash("sha256").update(bytes).digest("hex");
 function validatePairedCliArgs() {
-  if (producerVariant !== "v1" && producerVariant !== "v2") throw new Error("KS247_PAIRED_CLI_SCOPE_DENIED");
+  if (producerVariant !== "v1" && producerVariant !== "v2" && producerVariant !== "v3") throw new Error("KS247_PAIRED_CLI_SCOPE_DENIED");
   if (!args.includes("--producer-checkout")) { if (producerVariant !== "v1") throw new Error("KS247_PAIRED_VARIANT_REQUIRES_PRODUCER_DENIED"); return; }
   const allowed = new Set(["--answers", "--kind-decisions", "--business-semantics",
     "--source-revision", "--source", "--expectation", "--evidence-claim",
@@ -533,7 +536,7 @@ if (args.includes('--negative')) {
       let pairedRead = null;
       if (producer === null) observedJourney = await runRead();
       else {
-        const origin = producer.syntheticMetricReadOrigin(producerVariant);
+        const origin = producer.syntheticMetricReadOrigin(producerVariant === "v3" ? "v2" : producerVariant);
         const contract = JSON.parse(metricContractBytes.toString("utf8"));
         const periods = Object.fromEntries(["current", "comparison"].map((name) =>
           [name, { start: contract.periods[name].start, end: contract.periods[name].end }]));

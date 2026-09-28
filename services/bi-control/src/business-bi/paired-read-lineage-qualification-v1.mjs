@@ -4,7 +4,8 @@ export function qualifyPairedReadLineage({ pairedRead, lineage, producerSha, con
   const deny = (reason) => { const error = new Error(`KS247_PAIRED_LINEAGE_DENIED:${reason}`); error.code = error.message; throw error; };
   const scope = variant === "v1"
     ? {sha:"d8e78430e66a6d1b623fde26a3018089652d2112",origin:"LOCAL_SYNTHETIC_KS246_KS247_V1",taskRef:"ks247-net-revenue-read-v1"}
-    : variant === "v2" ? {sha:"e305a3432f7a98de83b1fdbf2a2b1d21bb719e7c",origin:"LOCAL_SYNTHETIC_KS246_KS247_V2",taskRef:"ks247-net-revenue-read-v2",sourceRevision:"synthetic-unfamiliar-source-v2",sourceSha256:"cacd2a08d5fa5cb8603513a769362a2f7bdb700c44d700728a1fe2f1244be52e"} : null;
+    : variant === "v2" ? {sha:"e305a3432f7a98de83b1fdbf2a2b1d21bb719e7c",origin:"LOCAL_SYNTHETIC_KS246_KS247_V2",taskRef:"ks247-net-revenue-read-v2",sourceRevision:"synthetic-unfamiliar-source-v2",sourceSha256:"cacd2a08d5fa5cb8603513a769362a2f7bdb700c44d700728a1fe2f1244be52e"}
+    : variant === "v3" ? {sha:"da92e10d8751f99b4103dfaa14bc5e5eb732e9dd",origin:"LOCAL_SYNTHETIC_KS246_KS247_V2",taskRef:"ks247-net-revenue-read-v2",sourceRevision:"synthetic-unfamiliar-source-v2",sourceSha256:"cacd2a08d5fa5cb8603513a769362a2f7bdb700c44d700728a1fe2f1244be52e"} : null;
   if (scope === null || producerSha !== scope.sha) deny("IDENTITY_UNAVAILABLE");
   if (pairedRead?.schemaVersion !== 'pansphaira.contract/synthetic-metric-read-task/v1'
       || pairedRead.status !== 'READ_COMPLETE' || pairedRead.effectStatus !== 'NO_EFFECT_AUTHORIZED'
