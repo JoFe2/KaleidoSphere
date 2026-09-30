@@ -22,7 +22,13 @@ test('KS256 source archive excludes inherited environment-bound evidence without
   const excluded = ['WORK_RESULT.md',
     'closure-audits/PORTFOLIO-KS143-ROOT-QS/exact-head-local-gate-receipt.json',
     'docs/evidence/m6-03-bi-specialist/qwen-conformance-manifest.json',
-    'scripts/run-qwen-conformance-evidence.mjs'];
+    'scripts/run-qwen-conformance-evidence.mjs',
+    'docs/evidence/conveyor/ks76-live-codex-local-readback-v1.json',
+    'scripts/release/validate-k4c-codex-plugin.mjs',
+    'scripts/run-native-superset-browser-evidence.mjs',
+    'scripts/run-visual-browser-evidence.mjs',
+    'tests/agent-skill-distribution.test.mjs',
+    'tests/fixtures/release/k4c-plugin-creator-transcripts-v1.json'];
   const archive = spawnSync('git', ['archive', '--format=tar', 'HEAD'], { maxBuffer: 32 * 1024 * 1024 });
   assert.equal(archive.status, 0, archive.stderr?.toString());
   const listing = spawnSync('tar', ['-tf', '-'], { input: archive.stdout, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
