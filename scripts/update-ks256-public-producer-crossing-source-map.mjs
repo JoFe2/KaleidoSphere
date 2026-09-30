@@ -4,9 +4,12 @@ import { readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 const root = process.cwd();
 const files = [
+  '.gitattributes',
+  'docs/evidence/ks256-release-boundary-v1.md',
   'services/bi-control/src/business-bi/public-producer-status-crossing-v1.mjs',
   'scripts/run-ks256-public-producer-crossing.mjs',
   'services/bi-control/src/business-bi/paired-read-status-projection-v1.mjs',
+  'services/bi-control/src/business-bi/synthetic-target-status-v1.mjs',
   'scripts/run-ks256-paired-status.mjs',
   'tests/ks256-paired-status.test.mjs',
   'docs/evidence/ks247-ks256-paired-display-v1.md',
