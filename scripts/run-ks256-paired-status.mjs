@@ -8,8 +8,11 @@ import { projectPairedReadStatus } from '../services/bi-control/src/business-bi/
 
 const args = process.argv.slice(2);
 const allowed = ['--pan-status-checkout', '--pan-read-checkout', '--pglite'];
+const variant = args.length === 8 && args[6] === "--source-variant" ? args[7] : "v1";
 const deny = (code) => { process.stdout.write(JSON.stringify({ outcome: 'DENIED', code, mutationCount: 0 }) + '\n'); process.exitCode = 1; };
-if (args.length !== 6 || args.some((x, i) => i % 2 === 0 && x !== allowed[i / 2])
+if (![6, 8].includes(args.length) || !["v1", "v3"].includes(variant)
+    || (args.length === 8 && args[6] !== "--source-variant")
+    || args.slice(0, 6).some((x, i) => i % 2 === 0 && x !== allowed[i / 2])
     || args.some((x, i) => i % 2 === 1 && (!x || x.startsWith('--')))) {
   deny('KS256_PAIRED_INPUT_SCOPE_DENIED');
 } else {
@@ -27,14 +30,19 @@ if (args.length !== 6 || args.some((x, i) => i % 2 === 0 && x !== allowed[i / 2]
     };
     const crossing = run('scripts/run-ks256-public-producer-crossing.mjs', ['--pan-checkout', args[1]]);
     if (crossing.outcome !== 'PROJECTED') throw Error('KS256_PRODUCER_STATUS_UNQUALIFIED');
-    const fd = 'tests/fixtures/business-bi/ks246-unfamiliar-schema/';
+    const fd = variant === "v3" ? "tests/fixtures/business-bi/ks247-second-source/"
+      : "tests/fixtures/business-bi/ks246-unfamiliar-schema/";
+    const version = variant === "v3" ? "v2" : "v1";
     const read = run('scripts/run-result-lineage-journey.mjs', [
-      '--answers', answers, '--kind-decisions', fd + 'kind-decisions-v1.json',
-      '--business-semantics', fd + 'business-semantics-v1.json',
-      '--source-revision', 'synthetic-unfamiliar-source-v1',
+      '--answers', answers, '--kind-decisions', fd + `kind-decisions-${version}.json`,
+      '--business-semantics', fd + `business-semantics-${version}.json`,
+      '--source-revision', `synthetic-unfamiliar-source-${version}`,
+      '--source-variant', variant,
+      ...(variant === "v3" ? ["--source", fd + "source-pay-feed-v2.json",
+        "--expectation", fd + "independent-expectation-v2.json"] : []),
       '--producer-checkout', args[3], '--pglite', args[5],
     ]);
-    const result = projectPairedReadStatus({ read, crossing });
+    const result = projectPairedReadStatus({ read, crossing, variant });
     process.stdout.write(JSON.stringify(result) + '\n');
     if (result.outcome === 'DENIED') process.exitCode = 1;
   } catch (error) { deny(error.message === 'KS256_PRODUCER_STATUS_UNQUALIFIED'
