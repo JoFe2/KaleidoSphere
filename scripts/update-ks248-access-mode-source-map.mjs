@@ -17,6 +17,8 @@ const sourceMapPath = resolve(root, 'SOURCE-MAP.json');
 
 const authoredFiles = [
   '.github/workflows/ci.yml',
+  'tests/postgresql-c2-safe-aggregate.test.mjs',
+  'tests/ks255-journey-runtime-binding.test.mjs',
   'scripts/run-ks248-paired-access-evaluation.mjs',
   'tests/fixtures/business-bi/ks248-paired-evaluator/access-cases-v2.json',
   'tests/fixtures/business-bi/ks248-paired-evaluator/access-holdout-v2.json',
