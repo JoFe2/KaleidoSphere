@@ -1,5 +1,16 @@
 # KS248 (KS-EVO-03) — access-mode journey comparison
 
+Current correction: [paired access evaluation v2](ks248-paired-access-evaluation-v2.md).
+Denied row rights now refuse; permitted FX without conversion is unsupported. A new
+`calibration-denied-credits-v2.json` preserves the old v1 calibration as counterevidence.
+False refusals and mismatched calibration now fail verification; clarification/correction
+work is unknown with separately named outcome proxies. Exclusive boundaries refuse.
+
+The remainder records the historical v1 slice, including its then-observed defects and
+partial acceptance claims. It is not current proof of FX capability or paired access reuse.
+
+## Historical v1 evidence
+
 Synthetic comparison of declared data rights; no real-source or production qualification.
 
 `Result / DoD`: "A small reproducible comparison proves or falsifies correctness and useful

@@ -40,7 +40,7 @@ const sha256Hex = (value) => createHash('sha256').update(value).digest('hex');
 
 const PROFILES = Object.freeze({
   A: { rights: `${FD}/rights-profile-a-v1.json`, holdout: `${FD}/holdout-v1.json`, calibration: `${FD}/calibration-v1.json` },
-  B: { rights: `${FD}/rights-profile-b-v1.json`, holdout: `${FD}/holdout-denied-credits-v1.json`, calibration: `${FD}/calibration-denied-credits-v1.json` },
+  B: { rights: `${FD}/rights-profile-b-v1.json`, holdout: `${FD}/holdout-denied-credits-v1.json`, calibration: `${FD}/calibration-denied-credits-v2.json` },
 });
 
 function compare(profile = 'A', overrides = {}) {
@@ -75,7 +75,7 @@ test('KS248 AC01: the case input carries NO expectation, and an expectation smug
 });
 
 test('KS248 AC01: the holdout and the calibration set are digest-bound, and public calibration is disjoint from the blind holdout', () => {
-  for (const name of ['holdout-v1.json', 'calibration-v1.json', 'holdout-denied-credits-v1.json', 'calibration-denied-credits-v1.json']) {
+  for (const name of ['holdout-v1.json', 'calibration-v1.json', 'holdout-denied-credits-v1.json', 'calibration-denied-credits-v1.json', 'calibration-denied-credits-v2.json']) {
     const population = readJson(`${FD}/${name}`);
     const { digest, ...body } = population;
     assert.equal(ACCESS_MODE_INTERNALS.sha256(body), digest, `${name} digest does not re-derive`);
@@ -301,9 +301,11 @@ test('KS248 AC04: every metric key is present, and the unmeasured metrics stay n
     assert.match(metrics.activeHumanOrAgentWorkReason, /^NOT_INSTRUMENTED:/);
     assert.equal(metrics.measurableCostMinorUnits, null);
     assert.match(metrics.measurableCostMinorUnitsReason, /^NOT_INVENTED:/);
-    for (const key of ['correctAcceptance', 'falseAcceptance', 'falseRefusal', 'clarificationsRequested', 'correctionsRequired']) {
+    for (const key of ['correctAcceptance', 'falseAcceptance', 'falseRefusal', 'abstentionOrBoundaryOutcomeCount', 'failedExpectationCount']) {
       assert.equal(Number.isInteger(metrics[key]), true, `${population}.${key} is not an integer`);
     }
+    assert.equal(metrics.clarificationsRequested, null);
+    assert.equal(metrics.correctionsRequired, null);
     assert.equal(metrics.correctAcceptance + metrics.falseAcceptance + metrics.falseRefusal
       + metrics.wrongNumber + metrics.wrongRefusalReason + metrics.refusalMatch
       + metrics.justifiedAbstention, metrics.caseCount);
@@ -392,6 +394,85 @@ test('KS248 CLI: --verify re-derives the carried binding exactly, and the negati
   const negative = runCli(['--negative']);
   assert.match(negative, /negative gates: 20 executed, 0 unexpected/);
   assert.equal(negative.includes('UNEXPECTEDLY_ACCEPTED'), false);
+});
+
+// Bounded corrections to independent review F1-F3. These expectations precede the fixes.
+const checkFresh = (input, report = buildAccessModeJourneyComparison(input)) =>
+  verifyAccessModeJourneyComparison({ ...input, report, bindingDigest: report.bindingDigest });
+
+test('KS248 review F1: denied row rights refuse full data, without disabling permitted aggregates', () => {
+  const input = variantInput('A');
+  input.rights.rowLevel = 'DENIED';
+  const report = buildAccessModeJourneyComparison(input);
+  const full = report.results.find((v) => v.caseId === 'case:full-net-delta');
+  assert.equal(full.observedOutcome, 'REFUSED_DENIED_ROW_LEVEL');
+  assert.equal(full.numbers, null);
+  assert.equal(report.results.find((v) => v.caseId === 'case:aggregate-net-delta').observedOutcome, 'ACCEPTED');
+  assert.throws(() => ACCESS_MODE_INTERNALS.permittedProjection({ rows: input.rows,
+    accessMode: 'PERMITTED_FULL_DATA', rights: input.rights }), /ROW_LEVEL_RIGHT_DENIED/);
+  assert.equal(checkFresh(input, report).outcome, 'DENIED');
+});
+
+test('KS248 review F1: permission to FX never substitutes for conversion capability', () => {
+  const report = compare('B');
+  const fx = report.results.find((v) => v.caseId === 'case:full-fx-required');
+  assert.equal(fx.observedOutcome, 'REFUSED_UNSUPPORTED_FX');
+  assert.equal(fx.numbers, null);
+  assert.equal(fx.basis, 'FX_CONVERSION_NOT_IMPLEMENTED');
+});
+
+test('KS248 review F2: fresh false refusals including abstention fail module and actual CLI checker', () => {
+  const scratch = mkdtempSync(path.join(tmpdir(), 'ks248-false-refusal-'));
+  try {
+    for (const mutation of [{ requiresJoinResolution: true }, { boundaryRule: 'UNSPECIFIED' }]) {
+      const input = variantInput('A');
+      Object.assign(input.cases.cases.find((v) => v.caseId === 'case:full-net-delta'), mutation);
+      const report = buildAccessModeJourneyComparison(input);
+      assert.equal(report.metrics.blindHoldout.falseRefusal, 1);
+      assert.equal(report.metrics.blindHoldout.justifiedAbstention, 0);
+      assert.equal(checkFresh(input, report).code, 'KS248_COMPARISON_DENIED:BLIND_HOLDOUT_VERDICT_FAILED');
+      const casesFile = path.join(scratch, 'cases.json');
+      const reportFile = path.join(scratch, 'report.json');
+      writeFileSync(casesFile, JSON.stringify(input.cases));
+      writeFileSync(reportFile, JSON.stringify(report));
+      const args = cliArgs('A');
+      args[args.indexOf('--cases') + 1] = casesFile;
+      assert.match(runCli([...args, '--verify', '--binding', reportFile]),
+        /verify=DENIED code=KS248_COMPARISON_DENIED:BLIND_HOLDOUT_VERDICT_FAILED/);
+    }
+  } finally { rmSync(scratch, { recursive: true, force: true }); }
+});
+
+test('KS248 review F2: calibration mismatch cannot verify; historical FX expectation is retained as counterevidence', () => {
+  const input = variantInput('B');
+  input.calibration = readJson(`${FD}/calibration-denied-credits-v1.json`);
+  const report = buildAccessModeJourneyComparison(input);
+  assert.equal(report.metrics.publicCalibration.falseRefusal, 1);
+  assert.equal(checkFresh(input, report).code, 'KS248_COMPARISON_DENIED:PUBLIC_CALIBRATION_VERDICT_FAILED');
+});
+
+test('KS248 review F2: unobserved clarification and correction work stay unknown, proxies are named', () => {
+  const metrics = compare('A').metrics.publicCalibration;
+  assert.equal(metrics.clarificationsRequested, null);
+  assert.match(metrics.clarificationsRequestedReason, /^NOT_INSTRUMENTED:/);
+  assert.equal(metrics.correctionsRequired, null);
+  assert.match(metrics.correctionsRequiredReason, /^NOT_INSTRUMENTED:/);
+  assert.equal(Number.isInteger(metrics.abstentionOrBoundaryOutcomeCount), true);
+  assert.equal(Number.isInteger(metrics.failedExpectationCount), true);
+});
+
+test('KS248 review F3: exclusive boundaries are explicitly unsupported, never silently inclusive aggregates', () => {
+  const input = variantInput('A');
+  input.rows.push({ order_id: 's-9xx', order_date: PERIODS.comparison.end,
+    record_kind: 'sale', amount_minor_units: 1000, status: 'closed', segment: 'direct' });
+  input.sourceIdentity.sourceBytesSha256 = sha256Hex(JSON.stringify(input.rows));
+  input.cases.cases.find((v) => v.caseId === 'case:aggregate-net-delta').boundaryRule = 'EXCLUDE_BOUNDARY_DATES';
+  const report = buildAccessModeJourneyComparison(input);
+  const aggregate = report.results.find((v) => v.caseId === 'case:aggregate-net-delta');
+  assert.equal(aggregate.observedOutcome, 'REFUSED_BOUNDARY_DATE');
+  assert.equal(aggregate.numbers, null);
+  assert.equal(aggregate.basis, 'EXCLUSIVE_BOUNDARY_RULE_NOT_AVAILABLE_ON_THE_RELEASED_PATH');
+  assert.equal(checkFresh(input, report).outcome, 'DENIED');
 });
 
 // ---------------------------------------------------------------------------

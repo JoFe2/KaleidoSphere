@@ -16,6 +16,13 @@ const root = resolve(process.cwd());
 const sourceMapPath = resolve(root, 'SOURCE-MAP.json');
 
 const authoredFiles = [
+  '.github/workflows/ci.yml',
+  'scripts/run-ks248-paired-access-evaluation.mjs',
+  'tests/fixtures/business-bi/ks248-paired-evaluator/access-cases-v2.json',
+  'tests/fixtures/business-bi/ks248-paired-evaluator/access-holdout-v2.json',
+  'tests/fixtures/business-bi/ks248-paired-evaluator/access-calibration-v2.json',
+  'tests/fixtures/business-bi/ks248-access-modes/calibration-denied-credits-v2.json',
+  'docs/evidence/ks248-paired-access-evaluation-v2.md',
   'tests/source-map.test.mjs',
   'tests/canonical-test-topology.test.mjs',
   'services/bi-control/src/business-bi/access-mode-journey-comparison-v1.mjs',

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "kaleidosphere.evaluator/paired-access-expectations/v2",
+  "population": "BLIND_HOLDOUT",
+  "basis": "Independently folded frozen source; expectations never passed to candidate CLI. Public evaluator declarations, not external blind generalization.",
+  "expectations": [
+    {"caseId": "blind:paired-aggregates", "outcome": "ACCEPTED", "numbers": {"comparisonNetMinorUnits": 30000, "currentNetMinorUnits": 100059, "deltaMinorUnits": 70059}},
+    {"caseId": "blind:paired-full", "outcome": "ACCEPTED", "numbers": {"comparisonNetMinorUnits": 30000, "currentNetMinorUnits": 100059, "deltaMinorUnits": 70059}}
+  ]
+}

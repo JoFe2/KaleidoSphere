@@ -1,4 +1,9 @@
-# KS248 evaluator-owned paired read subset — local candidate only
+# KS248 evaluator-owned paired read subset — retained v1 evidence
+
+The [v2 evaluator](ks248-paired-access-evaluation-v2.md) now scores the same fixed paired
+task under three requested modes against an independent reference. Unsupported restricted
+modes falsify reuse; they are not admitted access-mode capabilities. This v1 record remains
+historical and does not pool its source with the separate segment dataset.
 
 A disjoint public calibration case (default, unpaired) and two evaluator-owned blind cases
 (actual fixed-domain paired SQL read, one-cent substituted source) are frozen separately
