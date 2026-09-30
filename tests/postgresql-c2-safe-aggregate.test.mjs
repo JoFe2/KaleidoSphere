@@ -969,14 +969,15 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   // later, independently bound generation: it consumes the committed pinned provisioner
   // (scripts/provision-ks255-journey-runtime.mjs) and executes every required SQL suite over the
   // provisioned closure, without relaxing any retained gate. Only the current hash binding moves;
-  // the historical original above is immutable.
+  // the historical original above is immutable. KS248 adds an explicit public paired-task
+  // evaluation step and disables persisted checkout credentials; retained SQL gates remain.
   assert.equal(
     fileSha256(Buffer.from(`${git('show', `${C2_CORRECTION_COMMIT}:.github/workflows/ci.yml`)}\n`)),
     '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
-    '80f817587610957bba849e036e81f95a8a7901d25c6fa6394ac2e706251d48cc',
+    '2a80b395990fb23b37effe18004a63f93d0d34969304383feae49430d011885c',
   );
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
   assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);

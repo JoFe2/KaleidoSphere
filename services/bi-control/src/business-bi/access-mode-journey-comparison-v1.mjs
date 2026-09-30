@@ -43,7 +43,7 @@ import {
 } from './net-revenue-segment-comparison.mjs';
 
 export const ACCESS_MODE_COMPARISON_SCHEMA =
-  'kaleidosphere.business-bi/access-mode-journey-comparison/v1';
+  'kaleidosphere.business-bi/access-mode-journey-comparison/v2';
 export const ACCESS_MODE_CASES_SCHEMA =
   'kaleidosphere.business-bi/access-mode-cases/v1';
 export const ACCESS_MODE_HOLDOUT_SCHEMA =
@@ -67,6 +67,8 @@ export const OBSERVED_OUTCOMES_V1 = Object.freeze([
   'ACCEPTED',
   'ABSTAINED',
   'REFUSED_DENIED_FX',
+  'REFUSED_UNSUPPORTED_FX',
+  'REFUSED_DENIED_ROW_LEVEL',
   'REFUSED_DENIED_CREDITS',
   'REFUSED_BOUNDARY_DATE',
   'REFUSED_AMBIGUOUS_JOIN',
@@ -204,8 +206,12 @@ function validSourceIdentity(value) {
 // The permitted projection per access mode + granted rights.
 // ---------------------------------------------------------------------------
 function permittedProjection({ rows, accessMode, rights }) {
+  if (accessMode === 'PERMITTED_FULL_DATA' && rights.rowLevel !== 'PERMITTED') {
+    throw new Error('ROW_LEVEL_RIGHT_DENIED');
+  }
   if (accessMode === 'METADATA_ONLY') {
-    // Field profile and counts only. No amount is read at all.
+    // Trusted evaluator preparation reads the synthetic fixture. Candidate-visible output
+    // contains only field types/counts, never amount values or rows; not database privileges.
     const profile = new Map();
     for (const row of rows) {
       for (const [field, value] of Object.entries(row)) {
@@ -335,16 +341,25 @@ function integratedPath(rows) {
 // AC02/AC03 — run one case against its declared rights and the granted access mode.
 // ---------------------------------------------------------------------------
 function runCase({ item, rows, rights, sourceIdentity }) {
-  // Denied rights are checked BEFORE anything is read: an un-granted right is a refusal with
-  // its own name, never a silently zeroed number.
+  // Check rights before candidate projection/computation. The enclosing trusted evaluator
+  // separately reads/hashes the retained synthetic source; this is not a DB privilege system.
+  if (item.accessMode === 'PERMITTED_FULL_DATA' && rights.rowLevel === 'DENIED') {
+    return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'REFUSED_DENIED_ROW_LEVEL', numbers: null, basis: 'ROW_LEVEL_RIGHT_DENIED' };
+  }
   if (item.requiresFxConversion && rights.fxConversion === 'DENIED') {
     return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'REFUSED_DENIED_FX', numbers: null, basis: 'RIGHT_DENIED' };
+  }
+  if (item.requiresFxConversion) {
+    return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'REFUSED_UNSUPPORTED_FX', numbers: null, basis: 'FX_CONVERSION_NOT_IMPLEMENTED' };
   }
   if (item.requiresCredits && rights.credits === 'DENIED') {
     return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'REFUSED_DENIED_CREDITS', numbers: null, basis: 'RIGHT_DENIED' };
   }
   if (item.boundaryRule === 'UNSPECIFIED') {
     return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'ABSTAINED', numbers: null, basis: 'BOUNDARY_RULE_UNSPECIFIED' };
+  }
+  if (item.boundaryRule === 'EXCLUDE_BOUNDARY_DATES') {
+    return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'REFUSED_BOUNDARY_DATE', numbers: null, basis: 'EXCLUSIVE_BOUNDARY_RULE_NOT_AVAILABLE_ON_THE_RELEASED_PATH' };
   }
   // An ambiguous join inside the granted scope cannot be answered without inventing a
   // resolution: a case that NEEDS the join refuses by name instead of guessing.
@@ -401,13 +416,6 @@ function runCase({ item, rows, rights, sourceIdentity }) {
   // PERMITTED_FULL_DATA: the INTEGRATED PATH is composed and the independent REFERENCE is
   // computed alongside it, then compared.
   const permittedRows = projection.rows;
-  const boundaryRows = permittedRows.filter((row) => row.order_date === PERIODS.comparison.start
-    || row.order_date === PERIODS.comparison.end
-    || row.order_date === PERIODS.current.start
-    || row.order_date === PERIODS.current.end);
-  if (boundaryRows.length > 0 && item.boundaryRule === 'EXCLUDE_BOUNDARY_DATES') {
-    return { caseId: item.caseId, accessMode: item.accessMode, observedOutcome: 'REFUSED_BOUNDARY_DATE', numbers: null, basis: 'EXCLUSIVE_BOUNDARY_RULE_NOT_AVAILABLE_ON_THE_RELEASED_PATH', boundaryRowCount: boundaryRows.length, projection };
-  }
   try {
     for (const row of permittedRows) assertSegmentSourceRow(row);
   } catch (error) {
@@ -443,7 +451,7 @@ function classify(observed, expectation) {
     return 'FALSE_ACCEPTANCE';
   }
   if (observed.observedOutcome !== 'ACCEPTED' && expectation.expectedOutcome === 'ACCEPTED') {
-    return observed.observedOutcome === 'ABSTAINED' ? 'JUSTIFIED_ABSTENTION' : 'FALSE_REFUSAL';
+    return 'FALSE_REFUSAL';
   }
   if (observed.observedOutcome !== 'ACCEPTED') {
     return observed.observedOutcome === expectation.expectedOutcome ? 'REFUSAL_MATCH' : 'WRONG_REFUSAL_REASON';
@@ -549,9 +557,14 @@ export function buildAccessModeJourneyComparison({
       wrongRefusalReason: count('WRONG_REFUSAL_REASON'),
       justifiedAbstention: count('JUSTIFIED_ABSTENTION'),
       refusalMatch: count('REFUSAL_MATCH'),
-      clarificationsRequested: selected.filter((entry) =>
+      clarificationsRequested: null,
+      clarificationsRequestedReason: 'NOT_INSTRUMENTED: no clarification interaction is observed',
+      correctionsRequired: null,
+      correctionsRequiredReason: 'NOT_INSTRUMENTED: no correction work is observed',
+      abstentionOrBoundaryOutcomeCount: selected.filter((entry) =>
         entry.observedOutcome === 'ABSTAINED' || entry.observedOutcome === 'REFUSED_BOUNDARY_DATE').length,
-      correctionsRequired: count('WRONG_NUMBER') + count('WRONG_REFUSAL_REASON') + count('FALSE_ACCEPTANCE'),
+      failedExpectationCount: count('WRONG_NUMBER') + count('WRONG_REFUSAL_REASON')
+        + count('FALSE_ACCEPTANCE') + count('FALSE_REFUSAL'),
       acceptedCount: accepted.length,
       integratedPathAgreement: accepted.filter((entry) => entry.integratedPathAgreesWithReference === true).length
         + (accepted.length === 0 ? 0 : 0),
@@ -635,14 +648,19 @@ export function verifyAccessModeJourneyComparison({
     return deny('SERIALIZED_EVIDENCE_MISMATCH', { expected: bindingDigest, derived: sha256(report.binding ?? report) });
   }
   const blind = fresh.metrics.blindHoldout;
-  if (blind.falseAcceptance > 0 || blind.wrongNumber > 0 || blind.wrongRefusalReason > 0) {
-    return deny('BLIND_HOLDOUT_VERDICT_FAILED', {
-      falseAcceptance: blind.falseAcceptance,
-      wrongNumber: blind.wrongNumber,
-      wrongRefusalReason: blind.wrongRefusalReason,
-    });
+  for (const [population, failureCode] of [[blind, 'BLIND_HOLDOUT_VERDICT_FAILED'],
+    [fresh.metrics.publicCalibration, 'PUBLIC_CALIBRATION_VERDICT_FAILED']]) {
+    if (population.falseAcceptance > 0 || population.falseRefusal > 0
+        || population.wrongNumber > 0 || population.wrongRefusalReason > 0) {
+      return deny(failureCode, {
+        falseAcceptance: population.falseAcceptance,
+        falseRefusal: population.falseRefusal,
+        wrongNumber: population.wrongNumber,
+        wrongRefusalReason: population.wrongRefusalReason,
+      });
+    }
+    if (population.integratedPathDisagreement > 0) return deny('REFERENCE_DISAGREES_WITH_INTEGRATED_PATH');
   }
-  if (blind.integratedPathDisagreement > 0) return deny('REFERENCE_DISAGREES_WITH_INTEGRATED_PATH');
   return {
     outcome: 'VERIFIED',
     code: 'OK',

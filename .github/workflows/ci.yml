@@ -26,6 +26,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -66,5 +67,14 @@ jobs:
         run: |
           export PGLITE_CORE_PATH="$PWD/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js"
           node scripts/run-connected-net-revenue-journey.mjs --pglite "$PGLITE_CORE_PATH" --negative > "$RUNNER_TEMP/ks-connected-real-cli.json"
+      - name: Score the exact public paired task under requested access modes
+        run: |
+          git init "$RUNNER_TEMP/ks248-pan"
+          git -C "$RUNNER_TEMP/ks248-pan" -c credential.helper= -c http.extraheader= fetch --depth=1 https://github.com/JoFe2/PANSPHAIRA.git d8e78430e66a6d1b623fde26a3018089652d2112
+          git -C "$RUNNER_TEMP/ks248-pan" checkout --detach FETCH_HEAD
+          export KS247_PRODUCER_CHECKOUT="$RUNNER_TEMP/ks248-pan"
+          export KS247_PGLITE_PATH="$PWD/.ks-journey-runtime/node_modules/@electric-sql/pglite/dist/index.js"
+          node --test tests/ks248-paired-blind-evaluator.test.mjs
+          node scripts/run-ks248-paired-access-evaluation.mjs --producer-checkout "$KS247_PRODUCER_CHECKOUT" --pglite "$KS247_PGLITE_PATH" > "$RUNNER_TEMP/ks248-paired-evaluation.json"
       - name: Validate Docker Compose
         run: docker compose --env-file .env.example --file compose.yaml config --quiet

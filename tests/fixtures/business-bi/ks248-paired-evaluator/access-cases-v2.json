@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "kaleidosphere.evaluator/paired-access-cases/v2",
+  "classification": "PUBLIC_EVALUATOR_OWNED_SYNTHETIC_NOT_THIRD_PARTY_BLIND",
+  "producerSha": "d8e78430e66a6d1b623fde26a3018089652d2112",
+  "sourceRevision": "synthetic-unfamiliar-source-v1",
+  "sourceSha256": "56724bfa95e66d8b61a837e82098aeee67ad430434794da944d033d61dd9737e",
+  "question": "NET_REVENUE_DELTA",
+  "metricId": "bi-ks-01-net-revenue",
+  "taskRef": "ks247-net-revenue-read-v1",
+  "layout": "unfamiliar-pay-feed-layout-v1",
+  "rule": "INCLUDE_BOUNDARY_DATES",
+  "unit": "EUR_MINOR_UNITS",
+  "periods": {
+    "comparison": {"start": "2026-06-01", "end": "2026-06-30"},
+    "current": {"start": "2026-07-01", "end": "2026-07-31"}
+  },
+  "cases": [
+    {"caseId": "calibration:paired-metadata", "population": "PUBLIC_CALIBRATION", "accessMode": "METADATA_ONLY"},
+    {"caseId": "blind:paired-aggregates", "population": "BLIND_HOLDOUT", "accessMode": "PERMITTED_AGGREGATES"},
+    {"caseId": "blind:paired-full", "population": "BLIND_HOLDOUT", "accessMode": "PERMITTED_FULL_DATA"}
+  ]
+}

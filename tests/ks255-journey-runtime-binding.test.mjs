@@ -60,7 +60,8 @@ const WORKFLOW_PATH = '.github/workflows/ci.yml';
 // tests/postgresql-c2-safe-aggregate.test.mjs. The authorized correction that re-pointed CI at the
 // committed pinned provisioner moved THIS binding only; the historical C2-correction original
 // below is immutable and is never re-minted.
-const CURRENT_CI_SHA256 = '80f817587610957bba849e036e81f95a8a7901d25c6fa6394ac2e706251d48cc';
+// KS248 adds an exact public paired evaluation; all historical workflow/certificate pins stay fixed.
+const CURRENT_CI_SHA256 = '2a80b395990fb23b37effe18004a63f93d0d34969304383feae49430d011885c';
 const C2_CORRECTION_COMMIT = '4bf55758904f04369afb74b6d185a511f731c71d';
 // The recorded HISTORICAL workflow original at the C2 correction endpoint (frozen, not touched).
 const C2_CORRECTION_CI_SHA256 = '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9';
@@ -189,7 +190,7 @@ test('the current test root reaches every tracked suite exactly once (the regist
 });
 
 test('immutable historical evidence retains its exact source identity (no frozen proof binding rewritten)', () => {
-  // (1) The retained CI workflow binding: unchanged bytes, and the source map agrees.
+  // (1) The current CI generation binding; the historical correction below is unchanged.
   assert.equal(sha256(readBytes(WORKFLOW_PATH)), CURRENT_CI_SHA256, 'current workflow bytes');
   assert.equal(
     sha256(Buffer.from(`${execFileSync('git', ['show', `${C2_CORRECTION_COMMIT}:${WORKFLOW_PATH}`], {cwd: ROOT, encoding: 'utf8'}).trim()}\n`)),

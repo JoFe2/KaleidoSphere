@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "kaleidosphere.evaluator/paired-access-expectations/v2",
+  "population": "PUBLIC_CALIBRATION",
+  "basis": "Metadata cannot answer numeric deltas; this reference abstention is not a candidate capability claim.",
+  "expectations": [
+    {"caseId": "calibration:paired-metadata", "outcome": "ABSTAINED", "numbers": null}
+  ]
+}
