@@ -782,7 +782,7 @@
     "tests/metric-compiler-adapter.test.mjs": "1c2a2c05208e0f833f12c2c6afdd10da0ce7770b8f3e186d7c622165610a411a",
     "tests/net-revenue-connected-journey.test.mjs": "15baa65bb1c5c3b12658b98bd330f4b880d5592334dcb5f49131d9a15eeb73fc",
     "tests/net-revenue-f4-composition.test.mjs": "25b18cf6cb82099db31ce9e5a17a58df82bdbc9abd0478c46ffdbb40953c5a29",
-    "tests/net-revenue-guided-journey.test.mjs": "5765320ca41d85905d1738f7b27f7b6044f6b94a1cca0d4cc24ac7871e66841f",
+    "tests/net-revenue-guided-journey.test.mjs": "dade62484db18a20b7c4a3c5a575562f38fe811f69c2c2ab785f0fee2e36e28a",
     "tests/net-revenue-journey.test.mjs": "fd91f0716b55038c5d98d59546161913aeb8e03a7043a5f6e149115677a33271",
     "tests/net-revenue-ledger-mapping.test.mjs": "8732981d0637a782b6a96d92da498d2fbcfdeabe9b518e1733aa340f575a0c85",
     "tests/net-revenue-segment-comparison.test.mjs": "624f3f282c94f4d7b9ece7c0734dfcd41787d5a930c73804b1ace4c66df0df4a",

@@ -559,15 +559,19 @@ while time.time() < deadline:
         if not chunk:
             break
         screen += chunk.decode('utf-8', 'replace')
-    # advance one step at a time: only send the answer for step N once question N+1 is
-    # visible, which proves question N was answered and question N+1 was shown BEFORE it.
+    # Advance only after the COMPLETE current projection has crossed the PTY.
+    # One stderr.write may arrive as several os.read chunks under CI load.
     nxt = state['next']
     if nxt < len(answers):
         # Answer step N once ITS OWN question and options are on screen. The CLI prints the
         # prompt and then blocks on the answer, so its own text is the signal; waiting for
         # the NEXT question would DEADLOCK, because that question cannot be printed until
         # this answer arrives.
-        ready = projections[nxt] in screen
+        start = state['sent'][-1]['screenPos'] if state['sent'] else 0
+        current = screen[start:]
+        ready = (projections[nxt] in current
+                 and all(option in current for option in spec['options'][nxt])
+                 and (chr(10) + '> ') in current)
         if ready:
             os.write(fd, (answers[nxt] + chr(10)).encode())
             state['sent'].append({'index': nxt, 'screenPos': len(screen)})
@@ -602,6 +606,43 @@ function pythonBin() {
   return null;
 }
 
+test('parent R1 driver waits for split prompt/options chunks (synthetic PTY driver regression, not product evidence)', async (t) => {
+  const py = pythonBin();
+  if (!py) return t.skip('python3 with pty/os/select required');
+  const { mkdtemp, writeFile, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const dir = await mkdtemp(path.join(tmpdir(), 'ks-guided-pty-chunks-'));
+  try {
+    const cli = path.join(dir, 'split-prompt.mjs');
+    await writeFile(cli, `let complete = false;
+process.stdin.on('data', () => {
+  process.stdout.write((complete ? 'PROMPT_COMPLETE' : 'EARLY_ANSWER') + '\\n"writesPerformed":0\\n');
+});
+process.stderr.write('SYNTHETIC QUESTION\\n');
+setTimeout(() => { process.stderr.write('SYNTHETIC OPTION\\n> '); complete = true; }, 250);
+`);
+    const spec = JSON.stringify({ cwd: root, node: process.execPath, cli, pglite: '',
+      answers: ['SYNTHETIC ANSWER'], projections: ['SYNTHETIC QUESTION'],
+      options: [['SYNTHETIC OPTION']], timeoutMs: 5000 });
+    const result = spawnSync(py, ['-c', PTY_DRIVER, spec], { encoding: 'utf8', timeout: 10000 });
+    assert.equal(result.status, 0, result.stderr);
+    const { screen, sent } = JSON.parse(result.stdout.slice(result.stdout.lastIndexOf('__RESULT__') + '__RESULT__'.length));
+    assert.equal(sent.length, 1);
+    assert.equal(screen.includes('EARLY_ANSWER'), false);
+    assert.ok(screen.includes('PROMPT_COMPLETE'));
+    assert.ok(screen.indexOf('SYNTHETIC OPTION') + 'SYNTHETIC OPTION'.length <= sent[0].screenPos);
+    // RED control: the old header-only readiness sends before the delayed options.
+    const earlyDriver = PTY_DRIVER.replace(
+      "ready = (projections[nxt] in current\n                 and all(option in current for option in spec['options'][nxt])\n                 and (chr(10) + '> ') in current)",
+      'ready = projections[nxt] in current');
+    assert.notEqual(earlyDriver, PTY_DRIVER);
+    const early = spawnSync(py, ['-c', earlyDriver, spec], { encoding: 'utf8', timeout: 10000 });
+    assert.equal(early.status, 0, early.stderr);
+    const earlyReceipt = JSON.parse(early.stdout.slice(early.stdout.lastIndexOf('__RESULT__') + '__RESULT__'.length));
+    assert.ok(earlyReceipt.screen.includes('EARLY_ANSWER'));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
 test('parent R1: the real terminal shows options and the confirmation summary BEFORE the answer is read', async (t) => {
   const entry = await resolvePgliteEntry();
   if (!entry) return t.skip('PGlite runtime required');
@@ -618,7 +659,7 @@ test('parent R1: the real terminal shows options and the confirmation summary BE
   const { spawn } = await import('node:child_process');
   const spec = JSON.stringify({
     cwd: root, node: process.execPath, cli: CLI, pglite: entry, answers,
-    projections, timeoutMs: 60000,
+    projections, options: GUIDED_STEPS.map(step => GUIDED_PROMPTS[step].options), timeoutMs: 60000,
   });
   // Async spawn: this test must not block the event loop while the pty driver runs. The
   // driver forks a real terminal child, so it is run in its OWN process group and the whole
@@ -661,9 +702,11 @@ test('parent R1: the real terminal shows options and the confirmation summary BE
   // ...and it was displayed BEFORE the answer for that step was sent.
   assert.equal(sent.length, answers.length, 'not every answer was consumed');
   GUIDED_STEPS.forEach((step, i) => {
-    const optionsPos = screen.indexOf(GUIDED_PROMPTS[step].options[0]);
-    assert.ok(optionsPos !== -1 && optionsPos < sent[i].screenPos,
-      `${step}: its options/meaning appeared AFTER its answer was supplied (R1)`);
+    for (const option of GUIDED_PROMPTS[step].options) {
+      const optionsPos = screen.indexOf(option);
+      assert.ok(optionsPos !== -1 && optionsPos + option.length <= sent[i].screenPos,
+        `${step}: its options/meaning appeared AFTER its answer was supplied (R1)`);
+    }
   });
   // The resolved dataset/period/unit summary is shown before the run is authorized. The
   // summary is part of the CLI receipt, so assert the preview text is on the terminal and
