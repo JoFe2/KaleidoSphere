@@ -1,0 +1,6 @@
+# Retain historical evidence byte-for-byte in Git, but do not republish
+# environment-bound receipts or their host-specific replay harness in archives.
+/WORK_RESULT.md export-ignore
+/closure-audits/PORTFOLIO-KS143-ROOT-QS/exact-head-local-gate-receipt.json export-ignore
+/docs/evidence/m6-03-bi-specialist/qwen-conformance-manifest.json export-ignore
+/scripts/run-qwen-conformance-evidence.mjs export-ignore

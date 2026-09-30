@@ -18,6 +18,7 @@
     }
   },
   "files": {
+    ".gitattributes": "1ad740baa85b3219119148de7b45f09edad5d82e0e5e76ae7303161ff6d9f430",
     ".github/workflows/ci.yml": "80f817587610957bba849e036e81f95a8a7901d25c6fa6394ac2e706251d48cc",
     ".gitignore": "b7b139995265228c532ae8b7b98484151afdbd9485ad695a3ade3eda8e37be62",
     ".ks150-c2-real-cleanroom-post-restore-evidence.json": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382",
@@ -128,6 +129,7 @@
     "docs/evidence/ks255-journey-runtime-binding-v1.md": "108b58d7949a9ba1a6d33375e05de6f1873b575f0fd9e0cf1d7c72c965753933",
     "docs/evidence/ks256-lifecycle-transfer-status-v1.md": "a3feffd21ddb11baa0c0615e43e16dd423d35b6211c801300f897f86ca82513d",
     "docs/evidence/ks256-public-producer-crossing-v1.md": "2ae02f3df66d909e18dda66d0895807853e7e46a94d24157882fe634f45a9c92",
+    "docs/evidence/ks256-release-boundary-v1.md": "46678d83556be4ab41050f28dd0def333988a6c60b22bd09de5e3a14d5cdac42",
     "docs/evidence/legacy-identity/compatibility-migration-plan-v1.json": "3cf9a69703db601494ab8ac3c87d5abc2a56dd63f85a67f1fc98bcedd13fdf57",
     "docs/evidence/legacy-identity/legacy-technical-identity-inventory-v1.json": "181fe68da75baeccd69b02ca3d3f8ecb6ba6250b39eea7ffd750c4718bf32c61",
     "docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md": "b9bb009cdd87e1030e4730cb2c5d8ec826204ddb5b96c11f80e75ad198e9b552",
@@ -388,7 +390,7 @@
     "scripts/update-ks255-correction-source-map.mjs": "fef13db105a2bb98bfd53cc3b59442340a8491e40c386de068b40005ec76d686",
     "scripts/update-ks255-journey-runtime-source-map.mjs": "2571efb950726dc0a628a81b3298bd003d3befe1a42638a784c283463d96a07d",
     "scripts/update-ks256-lifecycle-transfer-status-source-map.mjs": "56f1f605b8a74e32f40581aca994be8f893ccf8ac65c4de39bd071421cbddae3",
-    "scripts/update-ks256-public-producer-crossing-source-map.mjs": "e93467c102ca60c841db08c014f7228d08ad801ddcebb9549be8406f6ca8eeeb",
+    "scripts/update-ks256-public-producer-crossing-source-map.mjs": "435b9ad66c995f65afbdae83d0f1c83857b1c75695bdbedc499341c55bdec1e5",
     "scripts/update-m6-04-source-map.mjs": "5ec15986623d3bfd09f2382239412ea502410ac8df5b300acaad328593a27703",
     "scripts/update-m6-05-source-map.mjs": "6837274be9316943aa86389a63a50c762e135e77af2bea9170eb2e899d8f4620",
     "scripts/update-owner-link-source-map.mjs": "7b5016d74fc530c4c385439af987b01fb54bc1b866ffce20b3705bd38d7eb92b",
@@ -774,7 +776,7 @@
     "tests/ks254-http-qualification.test.mjs": "b39c37ad8f627842ba3d62f8d93b21fbea37f3ade4fe72c309c6d2f8a7156790",
     "tests/ks254-superset-init-recovery.test.mjs": "37c32370045c02765854cb2d58ffb2b02cee82bda581cba404ad6ba39f0f3c1d",
     "tests/ks255-journey-runtime-binding.test.mjs": "e9b1d5a849a38f5f28586c3c64864d374a635ecf7b93f9bf75e8cbebb07d97f1",
-    "tests/ks256-paired-status.test.mjs": "57de5cd81faef8e2ddfea9a21d50273f5a8d076e5a7980f5955333bb6be80d15",
+    "tests/ks256-paired-status.test.mjs": "25fe2e490dfc5af3ed8ffb52e5b856640000a59f88dea6d2366f2e821acfd746",
     "tests/ks67-aggregate-profiling-closure.test.mjs": "e862efdaf91bac2b852ed6762155bff287fca6e4267d57c2e9adb7e4fd3f62f7",
     "tests/ks69-engine-harness-expansion-closure.test.mjs": "82f10fa7c35f0be3f20fd21947bd3dc05709fe50ae0528892bf12493fb08e357",
     "tests/ks70-program-closure.test.mjs": "339b2f9137e9a2c081fde44594d573867cdacb91407f07ffc27200aab5b4ec54",

@@ -18,6 +18,28 @@ const cli = (...args) => {
 };
 const args = () => ['--pan-status-checkout', status, '--pan-read-checkout', read, '--pglite', runtime];
 
+test('KS256 source archive excludes inherited environment-bound evidence without deleting its Git bytes', () => {
+  const excluded = ['WORK_RESULT.md',
+    'closure-audits/PORTFOLIO-KS143-ROOT-QS/exact-head-local-gate-receipt.json',
+    'docs/evidence/m6-03-bi-specialist/qwen-conformance-manifest.json',
+    'scripts/run-qwen-conformance-evidence.mjs'];
+  const archive = spawnSync('git', ['archive', '--format=tar', 'HEAD'], { maxBuffer: 32 * 1024 * 1024 });
+  assert.equal(archive.status, 0, archive.stderr?.toString());
+  const listing = spawnSync('tar', ['-tf', '-'], { input: archive.stdout, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+  assert.equal(listing.status, 0, listing.stderr);
+  const files = new Set(listing.stdout.trim().split('\n'));
+  for (const file of excluded) {
+    assert.equal(files.has(file), false, file);
+    const retained = spawnSync('git', ['show', `HEAD:${file}`]);
+    assert.equal(retained.status, 0, file);
+    assert.deepEqual(retained.stdout, readFileSync(file), `historic bytes changed: ${file}`);
+  }
+  for (const file of ['SOURCE-MAP.json', 'scripts/run-ks256-paired-status.mjs',
+    'services/bi-control/src/business-bi/synthetic-target-status-v1.mjs', 'tests/ks256-paired-status.test.mjs']) {
+    assert.equal(files.has(file), true, file);
+  }
+});
+
 test('KS256 missing checkouts and write escalation refuse without running either producer', () => {
   for (const extra of [[], ['--request-action', 'MIGRATE'], ['--pan-status-checkout', '/missing']]) {
     const out = cli(...extra);
