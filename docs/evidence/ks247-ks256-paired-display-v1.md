@@ -50,8 +50,65 @@ substitution, malformed/action flags, and mutations of actual child outputs (que
 period, number, revision and status digest). The last class is helper-level post-read
 consistency testing and is not presented as another producer execution.
 
-AC01 remains partial: source identity and separate producer status are observed locally;
-target identity/scope/progress remain UNKNOWN and denominator/quarantine NOT_OBSERVED.
-The target contract owner must supply independently qualified target evidence. AC02/AC03
-have local projection/denial evidence only; independent Main acceptance and delivery remain
-required. No issue closure, production, effect or new blind evaluation is claimed.
+At the retained corrected-producer checkpoint, AC01 was partial: source identity and
+separate producer status were observed locally; target identity/scope/progress remained
+UNKNOWN and denominator/quarantine NOT_OBSERVED. That checkpoint did not include target
+observation or independent delivery. The following bounded successor addresses the local
+synthetic target gap; it does not rewrite those historical evidence classes.
+
+## Observed synthetic receipt target (KS-OPS-04 AC01–AC03)
+
+The same CLI additionally accepts `--target-snapshot <directory> --target-revision
+synthetic-target-r1` (or `synthetic-target-r2`). Omission preserves the original UNKNOWN
+path. The directory is a caller-provisioned, generic synthetic receipt target, not an
+installation, service, transfer execution or production environment. No customer or host
+access is needed or claimed. The five owned artifacts are metric-contract, read-task,
+read-result, result-lineage and qualification, each with a `.json` suffix. Their expected
+bytes are derived from the just-executed qualified read, never from target-supplied hashes.
+`target.json` has the exact closed shape returned by `syntheticTargetMarker(read, revision)`;
+`syntheticTargetArtifacts(read)` supplies explicit sample bytes for separate local setup.
+The test provisioner demonstrates this setup from an actual released SQL read. The display
+itself never provisions or changes target bytes and accepts no write/approval action.
+
+AC01: the full actual-entry case reads five exact artifacts and displays both source and
+synthetic target identities, owned scope/owner, denominator 5, verified count 5, fraction 1,
+empty quarantine and NONE_OPEN. Its mixed case reads a mismatch (PARTIAL/quarantined),
+observes a missing file (OBSERVED_ABSENT), encounters denied permissions (DENIED) and refuses
+a symlink (UNKNOWN). Only the remaining exact artifact counts. The fraction is unknown,
+not a fabricated zero or success. Each unresolved item carries TARGET_CONTRACT_OWNER.
+The denominator is the fixed versioned receipt-artifact contract, not the old authored
+board denominator or a transfer-completion claim. Arbitrary input text and paths are never
+copied to output. Unexpected identity fields, including raw-person-shaped fields, refuse.
+
+AC02: tests exercise both v1 and corrected v3 source reads. Target source and requested
+revision must match the fresh qualification; stale revision or substituted source refuses.
+All five files and the identity marker are read twice to refuse an unstable snapshot.
+This bounded stability check is not an atomic filesystem snapshot. An optional
+`--target-observation-sha256 <previously-retained-digest>` requires the newly observed
+complete status binding to match that independent retained observation. Changing target
+bytes cannot reuse a previous complete receipt: it either displays a new explicit
+PARTIAL/UNKNOWN/DENIED/OBSERVED_ABSENT state or refuses the carried digest. Currentness
+means the requested revision at this local read, not a wall-clock or remote attestation.
+
+AC03: UPDATE, RESTORE and MIGRATE flags refuse through the actual CLI before producer or
+target execution. The positive display has READ_ONLY with all mutation rights NOT_GRANTED.
+Tests compare target file bytes before/after the positive execution. The producer lifecycle
+plane remains separate and never becomes evidence for this target or metric source.
+
+Reproduction (Node 24, pinned PGlite 0.3.14 and clean exact public producer checkouts):
+
+    PAN_PUBLIC_CHECKOUT=<status-checkout> \
+    KS256_STATUS_PRODUCER_CHECKOUT=<status-checkout> \
+    KS247_PRODUCER_CHECKOUT=<v1-read-checkout> \
+    KS247_PAN486_PRODUCER_CHECKOUT=<v3-read-checkout> \
+    KS247_PGLITE_PATH=<pinned-runtime>/dist/index.js \
+    node --test tests/ks256-paired-status.test.mjs \
+      tests/public-producer-status-crossing.test.mjs \
+      tests/project-lifecycle-transfer-status.test.mjs
+
+The named AC01–03 actual-entry test provisions only newly authored generic synthetic
+snapshots from actual child outputs, then exercises this CLI for both sources. It is public
+calibration, not blind evaluation. Canonical CI includes the real-file helper boundary;
+the public counterpart legs are explicit opt-ins and must be separately executed for
+acceptance. Independent review, exact-head CI, release and readback are separate delivery
+records, not claims established by this document. No broader operational rights are added.

@@ -8,10 +8,20 @@ import { projectPairedReadStatus } from '../services/bi-control/src/business-bi/
 
 const args = process.argv.slice(2);
 const allowed = ['--pan-status-checkout', '--pan-read-checkout', '--pglite'];
-const variant = args.length === 8 && args[6] === "--source-variant" ? args[7] : "v1";
+const options = new Map();
+const optional = ['--source-variant', '--target-snapshot', '--target-revision', '--target-observation-sha256'];
+let invalid = args.length < 6 || args.length % 2 !== 0;
+for (let i = 6; i < args.length; i += 2) {
+  if (!optional.includes(args[i]) || options.has(args[i])) invalid = true;
+  options.set(args[i], args[i + 1]);
+}
+const variant = options.get('--source-variant') ?? 'v1';
+const targetSnapshot = options.has('--target-snapshot') ? { root: options.get('--target-snapshot'),
+  revision: options.get('--target-revision'), expectedObservationSha256: options.get('--target-observation-sha256') } : undefined;
+if (options.has('--target-snapshot') !== options.has('--target-revision')
+    || (options.has('--target-observation-sha256') && !targetSnapshot)) invalid = true;
 const deny = (code) => { process.stdout.write(JSON.stringify({ outcome: 'DENIED', code, mutationCount: 0 }) + '\n'); process.exitCode = 1; };
-if (![6, 8].includes(args.length) || !["v1", "v3"].includes(variant)
-    || (args.length === 8 && args[6] !== "--source-variant")
+if (invalid || !["v1", "v3"].includes(variant)
     || args.slice(0, 6).some((x, i) => i % 2 === 0 && x !== allowed[i / 2])
     || args.some((x, i) => i % 2 === 1 && (!x || x.startsWith('--')))) {
   deny('KS256_PAIRED_INPUT_SCOPE_DENIED');
@@ -42,7 +52,7 @@ if (![6, 8].includes(args.length) || !["v1", "v3"].includes(variant)
         "--expectation", fd + "independent-expectation-v2.json"] : []),
       '--producer-checkout', args[3], '--pglite', args[5],
     ]);
-    const result = projectPairedReadStatus({ read, crossing, variant });
+    const result = projectPairedReadStatus({ read, crossing, variant, targetSnapshot });
     process.stdout.write(JSON.stringify(result) + '\n');
     if (result.outcome === 'DENIED') process.exitCode = 1;
   } catch (error) { deny(error.message === 'KS256_PRODUCER_STATUS_UNQUALIFIED'

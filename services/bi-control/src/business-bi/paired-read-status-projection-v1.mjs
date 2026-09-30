@@ -5,11 +5,12 @@ import { readFileSync } from 'node:fs';
 import { canonicalJson } from '../canonical-json.js';
 import { qualifyPairedReadLineage } from './paired-read-lineage-qualification-v1.mjs';
 import { PUBLIC_PAN_MAIN } from './public-producer-status-crossing-v1.mjs';
+import { observeSyntheticTarget } from './synthetic-target-status-v1.mjs';
 
 const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const contractSha256 = digest(readFileSync(new URL('../../../../contracts/business-bi/v1/net-revenue.metric.json', import.meta.url)));
 
-export function projectPairedReadStatus({ read, crossing, variant = 'v1', requestedAction = 'READ_STATUS' } = {}) {
+export function projectPairedReadStatus({ read, crossing, variant = 'v1', requestedAction = 'READ_STATUS', targetSnapshot } = {}) {
   const deny = (code) => ({ outcome: 'DENIED', code, mutationCount: 0 });
   if (requestedAction !== 'READ_STATUS') return deny('KS256_WRITE_AUTHORITY_NOT_GRANTED');
   const qualification = read?.pairedQualification;
@@ -50,6 +51,9 @@ export function projectPairedReadStatus({ read, crossing, variant = 'v1', reques
   if (crossing.crossingBindingDigest !== digest(JSON.stringify({
     ks: crossing.ksStatus.bindingDigest, producers: crossing.producerStatus,
   }))) return deny('KS256_PRODUCER_STATUS_UNQUALIFIED');
+  const targetStatus = targetSnapshot === undefined ? null : observeSyntheticTarget({ ...targetSnapshot, read });
+  if (targetStatus?.outcome === 'DENIED') return targetStatus;
+  const { outcome: _targetOutcome, mutationCount: _targetMutations, ...targetFields } = targetStatus ?? {};
   return {
     outcome: 'PROJECTED_LOCAL_SYNTHETIC_READ_ONLY',
     source: { taskRef: qualification.taskRef, question: qualification.question, sourceRevision: qualification.sourceRevision,
@@ -72,9 +76,11 @@ export function projectPairedReadStatus({ read, crossing, variant = 'v1', reques
     target: { identity: 'UNKNOWN', observed: false, responsibleRole: 'TARGET_CONTRACT_OWNER' },
     ownedScope: 'UNKNOWN_TARGET_SCOPE', denominator: 'NOT_OBSERVED', progress: 'UNKNOWN',
     quarantine: 'NOT_OBSERVED', nextResponsibleRole: 'TARGET_CONTRACT_OWNER',
+    ...targetFields,
     authority: { display: 'READ_ONLY', update: 'NOT_GRANTED', restore: 'NOT_GRANTED',
       migration: 'NOT_GRANTED', mutationCount: 0 },
-    nonclaims: ['No target identity, denominator, transfer progress or quarantine observed.',
+    nonclaims: [targetStatus ? 'Observed only a local synthetic receipt snapshot, not an installation or executed transfer.'
+      : 'No target identity, denominator, transfer progress or quarantine observed.',
       'Authored project board does not become a measured target through a metric read.'],
   };
 }

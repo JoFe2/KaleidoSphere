@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { projectPairedReadStatus } from '../services/bi-control/src/business-bi/paired-read-status-projection-v1.mjs';
+import { observeSyntheticTarget, syntheticTargetArtifacts, syntheticTargetMarker } from '../services/bi-control/src/business-bi/synthetic-target-status-v1.mjs';
 
 const status = process.env.KS256_STATUS_PRODUCER_CHECKOUT;
 const read = process.env.KS247_PRODUCER_CHECKOUT;
@@ -146,4 +147,123 @@ test('KS256 display rejects substituted qualifications, lineage and producer sta
       assert.equal(projectPairedReadStatus({ ...original, requestedAction: 'RESTORE' }).code,
         'KS256_WRITE_AUTHORITY_NOT_GRANTED');
     } finally { rmSync(root, { recursive: true, force: true }); }
+  });
+
+const provisionTarget = (root, sourceRead, revision = 'synthetic-target-r1') => {
+  writeFileSync(join(root, 'target.json'), JSON.stringify(syntheticTargetMarker(sourceRead, revision)));
+  for (const [id, bytes] of Object.entries(syntheticTargetArtifacts(sourceRead))) writeFileSync(join(root, `${id}.json`), bytes);
+};
+const mutateTarget = root => {
+  rmSync(join(root, 'read-task.json'));
+  chmodSync(join(root, 'read-result.json'), 0o000);
+  rmSync(join(root, 'result-lineage.json'));
+  symlinkSync('missing-synthetic-file', join(root, 'result-lineage.json'));
+  writeFileSync(join(root, 'qualification.json'), 'generic synthetic mismatched artifact');
+};
+const assertMixedTarget = view => {
+  assert.deepEqual(view.ownedScope.map(s => s.coverage), ['AVAILABLE', 'OBSERVED_ABSENT', 'DENIED', 'UNKNOWN', 'PARTIAL']);
+  assert.equal(view.denominator.value, 5);
+  assert.equal(view.progress.verifiedCount, 1);
+  assert.equal(view.progress.fraction, null);
+  assert.equal(view.quarantine.length, 1);
+  assert.equal(view.quarantine[0].id, 'qualification');
+  assert.equal(view.quarantine[0].includedInProgress, false);
+  assert.equal(view.nextResponsibleRole, 'TARGET_CONTRACT_OWNER');
+};
+
+// Canonical CI: actual local file reads, but helper-only source qualification here.
+// The full child execution/qualification boundary is exercised in the opt-in test below.
+test('KS256 synthetic target observer reads bytes and preserves all coverage states (helper boundary)', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ks256-target-unit-'));
+  const sourceRead = { pairedQualification: { sourceRevision: 'synthetic-v1', sourceSha256: 'a'.repeat(64), taskRef: 'synthetic-task' },
+    pairedRead: { task: { sourceSha256: 'a'.repeat(64) } }, lineage: { synthetic: true } };
+  try {
+    provisionTarget(root, sourceRead);
+    const input = { root, revision: 'synthetic-target-r1', read: sourceRead };
+    const full = observeSyntheticTarget(input);
+    assert.equal(full.outcome, 'OBSERVED_LOCAL_SYNTHETIC_TARGET');
+    assert.equal(full.progress.fraction, 1);
+    assert.equal(full.progress.verifiedCount, 5);
+    assert.equal(full.target.observed, true);
+    const bound = { ...input, expectedObservationSha256: full.target.observationSha256 };
+    assert.equal(observeSyntheticTarget(bound).progress.fraction, 1);
+    mutateTarget(root);
+    assertMixedTarget(observeSyntheticTarget(input));
+    assert.equal(observeSyntheticTarget(bound).code, 'KS256_TARGET_CARRIED_OBSERVATION_MISMATCH');
+    assert.equal(observeSyntheticTarget({ ...input, revision: 'synthetic-target-r2' }).code, 'KS256_TARGET_SOURCE_OR_REVISION_MISMATCH');
+    const changed = structuredClone(sourceRead); changed.pairedQualification.sourceSha256 = 'b'.repeat(64);
+    assert.equal(observeSyntheticTarget({ ...input, read: changed }).code, 'KS256_TARGET_SOURCE_OR_REVISION_MISMATCH');
+    const marker = syntheticTargetMarker(sourceRead, input.revision); marker.email = 'generic-payload-must-not-escape';
+    writeFileSync(join(root, 'target.json'), JSON.stringify(marker));
+    const rejected = observeSyntheticTarget(input);
+    assert.equal(rejected.code, 'KS256_TARGET_SOURCE_OR_REVISION_MISMATCH');
+    assert.equal(JSON.stringify(rejected).includes(marker.email), false);
+    assert.equal(JSON.stringify(rejected).includes(root), false);
+  } finally { chmodSync(join(root, 'read-result.json'), 0o600); rmSync(root, { recursive: true, force: true }); }
+});
+
+test('KS256 AC01-03 actual paired display observes target; rejects stale/substitution/privacy/authority across v1 and v3',
+  { skip: !(status && read && corrected && runtime) }, () => {
+    for (const variant of ['v1', 'v3']) {
+      const root = mkdtempSync(join(tmpdir(), 'ks256-target-entry-'));
+      const producer = variant === 'v1' ? read : corrected;
+      const fd = variant === 'v1' ? 'tests/fixtures/business-bi/ks246-unfamiliar-schema/' : 'tests/fixtures/business-bi/ks247-second-source/';
+      const version = variant === 'v1' ? 'v1' : 'v2';
+      try {
+        const answers = join(root, 'answers.txt');
+        writeFileSync(answers, ['synth_x.pay_feed.pf_id', 'synth_x.pay_feed.val_dt', 'MINOR_UNITS',
+          'synth_x.pay_feed.amt_a', 'EUR', 'R', 'V'].join('\n'));
+        const run = spawnSync(process.execPath, ['scripts/run-result-lineage-journey.mjs',
+          '--answers', answers, '--kind-decisions', fd + `kind-decisions-${version}.json`,
+          '--business-semantics', fd + `business-semantics-${version}.json`,
+          '--source-revision', `synthetic-unfamiliar-source-${version}`, '--source-variant', variant,
+          ...(variant === 'v3' ? ['--source', fd + 'source-pay-feed-v2.json', '--expectation', fd + 'independent-expectation-v2.json'] : []),
+          '--producer-checkout', producer, '--pglite', runtime], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024 });
+        assert.equal(run.status, 0, run.stderr);
+        const sourceRead = JSON.parse(run.stdout);
+        provisionTarget(root, sourceRead);
+        const base = ['--pan-status-checkout', status, '--pan-read-checkout', producer, '--pglite', runtime,
+          '--source-variant', variant, '--target-snapshot', root, '--target-revision', 'synthetic-target-r1'];
+        const before = Object.fromEntries(readdirSync(root).map(name => [name, readFileSync(join(root, name)).toString('hex')]));
+        const full = cli(...base);
+        assert.equal(full.exit, 0, JSON.stringify(full));
+        assert.equal(full.result.target.identity, 'synthetic-receipt-target');
+        assert.equal(full.result.target.sourceSha256, full.result.source.sourceSha256);
+        assert.equal(full.result.progress.fraction, 1);
+        assert.equal(full.result.progress.verifiedCount, 5);
+        assert.equal(full.result.denominator.value, 5);
+        assert.equal(full.result.producerCrossing.appliesToMetricSourceOrTarget, false);
+        assert.deepEqual(full.result.quarantine, []);
+        assert.deepEqual(Object.fromEntries(readdirSync(root).map(name => [name, readFileSync(join(root, name)).toString('hex')])), before);
+        for (const action of ['UPDATE', 'RESTORE', 'MIGRATE']) {
+          const refused = cli(...base, '--request-action', action);
+          assert.equal(refused.exit, 1);
+          assert.equal(refused.result.code, 'KS256_PAIRED_INPUT_SCOPE_DENIED');
+          assert.equal(refused.result.mutationCount, 0);
+        }
+        assert.equal(cli(...base, '--target-revision', 'synthetic-target-r2').result.code, 'KS256_PAIRED_INPUT_SCOPE_DENIED');
+        const stale = [...base]; stale[stale.length - 1] = 'synthetic-target-r2';
+        assert.equal(cli(...stale).result.code, 'KS256_TARGET_SOURCE_OR_REVISION_MISMATCH');
+        mutateTarget(root);
+        const mixed = cli(...base);
+        assert.equal(mixed.exit, 0, JSON.stringify(mixed));
+        assertMixedTarget(mixed.result);
+        assert.equal(mixed.result.authority.mutationCount, 0);
+        assert.equal(cli(...base, '--target-observation-sha256', full.result.target.observationSha256).result.code,
+          'KS256_TARGET_CARRIED_OBSERVATION_MISMATCH');
+        const marker = syntheticTargetMarker(sourceRead, 'synthetic-target-r1');
+        marker.sourceSha256 = 'f'.repeat(64);
+        writeFileSync(join(root, 'target.json'), JSON.stringify(marker));
+        assert.equal(cli(...base).result.code, 'KS256_TARGET_SOURCE_OR_REVISION_MISMATCH');
+        marker.email = 'generic-payload-must-not-escape';
+        writeFileSync(join(root, 'target.json'), JSON.stringify(marker));
+        const privateShape = cli(...base);
+        assert.equal(privateShape.result.code, 'KS256_TARGET_SOURCE_OR_REVISION_MISMATCH');
+        assert.equal(JSON.stringify(privateShape.result).includes(marker.email), false);
+        assert.equal(JSON.stringify(privateShape.result).includes(root), false);
+      } finally {
+        try { chmodSync(join(root, 'read-result.json'), 0o600); } catch {}
+        rmSync(root, { recursive: true, force: true });
+      }
+    }
   });
