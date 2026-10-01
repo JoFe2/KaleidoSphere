@@ -341,7 +341,8 @@ test('KS250: JSON and TABLE render the package; an unsupported format is refused
   assert.equal(renderReadOnlyMetricPilot(authorizedPilot(), 'CSV').code, 'KS250_PILOT_DENIED:FORMAT_UNSUPPORTED');
 });
 
-const CLI = 'scripts/run-read-only-metric-pilot.mjs';
+// Historical v1 contract stays executable against its frozen CLI; active v2 has separate regressions.
+const CLI = 'scripts/run-read-only-metric-pilot-v1.mjs';
 const runCli = (args) => execFileSync(process.execPath, [CLI, ...args], { encoding: 'utf8' });
 const cliArgs = (contextsFile, explanationsFile) => [
   '--protocol', `${FD}/protocol-v1.json`, '--contexts', `${FD}/${contextsFile}`,
