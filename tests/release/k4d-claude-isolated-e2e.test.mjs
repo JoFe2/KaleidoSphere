@@ -125,3 +125,84 @@ test('receipt schema is closed and names the required evidence fields', async ()
     'nonClaims',
   ]);
 });
+
+test('synthetic early CLI failure never reports unexecuted negative cases as denied', async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'ks77-early-failure-'));
+  const { rm } = await import('node:fs/promises');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const cli = path.join(directory, 'synthetic-claude');
+  await writeFile(cli, `#!${process.execPath}\nconsole.error('SYNTHETIC_VERSION_FAILURE');process.exit(17);\n`, { mode: 0o700 });
+  const result = run(['--clean-boundary', '--fixture', fixture, '--claude', cli, '--receipt', path.join(directory, 'receipt.json')]);
+  assert.equal(result.status, 1, result.stderr);
+  const receipt = parse(result.stdout);
+  assert.equal(receipt.accepted, false);
+  assert.equal(receipt.orderedCommandResults.at(-2).id, 'claude-version');
+  assert.equal(receipt.claude.version, null, 'failed version probe cannot inherit historical fixture version');
+  assert.equal(receipt.orderedCommandResults.at(-1).id, 'harness-cleanup-readback');
+  assert.ok(receipt.negativeAssertions.every((item) => item.observed !== 'denied'), 'no negative rejection was reached');
+  assert.equal(receipt.negativeAssertions.find((item) => item.id === 'undeclared-skill-invocation').observed, 'not-run');
+});
+
+for (const cacheKind of ['file', 'empty-directory']) {
+test(`synthetic CLI retained cache ${cacheKind} is distinct from actual harness cleanup`, async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'ks77-cache-readback-'));
+  const { rm } = await import('node:fs/promises');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const cli = path.join(directory, 'synthetic-claude');
+  // This controlled subprocess exercises the evidence helper, not a Claude model or marketplace.
+  await writeFile(cli, `#!${process.execPath}
+import { mkdirSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+const args=process.argv.slice(2), config=process.env.CLAUDE_CONFIG_DIR;
+const marker=path.join(path.dirname(process.argv[1]),'synthetic-state');
+const emit=(s)=>console.log(s);
+if(args[0]==='--version')emit('2.1.259');
+else if(args[1]==='marketplace' && args[2]==='add')emit('Successfully added marketplace');
+else if(args[1]==='marketplace' && args[2]==='remove')emit('Successfully removed marketplace');
+else if(args[1]==='marketplace' && args[2]==='list')emit('[]');
+else if(args[1]==='install' && args[2]==='kaleidosphere-agent-skill@kaleidosphere-local') {
+  mkdirSync(path.join(config,'plugins/cache/kaleidosphere-agent-skill/0.26.0'),{recursive:true});
+  if(${JSON.stringify(cacheKind)}==='file')writeFileSync(path.join(config,'plugins/cache/kaleidosphere-agent-skill/0.26.0/SKILL.md'),'SYNTHETIC_CACHE_RETAINED');
+  writeFileSync(marker,'SYNTHETIC');emit('Successfully installed plugin');
+} else if(args[1]==='install')emit('not found in marketplace');
+else if(args[1]==='remove') { writeFileSync(marker,'REMOVED');emit('Successfully uninstalled plugin'); }
+else if(args[1]==='list' || args[1]==='details') {
+  const { readFileSync }=await import('node:fs');
+  const removed=readFileSync(marker,'utf8')==='REMOVED';
+  if(args[1]==='list')emit(removed?'[]':'[{"name":"kaleidosphere-agent-skill"}]');
+  else emit(removed?'not found':'kaleidosphere-agent-skill Skills (1) Agents (0) Hooks (0) MCP servers (0) LSP servers (0)');
+} else { console.error('UNEXPECTED_SYNTHETIC_COMMAND');process.exit(19); }
+`, { mode: 0o700 });
+  const result = run(['--clean-boundary', '--fixture', fixture, '--claude', cli, '--receipt', path.join(directory, 'receipt.json')]);
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  const receipt = parse(result.stdout);
+  assert.equal(receipt.boundaryProof.nativeFilesystemEmpty, false);
+  assert.ok(receipt.boundaryProof.nativeResiduePaths.some((p) => p.includes('plugins/cache/kaleidosphere-agent-skill')));
+  assert.equal(receipt.boundaryProof.registrationClean, true);
+  assert.equal(receipt.boundaryProof.emptyAfterCleanup, true);
+  assert.deepEqual(receipt.boundaryProof.residuePaths, []);
+  assert.equal(receipt.boundaryProof.temporaryBoundaryRemoved, true);
+  assert.equal(receipt.orderedCommandResults.at(-1).id, 'harness-cleanup-readback');
+  assert.equal(receipt.schemaVersion, 'kaleidosphere/k4d-claude-isolated-e2e/v2');
+  assert.equal(receipt.accepted, true);
+  const observed = Object.fromEntries(receipt.negativeAssertions.map((item) => [item.id, item.observed]));
+  assert.equal(observed['preexisting-profile-residue'], 'not-triggered');
+  assert.equal(observed['absent-skill-discovery'], 'not-triggered');
+  assert.equal(observed['undeclared-skill-invocation'], 'denied');
+  assert.equal(observed['malformed-install-target'], 'denied');
+  assert.equal(observed['successful-use-after-removal'], 'denied');
+  assert.equal(observed['residue-after-cleanup'], 'not-triggered');
+  assert.ok(receipt.nonClaims.some((text) => text.includes('No authenticated Claude model/skill use')));
+});
+}
+
+test('v2 schema keeps native residue, registration and actual harness cleanup distinct', async () => {
+  const document = JSON.parse(await readFile(schema.replace('v1.json', 'v2.json'), 'utf8'));
+  assert.equal(document.additionalProperties, false);
+  assert.equal(document.properties.mode.const, 'clean-boundary');
+  assert.equal(document.properties.schemaVersion.const, 'kaleidosphere/k4d-claude-isolated-e2e/v2');
+  assert.deepEqual(document.$defs.negative.properties.observed.enum, ['denied', 'not-triggered', 'failed', 'not-run']);
+  for (const field of ['registrationClean', 'nativeResiduePaths', 'nativeFilesystemEmpty', 'temporaryBoundaryRemoved']) {
+    assert.ok(document.properties.boundaryProof.required.includes(field));
+  }
+});

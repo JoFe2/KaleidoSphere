@@ -17,6 +17,7 @@ const generator = path.join(root, 'scripts', 'release', 'generate-k4c-codex-plug
 const defaultFixture = path.join(root, 'tests', 'fixtures', 'release', 'k4c-codex-cli-transcripts-v1.json');
 const defaultReceipt = path.join(root, 'verification', 'k4c', 'codex-isolated-e2e-v1.json');
 const RECEIPT_SCHEMA = 'kaleidosphere/k4c-codex-isolated-e2e/v1';
+const LIVE_RECEIPT_SCHEMA = 'kaleidosphere/k4c-codex-isolated-e2e/v2';
 const FIXTURE_SCHEMA = 'kaleidosphere/k4c-codex-cli-transcripts/v1';
 const SHA256 = /^[a-f0-9]{64}$/;
 const REQUIRED_NEGATIVE_CASES = [
@@ -76,7 +77,7 @@ function resolveAuthFile(value) {
 function parseArgs(argv) {
   const args = {
     fixture: defaultFixture,
-    receipt: defaultReceipt,
+    receipt: null,
     cleanBoundary: false,
     boundary: null,
     codex: 'codex',
@@ -99,6 +100,8 @@ function parseArgs(argv) {
   }
   if (args.cleanBoundary && args.dryRun) throw new Error('--dry-run is only valid with --fixture');
   if (args.authFile !== null && !args.cleanBoundary) throw new Error('auth file denied: clean boundary required');
+  if (args.receipt === null) args.receipt = args.cleanBoundary
+    ? path.join(root, 'verification', 'k4c', 'codex-isolated-e2e-v2.json') : defaultReceipt;
   return args;
 }
 
@@ -337,13 +340,19 @@ async function runClean(fixture, args) {
   const env = baseEnvironment(roots);
   const authTarget = path.join(roots.codexHome, 'auth.json');
   const ordered = [];
+  const negatives = fixture.requiredNegativeCases.map((item) => ({ id: item.id, required: true, observed: 'not-run' }));
+  const checked = (id, ok, denialTriggered, message) => {
+    negatives.find((item) => item.id === id).observed = ok ? (denialTriggered ? 'denied' : 'not-triggered') : 'failed';
+    if (!ok) throw new Error(message);
+  };
+  checked('preexisting-profile-residue', true, false, 'preexisting-profile-residue denied');
   let order = 0;
   const record = (id, phase, command, expected, result, assertion) => {
     ordered.push(commandResult(++order, id, phase, command, expected, result, assertion));
     return result;
   };
   let packageReceipt;
-  let observedCodexVersion = fixture.codex.version;
+  let observedCodexVersion = null;
   let finalProof;
   let failed;
   try {
@@ -366,7 +375,10 @@ async function runClean(fixture, args) {
 
     const version = execute(args.codex, ['--version'], env);
     record('codex-version', 'preflight', version.command, 'passed', version.result);
-    if (version.raw.status !== 0 || !contains(version.raw.stdout, fixture.codex.version)) throw new Error('Codex version result denied');
+    // A historical fixture version is not an authority for a fresh host run.
+    // Capture the actual bounded version string; subsequent commands qualify
+    // their own compatibility and are not inferred from this version probe.
+    if (version.raw.status !== 0 || !/^codex-cli [0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.-]+)?$/.test(version.raw.stdout.trim())) throw new Error('Codex version result denied');
     observedCodexVersion = version.raw.stdout.trim();
 
     const marketplace = execute(args.codex, ['plugin', 'marketplace', 'add', roots.marketplaceRoot, '--json'], env);
@@ -375,7 +387,12 @@ async function runClean(fixture, args) {
 
     const malformed = execute(args.codex, ['plugin', 'add', `${fixture.package.pluginName}@`, '--json'], env);
     record('malformed-install-target-denied', 'negative-install', malformed.command, 'denied', malformed.result, 'malformed package target is rejected before install');
-    if (malformed.raw.status === 0 || malformed.raw.status === null) throw new Error('malformed-install-target denied assertion failed');
+    // A generic nonzero exit (including auth/transport errors) is not evidence
+    // that the target validator ran. Require an explicit known target diagnostic.
+    const targetDiagnostic = `${malformed.raw.stdout}\n${malformed.raw.stderr}`;
+    const targetRejected = /^(?:Error: )?invalid plugin target(?:: [^\r\n]+)?\r?$/im.test(targetDiagnostic)
+      || targetDiagnostic.split(/\r?\n/).includes('Error: plugin requires --marketplace unless passed as <plugin>@<marketplace>');
+    checked('malformed-install-target', malformed.raw.status !== 0 && malformed.raw.status !== null && !malformed.raw.error && !malformed.raw.signal && targetRejected, true, 'malformed-install-target denied assertion failed');
 
     const install = execute(args.codex, ['plugin', 'add', `${fixture.package.pluginName}@${fixture.package.marketplaceName}`, '--json'], env);
     record('install-plugin', 'install', install.command, 'passed', install.result);
@@ -383,7 +400,9 @@ async function runClean(fixture, args) {
 
     const discovery = execute(args.codex, ['plugin', 'list', '--json'], env);
     record('discover-skill', 'discovery', discovery.command, 'passed', discovery.result, 'declared skill kaleidosphere is discoverable');
-    if (discovery.raw.status !== 0 || !recursivelyContains(JSON.parse(discovery.raw.stdout), fixture.package.pluginName)) throw new Error('absent-skill-discovery denied');
+    let discoveryDoc;
+    try { discoveryDoc = JSON.parse(discovery.raw.stdout); } catch { discoveryDoc = null; }
+    checked('absent-skill-discovery', discovery.raw.status === 0 && recursivelyContains(discoveryDoc, fixture.package.pluginName), false, 'absent-skill-discovery denied');
     const skillStat = await lstat(path.join(roots.packageRoot, fixture.package.skillPath));
     if (!skillStat.isFile()) throw new Error('declared skill file discovery denied');
 
@@ -394,7 +413,7 @@ async function runClean(fixture, args) {
 
     const undeclared = execute(args.codex, ['exec', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check', '--json', 'Use the undeclared skill ks76-not-declared.'], env);
     record('use-undeclared-skill-denied', 'negative-use', undeclared.command, 'denied', undeclared.result, 'negative use assertion is required');
-    if (undeclared.raw.status === 0 || !contains(undeclared.raw.stdout, fixture.package.deniedUseResponse)) throw new Error('undeclared-skill-invocation denied assertion failed');
+    checked('undeclared-skill-invocation', undeclared.raw.status !== null && !undeclared.raw.error && !undeclared.raw.signal && contains(undeclared.raw.stdout, fixture.package.deniedUseResponse), true, 'undeclared-skill-invocation denied assertion failed');
 
     const remove = execute(args.codex, ['plugin', 'remove', `${fixture.package.pluginName}@${fixture.package.marketplaceName}`, '--json'], env);
     record('remove-plugin', 'removal', remove.command, 'passed', remove.result);
@@ -402,7 +421,9 @@ async function runClean(fixture, args) {
 
     const afterRemoval = execute(args.codex, ['exec', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check', '--json', prompt], env);
     record('use-after-removal-denied', 'negative-use-after-removal', afterRemoval.command, 'denied', afterRemoval.result, 'successful use after removal must fail');
-    if (afterRemoval.raw.status === 0 || !contains(afterRemoval.raw.stdout, 'REFUSED')) throw new Error('successful-use-after-removal denied assertion failed');
+    checked('successful-use-after-removal', afterRemoval.raw.status !== null && !afterRemoval.raw.error && !afterRemoval.raw.signal
+      && /\bKaleidoSphere: REFUSED_SKILL_NOT_INSTALLED\b/.test(afterRemoval.raw.stdout)
+      && !contains(afterRemoval.raw.stdout, fixture.package.expectedUseResponse), true, 'successful-use-after-removal denied assertion failed');
 
     const removeMarketplace = execute(args.codex, ['plugin', 'marketplace', 'remove', fixture.package.marketplaceName, '--json'], env);
     record('remove-marketplace', 'removal', removeMarketplace.command, 'passed', removeMarketplace.result);
@@ -413,7 +434,7 @@ async function runClean(fixture, args) {
     finalProof = await readBoundaryProof(boundary, roots);
     const readback = { command: ['read-boundary', roots.codexHome], result: { exitCode: finalProof.emptyAfterCleanup ? 0 : 1, signal: null, stdout: finalProof.emptyAfterCleanup ? 'empty\n' : `${finalProof.residuePaths.join('\n')}\n`, stderr: '', errorCode: null } };
     record('zero-residue-readback', 'readback', readback.command, 'passed', readback.result, 'profile, cache and config roots are empty');
-    if (!finalProof.emptyAfterCleanup) throw new Error(`residue-after-cleanup denied: ${finalProof.residuePaths.join(', ')}`);
+    checked('residue-after-cleanup', finalProof.emptyAfterCleanup, false, `residue-after-cleanup denied: ${finalProof.residuePaths.join(', ')}`);
   } catch (error) {
     failed = error;
   } finally {
@@ -431,15 +452,14 @@ async function runClean(fixture, args) {
       for (const entry of await readdir(boundary)) await rm(path.join(boundary, entry), { recursive: true, force: true });
     }
   }
-  const negativeAssertions = fixture.requiredNegativeCases.map((item) => ({ id: item.id, required: true, observed: 'denied' }));
   const receipt = {
-    schemaVersion: RECEIPT_SCHEMA,
+    schemaVersion: LIVE_RECEIPT_SCHEMA,
     mode: 'clean-boundary',
     codex: { binary: args.codex, version: observedCodexVersion, versionCommand: [args.codex, '--version'] },
     package: { ...fixture.package, generatedPackageReceipt: packageReceipt || null },
     boundaryProof: finalProof,
     orderedCommandResults: ordered,
-    negativeAssertions,
+    negativeAssertions: negatives,
     accepted: !failed && finalProof.emptyAfterCleanup === true,
     globalConfigurationMutated: false,
     nonClaims: fixture.nonClaims,

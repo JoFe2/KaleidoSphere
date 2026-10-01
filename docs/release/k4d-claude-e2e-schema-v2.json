@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/JoFe2/KaleidoSphere/blob/main/docs/release/k4d-claude-e2e-schema-v2.json",
+  "title": "K4D observed clean-boundary lifecycle receipt v2",
+  "description": "Per-check outcomes distinguish not-run, untriggered guards, observed denials and failed checks. Native filesystem residue, registration state and actual harness cleanup are separate. Not authenticated model or marketplace evidence. Historical fixture receipts retain v1.",
+  "type": "object", "additionalProperties": false,
+  "required": ["schemaVersion", "mode", "claude", "package", "boundaryProof", "orderedCommandResults", "negativeAssertions", "accepted", "globalConfigurationMutated", "nonClaims"],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere/k4d-claude-isolated-e2e/v2"},
+    "mode": {"const": "clean-boundary"},
+    "claude": {"type": "object", "additionalProperties": false, "required": ["binary", "version", "versionCommand"], "properties": {"binary": {"type": "string"}, "version": {"type": ["string", "null"]}, "versionCommand": {"$ref": "#/$defs/command"}}},
+    "package": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "packageDigest", "manifestSha256", "pluginName", "marketplaceName", "skillPath"],
+      "properties": {
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "packageDigest": {"$ref": "#/$defs/sha256"}, "manifestSha256": {"$ref": "#/$defs/sha256"},
+        "pluginName": {"type": "string"}, "marketplaceName": {"type": "string"},
+        "skillPath": {"const": "skills/kaleidosphere/SKILL.md"},
+        "generatedPackageReceipt": {"type": ["object", "null"]}
+      }
+    },
+    "boundaryProof": {
+      "type": "object", "additionalProperties": false,
+      "required": ["clean", "globalConfigurationMutated", "registrationClean", "nativeResiduePaths", "nativeFilesystemEmpty", "residuePaths", "emptyAfterCleanup", "temporaryBoundaryRemoved"],
+      "properties": {
+        "clean": {"type": "boolean"}, "globalConfigurationMutated": {"const": false},
+        "profileRoot": {"type": "string"}, "packageRoot": {"type": "string"},
+        "registrationClean": {"type": "boolean"},
+        "nativeResiduePaths": {"type": ["array", "null"], "items": {"type": "string"}},
+        "nativeFilesystemEmpty": {"type": ["boolean", "null"]},
+        "residuePaths": {"$ref": "#/$defs/paths"}, "emptyAfterCleanup": {"type": "boolean"},
+        "temporaryBoundaryRemoved": {"type": "boolean"}, "baselineNote": {"type": "string"},
+        "temporaryBoundaryDigest": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "orderedCommandResults": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/observation"}},
+    "negativeAssertions": {"type": "array", "minItems": 6, "items": {"$ref": "#/$defs/negative"}},
+    "accepted": {"type": "boolean"}, "globalConfigurationMutated": {"const": false},
+    "nonClaims": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "failure": {"type": "string"}
+  },
+  "$defs": {
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "paths": {"type": "array", "items": {"type": "string"}},
+    "command": {"type": "array", "minItems": 1, "items": {"type": "string"}},
+    "negative": {"type": "object", "additionalProperties": false, "required": ["id", "required", "observed"], "properties": {"id": {"type": "string"}, "required": {"const": true}, "observed": {"enum": ["denied", "not-triggered", "failed", "not-run"]}}},
+    "observation": {
+      "type": "object", "additionalProperties": false, "required": ["order", "id", "phase", "command", "expectedOutcome", "result"],
+      "properties": {
+        "order": {"type": "integer", "minimum": 1}, "id": {"type": "string"}, "phase": {"type": "string"},
+        "command": {"$ref": "#/$defs/command"}, "expectedOutcome": {"enum": ["passed", "denied"]},
+        "assertion": {"type": "string"}, "result": {"$ref": "#/$defs/result"}
+      }
+    },
+    "result": {"type": "object", "additionalProperties": false, "required": ["exitCode", "signal", "stdout", "stderr"], "properties": {"exitCode": {"type": ["integer", "null"]}, "signal": {"type": ["string", "null"]}, "stdout": {"type": "string"}, "stderr": {"type": "string"}, "errorCode": {"type": ["string", "null"]}}}
+  }
+}
