@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/issue-snapshot-metric/v1",
+  "metricId": "captured-open-issue-count/v1",
+  "domain": "GITHUB_ISSUE_METADATA",
+  "definition": {
+    "measure": "Number of distinct source issues whose supplied captured state equals OPEN",
+    "unit": "issues",
+    "population": "All validated distinct issues in the exact permission-bound frozen snapshot; pull requests excluded",
+    "selection": "state === OPEN",
+    "unknownStatePolicy": "DENY_ENTIRE_INPUT",
+    "duplicatePolicy": "DENY_ENTIRE_INPUT",
+    "timeSemantics": "Per-row captured state during the declared non-atomic page interval, not historical as-of reconstruction"
+  },
+  "allowedRowFields": ["id", "number", "state", "createdAt", "updatedAt", "closedAt"],
+  "forbiddenClaims": [
+    "Atomic cross-page or present live state",
+    "Period-end balance or status-transition history",
+    "Age, closure throughput, causal attribution, revenue or business outcome",
+    "Independent business definition signoff, human comprehension or generalization",
+    "Second-context permission or reuse"
+  ]
+}

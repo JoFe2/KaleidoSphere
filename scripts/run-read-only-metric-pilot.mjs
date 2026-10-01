@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // KaleidoSphere #250 (KS-EVO-05) — the ONE runnable LOCAL read-only metric pilot entry point.
 //
-// It PREPARES the credential-free pilot protocol and executes the SYNTHETIC REHEARSAL on the
-// existing installable path. It does NOT run a real pilot: a context without its own explicit
+// The default mode PREPARES the credential-free pilot protocol and executes the SYNTHETIC REHEARSAL on the
+// existing installable path. The additive --issue-snapshot mode reads an explicitly
+// permission-bound frozen issue-metadata source and performs one fixed-domain computation;
+// it does not qualify a complete pilot, business definition or human comprehension.
+// See docs/evidence/issue-state-snapshot-v1.md. The default mode does NOT run a real pilot: a context without its own explicit
 // read permission stays BLOCKED_EXTERNAL, an AUTHORED_TEST_INPUT explanation stays
 // CONTRACT_LEVEL_ONLY, and the rehearsal is never presented as a pilot.
 //
@@ -20,11 +23,22 @@
 //   node scripts/run-read-only-metric-pilot.mjs --negative
 //       Execute the bounded negative gates and print each exact rejection code.
 //
-// This CLI WRITES NOTHING and opens no socket: no real source is connected, no credential is
+// This CLI WRITES NOTHING and opens no socket. The default mode connects no real source;
+// snapshot mode only reads the caller-named admitted frozen metadata. No credential is
 // accepted, and no productive or public effect is produced.
 
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
+
+// New scope-specific snapshot mode: never route issue metadata into revenue fixtures.
+// Maintainer establishes exact source-owner authority outside the parser. Reader mode
+// prints a maintainer envelope; separate worksheet from referenceAnswers before handoff.
+if (process.argv.slice(2).some(a => /^--(?:issue-snapshot|issue-permission|issue-capture|reader-task)(?:=|$)/.test(a))) {
+  const { runIssueSnapshotCli } = await import('./lib/issue-snapshot-pilot-cli.mjs');
+  const result = runIssueSnapshotCli(process.argv.slice(2));
+  process.stdout.write(JSON.stringify(result, null, 2) + '\n');
+  process.exit(result.outcome === 'DENIED' ? 1 : 0);
+}
 
 import {
   PILOT_FORMATS,

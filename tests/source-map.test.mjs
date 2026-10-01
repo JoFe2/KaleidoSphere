@@ -77,6 +77,8 @@ import './read-only-metric-pilot.test.mjs';
 import './read-only-metric-pilot-v2.test.mjs';
 // Reader/confinement v2 preserves the same immutable canonical test parent.
 import './ks236-reader-task-v2.test.mjs';
+// #250 scope-specific approved issue snapshot; same immutable canonical parent, exactly once.
+import './issue-state-snapshot-metric.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
