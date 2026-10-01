@@ -48,7 +48,8 @@ test('shared host contracts preserve exact evidence tiers and one business-logic
 });
 
 test('PostgreSQL remains an isolated pilot and DSH remains outside the core release', async () => {
-  const readme = await readFile('README.md', 'utf8');
+  // The approved short entry links this exact historical technical inventory.
+  const readme = await readFile('docs/release/readme-capability-inventory-v0.26.0.txt', 'utf8');
   assert.match(readme, /Optional bounded pilots/);
   assert.match(readme, /PostgreSQL/);
   assert.match(readme, /separate \*\*Developer Preview\*\*/);

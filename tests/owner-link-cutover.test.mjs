@@ -10,11 +10,11 @@ const formerOwnerPattern = new RegExp(formerOwner, 'i');
 test('active KaleidoSphere repository links use the canonical owner', async () => {
   const readme = await readFile('README.md', 'utf8');
   const expectedTargets = [
-    `https://github.com/${canonicalOwner}/KaleidoSphere/actions/workflows/ci.yml/badge.svg`,
-    `https://github.com/${canonicalOwner}/KaleidoSphere/actions/workflows/ci.yml`,
-    `https://img.shields.io/github/v/release/${canonicalOwner}/KaleidoSphere?sort=semver`,
-    `https://github.com/${canonicalOwner}/KaleidoSphere/releases/latest`,
-    `https://img.shields.io/github/license/${canonicalOwner}/KaleidoSphere`,
+    `https://raw.githubusercontent.com/${canonicalOwner}/KaleidoSphere/6c52fe412f62b4197979c4139575043ec75ec192/services/bi-agent/assets/kaleidosphere-logo.png`,
+    `https://github.com/${canonicalOwner}/KaleidoSphere/releases`,
+    `https://github.com/${canonicalOwner}/KaleidoSphere/issues/250`,
+    `https://github.com/${canonicalOwner}/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/LICENSE`,
+    `https://github.com/${canonicalOwner}/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/SOURCE-MAP.md`,
     `https://github.com/${canonicalOwner}/KaleidoSphere.git`,
   ];
 

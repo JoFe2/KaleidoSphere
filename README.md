@@ -1,66 +1,102 @@
 # KaleidoSphere
 
-<picture>
-  <source srcset="services/bi-agent/assets/kaleidosphere-logo.svg" type="image/svg+xml">
-  <img src="services/bi-agent/assets/kaleidosphere-logo.png" alt="KaleidoSphere logo" width="280" height="280">
-</picture>
+<img src="https://raw.githubusercontent.com/JoFe2/KaleidoSphere/6c52fe412f62b4197979c4139575043ec75ec192/services/bi-agent/assets/kaleidosphere-logo.png" alt="KaleidoSphere logo" width="96" height="96">
 
-[![CI](https://github.com/JoFe2/KaleidoSphere/actions/workflows/ci.yml/badge.svg)](https://github.com/JoFe2/KaleidoSphere/actions/workflows/ci.yml)
-[![Latest release](https://img.shields.io/github/v/release/JoFe2/KaleidoSphere?sort=semver)](https://github.com/JoFe2/KaleidoSphere/releases/latest)
-[![License](https://img.shields.io/github/license/JoFe2/KaleidoSphere)](LICENSE)
-[![Docker Compose](https://img.shields.io/badge/Docker%20Compose-local%20stack-2496ed)](compose.yaml)
+## Adapt your analysis. Keep control of the meaning.
 
-**KaleidoSphere — Multi-perspective Business & Decision Intelligence**
+**Multi-perspective Business & Decision Intelligence.**
 
-KaleidoSphere is the PANSPHAIRA ecosystem system for Business Intelligence,
-analytics, and Decision Intelligence. KaleidoSphere transforms fragmented
-enterprise data into coherent perspectives, revealing patterns, dependencies
-and actionable insights.
+A dashboard can show a number without explaining which data, definitions or assumptions produced it. When a business question or data structure changes, that missing context makes the result difficult to check and reuse.
 
-Understand your database. Define the right dashboards. Keep SQL, credentials
-and persistent authority out of clients and models.
+KaleidoSphere brings database discovery, defined metrics and inspectable results together. Explore what a source contains, clarify the question, and follow a supported metric through its table, chart and contributing aggregates. Keep the source context and known gaps alongside the answer.
 
-KaleidoSphere is a local first-pass database understanding and BI
-requirements workflow for BI, data, and platform teams. It analyzes Oracle or
-Microsoft SQL Server metadata with a read-only account, stores an
-evidence-bound technical catalog, guides dashboard requirement discovery, and
-prepares review-bound technical overview workflows for its own Apache Superset
-stack. Optional model use is limited to bounded intent classification.
+It is the analytics and Decision Intelligence system in the **PANSPHAIRA ecosystem**. Its direction is adaptable analysis: reuse checked building blocks as questions and sources evolve, rather than treating every dashboard as an isolated project.
 
-## Release identity
+**Available today:** read-only metadata discovery and released, explicitly scoped metric journeys with synthetic data. Real-context pilots and broader automatic adaptation are separate development goals, not established production capabilities.
 
-KaleidoSphere uses separate, intentionally pinned version axes:
+[Explore the examples](#what-you-can-explore) · [Start locally](#start-locally) · [How it fits together](#how-it-fits-together) · [Releases](https://github.com/JoFe2/KaleidoSphere/releases)
 
-| Layer | Version | Meaning |
-|---|---:|---|
-| Repository release | `v0.26.0` | Current source and release-archive identity |
-| bi-agent component | `v0.18.1` | Runtime product identity attested by the embedded service |
-| External API contract | `2.0.0` | Closed six-action wire contract |
-| Apache Superset | `6.1.0` | Digest-pinned local projection UI |
+## From a question to a result you can inspect
 
-The component and API versions do not imply that the repository is still on an
-older release.
+1. **Define the question.** Discover the source structure and clarify the metric, period, units and permitted scope.
+2. **Check the result.** Inspect the calculation and its evidence. Keep missing coverage and contradictory evidence visible.
+3. **Assess reuse.** Compare a supported mapping or handoff before adopting it for another declared context.
 
-## What you can do
+```text
+Business question + permitted sources
+                 |
+       Read-only discovery
+                 |
+       Local evidence catalog
+                 |
+    Defined metric + checked result
+                 |
+       Table / chart / details
+                 |
+          Review and reuse
+```
 
-- Analyze Oracle or Microsoft SQL Server metadata with audited read-only query packs.
-- Build a versioned local catalog with receipt IDs, snapshot hashes, coverage states, and blind spots.
-- Ask bounded technical questions about size, statistics, dependencies, stored logic, and coverage.
-- Run guided BI requirements discovery and export a human/machine brief with catalog provenance.
-- Preview fixed managed Superset overview dashboards for system, table, code, and coverage views.
-- Collect a read-only Superset runtime fingerprint before future reviewed promotion planning.
-- Build, inspect, and fail-closed preflight a deterministic review-only promotion ZIP from confirmed evidence.
-- Validate promotion execution as **library/test evidence only** against an
-  isolated synthetic owned metadata target; no shipped CLI, HTTP, or operator
-  invocation path is claimed.
+This is the architectural reading order. The examples below have their own supported inputs and proof boundaries; the diagram does not imply a universal end-to-end integration.
 
-## Try it in 5 minutes
+## What you can explore
 
-The default quickstart uses a deterministic synthetic fixture. It does not need
-an external database or an API key.
+### Understand a database before designing a dashboard
 
-Requirements: Docker Engine with Compose v2, OpenSSL, and free localhost ports
-`18088` and `18790`.
+Inspect **Oracle or Microsoft SQL Server metadata** with a read-only account. Explore table sizes, dependencies, stored logic and coverage, then use guided discovery to prepare a BI requirements brief with source context.
+
+**Status:** documented runtime functionality, with a synthetic fixture for the default local introduction.
+
+[Technical catalog](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md) · [Guided BI discovery](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/M4_GUIDED_BI_DISCOVERY.md)
+
+### Explain the number behind a chart
+
+Follow a **net-revenue result** through its table, chart, period filter and contributing aggregates. See the declared units and calculation context instead of treating the visualization as the whole explanation.
+
+**Status:** released visualization evidence from real PostgreSQL execution with synthetic, non-customer data.
+
+[Visualization and reproduction](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/vis01-net-revenue.md)
+
+### Compare a metric across two declared data layouts
+
+Use frozen mappings for **two ledger layouts**, then compare periods and segments through a local SQL engine. The example shows a concrete route to reuse without claiming that arbitrary schemas are interchangeable.
+
+**Status:** released local synthetic tooling. The connected demonstration keeps its holdout and comparison fixtures separate; it is not one continuous business-data lineage.
+
+[Metric composition](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/net-revenue-f4-composition-v1.md) · [Connected demonstration](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/net-revenue-connected-journey-v1.md)
+
+### Inspect a cross-system handoff before relying on it
+
+Keep task identity, source revision and result evidence together. Inspect a paired read and compare an explicitly supplied **synthetic target-status snapshot** with qualified source bytes.
+
+**Status:** released fixed-source synthetic tooling. Reading target status does not install or transfer anything to that target.
+
+[Paired display and boundaries](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/ks247-ks256-paired-display-v1.md)
+
+### Learn where a reuse assumption breaks
+
+Compare access modes against a fixed task reference. Full-data output matches that reference; paired metadata-only and aggregate modes do not pass the benchmark and remain unsupported.
+
+**Status:** released comparison tooling with an explicitly failed benchmark—not a claim that those access modes work.
+
+[Comparison results and reproduction](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/ks248-paired-access-evaluation-v2.md)
+
+## How it fits together
+
+- **Source discovery** reads permitted metadata and records what was—and was not—observed.
+- **The local catalog** keeps source identity, coverage and technical context available for inspection.
+- **Declared metric paths** connect supported inputs, calculations and checks.
+- **Tables, charts and the local Superset stack** provide the supported views, not an unrestricted dashboard generator.
+- **Thin agent interfaces** help operate defined actions. They do not receive database credentials, free-form SQL privileges or new permissions simply because a prompt requests them.
+
+People choose the question and access scope. Permissions and review determine what may be reused or promoted; model output is not authorization.
+
+[Architecture](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/ARCHITECTURE.md) · [Security model](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/SECURITY.md) · [Detailed capability inventory](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/README.md#current-capabilities-and-boundaries)
+
+## Start locally
+
+The default metadata introduction uses a deterministic synthetic fixture: **no external database or API key is required**.
+
+Host prerequisites: **Node.js 24**, **curl**, Docker Engine with Compose v2, OpenSSL, and available localhost ports `18088` and `18790`.
 
 ```bash
 git clone https://github.com/JoFe2/KaleidoSphere.git
@@ -71,268 +107,32 @@ cp .env.example .env
 ./bin/bi status
 ./bin/bi analyze
 ./bin/bi ask "Largest tables by size"
-./bin/bi discovery start demo
-./bin/bi discovery answer demo audienceRole "Sales analyst"
-./bin/bi discovery answer demo businessQuestions '["Which order value should be watched weekly?"]'
-./bin/bi discovery status demo
-./bin/bi superset-fingerprint collect
-./bin/bi down
 ```
 
-Open <http://127.0.0.1:18790> for KaleidoSphere and
-<http://127.0.0.1:18088> for Superset. The generated Superset `analyst`
-password is stored in `.runtime/secrets/superset_analyst_password` with mode
-`0600` and is not printed by the scripts.
+Open the local KaleidoSphere UI at `http://127.0.0.1:18790`. The documented configuration explains Superset access and local credentials. Shut down the stack with `./bin/bi down` when finished.
 
-## AgentSkills package
+The metric demonstrations are separate entry points with their own pinned runtimes and explicit inputs; they are not additional default Compose database engines.
 
-`agent-skills/kaleidosphere` is one shared, instruction-only AgentSkill for the
-six closed External API v2 intents. It adds no endpoint, credential, provider,
-plugin executable or mutation authority.
+[Local configuration](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/CONFIGURATION.md) · [Run a metric journey](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/net-revenue-journey-v1.md)
 
-Codex and Claude Code can install the same package with the current
-AgentSkills installer:
+## One skill source, explicit host boundaries
 
-```bash
-npx skills add ./agent-skills/kaleidosphere \
-  --agent codex claude-code --skill kaleidosphere --copy -y
-```
+The canonical AgentSkill provides instructions for six defined API actions: **status, discovery, analyze, plan, preview and readback**. Host-specific views reuse that source without adding credentials or mutation authority.
 
-OpenClaw uses the same package under `<workspace>/skills/kaleidosphere`;
-Hermes uses `~/.hermes/skills/kaleidosphere`. Host-specific installation and
-evidence status are recorded in `agent-skills/host-contracts.json`. No
-marketplace listing beyond the recorded K4b ClawHub catalog version 0.18.2 is
-claimed. The single-source distribution epic keeps this one maintained source
-and records its per-host terminal states and bounded external waits in
-`docs/release/ks73-epic-closure-v1.json`, verified by
-`npm run test:ks73-epic-closure`. It records the completed K4b ClawHub
-publication as version-bound recorded public delivery at exactly catalog
-version 0.18.2, bound to the recorded public facts in
-`docs/release/k4b-clawhub-publication-v1.json`; no public Codex or Claude
-listing is claimed by it, and no marketplace publication of the current
-source package 0.26.0 is claimed.
+Distribution archives for ClawHub/OpenClaw/Hermes, Codex and Claude Code are available through the project's releases. Archive availability is not proof of a current marketplace listing or successful execution in every host. Thin packages accompany the licensed source archive; retain its Apache-2.0 license and NOTICE.
 
-## DSH and host integrations
+[Distribution assets](https://github.com/JoFe2/KaleidoSphere/releases) · [Recorded host and publication boundaries](https://github.com/JoFe2/KaleidoSphere/issues/73#issuecomment-5910521259)
 
-The AgentSkill above is instruction-only. The optional
-[`JoFe2/kaleidosphere-dsh-plugin`](https://github.com/JoFe2/kaleidosphere-dsh-plugin)
-is a separate **Developer Preview** for DeepSeek Harness rc.8. It is not part
-of the KaleidoSphere v0.26.0 release assets and adds no DSH dependency, loader
-or mapping to this repository. The plugin exposes six native
-`kaleidosphere_*` tools and vendors its own exact KaleidoSphere v0.16.0 subset;
-its compatibility, lifecycle and release status are governed in that repository.
+## What comes next
 
-## First result
+The direction is broader source coverage, more reusable analytical building blocks and clearer visual composition. Real-context pilots must establish practical value and operating limits with separately authorized sources and actual observations.
 
-The fixture run returns real local evidence over synthetic metadata, not
-production evidence. A successful response includes:
+Reader comprehension, pilot evidence and marketplace approval are distinct acceptance steps. Automated tests do not replace them.
 
-```json
-{
-  "intent": "ANALYZE",
-  "tools": ["status", "analyze", "catalog_ingest", "readback", "catalog_question"],
-  "analysisReceipt": {
-    "receiptId": "mssql-...",
-    "runtimeValidation": "SYNTHETIC_UNVALIDATED",
-    "snapshotSha256": "..."
-  },
-  "publication": {"status": "AWAITING_TRUSTED_APPROVAL", "mutationPerformed": false}
-}
-```
+[Roadmap](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/ROADMAP.md) · [Reader exercise](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/docs/evidence/ks236-reader-task-protocol-v1.md) · [Pilot scope](https://github.com/JoFe2/KaleidoSphere/issues/250)
 
-Local catalog answers include receipt, snapshot, scope, and coverage caveats.
+## Source, evidence and contribution
 
-## Workflow
+The examples above link to a fixed source revision so their evidence remains inspectable. Use the release page for the artifact and checksum contract of the version you download. Repository, runtime component, External API and Superset versions are separate identities.
 
-```mermaid
-flowchart LR
-  A[Oracle or MSSQL metadata] -->|audited read-only SELECTs| B[Read-only analyzer]
-  B --> C[Evidence catalog]
-  C --> D[Bounded Q&A and BI discovery]
-  C --> E[BI proposal and preview]
-  D --> G[Trusted preview / approval / apply / readback / rollback]
-  H[Superset fingerprint] --> G
-  F[Optional LLM] -->|intent classification only| D
-```
-
-KaleidoSphere does not send free-form SQL to a source database, does not
-sample source rows, and does not give Superset direct source-database
-credentials.
-
-## Why teams use it
-
-Direct LLM-to-SQL workflows can blur exploration, credential-bearing access, and
-production data exposure. KaleidoSphere narrows the surface: collect safe
-metadata, preserve coverage evidence, ask deterministic catalog-bound questions,
-turn requirements into a reviewable brief, and show fixed technical dashboards
-backed by the local catalog.
-
-## Security by design
-
-- Source adapters use read-only metadata queries and fail closed on unsafe
-  rights or scope mismatch.
-- Source rows, raw SQL prompts, credentials, raw PL/SQL/view text, DB-link secrets, and provider keys are excluded from model input.
-- Superset connects only to the local projection database; it does not receive
-  Oracle or MSSQL credentials.
-- The default agent path runs offline with `LLM_MODE=stub`.
-- Optional OpenAI-compatible providers may classify only `ANALYZE`, `STATUS`, or `DENY`.
-- Containers are unprivileged, capability-dropped, and expose only localhost UI ports.
-- Destructive reset requires `./bin/bi reset --yes-i-understand`.
-
-See [docs/SECURITY.md](docs/SECURITY.md) for the full trust boundary.
-
-## Live database configuration
-
-The fixture mode in `.env.example` is the portable default. To analyze a live
-database, choose exactly one engine:
-
-- `BI_ENGINE=mssql` for Microsoft SQL Server metadata analysis.
-- `BI_ENGINE=oracle` for Oracle metadata analysis through `node-oracledb` Thin
-  mode.
-
-Put source passwords only in `.secrets/mssql_password` or `.secrets/oracle_password`,
-keep the files mode `0600`, and grant the analyzer principal only the minimum
-read visibility for the declared schemas. Details are in
-[docs/CONFIGURATION.md](docs/CONFIGURATION.md).
-
-## Current capabilities and boundaries
-
-### Default runtime and documented CLI
-
-- Oracle and Microsoft SQL Server read-only metadata analysis.
-- Versioned evidence-bound local technical catalog and bounded technical Q&A.
-- Guided BI requirements discovery with Markdown/JSON brief export.
-- Review-bound managed technical overview dashboard workflows in Apache Superset.
-- Server-attested External API `2.0.0` with six closed External API v2 actions:
-  status, discovery, analyze, plan, preview and readback. The runtime reports
-  `bi-agent` product `v0.18.1` and exact capabilities at
-  `GET /v2/capabilities`. The additive
-  `GET /v2/capability-manifest` projects only those six actions with canonical
-  integrity, current-attestation, executable-state, authority and evidence
-  bindings for thin adapters.
-- Read-only Superset 6.1.0 runtime fingerprint and fail-closed planning preflight.
-
-### Optional bounded pilots
-
-- Bounded PostgreSQL read-only metadata pilot with a frozen catalog pack and
-  digest-pinned synthetic PostgreSQL 16.10 E2E/readback evidence. It is not a
-  third `BI_ENGINE` option in the default Compose stack.
-- Explicitly allowlisted PostgreSQL null/distinct count profiling and
-  single-column relationship-candidate evidence with observed/computed/inferred
-  separation, deterministic Evidence Store and proposal-only rule plan/reports.
-
-### Local library/contract surfaces
-
-- The closed `bi-ks-01-net-revenue/v1` local operation executes one
-  digest-bound, read-only aggregate over the admitted synthetic holdout and
-  emits identity-equal JSON and TABLE readbacks. It has no free SQL, real-source,
-  dashboard, mutation, or shipped CLI/HTTP authority.
-- A documented, runnable local net-revenue user journey
-  (`node scripts/run-net-revenue-journey.mjs`, see
-  `docs/evidence/net-revenue-journey-v1.md`) composes the released C2 calculation,
-  readback and the VIS-01 visual into one local entry point, running normal and
-  negative paths against a real local read-only relational source (an injected
-  in-process PGlite engine in an isolated runtime, never a `package.json`
-  dependency) reconciled to the independent oracle. This is a local-only CLI: it
-  writes no public state and has no HTTP publish path.
-
-- A positive local F4 composition (`node scripts/run-net-revenue-f4-composition.mjs`,
-  see `docs/evidence/net-revenue-f4-composition-v1.md`) reads a real local source whose
-  ledger kernel is mapped through the frozen #237 mapping profiles (both `ledger-v1` and
-  `ledger-v2`) and whose #238 `status`/`segment` extension feeds the period/segment
-  comparison, all through one entry point. Both real local PGlite mappings reproduce
-  byte-identical kernel and comparison digests using synthetic data. Database setup
-  writes only to the isolated local engine; this F4 path is not enforced read-only
-  qualification. CLI `--negative` checks source/unit/mapping denials directly on
-  fixture mutations, not through database seed/read. This is a local-only CLI (no
-  public state or HTTP publish path); the #238 PANSPHAIRA provenance stays HELD.
-  Human comprehension and full issue acceptance remain open.
-
-- The [connected synthetic runner](docs/evidence/net-revenue-connected-journey-v1.md)
-  (`node scripts/run-connected-net-revenue-journey.mjs`) exposes calculation,
-  table/chart/details, two-layout reuse and comparison in one noninteractive run.
-  Its holdout and F4 data are separate fixtures, not one end-to-end business lineage.
-  The optional PGlite path executes real SQL, including the exact provenance-negative
-  gate; the real PSAi registry still returns HELD. A separate
-  [reader-task protocol](docs/evidence/ks236-reader-task-protocol-v1.md) prepares human
-  evaluation without inventing answers. No broader #167 promotion is claimed.
-
-- Exactly one admitted-holdout metric, synthetic net-revenue v1, passed
-  clean-room falsification; no production or broader BI claim is made. The
-  result reports 3/3 satisfied criteria separately from 1 delivered local
-  evidence package and 0 published packages.
-- The `E-BI-1` cumulative evidence record binds the exact public
-  terminal/release/readback and Queue-DONE chains for #145, #146, and #147,
-  reports `PASS`, `FALSIFIED`, and `BLOCKED_EXTERNAL` as separate classes, and
-  leaves parent #143 open for its own controlled delivery. It adds no second
-  metric, production claim, external effect, or Authority.
-- The v0.25.0 authority-bound local object extension defines
-  `bi.object.search.read`, `bi.object.details.read` and
-  `bi.database.overview.read`, with capability-specific bindings and read-only
-  Search, Details and Overview handlers. These importable local contracts do
-  not extend External API v2 and are not additional public server routes.
-- Deterministic MSSQL/Oracle Progressive Run Controller v1 with explicit per-object coverage,
-  a 95% breadth-before-depth gate, hard probe budgets, duplicate suppression and receipt resume.
-- Reservation-before-dispatch table/hypothesis budgets, persisted hypothesis and counterevidence,
-  typed near-duplicate suppression, deterministic expected-gain ordering and unknown-outcome reconciliation.
-- Controller-bound MSSQL/Oracle safe-analysis parity for bounded column, quality,
-  temporal and relationship aggregates. Typed pair targets debit both objects;
-  observed/computed evidence remains separate from proposal-only inference.
-- Deterministic proposal-only key, temporal, quality and relationship roles;
-  structural connected-component clusters; and a hash-chained six-surface diff
-  that distinguishes observed removal from visibility loss.
-- Deterministic `chimpmaera.bi/superset-promotion-bundle/v1` review ZIP build,
-  inspection, checksum, and fail-closed preflight.
-
-### Synthetic test evidence only
-
-- Promotion execution, trusted-workflow apply/readback/rollback and ambiguous
-  outcome reconciliation are exercised through local synthetic library tests.
-  They have no shipped CLI or HTTP invocation path and do not authorize
-  production/customer mutation.
-
-### Not claimed today
-
-- Ambient or client-authorized dynamic dataset, chart, or dashboard mutation.
-- Production/customer promotion, Superset-native ZIP import/export, or dynamic
-  source-connected asset creation. The execution adapter is synthetic-owned and local-only.
-- Free-form SQL, SQL Lab, source-row persistence/sampling, automatic relationship
-  activation, semantic-model generation, or direct production compatibility.
-- Direct Superset-to-source Oracle/MSSQL connections.
-- SSO, HA, Kubernetes, or managed multi-tenant operation.
-
-## Docs
-
-- [Architecture](docs/ARCHITECTURE.md), [Configuration](docs/CONFIGURATION.md),
-  [Security](docs/SECURITY.md), [Roadmap](docs/ROADMAP.md),
-  [Release notes](docs/RELEASE_NOTES.md), and
-  [Clean-room validation](docs/CLEAN_ROOM.md)
-- Evidence: [Oracle runtime](docs/evidence/M1_ORACLE_RUNTIME.md),
-  [Oracle technical inventory](docs/evidence/M2_ORACLE_TECHNICAL_INVENTORY.md),
-  [local catalog](docs/evidence/M3_LOCAL_TECHNICAL_CATALOG.md),
-  [BI discovery](docs/evidence/M4_GUIDED_BI_DISCOVERY.md),
-  [Superset fingerprint](docs/evidence/M5_SUPERSET_FINGERPRINT.md), and
-  [promotion bundle contract](docs/evidence/M5_PROMOTION_BUNDLE.md)
-
-Some decision and roadmap documents preserve the non-claims of the historical
-slice in which they were written. Use [release notes](docs/RELEASE_NOTES.md) and
-the versioned tests as the current release delta; a later library proof does not
-retroactively create a public invocation path.
-
-## Development and verification
-
-Development and tests require Node.js 24. The canonical local gates are:
-
-```bash
-npm run dist:agent-skill
-npm test
-docker compose config
-```
-
-## Provenance
-
-KaleidoSphere is a standalone public repository with repository-authored
-runtime, catalog, discovery, Superset, fingerprint, promotion-bundle, tests, and
-docs. Some analyzer foundations were derived from external public source
-material. Exact sources, commits, files, and hashes are tracked in
-[SOURCE-MAP.md](SOURCE-MAP.md) and [SOURCE-MAP.json](SOURCE-MAP.json).
+[Releases](https://github.com/JoFe2/KaleidoSphere/releases) · [License](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/LICENSE) · [Source provenance](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/SOURCE-MAP.md) · [Development and verification](https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/README.md#development-and-verification)

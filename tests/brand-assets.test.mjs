@@ -89,8 +89,7 @@ test('README, web manifest and container reference the complete pragmatic icon s
     readFile(path.join(assetRoot, 'site.webmanifest'), 'utf8').then(JSON.parse),
     readFile(path.join(root, 'services/bi-agent/Dockerfile'), 'utf8'),
   ]);
-  assert.match(readme, /<source srcset="services\/bi-agent\/assets\/kaleidosphere-logo\.svg" type="image\/svg\+xml">/);
-  assert.match(readme, /<img src="services\/bi-agent\/assets\/kaleidosphere-logo\.png" alt="KaleidoSphere logo" width="280" height="280">/);
+  assert.match(readme, /<img src="https:\/\/raw\.githubusercontent\.com\/JoFe2\/KaleidoSphere\/6c52fe412f62b4197979c4139575043ec75ec192\/services\/bi-agent\/assets\/kaleidosphere-logo\.png" alt="KaleidoSphere logo" width="96" height="96">/);
   assert.deepEqual(webManifest.icons, [
     {src: '/assets/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any'},
     {src: '/assets/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any'},
@@ -103,12 +102,14 @@ test('README, web manifest and container reference the complete pragmatic icon s
 
 test('README provenance stays product-neutral while linking exact source maps', async () => {
   const readme = await readFile(path.join(root, 'README.md'), 'utf8');
-  const provenance = readme.slice(readme.indexOf('## Provenance'));
+  const provenance = readme.slice(readme.indexOf('## Source, evidence and contribution'));
   const legacyProductName = ['Chimp', 'Maera'].join('');
 
-  assert.match(provenance, /external public source\s+material/);
-  assert.match(provenance, /\[SOURCE-MAP\.md\]\(SOURCE-MAP\.md\)/);
-  assert.match(provenance, /\[SOURCE-MAP\.json\]\(SOURCE-MAP\.json\)/);
+  assert.match(provenance, /examples above link to a fixed source revision/);
+  assert.match(provenance, /\[Source provenance\]\(https:\/\/github\.com\/JoFe2\/KaleidoSphere\/blob\/6c52fe412f62b4197979c4139575043ec75ec192\/SOURCE-MAP\.md\)/);
+  const inventory = await readFile(path.join(root, 'docs/release/readme-capability-inventory-v0.26.0.txt'), 'utf8');
+  assert.match(inventory, /external public source\s+material/);
+  assert.match(inventory, /\[SOURCE-MAP\.json\]\(SOURCE-MAP\.json\)/);
   assert.doesNotMatch(provenance, new RegExp(legacyProductName, 'i'));
 });
 
