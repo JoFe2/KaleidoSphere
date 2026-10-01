@@ -23,8 +23,9 @@ const root = path.resolve(import.meta.dirname, '..', '..');
 const generator = path.join(root, 'scripts', 'release', 'generate-k4d-claude-plugin.mjs');
 const defaultFixture = path.join(root, 'tests', 'fixtures', 'release', 'k4d-claude-cli-transcripts-v1.json');
 const defaultReceipt = path.join(root, 'generated', 'claude', 'receipts', 'claude-isolated-e2e-v1.json');
-const cleanReceiptDefault = path.join(root, 'generated', 'claude', 'receipts', 'claude-isolated-e2e-clean-boundary-v1.json');
+const cleanReceiptDefault = path.join(root, 'generated', 'claude', 'receipts', 'claude-isolated-e2e-clean-boundary-v2.json');
 const RECEIPT_SCHEMA = 'kaleidosphere/k4d-claude-isolated-e2e/v1';
+const LIVE_RECEIPT_SCHEMA = 'kaleidosphere/k4d-claude-isolated-e2e/v2';
 const FIXTURE_SCHEMA = 'kaleidosphere/k4d-claude-cli-transcripts/v1';
 const SHA256 = /^[a-f0-9]{64}$/;
 const REQUIRED_NEGATIVE_CASES = [
@@ -239,6 +240,8 @@ function baseEnvironment(roots) {
     PATH: process.env.PATH || '',
     CLAUDE_CONFIG_DIR: roots.config,
     HOME: roots.home,
+    // Preserve the parent's explicitly admitted temporary scope for the generator.
+    TMPDIR: os.tmpdir(),
   };
 }
 
@@ -320,6 +323,12 @@ async function runClean(fixture, args) {
   const env = baseEnvironment(roots);
   const pluginId = `${fixture.package.pluginName}@${fixture.package.marketplaceName}`;
   const ordered = [];
+  const negatives = fixture.requiredNegativeCases.map((item) => ({ id: item.id, required: true, observed: 'not-run' }));
+  const checked = (id, ok, denialTriggered, message) => {
+    negatives.find((item) => item.id === id).observed = ok ? (denialTriggered ? 'denied' : 'not-triggered') : 'failed';
+    if (!ok) throw new Error(message);
+  };
+  checked('preexisting-profile-residue', true, false, 'preexisting-profile-residue denied');
   let order = 0;
   let failed;
   let finalProof;
@@ -328,7 +337,9 @@ async function runClean(fixture, args) {
     return result;
   };
   let packageReceipt;
-  let observedVersion = fixture.claude.version;
+  let observedVersion = null;
+  let registrationClean = false;
+  let nativeResiduePaths = null;
   try {
     const generated = execute(process.execPath, [generator, '--out', roots.packageRoot], env);
     record('generate-package', 'preflight', generated.command, 'passed', generated.result, 'package digest is bound to the generated receipt');
@@ -359,9 +370,7 @@ async function runClean(fixture, args) {
     } catch {
       discoveryDoc = null;
     }
-    if (discovery.raw.status !== 0 || !Array.isArray(discoveryDoc) || discoveryDoc.length === 0 || !combined(discovery.result).includes(fixture.package.pluginName)) {
-      throw new Error('absent-skill-discovery denied');
-    }
+    checked('absent-skill-discovery', discovery.raw.status === 0 && Array.isArray(discoveryDoc) && discoveryDoc.length > 0 && combined(discovery.result).includes(fixture.package.pluginName), false, 'absent-skill-discovery denied');
     const skillStat = await lstat(path.join(roots.packageRoot, fixture.package.skillPath));
     if (!skillStat.isFile()) throw new Error('declared skill file discovery denied');
 
@@ -374,11 +383,11 @@ async function runClean(fixture, args) {
 
     const undeclared = execute(args.claude, ['plugin', 'install', `ks77-not-declared@${fixture.package.marketplaceName}`], env);
     record('use-undeclared-skill-denied', 'negative-use', undeclared.command, 'denied', undeclared.result, 'not found in marketplace');
-    if (!combined(undeclared.result).includes('not found in marketplace')) throw new Error('undeclared-skill-invocation denied assertion failed');
+    checked('undeclared-skill-invocation', undeclared.raw.status !== null && !undeclared.raw.error && !undeclared.raw.signal && combined(undeclared.result).includes('not found in marketplace'), true, 'undeclared-skill-invocation denied assertion failed');
 
     const malformed = execute(args.claude, ['plugin', 'install', `${fixture.package.pluginName}@unknown-marketplace`], env);
     record('malformed-install-target-denied', 'negative-install', malformed.command, 'denied', malformed.result, 'not found in marketplace');
-    if (!combined(malformed.result).includes('not found in marketplace')) throw new Error('malformed-install-target denied assertion failed');
+    checked('malformed-install-target', malformed.raw.status !== null && !malformed.raw.error && !malformed.raw.signal && combined(malformed.result).includes('not found in marketplace'), true, 'malformed-install-target denied assertion failed');
 
     const remove = execute(args.claude, ['plugin', 'remove', pluginId], env);
     record('remove-plugin', 'removal', remove.command, 'passed', remove.result, 'Successfully uninstalled plugin');
@@ -396,7 +405,7 @@ async function runClean(fixture, args) {
 
     const detailsAfter = execute(args.claude, ['plugin', 'details', fixture.package.pluginName], env);
     record('use-declared-skill-after-removal-denied', 'negative-use-after-removal', detailsAfter.command, 'denied', detailsAfter.result, 'not found');
-    if (!combined(detailsAfter.result).includes('not found')) throw new Error('successful-use-after-removal denied assertion failed');
+    checked('successful-use-after-removal', detailsAfter.raw.status !== null && !detailsAfter.raw.error && !detailsAfter.raw.signal && combined(detailsAfter.result).includes('not found'), true, 'successful-use-after-removal denied assertion failed');
 
     const removeMarketplace = execute(args.claude, ['plugin', 'marketplace', 'remove', fixture.package.marketplaceName], env);
     record('remove-marketplace', 'removal', removeMarketplace.command, 'passed', removeMarketplace.result, 'Successfully removed marketplace');
@@ -412,23 +421,14 @@ async function runClean(fixture, args) {
     }
     if (marketplaceListAfter.raw.status !== 0 || !Array.isArray(marketplaceListDoc) || marketplaceListDoc.length !== 0) throw new Error('marketplace-absent-readback denied');
 
-    // Zero-residue is authoritative from the CLI's own post-removal readback: no
-    // active plugin and no registered marketplace remain. Claude's baseline config
-    // files (settings, backups) are not submission residue and are not counted.
-    const clean = listAfterDoc?.length === 0 && marketplaceListDoc?.length === 0 && combined(detailsAfter.result).includes('not found');
-    const proofBody = cleanProofBody(clean);
-    finalProof = {
-      clean,
-      globalConfigurationMutated: false,
-      profileRoot: boundary,
-      packageRoot: roots.packageRoot,
-      residuePaths: proofBody.residuePaths,
-      emptyAfterCleanup: proofBody.emptyAfterCleanup,
-      baselineNote: 'Claude writes baseline CLAUDE_CONFIG_DIR state (settings, backups, orphaned cache); submission residue is measured by the CLI plugin/marketplace readback, not by config-dir emptiness.',
-      temporaryBoundaryDigest: sha256(JSON.stringify(proofBody)),
-    };
-    record('zero-residue-readback', 'readback', ['read-boundary', roots.config], 'passed', { exitCode: clean ? 0 : 1, signal: null, stdout: clean ? 'clean\n' : 'residue\n', stderr: '', errorCode: null }, 'no active plugin or marketplace residue');
-    if (!clean) throw new Error('residue-after-cleanup denied: active plugin or marketplace residue remains');
+    registrationClean = listAfterDoc?.length === 0 && marketplaceListDoc?.length === 0 && combined(detailsAfter.result).includes('not found');
+    if (!registrationClean) throw new Error('registration-after-removal denied: active plugin or marketplace remains');
+    // CLI deregistration is not filesystem emptiness. Observe files before the
+    // harness removes its own boundary, preserving native cache-retention evidence.
+    nativeResiduePaths = (await listPaths(roots.config)).map((p) => `config/${p}`)
+      .concat((await listPaths(roots.home)).map((p) => `home/${p}`)).sort();
+    record('native-filesystem-readback', 'readback', ['read-boundary', roots.config, roots.home], 'passed',
+      { exitCode: 0, signal: null, stdout: `${JSON.stringify({ registrationClean, nativeResiduePaths })}\n`, stderr: '', errorCode: null });
   } catch (error) {
     failed = error;
   } finally {
@@ -436,19 +436,46 @@ async function runClean(fixture, args) {
     else {
       for (const entry of await readdir(boundary).catch(() => [])) await rm(path.join(boundary, entry), { recursive: true, force: true });
     }
+    const residuePaths = await listPaths(boundary);
+    let temporaryBoundaryRemoved = false;
+    try { await lstat(boundary); } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      temporaryBoundaryRemoved = true;
+    }
+    const cleanupEmpty = residuePaths.length === 0 && (!owned || temporaryBoundaryRemoved);
+    const proofBody = { registrationClean, nativeResiduePaths, residuePaths, emptyAfterCleanup: cleanupEmpty, temporaryBoundaryRemoved };
+    finalProof = {
+      clean: registrationClean && cleanupEmpty, globalConfigurationMutated: false,
+      profileRoot: boundary, packageRoot: roots.packageRoot,
+      registrationClean, nativeResiduePaths,
+      nativeFilesystemEmpty: nativeResiduePaths === null ? null : nativeResiduePaths.length === 0,
+      residuePaths, emptyAfterCleanup: cleanupEmpty, temporaryBoundaryRemoved,
+      baselineNote: 'Native CLI filesystem residue is measured separately. emptyAfterCleanup records actual harness cleanup, not native CLI zero-residue or authenticated model use.',
+      temporaryBoundaryDigest: sha256(JSON.stringify(proofBody)),
+    };
+    record('harness-cleanup-readback', 'readback', ['read-boundary', boundary], 'passed',
+      { exitCode: cleanupEmpty ? 0 : 1, signal: null, stdout: `${JSON.stringify({ residuePaths, temporaryBoundaryRemoved })}\n`, stderr: '', errorCode: null });
+    // Cleanup after a failed run is not a successful lifecycle negative case.
+    if (!failed) {
+      negatives.find((item) => item.id === 'residue-after-cleanup').observed = cleanupEmpty ? 'not-triggered' : 'failed';
+      if (!cleanupEmpty) failed = new Error('residue-after-cleanup denied: harness boundary not empty');
+    }
   }
-  const negativeAssertions = fixture.requiredNegativeCases.map((item) => ({ id: item.id, required: true, observed: 'denied' }));
   const receipt = {
-    schemaVersion: RECEIPT_SCHEMA,
+    schemaVersion: LIVE_RECEIPT_SCHEMA,
     mode: 'clean-boundary',
     claude: { binary: args.claude, version: observedVersion, versionCommand: [args.claude, '--version'] },
     package: { ...fixture.package, generatedPackageReceipt: packageReceipt || null },
     boundaryProof: finalProof,
     orderedCommandResults: ordered,
-    negativeAssertions,
+    negativeAssertions: negatives,
     accepted: !failed && finalProof?.emptyAfterCleanup === true,
     globalConfigurationMutated: false,
-    nonClaims: fixture.nonClaims,
+    nonClaims: [
+      'No authenticated Claude model/skill use is established by plugin details or local lifecycle commands.',
+      'Native CLI deregistration, retained filesystem/cache residue and explicit harness cleanup are separate observations.',
+      'No marketplace submission, publication, listing, external anonymous readback or native zero-residue is inferred from harness cleanup.',
+    ],
   };
   if (failed) receipt.failure = failed.message;
   return receipt;

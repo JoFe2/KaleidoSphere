@@ -133,3 +133,93 @@ test('receipt schema is closed and names the required evidence fields', async ()
     'nonClaims',
   ]);
 });
+
+test('synthetic early CLI failure never reports unexecuted negative cases as denied', async (t) => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'ks76-early-failure-'));
+  const { rm } = await import('node:fs/promises');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const cli = path.join(directory, 'synthetic-codex');
+  await writeFile(cli, `#!${process.execPath}\nconsole.error('SYNTHETIC_VERSION_FAILURE');process.exit(17);\n`, { mode: 0o700 });
+  const result = run(['--clean-boundary', '--fixture', fixture, '--codex', cli, '--receipt', path.join(directory, 'receipt.json')]);
+  assert.equal(result.status, 1, result.stderr);
+  const receipt = parse(result.stdout);
+  assert.equal(receipt.accepted, false);
+  assert.equal(receipt.orderedCommandResults.at(-1).id, 'codex-version');
+  assert.equal(receipt.codex.version, null, 'failed version probe cannot inherit historical fixture version');
+  assert.ok(receipt.negativeAssertions.every((item) => item.observed !== 'denied'), 'no negative rejection was reached');
+  assert.equal(receipt.negativeAssertions.find((item) => item.id === 'undeclared-skill-invocation').observed, 'not-run');
+  assert.equal(receipt.mode, 'clean-boundary');
+});
+
+async function syntheticLifecycle(t, scenario) {
+  const directory = await mkdtemp(path.join(tmpdir(), 'ks76-synthetic-lifecycle-'));
+  const { rm } = await import('node:fs/promises');
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const cli = path.join(directory, 'synthetic-codex');
+  const { package: pkg } = JSON.parse(await readFile(fixture, 'utf8'));
+  // Explicit local test double, never a host/model result or platform response.
+  await writeFile(cli, `#!${process.execPath}
+import { existsSync, writeFileSync, unlinkSync } from 'node:fs';
+import path from 'node:path';
+const args=process.argv.slice(2), scenario=${JSON.stringify(scenario)}, pkg=${JSON.stringify(pkg)};
+const marker=path.join(process.env.CODEX_HOME,'synthetic-installed');
+const emit=(s)=>console.log(s);
+if(args[0]==='--version')emit('codex-cli 0.156.1');
+else if(args[1]==='marketplace')emit('{}');
+else if(args[1]==='add' && args[2].endsWith('@')){console.error('SYNTHETIC_MALFORMED_TARGET');process.exit(2);}
+else if(args[1]==='add'){writeFileSync(marker,'SYNTHETIC');emit('{}');}
+else if(args[1]==='list')emit(scenario==='discovery-missing'?'[]':JSON.stringify([{name:pkg.pluginName}]));
+else if(args[1]==='remove'){unlinkSync(marker);emit('{}');}
+else if(args[0]==='exec') {
+  if(args.at(-1).includes('ks76-not-declared'))emit(scenario==='undeclared-succeeds'?pkg.expectedUseResponse:pkg.deniedUseResponse);
+  else if(existsSync(marker) || scenario==='after-removal-succeeds')emit(pkg.expectedUseResponse);
+  else emit('REFUSED');
+} else {console.error('UNEXPECTED_SYNTHETIC_COMMAND');process.exit(19);}
+`, { mode: 0o700 });
+  const result = run(['--clean-boundary', '--fixture', fixture, '--codex', cli, '--receipt', path.join(directory, 'receipt.json')]);
+  return { result, receipt: parse(result.stdout) };
+}
+
+test('synthetic completed lifecycle distinguishes triggered denials from permitted guard counterparts', async (t) => {
+  const { result, receipt } = await syntheticLifecycle(t, 'allowed');
+  assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
+  assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-codex-isolated-e2e/v2');
+  assert.equal(receipt.codex.version, 'codex-cli 0.156.1', 'observed test-double version is not historical fixture version');
+  assert.equal(receipt.accepted, true);
+  const observed = Object.fromEntries(receipt.negativeAssertions.map((item) => [item.id, item.observed]));
+  assert.deepEqual(observed, {
+    'preexisting-profile-residue': 'not-triggered',
+    'absent-skill-discovery': 'not-triggered',
+    'undeclared-skill-invocation': 'denied',
+    'malformed-install-target': 'denied',
+    'successful-use-after-removal': 'denied',
+    'residue-after-cleanup': 'not-triggered',
+  });
+  const refusal = receipt.orderedCommandResults.find((item) => item.id === 'use-undeclared-skill-denied');
+  assert.equal(refusal.result.exitCode, 0, 'content refusal can exit successfully');
+  assert.equal(receipt.boundaryProof.emptyAfterCleanup, true);
+});
+
+for (const [scenario, failedCase, notRunCase] of [
+  ['discovery-missing', 'absent-skill-discovery', 'undeclared-skill-invocation'],
+  ['undeclared-succeeds', 'undeclared-skill-invocation', 'successful-use-after-removal'],
+  ['after-removal-succeeds', 'successful-use-after-removal', 'residue-after-cleanup'],
+]) {
+  test(`synthetic ${scenario} records failed check without promoting later unexecuted checks`, async (t) => {
+    const { result, receipt } = await syntheticLifecycle(t, scenario);
+    assert.equal(result.status, 1, `${result.stdout}\n${result.stderr}`);
+    assert.equal(receipt.accepted, false);
+    const observed = Object.fromEntries(receipt.negativeAssertions.map((item) => [item.id, item.observed]));
+    assert.equal(observed[failedCase], 'failed');
+    assert.equal(observed[notRunCase], 'not-run');
+    assert.equal(receipt.boundaryProof.emptyAfterCleanup, true, 'recovery cleanup is not lifecycle success');
+  });
+}
+
+test('v2 schema preserves observed outcomes separately from historical fixture v1', async () => {
+  const document = JSON.parse(await readFile(schema.replace('v1.json', 'v2.json'), 'utf8'));
+  assert.equal(document.additionalProperties, false);
+  assert.equal(document.properties.mode.const, 'clean-boundary');
+  assert.equal(document.properties.schemaVersion.const, 'kaleidosphere/k4c-codex-isolated-e2e/v2');
+  assert.deepEqual(document.$defs.negative.properties.observed.enum, ['denied', 'not-triggered', 'failed', 'not-run']);
+});
