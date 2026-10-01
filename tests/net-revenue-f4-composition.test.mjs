@@ -247,19 +247,18 @@ test('CLI output confinement: --out denies /tmp-prefixed lookalikes and symlink 
   assert.equal(sibling.status, 1, '/tmpfoo must be denied');
   assert.match(sibling.stderr, /F4_CLI_OUT_PATH_DENIED/);
 
-  // A valid /tmp path is accepted and the receipt lands at exactly that path.
+  // A valid configured temporary path is accepted at exactly that path.
   const tmpRoot = await mkdtemp(join(tmpdir(), 'f4-out-'));
   t.after(() => rm(tmpRoot, { recursive: true, force: true }));
   const okPath = join(tmpRoot, 'receipt.json');
   const ok = await run(['--out', okPath]);
-  assert.equal(ok.status, 0, 'valid /tmp receipt must be accepted');
+  assert.equal(ok.status, 0, 'valid configured temporary receipt must be accepted');
   assert.equal(JSON.parse(await readFile(okPath, 'utf8')).sourceMode, 'SYNTHETIC_FALLBACK');
 
-  // A symlink inside /tmp (or the repo) that resolves OUTSIDE the allowed roots must be
-  // denied and must not leak a file to the real target.
-  // The outside target must be a DIFFERENT root than /tmp (or the repo): use /var/tmp,
-  // which resolves elsewhere and is not one of the two allowed output roots.
-  const outside = await mkdtemp(join('/var/tmp', 'f4-outside-'));
+  // A symlink to a separate task-owned directory is denied even when its target is
+  // inside the configured temporary root. No fixture may write to global /var/tmp.
+  // The v2 suite additionally exercises targets outside a nested configured TMPDIR.
+  const outside = await mkdtemp(join(tmpdir(), 'f4-outside-'));
   const escapeSource = join(tmpRoot, 'escape');
   await symlink(outside, escapeSource);
   t.after(() => rm(outside, { recursive: true, force: true }));

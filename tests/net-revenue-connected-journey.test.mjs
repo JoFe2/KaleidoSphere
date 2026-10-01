@@ -716,11 +716,11 @@ test('CLI symlink confinement is PRESERVED: leaf, dangling leaf, ancestor and pr
 
     // 4. prefix lookalike: a sibling whose name merely starts with the repository path.
     assert.match(await attempt(`${root}-evil/x.json`),
-      /CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or \/tmp/);
+      /CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or configured temporary directory/);
 
     // 5. outside every allowed root
     assert.match(await attempt('/etc/ks-connected-evil.json'),
-      /CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or \/tmp/);
+      /CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or configured temporary directory/);
 
     // ...while an honest path still writes, so the confinement is not a blanket refusal.
     const honest = path.join(real, 'ok.json');

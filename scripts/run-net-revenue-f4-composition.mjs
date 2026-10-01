@@ -8,7 +8,7 @@
 //       [--layout ledger-v1|ledger-v2|both] [--format JSON] [--negative] [--out <path>]
 //
 // No credentials, network, mutation, or publish path. Writes only a local JSON receipt
-// (zero public effect). `--out` is restricted to the repository or /tmp.
+// (zero public effect). `--out` is restricted to the repository or configured TMPDIR.
 //
 // KS236–238 F4 correction: `--pglite --negative` previously fed mutated fixture arrays
 // STRAIGHT to composeF4ForLayout while keeping sourceMode REAL_POSTGRESQL — so the
@@ -18,8 +18,8 @@
 // synthetic mode. Source-read failures (seed/read stage) stay distinct from mapping
 // failures (frozen #237 profile gate), and each negative case records which path ran.
 
-import { readFile, realpath, lstat, open } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { assertJourneyOutputPath, writeJourneyReceipt } from './lib/journey-output-boundary.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -122,55 +122,9 @@ async function runNegativeCases(engine, lv, fixture) {
   };
 }
 
-// `--out` must land inside the repository or /tmp — NOT a sibling prefix like /tmpfoo
-// and NOT a symlink (leaf or any ancestor component) that escapes the allowed roots.
-// Lexical containment is checked against exact root+separator prefixes; then EVERY path
-// component below the matched root is inspected with lstat (which never follows a
-// symlink), so a dangling leaf symlink whose target does not exist yet is still DENIED
-// instead of being silently walked past by realpath. The final open is performed with
-// O_NOFOLLOW so a symlink leaf can never be followed even if it appears between check
-// and open (there is no race window on pre-existing contents; no claim is made against
-// a hostile actor concurrently swapping an ANCESTOR directory after the check).
-async function assertAllowedOutputPath(out) {
-  const resolved = path.resolve(out);
-  const prefixes = [root, '/tmp'];
-  const matchedNorm = prefixes.map((p) => p.endsWith(path.sep) ? p.slice(0, -1) : p)
-    .find((norm) => resolved === norm || resolved.startsWith(`${norm}${path.sep}`));
-  if (!matchedNorm) throw new Error('F4_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-
-  // Resolve the allowed root and every component of the relative tail WITHOUT following
-  // symlinks. If any component (including the final leaf) is a symlink — whether dangling
-  // or pointing anywhere — the path is denied. This closes the deterministic escape where
-  // realpath failed on the dangling leaf and walked UP past the symlink to a benign parent.
-  const realRoot = await realpath(matchedNorm).then((rp) => (rp.endsWith(path.sep) ? rp.slice(0, -1) : rp)).catch(() => null);
-  if (realRoot === null) throw new Error('F4_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-  const rel = resolved.slice(matchedNorm.length).split(path.sep).filter((c) => c !== '' && c !== '.');
-  let walked = realRoot;
-  for (const comp of rel) {
-    const candidate = path.join(walked, comp);
-    let st;
-    try { st = await lstat(candidate); }
-    catch { break; } // stop at the first non-existent component; the leaf may simply not exist yet
-    if (st.isSymbolicLink()) {
-      throw new Error('F4_CLI_OUT_PATH_DENIED: --out must not contain a symlink');
-    }
-    walked = candidate;
-  }
-  return resolved;
-}
-
-// Open the final receipt leaf with O_NOFOLLOW (| O_CREAT | O_TRUNC) and write the
-// payload. A symlink leaf (pre-existing or swapped in) makes open() fail with ELOOP
-// rather than following outside the allowed root; a normal missing/regular leaf is
-// created/overwritten exactly as before, preserving ordinary in-root writes.
-async function writeAtPathNoFollow(resolved, payload) {
-  const fd = await open(resolved, constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW, 0o644);
-  try {
-    await fd.writeFile(payload);
-  } finally {
-    await fd.close();
-  }
-}
+// The same exact-root, configured-TMPDIR and final no-follow contract as the connected CLI.
+const assertAllowedOutputPath = (out) => assertJourneyOutputPath(out, { root, code: 'F4_CLI_OUT_PATH_DENIED' });
+const writeAtPathNoFollow = writeJourneyReceipt;
 
 try {
   const { values } = parseArgs({

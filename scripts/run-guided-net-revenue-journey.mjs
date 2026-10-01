@@ -5,7 +5,7 @@
 //       [--pglite <dist/index.js path>] [--out <path>]
 //
 // What this adds over the released connected runner
-// (`run-connected-net-revenue-journey.mjs`, which is UNCHANGED by this work):
+// (`run-connected-net-revenue-journey.mjs`):
 //
 //   * it asks the user the four bounded questions and reads the ANSWERS from a real
 //     source — `--answers <path>` feeds the user's own lines, and stdin is read when no
@@ -21,10 +21,10 @@
 // guided journey and must not be reported as a crash — nor as a success.
 //
 // No credentials, network, mutation or publish path. `--out` is confined exactly like the
-// released #240/#239 CLIs: repository or /tmp, no symlink component, final open O_NOFOLLOW.
+// released #240/#239 CLIs: repository or configured TMPDIR, no symlink, final O_NOFOLLOW.
 
-import { readFile, realpath, lstat, open } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { assertJourneyOutputPath, writeJourneyReceipt } from './lib/journey-output-boundary.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -62,31 +62,8 @@ const HOLDOUT = path.join(root, 'tests/fixtures/business-bi/net-revenue-holdout-
 const F4_V1 = path.join(root, 'tests/fixtures/business-bi/net-revenue-f4-composition-v1.json');
 const F4_V2 = path.join(root, 'tests/fixtures/business-bi/net-revenue-f4-composition-v2.json');
 
-async function assertAllowedOutputPath(out) {
-  const resolved = path.resolve(out);
-  const prefixes = [root, '/tmp'];
-  const matchedNorm = prefixes.map((p) => (p.endsWith(path.sep) ? p.slice(0, -1) : p))
-    .find((norm) => resolved === norm || resolved.startsWith(`${norm}${path.sep}`));
-  if (!matchedNorm) throw new Error('GUIDED_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-  const realRoot = await realpath(matchedNorm)
-    .then((rp) => (rp.endsWith(path.sep) ? rp.slice(0, -1) : rp)).catch(() => null);
-  if (realRoot === null) throw new Error('GUIDED_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-  const rel = resolved.slice(matchedNorm.length).split(path.sep).filter((c) => c !== '' && c !== '.');
-  let walked = realRoot;
-  for (const comp of rel) {
-    const candidate = path.join(walked, comp);
-    let st;
-    try { st = await lstat(candidate); } catch { break; }
-    if (st.isSymbolicLink()) throw new Error('GUIDED_CLI_OUT_PATH_DENIED: --out must not contain a symlink');
-    walked = candidate;
-  }
-  return resolved;
-}
-
-async function writeAtPathNoFollow(resolved, payload) {
-  const fd = await open(resolved, constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW, 0o644);
-  try { await fd.writeFile(payload); } finally { await fd.close(); }
-}
+const assertAllowedOutputPath = (out) => assertJourneyOutputPath(out, { root, code: 'GUIDED_CLI_OUT_PATH_DENIED' });
+const writeAtPathNoFollow = writeJourneyReceipt;
 
 // Read the user's raw lines. A file supplied explicitly must exist — a missing `--answers`
 // file is an operator error, not an unanswered question, and must not silently downgrade
@@ -252,7 +229,7 @@ export const GUIDED_CLI_HELP_TEXT = [
   '                     reads nothing.',
   '  --format <FORMAT>  JSON (default, the machine receipt) | TABLE | HTML   (R2 correction)',
   '  --view <path>      write the practical dataset-bound view (TABLE or HTML per --format)',
-  '  --out <path>       write the JSON receipt; confined to the repository or /tmp',
+  '  --out <path>       write the JSON receipt; confined to the repository or configured TMPDIR',
   '  --help             print this text and exit 0',
   '',
   'Exit status: 0 for a completed run AND for every in-scope refusal (an unsupported',
