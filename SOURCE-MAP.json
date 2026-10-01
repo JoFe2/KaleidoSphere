@@ -849,7 +849,7 @@
     "tests/release/generate-k4d-claude-plugin.test.mjs": "73bf25d91817a420eca90787364eb406f5218e55af8486eb635b2f50e6f59fe7",
     "tests/release/k4c-anonymous-directory-readback.test.mjs": "afad853f833362ee0148bea93d7e2dafee248970b502947399810b625ac6dd7a",
     "tests/release/k4c-bounded-external-wait.test.mjs": "7a6ee672da0e1b4c90592b172301d74168da4fd76330af1e79de8251d8398c84",
-    "tests/release/k4c-codex-clean-boundary.test.mjs": "c982dba11c43ad3b238ff0a73408adfbfec3e9aa2da92b87a3fe4fb468f0abc0",
+    "tests/release/k4c-codex-clean-boundary.test.mjs": "c0e0656dfd1a2bc983c78db13b706a47e6586c4f23b15d6921644c3529edaf19",
     "tests/release/k4c-codex-isolated-e2e.test.mjs": "0042cc1b3e0abb4c458069f12f7ad3a10f11264a1b4c41916844052d18a85ac8",
     "tests/release/k4c-delivery-readback.test.mjs": "0237feb115242bd3530d9de7a04d9b459373e855b19a38a29b1ec27cbd1a4d5f",
     "tests/release/k4c-local-contract-integration.test.mjs": "0e430aaddcbd88045f153e671ab61a2a066d141f896dd152018f689cd56f57e6",

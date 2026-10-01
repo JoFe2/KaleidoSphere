@@ -146,7 +146,7 @@ test('clean-boundary executor runs the full ordered contract against a conforman
     const receipt = parse(result.stdout);
     assert.deepEqual(JSON.parse(await readFile(receiptPath, 'utf8')), receipt);
 
-    assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-codex-isolated-e2e/v1');
+    assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-codex-isolated-e2e/v2');
     assert.equal(receipt.mode, 'clean-boundary');
     assert.equal(receipt.accepted, true);
     assert.equal(receipt.globalConfigurationMutated, false);
@@ -187,7 +187,9 @@ test('clean-boundary executor runs the full ordered contract against a conforman
       'successful-use-after-removal',
       'residue-after-cleanup',
     ]);
-    assert.ok(receipt.negativeAssertions.every((item) => item.observed === 'denied'));
+    assert.deepEqual(receipt.negativeAssertions.map((item) => item.observed), [
+      'not-triggered', 'not-triggered', 'denied', 'denied', 'denied', 'not-triggered',
+    ]);
 
     assert.equal(receipt.boundaryProof.emptyAfterCleanup, true);
     assert.equal(receipt.boundaryProof.globalConfigurationMutated, false);
@@ -214,6 +216,9 @@ test('clean-boundary executor fails closed when declared-skill discovery is abse
     assert.equal(receipt.mode, 'clean-boundary');
     assert.equal(receipt.accepted, false);
     assert.match(receipt.failure, /absent-skill-discovery denied/);
+    const outcomes = Object.fromEntries(receipt.negativeAssertions.map((item) => [item.id, item.observed]));
+    assert.equal(outcomes['absent-skill-discovery'], 'failed');
+    assert.equal(outcomes['undeclared-skill-invocation'], 'not-run');
     // Even on failure the harness cleans the boundary: no residue remains.
     assert.equal(receipt.boundaryProof.emptyAfterCleanup, true);
     assert.deepEqual(await readdir(boundary), []);
