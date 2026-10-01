@@ -1,0 +1,21 @@
+{
+  "schema": "kaleidosphere/ks250-historical-preparation-freeze/v1",
+  "source_commit": "ef451abb13ff853c3bdfd678f6ba4495320e7dbd",
+  "role": "HISTORICAL_REPLAY_ONLY_NOT_ACTIVE_QUALIFICATION",
+  "prior_cli": "scripts/run-read-only-metric-pilot.mjs",
+  "frozen_cli": "scripts/run-read-only-metric-pilot-v1.mjs",
+  "active_cli": "scripts/run-read-only-metric-pilot.mjs",
+  "active_module": "services/bi-control/src/business-bi/read-only-metric-pilot-protocol-v2.mjs",
+  "warning": "v1 has known synthetic-label promotion, first-context permission, unknown-effort and carried-binding defects; preserved for historical replay, not evidence qualification",
+  "files": {
+    "services/bi-control/src/business-bi/read-only-metric-pilot-protocol-v1.mjs": "6536ade080aecbff15a2001bdaa30bcf1a7409224fa9062d743530a2ef28c6e5",
+    "docs/evidence/ks250-metric-pilot-v1.md": "4f8a85d155b5b22b149651ba915f6481d49d0e29b78ae01f6f1f41f3cfa35db4",
+    "tests/fixtures/business-bi/ks250-metric-pilot/contexts-authorized-rehearsal-v1.json": "d9f48f8faf6748b3b4918992a4bdad31198978a8c1490c2c8231bf6edc40d9c3",
+    "tests/fixtures/business-bi/ks250-metric-pilot/contexts-v1.json": "94b647a2c9c02b2af9cbf7326605c23790f6782c5227efa1dfa6662259645b97",
+    "tests/fixtures/business-bi/ks250-metric-pilot/explanations-empty-v1.json": "a71d4a86889f49cedd384882d6fc283d480ddb337d21c76722ab7b010adbad15",
+    "tests/fixtures/business-bi/ks250-metric-pilot/explanations-v1.json": "53186d98225eb7b6b5d941e128029bd9a3beeb05f61b3cb1bb0b11590cdca310",
+    "tests/fixtures/business-bi/ks250-metric-pilot/protocol-v1.json": "c1dcfd3fd0d9a2e11562b5e660e4b5f5751a32672bd83be2b87ad24a4de09339",
+    "tests/fixtures/business-bi/ks250-metric-pilot/source-identity-v1.json": "69d0a24efd77ce174dbf487c1d6a53009d05049d20e803c440f6654bfc2bc9e7",
+    "scripts/run-read-only-metric-pilot-v1.mjs": "e3e926939cf18a49c10ab11f1245287df2170c240d01f16641d73b75ce83c68b"
+  }
+}
