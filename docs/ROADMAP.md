@@ -105,10 +105,16 @@ Human reader-comprehension evidence is still missing; automated tests do not rep
 A positive local F4 composition (`node scripts/run-net-revenue-f4-composition.mjs`)
 implements the #237 to #238 local CLI path with synthetic data in a real local engine.
 Isolated database setup writes data; SELECT is not enforced read-only qualification.
-Both frozen mapping profiles feed period/segment comparison. CLI `--negative` exercises
-fixture mutations directly rather than database reads. The #238 PANSPHAIRA provenance
-remains HELD. These are implemented local candidates, not full issue acceptance or a
-claim that this increment is already publicly released.
+Both frozen mapping profiles feed period/segment comparison. CLI `--negative` sends
+each mutated fixture through the same independent database seed/read handoff before
+the mapping boundary; without `--pglite` this is a labelled synthetic adapter, not a
+real SQL engine. Source-read failures remain distinct from mapping denials. The guided
+question/source/period/unit decision surface (`node scripts/run-guided-net-revenue-journey.mjs`)
+was delivered in release `2026_09_22_v2`; the retained F4 and guided implementations
+are included in subsequent source/tooling releases. Public delivery of this technical
+increment is not full #236 acceptance: real uncoached reader responses are still
+missing, the #167 promotion gate remains NOT_PROMOTED, and #238 PANSPHAIRA provenance
+remains HELD.
 
 ## Candidate next capabilities
 

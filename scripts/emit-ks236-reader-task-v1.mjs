@@ -7,15 +7,15 @@
 //
 // This script PREPARES the task. It emits (a) the reader's worksheet derived from the SAME
 // real execution the journey performs, and (b) an EMPTY comprehension record whose slots a
-// real human must fill. It accepts no human-answer input and always emits every answer,
-// identity and timestamp as null. This preparation execution therefore records no human
-// comprehension result. The maintainer separates the blank reader form from the grading
-// reference before handoff; real responses and their assessment remain external evidence.
+// real human must fill. It deliberately cannot fill them: the record is emitted with every
+// answer null, and the accompanying check fails closed if any answer is present without a
+// declared reader identity and timestamp. Automated runs therefore cannot manufacture a
+// comprehension result — they can only ship the blank form and the reference answers the
+// reviewer is NOT shown.
 //
 //   node scripts/emit-ks236-reader-task.mjs [--pglite <dist/index.js>] [--out <path>]
 
-import { readFile } from 'node:fs/promises';
-import { assertJourneyOutputPath, writeJourneyReceipt } from './lib/journey-output-boundary.mjs';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -79,7 +79,6 @@ const readerFacing = {
     unknownChannelCurrent: c.unknown,
     unknownChannelComparison: report.comparison.unknown,
     orderIntake: c.orderIntake,
-    openOrderCount: c.openOrderCount,
     openOrderValue: c.openOrderValue,
     observedOpenSaleRowValue: c.observedOpenSaleRowValue,
   },
@@ -94,9 +93,8 @@ const readerFacing = {
   ],
 };
 
-// Reference answers exist for GRADING ONLY, outside worksheet.readerFacing in the
-// maintainer envelope. The maintainer must extract a reader-only copy before handoff;
-// the combined envelope must never be given to an uncoached reader.
+// Reference answers exist for GRADING ONLY. They are written to a separate file the reader
+// is not given, so the worksheet cannot leak the expected phrasing.
 const referenceAnswers = {
   T1: 'Sum of sale amounts minus credit amounts within a fixed calendar period, in integer EUR cents.',
   T2: 'Current = 2026-07 (2026-07-01..31), comparison = 2026-06 (2026-06-01..30), inclusive both ends.',
@@ -108,9 +106,9 @@ const referenceAnswers = {
 };
 
 const worksheet = {
-  schemaVersion: 'kaleidosphere.business-bi/ks236-reader-task/v2',
+  schemaVersion: 'kaleidosphere.business-bi/ks236-reader-task/v1',
   issue: 'KPI-USER-01 (#236)',
-  provenance: `Prepared by the existing connected-journey execution in ${sourceMode} over synthetic data. No human response is recorded here.`,
+  provenance: 'Prepared from a real connected-journey execution. No human response is recorded here.',
   readerFacing,
   comprehensionRecord: {
     readerIdentity: null, readAt: null, sourceModeSeen: null,
@@ -123,8 +121,11 @@ const worksheet = {
 
 const payload = JSON.stringify({ worksheet, referenceAnswers }, null, 2) + '\n';
 if (values.out) {
-  const resolved = await assertJourneyOutputPath(values.out, { root, code: 'KS236_READER_OUT_PATH_DENIED' });
-  await writeJourneyReceipt(resolved, payload);
+  const resolved = path.resolve(values.out);
+  if (!resolved.startsWith(root) && !resolved.startsWith('/tmp')) {
+    throw new Error('KS236_READER_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
+  }
+  await writeFile(resolved, payload);
   console.log(`KS236 reader-task worksheet written: ${resolved}`);
   console.log('comprehensionRecord is EMPTY by construction — a real reader must fill it.');
 } else {

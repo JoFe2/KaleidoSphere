@@ -1,0 +1,26 @@
+{
+  "schema": "kaleidosphere/ks236-reader-instrument-freeze/v1",
+  "source_commit": "af8160c1da9e5e86add7471405be6e9f6c378472",
+  "historical_role": "HISTORICAL_REPLAY_ONLY_NOT_ACTIVE_READER_QUALIFICATION",
+  "original_emitter": "scripts/emit-ks236-reader-task.mjs",
+  "frozen_emitter": "scripts/emit-ks236-reader-task-v1.mjs",
+  "active_emitter": "scripts/emit-ks236-reader-task.mjs",
+  "active_schema": "kaleidosphere.business-bi/ks236-reader-task/v2",
+  "warning": "v1 omitted openOrderCount from the reader view while T4 expected it; its original output guard is historical, not active policy",
+  "actual_reader_observed": false,
+  "files": {
+    "docs/evidence/ks236-reader-task-protocol-v1.md": "8bd60984cdfbadaa2514f1f6003d0046b8f436c9b75acee649a6110379aac323",
+    "contracts/business-bi/v1/net-revenue.metric.json": "455f735e55f03155c657dc963656ed01363e546345824dfea66b883c287d9d70",
+    "services/bi-control/src/business-bi/net-revenue-connected-journey.mjs": "a6e691c7ce97346f9d98242875832dbe890b7fdf6c313794ba54284f9a544034",
+    "services/bi-control/src/business-bi/net-revenue-journey.mjs": "83da0f1cb7c235dd510c7416d211804c6fe1c1447447f03808ebf66d58b0096e",
+    "services/bi-control/src/business-bi/net-revenue-f4-composition.mjs": "69c3440a015450a36215491dbf35d36deba144834a9cf00e73799e1daf5fb1c6",
+    "services/bi-control/src/business-bi/net-revenue-visual-v1.mjs": "5582c30cf7ceab01d24a5682e05d0b1862735c715644a23ad0a3ac1bbe2f4faa",
+    "tests/fixtures/business-bi/net-revenue-oracle-v1.json": "ce0c135351a8179f08cfca77b91a9624f2f6a7e16fd81cda8c3aba780f4a9164",
+    "tests/fixtures/business-bi/net-revenue-holdout-v1.json": "2d0ba0bb806e73a473688d6137c6182f4233aec1bed92aee708c4a052d327a4d",
+    "tests/fixtures/business-bi/net-revenue-f4-composition-v1.json": "db6b93e53443089d9cbee50639fba5d987195a6ca7dbedf56826744ca02993b7",
+    "tests/fixtures/business-bi/net-revenue-f4-composition-v2.json": "ae68de76d18a823c3084843ea3b4d18e08957db168823c66a37730ef17efbaba",
+    "package.json": "85ca0ccac0fa41d937e2ce62768bff6b1cfe3b2ec3d04886343fcd905646c401",
+    "README.md": "f68c19174eaeddadedca5485410e7c6f03c7245f6579a895908167a2f6f07bc1",
+    "scripts/emit-ks236-reader-task-v1.mjs": "5eae4b4b81819db66e99b5f12c2666b25816f4ca233488bcf7aa8a5f2d4c26bd"
+  }
+}

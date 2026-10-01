@@ -10,7 +10,8 @@
 // No credentials, network, mutation, or publish path. Writes only a local JSON
 // receipt (zero public effect).
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
+import { assertJourneyOutputPath, writeJourneyReceipt } from './lib/journey-output-boundary.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -100,11 +101,8 @@ try {
   process.stdout.write(out);
 
   if (values.out) {
-    const resolved = path.resolve(values.out);
-    if (!resolved.startsWith(`${root}${path.sep}`) && !resolved.startsWith('/tmp')) {
-      throw new Error('JOURNEY_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-    }
-    await writeFile(resolved, out, { mode: 0o644 });
+    const resolved = await assertJourneyOutputPath(values.out, { root, code: 'JOURNEY_CLI_OUT_PATH_DENIED' });
+    await writeJourneyReceipt(resolved, out);
   }
 } catch (error) {
   process.stderr.write(`${error.code ?? error.message}\n`);

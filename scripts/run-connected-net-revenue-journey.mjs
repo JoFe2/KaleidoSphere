@@ -10,11 +10,11 @@
 //       [--format JSON] [--negative] [--out <path>]
 //
 // No credentials, network, mutation, or publish path. Writes only a local JSON receipt
-// (zero public effect). `--out` is confined to the repository or /tmp exactly like the
+// (zero public effect). `--out` is confined to the repository or configured TMPDIR:
 // released #240 CLI: no symlink component, no prefix lookalike, final open O_NOFOLLOW.
 
-import { readFile, realpath, lstat, open } from 'node:fs/promises';
-import { constants } from 'node:fs';
+import { readFile } from 'node:fs/promises';
+import { assertJourneyOutputPath, writeJourneyReceipt } from './lib/journey-output-boundary.mjs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { parseArgs } from 'node:util';
@@ -38,32 +38,9 @@ const F4_V1 = path.join(root, 'tests/fixtures/business-bi/net-revenue-f4-composi
 const F4_V2 = path.join(root, 'tests/fixtures/business-bi/net-revenue-f4-composition-v2.json');
 const REGISTRY = path.join(root, 'contracts/pansphaira-analytics/v1/release-registry.v1.json');
 
-// Same confinement contract as the released #240 CLI (kept identical on purpose: the
-// connected journey must not widen the write surface it inherited).
-async function assertAllowedOutputPath(out) {
-  const resolved = path.resolve(out);
-  const prefixes = [root, '/tmp'];
-  const matchedNorm = prefixes.map((p) => (p.endsWith(path.sep) ? p.slice(0, -1) : p))
-    .find((norm) => resolved === norm || resolved.startsWith(`${norm}${path.sep}`));
-  if (!matchedNorm) throw new Error('CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-  const realRoot = await realpath(matchedNorm).then((rp) => (rp.endsWith(path.sep) ? rp.slice(0, -1) : rp)).catch(() => null);
-  if (realRoot === null) throw new Error('CONNECTED_CLI_OUT_PATH_DENIED: --out must be inside the repository or /tmp');
-  const rel = resolved.slice(matchedNorm.length).split(path.sep).filter((c) => c !== '' && c !== '.');
-  let walked = realRoot;
-  for (const comp of rel) {
-    const candidate = path.join(walked, comp);
-    let st;
-    try { st = await lstat(candidate); } catch { break; }
-    if (st.isSymbolicLink()) throw new Error('CONNECTED_CLI_OUT_PATH_DENIED: --out must not contain a symlink');
-    walked = candidate;
-  }
-  return resolved;
-}
-
-async function writeAtPathNoFollow(resolved, payload) {
-  const fd = await open(resolved, constants.O_WRONLY | constants.O_CREAT | constants.O_TRUNC | constants.O_NOFOLLOW, 0o644);
-  try { await fd.writeFile(payload); } finally { await fd.close(); }
-}
+// Reuse the same configured scratch/no-follow boundary as the direct journey receipts.
+const assertAllowedOutputPath = (out) => assertJourneyOutputPath(out, { root, code: 'CONNECTED_CLI_OUT_PATH_DENIED' });
+const writeAtPathNoFollow = writeJourneyReceipt;
 
 try {
   const { values } = parseArgs({
