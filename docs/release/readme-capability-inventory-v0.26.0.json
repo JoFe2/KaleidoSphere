@@ -1,0 +1,11 @@
+{
+  "schema": "kaleidosphere/historical-readme-inventory/v1",
+  "role": "Verbatim historical technical-claims source for offline maturity guards, not the current user-facing entry point",
+  "source_commit": "6c52fe412f62b4197979c4139575043ec75ec192",
+  "source_path": "README.md",
+  "source_url": "https://github.com/JoFe2/KaleidoSphere/blob/6c52fe412f62b4197979c4139575043ec75ec192/README.md#current-capabilities-and-boundaries",
+  "snapshot": "readme-capability-inventory-v0.26.0.txt",
+  "sha256": "243ddfa995c8684f676148335c5692f66e12a83470e4dbbeba839123f4973674",
+  "interpretation": "Relative references in this verbatim text belong to the root of the historical source revision. The approved short README links to that exact public revision. Existing technical maturity, provenance and negative guards remain executable against these unchanged bytes; current README bytes have a separate exact approved-content gate.",
+  "new_runtime_capability": false
+}

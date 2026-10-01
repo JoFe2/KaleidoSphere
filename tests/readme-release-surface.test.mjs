@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
@@ -11,6 +12,28 @@ function section(markdown, heading) {
 }
 
 const compact = (value) => value.replace(/\s+/g, ' ').trim();
+const sha256 = (value) => createHash('sha256').update(value).digest('hex');
+const capabilityInventory = 'docs/release/readme-capability-inventory-v0.26.0.txt';
+const capabilityInventorySha256 = '243ddfa995c8684f676148335c5692f66e12a83470e4dbbeba839123f4973674';
+const approvedEntrySha256 = 'f68c19174eaeddadedca5485410e7c6f03c7245f6579a895908167a2f6f07bc1';
+
+function validateEntry(readme) {
+  // Approved benefit-led entry and its immutable linked technical inventory are
+  // separate surfaces. Exact bytes prevent silent claim/permission expansion.
+  assert.equal(sha256(readme), approvedEntrySha256, 'public entry must preserve the approved R2 bytes');
+  assert.match(readme, /README\.md#current-capabilities-and-boundaries/);
+  assert.match(readme, /Host prerequisites: \*\*Node\.js 24\*\*, \*\*curl\*\*/);
+  assert.match(readme, /paired metadata-only and aggregate modes do not pass the benchmark and remain unsupported/);
+  assert.match(readme, /Automated tests do not replace them/);
+}
+
+test('benefit-led entry preserves approved R2 and its exact linked historical inventory', async () => {
+  const [entry, inventory] = await Promise.all([readFile('README.md', 'utf8'), readFile(capabilityInventory, 'utf8')]);
+  validateEntry(entry);
+  assert.equal(sha256(inventory), capabilityInventorySha256, 'offline inventory is the verbatim public README at the linked source revision');
+  assert.match(entry, /https:\/\/github\.com\/JoFe2\/KaleidoSphere\/blob\/6c52fe412f62b4197979c4139575043ec75ec192\/README\.md#current-capabilities-and-boundaries/);
+  validateReadme(inventory);
+});
 
 function validateReadme(readme) {
   for (const value of [
@@ -107,9 +130,9 @@ function validateReadme(readme) {
   assert.doesNotMatch(normalized, /E-BI-1[^.\n]*(?:second metric|general BI|business-wide|production-ready)/i);
 }
 
-test('README distinguishes the current release surfaces and optional DSH preview', async () => {
+test('linked historical inventory retains current release surfaces and optional DSH boundaries', async () => {
   const [readme, rootPackage, agentPackage, compose, cli, server, contract] = await Promise.all([
-    readFile('README.md', 'utf8'),
+    readFile(capabilityInventory, 'utf8'),
     readFile('package.json', 'utf8').then(JSON.parse),
     readFile('services/bi-agent/package.json', 'utf8').then(JSON.parse),
     readFile('compose.yaml', 'utf8'),
@@ -131,7 +154,8 @@ test('README distinguishes the current release surfaces and optional DSH preview
 });
 
 test('README release-surface gate rejects contradictory overclaims', async () => {
-  const readme = await readFile('README.md', 'utf8');
+  const readme = await readFile(capabilityInventory, 'utf8');
+  const entry = await readFile('README.md', 'utf8');
   for (const overclaim of [
     'The default Compose stack now accepts `BI_ENGINE=postgres` for PostgreSQL.',
     'The default Compose stack now supports\nPostgreSQL as a production engine.',
@@ -154,5 +178,6 @@ test('README release-surface gate rejects contradictory overclaims', async () =>
     'E-BI-1 establishes general BI production readiness.',
   ]) {
     assert.throws(() => validateReadme(`${readme}\n${overclaim}\n`), undefined, overclaim);
+    assert.throws(() => validateEntry(`${entry}\n${overclaim}\n`), undefined, `public entry: ${overclaim}`);
   }
 });

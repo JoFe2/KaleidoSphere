@@ -731,7 +731,8 @@ test('canonical source gate, SOURCE-MAP, release, and README surfaces bind the p
     [...RELEASE_PATH_CLASSES.evidence].sort((left, right) => left.localeCompare(right)),
   );
 
-  const readme = readFileSync('README.md', 'utf8');
+  // Replay the unchanged technical claims behind the approved entry's pinned link.
+  const readme = readFileSync('docs/release/readme-capability-inventory-v0.26.0.txt', 'utf8');
   assert.match(readme, /`E-BI-1` cumulative evidence record binds the exact public\s+terminal\/release\/readback and Queue-DONE chains for #145, #146, and #147/i);
   assert.match(readme, /reports `PASS`, `FALSIFIED`, and `BLOCKED_EXTERNAL` as separate classes/i);
   assert.match(readme, /leaves parent #143 open for its own controlled delivery/i);

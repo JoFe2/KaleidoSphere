@@ -2273,11 +2273,6 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/superset-promotion-bundle/v1",
-      "path": "README.md"
-    },
-    {
-      "identityClass": "schemaIdentity",
-      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
       "path": "contracts/superset-promotion-bundle/v1/promotion-bundle.schema.json"
     },
     {
@@ -2299,6 +2294,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/superset-promotion-bundle/v1",
       "path": "docs/evidence/M5_PROMOTION_BUNDLE.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/superset-promotion-bundle/v1",
+      "path": "docs/release/readme-capability-inventory-v0.26.0.txt"
     },
     {
       "identityClass": "schemaIdentity",
