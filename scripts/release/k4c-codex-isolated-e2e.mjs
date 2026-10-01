@@ -387,7 +387,12 @@ async function runClean(fixture, args) {
 
     const malformed = execute(args.codex, ['plugin', 'add', `${fixture.package.pluginName}@`, '--json'], env);
     record('malformed-install-target-denied', 'negative-install', malformed.command, 'denied', malformed.result, 'malformed package target is rejected before install');
-    checked('malformed-install-target', malformed.raw.status !== 0 && malformed.raw.status !== null && !malformed.raw.error && !malformed.raw.signal, true, 'malformed-install-target denied assertion failed');
+    // A generic nonzero exit (including auth/transport errors) is not evidence
+    // that the target validator ran. Require an explicit known target diagnostic.
+    const targetDiagnostic = `${malformed.raw.stdout}\n${malformed.raw.stderr}`;
+    const targetRejected = /^(?:Error: )?invalid plugin target(?:: [^\r\n]+)?\r?$/im.test(targetDiagnostic)
+      || targetDiagnostic.split(/\r?\n/).includes('Error: plugin requires --marketplace unless passed as <plugin>@<marketplace>');
+    checked('malformed-install-target', malformed.raw.status !== 0 && malformed.raw.status !== null && !malformed.raw.error && !malformed.raw.signal && targetRejected, true, 'malformed-install-target denied assertion failed');
 
     const install = execute(args.codex, ['plugin', 'add', `${fixture.package.pluginName}@${fixture.package.marketplaceName}`, '--json'], env);
     record('install-plugin', 'install', install.command, 'passed', install.result);
@@ -416,7 +421,9 @@ async function runClean(fixture, args) {
 
     const afterRemoval = execute(args.codex, ['exec', '--ephemeral', '--ignore-user-config', '--skip-git-repo-check', '--json', prompt], env);
     record('use-after-removal-denied', 'negative-use-after-removal', afterRemoval.command, 'denied', afterRemoval.result, 'successful use after removal must fail');
-    checked('successful-use-after-removal', afterRemoval.raw.status !== null && !afterRemoval.raw.error && !afterRemoval.raw.signal && contains(afterRemoval.raw.stdout, 'REFUSED'), true, 'successful-use-after-removal denied assertion failed');
+    checked('successful-use-after-removal', afterRemoval.raw.status !== null && !afterRemoval.raw.error && !afterRemoval.raw.signal
+      && /\bKaleidoSphere: REFUSED_SKILL_NOT_INSTALLED\b/.test(afterRemoval.raw.stdout)
+      && !contains(afterRemoval.raw.stdout, fixture.package.expectedUseResponse), true, 'successful-use-after-removal denied assertion failed');
 
     const removeMarketplace = execute(args.codex, ['plugin', 'marketplace', 'remove', fixture.package.marketplaceName, '--json'], env);
     record('remove-marketplace', 'removal', removeMarketplace.command, 'passed', removeMarketplace.result);

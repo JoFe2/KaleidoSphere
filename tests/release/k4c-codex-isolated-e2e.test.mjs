@@ -166,22 +166,25 @@ const marker=path.join(process.env.CODEX_HOME,'synthetic-installed');
 const emit=(s)=>console.log(s);
 if(args[0]==='--version')emit('codex-cli 0.156.1');
 else if(args[1]==='marketplace')emit('{}');
-else if(args[1]==='add' && args[2].endsWith('@')){console.error('SYNTHETIC_MALFORMED_TARGET');process.exit(2);}
+else if(args[1]==='add' && args[2].endsWith('@')) {
+  console.error(scenario==='malformed-auth-failure'?'SYNTHETIC HTTP 401 Unauthorized; target was not evaluated':scenario==='malformed-generic-failure'?'SYNTHETIC_GENERIC_PROCESS_FAILURE':scenario==='native-target-diagnostic'?'Error: plugin requires --marketplace unless passed as <plugin>@<marketplace>':'invalid plugin target');process.exit(2);
+}
 else if(args[1]==='add'){writeFileSync(marker,'SYNTHETIC');emit('{}');}
 else if(args[1]==='list')emit(scenario==='discovery-missing'?'[]':JSON.stringify([{name:pkg.pluginName}]));
 else if(args[1]==='remove'){unlinkSync(marker);emit('{}');}
 else if(args[0]==='exec') {
   if(args.at(-1).includes('ks76-not-declared'))emit(scenario==='undeclared-succeeds'?pkg.expectedUseResponse:pkg.deniedUseResponse);
   else if(existsSync(marker) || scenario==='after-removal-succeeds')emit(pkg.expectedUseResponse);
-  else emit('REFUSED');
+  else emit(scenario==='after-removal-not-refused'?'KaleidoSphere: NOT_REFUSED; '+pkg.expectedUseResponse:scenario==='after-removal-conflicting-response'?'KaleidoSphere: REFUSED_SKILL_NOT_INSTALLED; '+pkg.expectedUseResponse:'KaleidoSphere: REFUSED_SKILL_NOT_INSTALLED');
 } else {console.error('UNEXPECTED_SYNTHETIC_COMMAND');process.exit(19);}
 `, { mode: 0o700 });
   const result = run(['--clean-boundary', '--fixture', fixture, '--codex', cli, '--receipt', path.join(directory, 'receipt.json')]);
   return { result, receipt: parse(result.stdout) };
 }
 
-test('synthetic completed lifecycle distinguishes triggered denials from permitted guard counterparts', async (t) => {
-  const { result, receipt } = await syntheticLifecycle(t, 'allowed');
+for (const scenario of ['allowed', 'native-target-diagnostic']) {
+test(`synthetic completed lifecycle ${scenario} distinguishes triggered denials from permitted guard counterparts`, async (t) => {
+  const { result, receipt } = await syntheticLifecycle(t, scenario);
   assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
   assert.equal(receipt.schemaVersion, 'kaleidosphere/k4c-codex-isolated-e2e/v2');
   assert.equal(receipt.codex.version, 'codex-cli 0.156.1', 'observed test-double version is not historical fixture version');
@@ -199,11 +202,16 @@ test('synthetic completed lifecycle distinguishes triggered denials from permitt
   assert.equal(refusal.result.exitCode, 0, 'content refusal can exit successfully');
   assert.equal(receipt.boundaryProof.emptyAfterCleanup, true);
 });
+}
 
 for (const [scenario, failedCase, notRunCase] of [
   ['discovery-missing', 'absent-skill-discovery', 'undeclared-skill-invocation'],
   ['undeclared-succeeds', 'undeclared-skill-invocation', 'successful-use-after-removal'],
   ['after-removal-succeeds', 'successful-use-after-removal', 'residue-after-cleanup'],
+  ['after-removal-not-refused', 'successful-use-after-removal', 'residue-after-cleanup'],
+  ['after-removal-conflicting-response', 'successful-use-after-removal', 'residue-after-cleanup'],
+  ['malformed-auth-failure', 'malformed-install-target', 'absent-skill-discovery'],
+  ['malformed-generic-failure', 'malformed-install-target', 'absent-skill-discovery'],
 ]) {
   test(`synthetic ${scenario} records failed check without promoting later unexecuted checks`, async (t) => {
     const { result, receipt } = await syntheticLifecycle(t, scenario);

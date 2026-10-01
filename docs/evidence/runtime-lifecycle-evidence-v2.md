@@ -17,6 +17,10 @@ An unobserved or failed host-version probe records `version: null`, not the hist
 
 The Claude helper also used empty plugin/marketplace registration lists as filesystem emptiness. A v2 receipt separates `registrationClean`, `nativeResiduePaths`, `nativeFilesystemEmpty` and actual `emptyAfterCleanup`. Native files are enumerated in the isolated config/HOME before explicit harness cleanup. A separate post-cleanup readback verifies the owned boundary was removed, or the caller-supplied boundary was emptied. Native cache retention remains visible and is never described as native zero-residue merely because the harness later removes its own test profile.
 
+Native enumeration includes directory entries, even empty cache directories, but not the config/HOME base directories themselves. Directory paths end with `/`; symlinks are listed without being followed. Only actual absence of all native entries permits `nativeFilesystemEmpty: true`.
+
+After-removal model denial requires the complete bounded `KaleidoSphere: REFUSED_SKILL_NOT_INSTALLED` marker and no conflicting expected-use response. `NOT_REFUSED` and an otherwise successful response do not meet that contract. The malformed-target check requires both a completed nonzero process and an explicit target-validation diagnostic: a complete `invalid plugin target` line (optionally with `Error:` prefix or a colon explanation), or the retained native `Error: plugin requires --marketplace unless passed as <plugin>@<marketplace>` line. Unknown diagnostics, authentication errors and transport failures stay failed/unproved, not target-denial evidence. These predicates do not authorize a new native/authentication probe.
+
 The generator and Claude helper now share the explicitly selected parent `TMPDIR`; the helper does not silently drop that scope and fall back to a different generator temp root.
 
 ## Preserved history and scope

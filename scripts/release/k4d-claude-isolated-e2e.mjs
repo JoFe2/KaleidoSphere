@@ -212,7 +212,7 @@ function commandResult(order, id, phase, command, expectedOutcome, result, asser
   return record;
 }
 
-async function listPaths(base) {
+async function listPaths(base, { includeDirectories = false } = {}) {
   try {
     const stat = await lstat(base);
     if (!stat.isDirectory() || stat.isSymbolicLink()) return [`${base}/<unsafe-root>`];
@@ -227,7 +227,10 @@ async function listPaths(base) {
     for (const entry of entries) {
       const child = relative ? `${relative}/${entry.name}` : entry.name;
       if (entry.isSymbolicLink()) paths.push(child);
-      else if (entry.isDirectory()) await visit(child);
+      else if (entry.isDirectory()) {
+        if (includeDirectories) paths.push(`${child}/`);
+        await visit(child);
+      }
       else paths.push(child);
     }
   };
@@ -425,8 +428,8 @@ async function runClean(fixture, args) {
     if (!registrationClean) throw new Error('registration-after-removal denied: active plugin or marketplace remains');
     // CLI deregistration is not filesystem emptiness. Observe files before the
     // harness removes its own boundary, preserving native cache-retention evidence.
-    nativeResiduePaths = (await listPaths(roots.config)).map((p) => `config/${p}`)
-      .concat((await listPaths(roots.home)).map((p) => `home/${p}`)).sort();
+    nativeResiduePaths = (await listPaths(roots.config, { includeDirectories: true })).map((p) => `config/${p}`)
+      .concat((await listPaths(roots.home, { includeDirectories: true })).map((p) => `home/${p}`)).sort();
     record('native-filesystem-readback', 'readback', ['read-boundary', roots.config, roots.home], 'passed',
       { exitCode: 0, signal: null, stdout: `${JSON.stringify({ registrationClean, nativeResiduePaths })}\n`, stderr: '', errorCode: null });
   } catch (error) {
@@ -436,7 +439,7 @@ async function runClean(fixture, args) {
     else {
       for (const entry of await readdir(boundary).catch(() => [])) await rm(path.join(boundary, entry), { recursive: true, force: true });
     }
-    const residuePaths = await listPaths(boundary);
+    const residuePaths = await listPaths(boundary, { includeDirectories: true });
     let temporaryBoundaryRemoved = false;
     try { await lstat(boundary); } catch (error) {
       if (error.code !== 'ENOENT') throw error;
