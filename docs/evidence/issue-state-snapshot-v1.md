@@ -43,6 +43,9 @@ rejects content, authors, tokens, unknown state, duplicate ID/number, unsafe
 numeric IDs, invalid/impossible/future timestamps, mismatched identity/digest,
 permission scope, atomic claims, incomplete/changing-total pagination and
 permission later than the source capture. All timestamps are explicit zones.
+Comparisons preserve the accepted zero-to-six fractional digits exactly using
+integer microseconds, including equivalent offsets and pre-epoch instants;
+original timestamp strings and source bytes are never rounded or rewritten.
 An OPEN issue's optional prior close time is not transition-history evidence.
 A close timestamp later than the independently exposed update timestamp (but
 not later than capture end) is retained and reported as a timestamp caveat;

@@ -29,8 +29,13 @@ function instant(value) {
   if (!Number.isFinite(day.getTime()) || day.toISOString().slice(0, 10) !== value.slice(0, 10)
     || Number(value.slice(11, 13)) > 23 || Number(value.slice(14, 16)) > 59 || Number(value.slice(17, 19)) > 59) return null;
   if (!value.endsWith('Z') && (Number(value.slice(-5, -3)) > 23 || Number(value.slice(-2)) > 59)) return null;
-  const t = Date.parse(value);
-  return Number.isFinite(t) ? t : null;
+  // Parse only the whole-second calendar/offset using Date. Keep the entire
+  // accepted 1–6 digit fraction as integer microseconds, including pre-epoch
+  // instants; never round epoch microseconds through a floating-point Number.
+  const wholeSeconds = value.slice(0, 19) + (value.endsWith('Z') ? 'Z' : value.slice(-6));
+  const t = Date.parse(wholeSeconds);
+  const fraction = /^\.(\d{1,6})/.exec(value.slice(19))?.[1] ?? '';
+  return Number.isSafeInteger(t) ? BigInt(t) * 1000n + BigInt(fraction.padEnd(6, '0')) : null;
 }
 
 export function analyzeIssueStateSnapshot({ sourceBytes, permission, capture } = {}) {

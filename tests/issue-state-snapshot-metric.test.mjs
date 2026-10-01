@@ -96,6 +96,37 @@ test('#236 reader artifact derives actual displayed product figures and separate
   for(const [k,v] of Object.entries(p.worksheet.comprehensionRecord))if(k!=='answers')assert.equal(v,null);
   assert.match(p.referenceAnswers.T1,/^2 distinct/);assert.match(p.referenceAnswers.T4,/not zero/);
 });
+// KS250-FINAL-01: exact microsecond regressions and permitted boundary counterparts.
+for (const [name, mutate, code] of [
+  ['late grant microsecond', x => x.permission.grantedAt='2026-01-02T00:00:00.000001Z', 'CAPTURE_BOUNDARY'],
+  ['reverse capture microsecond', x => x.capture.startedAt='2026-01-02T00:00:01.000001Z', 'CAPTURE_BOUNDARY'],
+  ['future update microsecond', x => rebind(x,s => s.issues[0].updatedAt='2026-01-02T00:00:01.000001Z'), 'ROW_TIME'],
+  ['future close microsecond', x => rebind(x,s => s.issues[1].closedAt='2026-01-02T00:00:01.000001Z'), 'ROW_TIME'],
+  ['created after updated microsecond', x => rebind(x,s => s.issues[0].createdAt='2026-01-02T00:00:00.000001Z'), 'ROW_TIME'],
+  ['closed before created microsecond', x => rebind(x,s => {s.issues[1].createdAt='2026-01-01T00:00:00.000002Z';s.issues[1].closedAt='2026-01-01T00:00:00.000001Z';}), 'ROW_TIME'],
+]) test(`KS250-FINAL-01: ${name}`,()=>{const x=inputs();mutate(x);denied(x,code);});
+test('KS250-FINAL-01: positive sub-millisecond caveat is counted without modifying captured bytes',()=>{
+  const x=rebind(inputs(),s=>s.issues[1].closedAt='2026-01-02T00:00:00.000001Z');const bytes=x.sourceBytes;
+  const r=analyzeIssueStateSnapshot(x);assert.equal(r.outcome,'ANALYZED_FROZEN_SNAPSHOT');assert.equal(r.timestampCaveats.closedAtAfterUpdatedCount,1);
+  assert.equal(x.sourceBytes,bytes);assert.equal(r.sourceBytesSha256,hash(bytes));
+});
+test('KS250-FINAL-01: equal exact microsecond grant/start/end boundaries remain admitted',()=>{
+  const x=inputs();x.permission.grantedAt=x.capture.startedAt=x.capture.finishedAt='2026-01-02T00:00:00.000001Z';
+  const r=analyzeIssueStateSnapshot(x);assert.equal(r.outcome,'ANALYZED_FROZEN_SNAPSHOT');assert.equal(r.capture.startedAt,x.capture.startedAt);
+});
+test('KS250-FINAL-01: equivalent offset microseconds compare equally and preserve original strings',()=>{
+  const x=rebind(inputs(),s=>{for(const r of s.issues){r.updatedAt='2026-01-02T00:00:00.000001Z';if(r.state==='CLOSED')r.closedAt='2026-01-02T01:00:00.000001+01:00';}});
+  x.permission.grantedAt='2026-01-02T02:00:00.000001+02:00';x.capture.startedAt='2026-01-02T00:00:00.000001Z';x.capture.finishedAt='2026-01-02T01:00:00.000001+01:00';
+  const r=analyzeIssueStateSnapshot(x);assert.equal(r.outcome,'ANALYZED_FROZEN_SNAPSHOT');assert.equal(r.timestampCaveats.closedAtAfterUpdatedCount,0);
+  assert.equal(r.capture.finishedAt,x.capture.finishedAt);assert.equal(r.sourceBytesSha256,hash(x.sourceBytes));
+});
+test('KS250-FINAL-01: pre-epoch microseconds keep signed order rather than unsafe floating epoch arithmetic',()=>{
+  const x=rebind(inputs(),s=>{for(const r of s.issues){r.createdAt='1969-12-31T23:59:58Z';r.updatedAt='1969-12-31T23:59:59.999998Z';if(r.state==='CLOSED')r.closedAt='1969-12-31T23:59:59.999999Z';}});
+  x.permission.grantedAt=x.capture.startedAt='1969-12-31T23:59:59.999998Z';x.capture.finishedAt='1969-12-31T23:59:59.999999Z';
+  assert.equal(analyzeIssueStateSnapshot(x).timestampCaveats.closedAtAfterUpdatedCount,1);
+  x.permission.grantedAt='1970-01-01T00:00:00Z';denied(x,'CAPTURE_BOUNDARY');
+});
+
 test('existing installable CLI executes snapshot / verify / reader modes and closed-world flag denials without writes/network',()=>{
   const dir=mkdtempSync(path.join(tmpdir(),'ks250-issue-snapshot-'));
   try {
