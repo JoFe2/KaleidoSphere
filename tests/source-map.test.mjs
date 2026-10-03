@@ -88,6 +88,10 @@ import './duckdb-file-profile.test.mjs';
 import './duckdb-file-security.test.mjs';
 import './duckdb-file-runtime.test.mjs';
 import './duckdb-file-boundary.test.mjs';
+// J02 identity and execution/registry separation retain this canonical root exactly once.
+import './provider-pair-profile.test.mjs';
+import './provider-pair-http.test.mjs';
+import './provider-pair-execution.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

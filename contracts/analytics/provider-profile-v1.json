@@ -1,0 +1,255 @@
+{
+  "schemaVersion": "superset-bi-agent.external/provider-profile/v1",
+  "product": {
+    "id": "superset-bi-agent",
+    "version": "v0.18.1",
+    "component": "bi-agent-runtime"
+  },
+  "artifact": {
+    "packageName": "@chimpmaera-bi/agent",
+    "packageVersion": "0.18.1",
+    "packageSha256": "826bcc27fa1a59514001b550a8d07c2fd129bf68089ddc98bdf626b2eb346145",
+    "component": "bi-agent-runtime"
+  },
+  "contract": {
+    "id": "superset-bi-agent.external",
+    "version": "2.0.0"
+  },
+  "attestations": [
+    {
+      "schemaVersion": "superset-bi-agent.external/capability-attestation/v2",
+      "product": {
+        "id": "superset-bi-agent",
+        "version": "v0.18.1",
+        "component": "bi-agent-runtime"
+      },
+      "contract": {
+        "id": "superset-bi-agent.external",
+        "version": "2.0.0"
+      },
+      "capabilities": [
+        {
+          "id": "bi.status.read",
+          "action": "status",
+          "authority": "read-only"
+        },
+        {
+          "id": "bi.discovery.run",
+          "action": "discovery",
+          "authority": "local-evidence-write"
+        },
+        {
+          "id": "bi.analysis.run",
+          "action": "analyze",
+          "authority": "source-read-only"
+        },
+        {
+          "id": "bi.graph.adaptive-v1.plan",
+          "action": "plan",
+          "authority": "proposal-only"
+        },
+        {
+          "id": "bi.preview.create",
+          "action": "preview",
+          "authority": "proposal-only"
+        },
+        {
+          "id": "bi.readback.read",
+          "action": "readback",
+          "authority": "read-only"
+        },
+        {
+          "id": "superset.trusted-apply",
+          "action": "trusted-apply",
+          "authority": "trusted-approval-only",
+          "externalIntent": false
+        },
+        {
+          "id": "superset.trusted-readback",
+          "action": "trusted-readback",
+          "authority": "trusted-approval-only",
+          "externalIntent": false
+        },
+        {
+          "id": "superset.trusted-rollback",
+          "action": "trusted-rollback",
+          "authority": "trusted-approval-only",
+          "externalIntent": false
+        }
+      ],
+      "graph": {
+        "acceptedIncumbent": "adaptive-v1",
+        "candidatePromotion": "none"
+      },
+      "boundaries": {
+        "sourceDatabaseCredentialsAccepted": false,
+        "freeSqlAccepted": false,
+        "rawSourceRowsReturned": false,
+        "modelMutationAuthority": false,
+        "directSupersetMutationIntentAccepted": false,
+        "persistentSupersetWorkflow": "trusted-preview-approval-apply-readback-rollback-only"
+      },
+      "attestation": {
+        "algorithm": "sha256-canonical-json",
+        "digest": "sha256:7379d493c1dceeaa83a1266e420cb866efb2216c3b56c0d93212863c5b87bb8a"
+      }
+    }
+  ],
+  "consumerProfile": {
+    "schemaVersion": "superset-bi-agent.external/consumer-profile/v1",
+    "product": {
+      "id": "superset-bi-agent",
+      "version": "v0.18.1"
+    },
+    "contract": {
+      "id": "superset-bi-agent.external",
+      "version": "2.0.0"
+    },
+    "supported": [
+      {
+        "id": "bi.status.read",
+        "action": "status",
+        "authority": "read-only"
+      },
+      {
+        "id": "bi.discovery.run",
+        "action": "discovery",
+        "authority": "local-evidence-write"
+      },
+      {
+        "id": "bi.analysis.run",
+        "action": "analyze",
+        "authority": "source-read-only"
+      },
+      {
+        "id": "bi.graph.adaptive-v1.plan",
+        "action": "plan",
+        "authority": "proposal-only"
+      },
+      {
+        "id": "bi.preview.create",
+        "action": "preview",
+        "authority": "proposal-only"
+      },
+      {
+        "id": "bi.readback.read",
+        "action": "readback",
+        "authority": "read-only"
+      }
+    ],
+    "partial": [
+      {
+        "id": "superset.trusted-apply",
+        "action": "trusted-apply",
+        "authority": "trusted-approval-only",
+        "externalIntent": false
+      },
+      {
+        "id": "superset.trusted-readback",
+        "action": "trusted-readback",
+        "authority": "trusted-approval-only",
+        "externalIntent": false
+      },
+      {
+        "id": "superset.trusted-rollback",
+        "action": "trusted-rollback",
+        "authority": "trusted-approval-only",
+        "externalIntent": false
+      }
+    ],
+    "unsupported": [
+      {
+        "surface": "sourceDatabaseCredentials",
+        "accepted": false
+      },
+      {
+        "surface": "freeSql",
+        "accepted": false
+      },
+      {
+        "surface": "rawSourceRows",
+        "accepted": false
+      },
+      {
+        "surface": "modelMutation",
+        "accepted": false
+      },
+      {
+        "surface": "directSupersetMutationIntent",
+        "accepted": false
+      }
+    ],
+    "nonclaims": [
+      {
+        "id": "graph-candidate-promotion",
+        "status": "none"
+      },
+      {
+        "id": "persistent-superset-workflow",
+        "status": "trusted-preview-approval-apply-readback-rollback-only"
+      },
+      {
+        "id": "external-mutation-intent",
+        "status": "none"
+      }
+    ],
+    "boundaries": {
+      "sourceDatabaseCredentialsAccepted": false,
+      "freeSqlAccepted": false,
+      "rawSourceRowsReturned": false,
+      "modelMutationAuthority": false,
+      "directSupersetMutationIntentAccepted": false,
+      "persistentSupersetWorkflow": "trusted-preview-approval-apply-readback-rollback-only"
+    },
+    "attestation": {
+      "algorithm": "sha256-canonical-json",
+      "digest": "sha256:203fab47d7f37110e6de37e71cd5d61f245baeb7ddcde17f3fa6b208c90d4378"
+    }
+  },
+  "allowedOperations": [
+    {
+      "id": "bi.status.read",
+      "action": "status",
+      "authority": "read-only"
+    },
+    {
+      "id": "bi.discovery.run",
+      "action": "discovery",
+      "authority": "local-evidence-write"
+    },
+    {
+      "id": "bi.analysis.run",
+      "action": "analyze",
+      "authority": "source-read-only"
+    },
+    {
+      "id": "bi.graph.adaptive-v1.plan",
+      "action": "plan",
+      "authority": "proposal-only"
+    },
+    {
+      "id": "bi.preview.create",
+      "action": "preview",
+      "authority": "proposal-only"
+    },
+    {
+      "id": "bi.readback.read",
+      "action": "readback",
+      "authority": "read-only"
+    }
+  ],
+  "registry": {
+    "admission": "SEPARATE_PROFILE_FUNCTION_AND_RIGHTS_EVIDENCE",
+    "promotionPerformed": false,
+    "blockedScope": "EXACT_HELD_PROFILE_ONLY"
+  },
+  "execution": {
+    "sourceAndRightsRequiredFor": "analyze",
+    "standaloneAnalysisBlockedByHandshake": false,
+    "metadataIsAuthority": false
+  },
+  "integrity": {
+    "algorithm": "sha256-canonical-json",
+    "digest": "sha256:9d50be8fad2ba9f3432e1461a2a9d9b08a567097d5f9a88ec86b7405230f9b04"
+  }
+}

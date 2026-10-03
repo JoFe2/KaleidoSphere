@@ -2,7 +2,18 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 export const SBA_PRODUCT_ID = 'superset-bi-agent';
-const runtimePackage = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+const runtimePackageBytes = readFileSync(new URL('../package.json', import.meta.url));
+const runtimePackageSha256 = createHash('sha256').update(runtimePackageBytes).digest('hex');
+// J02: the qualified service artifact, never root metadata or caller/environment input.
+if (runtimePackageSha256 !== '826bcc27fa1a59514001b550a8d07c2fd129bf68089ddc98bdf626b2eb346145') {
+  throw new Error('J02_AGENT_ARTIFACT_DENIED');
+}
+const runtimePackage = JSON.parse(runtimePackageBytes.toString('utf8'));
+export const SBA_AGENT_ARTIFACT = Object.freeze({
+  packageName: runtimePackage.name,
+  packageVersion: runtimePackage.version,
+  packageSha256: runtimePackageSha256,
+});
 export const SBA_PRODUCT_VERSION = `v${runtimePackage.version}`;
 export const SBA_EXTERNAL_CONTRACT_ID = 'superset-bi-agent.external';
 export const SBA_EXTERNAL_CONTRACT_VERSION = '2.0.0';
@@ -53,6 +64,38 @@ export function canonicalJson(value) {
 }
 
 export const sha256Digest = (value) => `sha256:${createHash('sha256').update(canonicalJson(value)).digest('hex')}`;
+
+// J02: a description binds metadata; it never supplies source rights or registry admission.
+export function externalBiProviderProfileV1() {
+  const attestation = capabilityAttestationV2();
+  const body = {
+    schemaVersion: 'superset-bi-agent.external/provider-profile/v1',
+    product: attestation.product,
+    artifact: {...SBA_AGENT_ARTIFACT, component: 'bi-agent-runtime'},
+    contract: attestation.contract,
+    attestations: [attestation],
+    consumerProfile: externalBiConsumerProfileV1(),
+    allowedOperations: SBA_EXTERNAL_CAPABILITIES.filter(c => SBA_RUNTIME_DISPATCH_ACTIONS.includes(c.action)).map(c => ({...c})),
+    registry: {
+      admission: 'SEPARATE_PROFILE_FUNCTION_AND_RIGHTS_EVIDENCE',
+      promotionPerformed: false,
+      blockedScope: 'EXACT_HELD_PROFILE_ONLY',
+    },
+    execution: {
+      sourceAndRightsRequiredFor: 'analyze',
+      standaloneAnalysisBlockedByHandshake: false,
+      metadataIsAuthority: false,
+    },
+  };
+  return deepFreeze({...body, integrity: {algorithm:'sha256-canonical-json',digest:sha256Digest(body)}});
+}
+
+export function validateProviderProfileV1(value) {
+  profilePlainData(value);
+  if (canonicalJson(value) !== canonicalJson(externalBiProviderProfileV1())) fail('J02_PROVIDER_PROFILE_DRIFT_DENIED');
+  return deepFreeze(structuredClone(value));
+}
+
 
 function exact(value, allowed, required = allowed) {
   if (!value || typeof value !== 'object' || Array.isArray(value) || Object.getPrototypeOf(value) !== Object.prototype) fail('EXTERNAL_BI_REQUEST_INVALID');

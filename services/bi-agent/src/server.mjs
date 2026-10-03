@@ -3,7 +3,7 @@ import http from 'node:http';
 
 import { objectFromMessage, technicalFamily } from './ask-intent.mjs';
 import { capabilityManifestV1 } from './capability-manifest-v1.mjs';
-import { capabilityAttestationV2, executeExternalIntentV2 } from './external-api-v2.mjs';
+import { capabilityAttestationV2, executeExternalIntentV2, externalBiProviderProfileV1 } from './external-api-v2.mjs';
 
 const port = Number(process.env.PORT ?? 18790);
 const controlBase = process.env.CONTROL_BASE_URL;
@@ -244,6 +244,7 @@ const server = http.createServer(async (request, response) => {
   try {
     if (request.method === 'GET' && request.url === '/healthz') return send(response, 200, 'application/json', {status: 'ok'});
     if (request.method === 'GET' && request.url === '/v2/capabilities') return send(response, 200, 'application/json', capabilityAttestationV2());
+    if (request.method === 'GET' && request.url === '/v2/provider-profile') return send(response, 200, 'application/json', externalBiProviderProfileV1());
     if (request.method === 'GET' && request.url === '/v2/capability-manifest') return send(response, 200, 'application/json', capabilityManifestV1());
     if (request.method === 'GET' && brandAssets.has(request.url)) {
       const asset = brandAssets.get(request.url);
