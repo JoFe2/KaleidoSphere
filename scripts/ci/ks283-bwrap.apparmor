@@ -1,0 +1,39 @@
+# K01 hosted-runner qualification only; never load on a user/production host.
+# ABI and stacked-child design follow AppArmor v4.0.1 bwrap-userns-restrict.
+# No local includes: reviewed bytes are the whole policy, not an extension point.
+abi <abi/4.0>,
+include <tunables/global>
+
+profile ks283-ci-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
+  allow capability,
+  allow file rwlkm /{**,},
+  allow network,
+  allow unix,
+  allow ptrace,
+  allow signal,
+  allow mqueue,
+  allow io_uring,
+  allow userns,
+  allow mount,
+  allow umount,
+  allow pivot_root,
+  allow dbus,
+  allow px /** -> ks283-ci-bwrap//&ks283-ci-child,
+}
+
+profile ks283-ci-child flags=(attach_disconnected) {
+  allow file rwlkm /{**,},
+  allow network,
+  allow unix,
+  allow ptrace,
+  allow signal,
+  allow mqueue,
+  allow io_uring,
+  allow userns,
+  allow mount,
+  allow umount,
+  allow pivot_root,
+  allow dbus,
+  allow pix /** -> &ks283-ci-child,
+  audit deny capability,
+}

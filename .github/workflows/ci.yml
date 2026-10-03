@@ -50,6 +50,25 @@ jobs:
           node scripts/provision-ks255-journey-runtime.mjs --install
           node scripts/provision-ks255-journey-runtime.mjs --verify
           node scripts/provision-ks255-journey-runtime.mjs --measure --require-resolved --require-verified
+      # K01 requires an actual kernel-enforced namespace; never skip/fallback unisolated.
+      - name: Prepare and execute the required aggregate sandbox
+        run: |
+          if ! test -x /usr/bin/bwrap; then
+            sudo apt-get update
+            sudo apt-get install --no-install-recommends -y bubblewrap
+          fi
+          # Only these two repository-owned profiles are loaded, on an ephemeral hosted runner.
+          # Namespace bootstrap may use its kernel-granted capabilities; every child denies them.
+          test "${RUNNER_ENVIRONMENT:?}" = github-hosted
+          test "${RUNNER_OS:?}" = Linux
+          node --input-type=module -e 'import {readFileSync,existsSync,writeFileSync} from "node:fs"; const keys=["apparmor_restrict_unprivileged_userns","apparmor_restrict_unprivileged_unconfined","unprivileged_userns_clone"]; const state=Object.fromEntries(keys.map(k=>[k,existsSync("/proc/sys/kernel/"+k)?readFileSync("/proc/sys/kernel/"+k,"utf8").trim():null])); writeFileSync(process.env.RUNNER_TEMP+"/ks283-security-before.json",JSON.stringify(state)); console.log("K01 runner policy before:",JSON.stringify(state));'
+          sudo apparmor_parser --replace --skip-cache scripts/ci/ks283-bwrap.apparmor
+          sudo python3 -c 'from pathlib import Path; rows=set(Path("/sys/kernel/security/apparmor/profiles").read_text().splitlines()); expected={"ks283-ci-bwrap (enforce)","ks283-ci-child (enforce)"}; assert expected <= rows, (expected,rows); print("K01 repository-owned profiles enforced:",sorted(expected))'
+          node --input-type=module -e 'import {readFileSync,existsSync} from "node:fs"; import assert from "node:assert/strict"; const keys=["apparmor_restrict_unprivileged_userns","apparmor_restrict_unprivileged_unconfined","unprivileged_userns_clone"]; const after=Object.fromEntries(keys.map(k=>[k,existsSync("/proc/sys/kernel/"+k)?readFileSync("/proc/sys/kernel/"+k,"utf8").trim():null])); assert.deepEqual(after,JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/ks283-security-before.json"))); console.log("K01 runner policy after (unchanged):",JSON.stringify(after));'
+          # No fallback, blanket policy/sysctl change, host-network sharing or unisolated execution.
+          node --input-type=module -e 'import { aggregateSandboxCommand } from "./services/bi-control/src/business-bi/permitted-aggregate-sandbox.mjs"; import { spawnSync } from "node:child_process"; import { readFileSync } from "node:fs"; const {command:c,args:a}=aggregateSandboxCommand(process.cwd()); const p=spawnSync(c,a,{input:readFileSync("examples/business-bi/k01-permitted-period-aggregates-v1.json"),encoding:"utf8",timeout:5000,maxBuffer:1048576,env:{}}); console.log("K01 runner sandbox status:",p.status,"signal:",p.signal,"error:",p.error?.code??null); process.stdout.write(p.stdout??""); process.stderr.write(p.stderr??""); if(p.status!==0)process.exit(1);'
+          node scripts/run-permitted-aggregate-journey.mjs --input examples/business-bi/k01-permitted-period-aggregates-v1.json
+          node --input-type=module -e 'import {aggregateSandboxCommand} from "./services/bi-control/src/business-bi/permitted-aggregate-sandbox.mjs"; import {spawnSync} from "node:child_process"; import assert from "node:assert/strict"; const {command,args}=aggregateSandboxCommand(process.cwd()); const code="const f=require(\"node:fs\"); console.log(JSON.stringify({profile:f.readFileSync(\"/proc/self/attr/current\",\"utf8\").trim(),status:f.readFileSync(\"/proc/self/status\",\"utf8\")}))"; const p=spawnSync(command,args.slice(0,-1).concat("--eval",code),{encoding:"utf8",timeout:5000,maxBuffer:1048576,env:{}}); assert.equal(p.status,0,p.stderr); const info=JSON.parse(p.stdout); assert.ok(info.profile.includes("ks283-ci-child")&&info.profile.includes("enforce"),info.profile); const caps=Object.fromEntries(["CapEff","CapPrm","CapAmb"].map(k=>[k,info.status.match(new RegExp("^"+k+":\\s*([0-9a-f]+)$","m"))[1]])); assert.ok(Object.values(caps).every(v=>/^0+$/.test(v)),caps); console.log("K01 actual stacked child:",JSON.stringify({profile:info.profile,caps}));'
       - run: npm run dist:agent-skill
       - run: npm test
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over

@@ -971,13 +971,14 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   // provisioned closure, without relaxing any retained gate. Only the current hash binding moves;
   // the historical original above is immutable. KS248 adds an explicit public paired-task
   // evaluation step and disables persisted checkout credentials; retained SQL gates remain.
+  // K01 adds mandatory isolated-aggregate execution; only this current CI digest advances.
   assert.equal(
     fileSha256(Buffer.from(`${git('show', `${C2_CORRECTION_COMMIT}:.github/workflows/ci.yml`)}\n`)),
     '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
-    '2a80b395990fb23b37effe18004a63f93d0d34969304383feae49430d011885c',
+    '5ff0503e5f82f800e877fdb11f48af0be5736b0ffb46b8e742cb7043c7a0bac7',
   );
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
   assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);
