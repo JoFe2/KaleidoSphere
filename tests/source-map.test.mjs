@@ -79,6 +79,8 @@ import './read-only-metric-pilot-v2.test.mjs';
 import './ks236-reader-task-v2.test.mjs';
 // #250 scope-specific approved issue snapshot; same immutable canonical parent, exactly once.
 import './issue-state-snapshot-metric.test.mjs';
+// Additive #76 directory-upload packaging preserves the immutable canonical roots.
+import './k4c-directory-upload.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
