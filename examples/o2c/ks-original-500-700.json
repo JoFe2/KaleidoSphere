@@ -1,0 +1,95 @@
+{
+  "id": "KS-ORIGINAL-500-700",
+  "revision": 1,
+  "schema": "kaleidosphere/o2c-invoice-date-dispatch/v1",
+  "scope": {
+    "source_id": "SYN-KS-ORIGINAL",
+    "tenant_id": "SYN-TENANT-01",
+    "entity_id": "SYN-ENTITY-01",
+    "warehouse_id": "WH-01",
+    "item_id": "ARTICLE-A",
+    "currency": "EUR",
+    "quantity_unit": "STK",
+    "business_timezone": "Europe/Berlin"
+  },
+  "orders": [
+    {
+      "tenant_id": "SYN-TENANT-01",
+      "entity_id": "SYN-ENTITY-01",
+      "order_id": "SO-KS-01",
+      "position_id": "1",
+      "accepted_at": "2026-06-20T10:00:00+02:00",
+      "quantity": 10,
+      "unit_net_minor": 10000,
+      "promised_dispatch_at": "2026-06-30T23:59:59+02:00",
+      "promise_revision": 1
+    }
+  ],
+  "documents": [
+    {
+      "tenant_id": "SYN-TENANT-01",
+      "entity_id": "SYN-ENTITY-01",
+      "order_id": "SO-KS-01",
+      "position_id": "1",
+      "document_id": "KS-AR-01",
+      "type": "INVOICE",
+      "state": "ISSUED",
+      "invoice_date": "2026-06-25",
+      "quantity_absolute": 5,
+      "net_absolute_minor": 60000
+    },
+    {
+      "tenant_id": "SYN-TENANT-01",
+      "entity_id": "SYN-ENTITY-01",
+      "order_id": "SO-KS-01",
+      "position_id": "1",
+      "document_id": "KS-CN-01",
+      "type": "CREDIT",
+      "state": "ISSUED",
+      "invoice_date": "2026-06-27",
+      "quantity_absolute": 1,
+      "net_absolute_minor": 10000,
+      "correction_of": [
+        "KS-AR-01",
+        "1"
+      ]
+    },
+    {
+      "tenant_id": "SYN-TENANT-01",
+      "entity_id": "SYN-ENTITY-01",
+      "order_id": "SO-KS-01",
+      "position_id": "1",
+      "document_id": "KS-AR-02",
+      "type": "INVOICE",
+      "state": "ISSUED",
+      "invoice_date": "2026-07-03",
+      "quantity_absolute": 5,
+      "net_absolute_minor": 70000
+    }
+  ],
+  "shipments": [
+    {
+      "tenant_id": "SYN-TENANT-01",
+      "entity_id": "SYN-ENTITY-01",
+      "order_id": "SO-KS-01",
+      "position_id": "1",
+      "shipment_id": "KS-SH-01",
+      "dispatched_at": "2026-06-29T15:00:00+02:00",
+      "quantity": 8,
+      "promise_revision": 1,
+      "milestone": "DISPATCH"
+    },
+    {
+      "tenant_id": "SYN-TENANT-01",
+      "entity_id": "SYN-ENTITY-01",
+      "order_id": "SO-KS-01",
+      "position_id": "1",
+      "shipment_id": "KS-SH-02",
+      "dispatched_at": "2026-07-02T15:00:00+02:00",
+      "quantity": 2,
+      "promise_revision": 1,
+      "milestone": "DISPATCH"
+    }
+  ],
+  "customer_receipts": []
+}

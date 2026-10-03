@@ -92,6 +92,11 @@ import './duckdb-file-boundary.test.mjs';
 import './provider-pair-profile.test.mjs';
 import './provider-pair-http.test.mjs';
 import './provider-pair-execution.test.mjs';
+// K03 additive invoice-date source, views and real CLI denials retain this root exactly once.
+import './invoice-date-o2c-journey.test.mjs';
+import './invoice-date-o2c-negatives.test.mjs';
+import './invoice-date-o2c-views.test.mjs';
+import './invoice-date-o2c-boundary.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

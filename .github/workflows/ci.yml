@@ -87,6 +87,13 @@ jobs:
           node --test tests/provider-pair-profile.test.mjs \
                     tests/provider-pair-http.test.mjs \
                     tests/provider-pair-execution.test.mjs
+      - name: Execute required invoice-date O2C views and source/rights refusals
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          node --test tests/invoice-date-o2c-journey.test.mjs \
+                    tests/invoice-date-o2c-negatives.test.mjs \
+                    tests/invoice-date-o2c-views.test.mjs \
+                    tests/invoice-date-o2c-boundary.test.mjs
       - run: npm run dist:agent-skill
       - run: npm test
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over
