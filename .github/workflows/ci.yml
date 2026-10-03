@@ -81,6 +81,12 @@ jobs:
                     tests/duckdb-file-security.test.mjs \
                     tests/duckdb-file-runtime.test.mjs \
                     tests/duckdb-file-boundary.test.mjs
+      - name: Execute required exact provider identity and scoped HELD/source boundaries
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          node --test tests/provider-pair-profile.test.mjs \
+                    tests/provider-pair-http.test.mjs \
+                    tests/provider-pair-execution.test.mjs
       - run: npm run dist:agent-skill
       - run: npm test
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over

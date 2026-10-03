@@ -142,6 +142,28 @@
         }
       ],
       "note": "KS254 native Superset init and recovery replaces literal path mentions in two rewritten runtime files, removes those five obsolete source occurrences, and adds sixteen scanned occurrences in the new runtime and tests. Exact technical contract values remain; no scanner exclusion or historical immutable evidence changed."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "b6c38e597ecbe657e212c2e7beaccd29d55df6c7",
+      "predecessorOccurrences": 1081,
+      "predecessorInventorySha256": "d671d6dfc0bc8209e4643b7bb5746788bd9491f64042ba4e016b9ba80a9f8d7d",
+      "addedOccurrences": 2,
+      "removedOccurrences": 0,
+      "occurrences": 1083,
+      "addedIdentityClasses": [
+        "packageContainer"
+      ],
+      "origin": "J02_QUALIFIED_AGENT_ARTIFACT_DESCRIPTION",
+      "originCommit": "b6c38e597ecbe657e212c2e7beaccd29d55df6c7",
+      "addedValues": [
+        "chimpmaera-bi/agent"
+      ],
+      "addedPaths": [
+        "contracts/analytics/provider-profile-v1.json",
+        "tests/provider-pair-profile.test.mjs"
+      ],
+      "note": "Register the exact qualified agent package identity in the runtime-derived provider profile fixture and the byte-identity regression test. Preserve every predecessor occurrence and census revision; no scanner exclusion, technical rename, source rewrite, registry promotion, or historical baseline change."
     }
   ],
   "occurrences": [
@@ -818,7 +840,17 @@
     {
       "identityClass": "packageContainer",
       "value": "chimpmaera-bi/agent",
+      "path": "contracts/analytics/provider-profile-v1.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/agent",
       "path": "services/bi-agent/package.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi/agent",
+      "path": "tests/provider-pair-profile.test.mjs"
     },
     {
       "identityClass": "packageContainer",
