@@ -8,6 +8,8 @@
 # never committed: only the pinned binding (dependencies/ks-journey-runtime/package.json +
 # package-lock.json) and the artifact manifest (contracts/dependencies/) are tracked.
 .ks-journey-runtime/
+# K02 task-private pinned DuckDB runtime; only its binding/manifest is tracked.
+.ks-file-runtime/
 node_modules/
 npm-debug.log*
 *.tar

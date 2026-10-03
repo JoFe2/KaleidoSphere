@@ -1,0 +1,7 @@
+{
+  "name": "ks-file-runtime",
+  "private": true,
+  "dependencies": {
+    "@duckdb/node-api": "1.5.6-r.1"
+  }
+}

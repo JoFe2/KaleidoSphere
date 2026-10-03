@@ -50,6 +50,11 @@ jobs:
           node scripts/provision-ks255-journey-runtime.mjs --install
           node scripts/provision-ks255-journey-runtime.mjs --verify
           node scripts/provision-ks255-journey-runtime.mjs --measure --require-resolved --require-verified
+      - name: Provision the pinned file runtime (DuckDB 1.5.6-r.1 locked closure)
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          node scripts/provision-duckdb-file-runtime.mjs --install
+          node scripts/provision-duckdb-file-runtime.mjs --verify
       # K01 requires an actual kernel-enforced namespace; never skip/fallback unisolated.
       - name: Prepare and execute the required aggregate sandbox
         run: |
@@ -69,6 +74,13 @@ jobs:
           node --input-type=module -e 'import { aggregateSandboxCommand } from "./services/bi-control/src/business-bi/permitted-aggregate-sandbox.mjs"; import { spawnSync } from "node:child_process"; import { readFileSync } from "node:fs"; const {command:c,args:a}=aggregateSandboxCommand(process.cwd()); const p=spawnSync(c,a,{input:readFileSync("examples/business-bi/k01-permitted-period-aggregates-v1.json"),encoding:"utf8",timeout:5000,maxBuffer:1048576,env:{}}); console.log("K01 runner sandbox status:",p.status,"signal:",p.signal,"error:",p.error?.code??null); process.stdout.write(p.stdout??""); process.stderr.write(p.stderr??""); if(p.status!==0)process.exit(1);'
           node scripts/run-permitted-aggregate-journey.mjs --input examples/business-bi/k01-permitted-period-aggregates-v1.json
           node --input-type=module -e 'import {aggregateSandboxCommand} from "./services/bi-control/src/business-bi/permitted-aggregate-sandbox.mjs"; import {spawnSync} from "node:child_process"; import assert from "node:assert/strict"; const {command,args}=aggregateSandboxCommand(process.cwd()); const code="const f=require(\"node:fs\"); console.log(JSON.stringify({profile:f.readFileSync(\"/proc/self/attr/current\",\"utf8\").trim(),status:f.readFileSync(\"/proc/self/status\",\"utf8\")}))"; const p=spawnSync(command,args.slice(0,-1).concat("--eval",code),{encoding:"utf8",timeout:5000,maxBuffer:1048576,env:{}}); assert.equal(p.status,0,p.stderr); const info=JSON.parse(p.stdout); assert.ok(info.profile.includes("ks283-ci-child")&&info.profile.includes("enforce"),info.profile); const caps=Object.fromEntries(["CapEff","CapPrm","CapAmb"].map(k=>[k,info.status.match(new RegExp("^"+k+":\\s*([0-9a-f]+)$","m"))[1]])); assert.ok(Object.values(caps).every(v=>/^0+$/.test(v)),caps); console.log("K01 actual stacked child:",JSON.stringify({profile:info.profile,caps}));'
+      - name: Execute required pinned file profile and executing boundary refusals
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          node --test tests/duckdb-file-profile.test.mjs \
+                    tests/duckdb-file-security.test.mjs \
+                    tests/duckdb-file-runtime.test.mjs \
+                    tests/duckdb-file-boundary.test.mjs
       - run: npm run dist:agent-skill
       - run: npm test
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over

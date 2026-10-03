@@ -978,7 +978,7 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   );
   assert.equal(
     fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
-    '5ff0503e5f82f800e877fdb11f48af0be5736b0ffb46b8e742cb7043c7a0bac7',
+    'b3d08cba4fa3d6194b4fb506649374d4d9cba57188be3e44c27fa12d37f3f8b7',
   );
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
   assert.equal(fileSha256(await readFile(profilePath)), C1_PROFILE_SHA256);
