@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/permitted-period-aggregates/v1",
+  "operationId": "bi-ks-01-net-revenue/v1",
+  "accessMode": "PERMITTED_AGGREGATES",
+  "source": {
+    "id": "synth_x.pay_feed",
+    "revision": "synthetic-unfamiliar-source-v1",
+    "sha256": "56724bfa95e66d8b61a837e82098aeee67ad430434794da944d033d61dd9737e"
+  },
+  "unit": "EUR_MINOR_UNITS",
+  "rule": "INCLUDE_BOUNDARY_DATES",
+  "periods": [
+    {
+      "key": "comparison",
+      "start": "2026-06-01",
+      "end": "2026-06-30",
+      "saleMinorUnits": 35500,
+      "creditMinorUnits": 5500,
+      "unknownRows": 2
+    },
+    {
+      "key": "current",
+      "start": "2026-07-01",
+      "end": "2026-07-31",
+      "saleMinorUnits": 141293,
+      "creditMinorUnits": 41234,
+      "unknownRows": 1
+    }
+  ],
+  "unassignedUnknownRows": 1
+}

@@ -167,6 +167,7 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/ks236-reader-task-v2.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/issue-state-snapshot-metric.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/k4c-directory-upload.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/permitted-aggregate-journey.test.mjs' },
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },

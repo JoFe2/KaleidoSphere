@@ -50,6 +50,14 @@ jobs:
           node scripts/provision-ks255-journey-runtime.mjs --install
           node scripts/provision-ks255-journey-runtime.mjs --verify
           node scripts/provision-ks255-journey-runtime.mjs --measure --require-resolved --require-verified
+      # K01 requires an actual kernel-enforced namespace; never skip/fallback unisolated.
+      - name: Prepare and execute the required aggregate sandbox
+        run: |
+          if ! test -x /usr/bin/bwrap; then
+            sudo apt-get update
+            sudo apt-get install --no-install-recommends -y bubblewrap
+          fi
+          node scripts/run-permitted-aggregate-journey.mjs --input examples/business-bi/k01-permitted-period-aggregates-v1.json
       - run: npm run dist:agent-skill
       - run: npm test
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over

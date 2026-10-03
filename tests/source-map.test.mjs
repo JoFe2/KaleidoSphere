@@ -81,6 +81,8 @@ import './ks236-reader-task-v2.test.mjs';
 import './issue-state-snapshot-metric.test.mjs';
 // Additive #76 directory-upload packaging preserves the immutable canonical roots.
 import './k4c-directory-upload.test.mjs';
+// K01 actual aggregate candidate retains the immutable canonical root, exactly once.
+import './permitted-aggregate-journey.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
