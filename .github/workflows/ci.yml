@@ -57,6 +57,9 @@ jobs:
             sudo apt-get update
             sudo apt-get install --no-install-recommends -y bubblewrap
           fi
+          # Qualified-runner diagnostic uses only the approved public input and the exact sandbox command.
+          # No fallback, AppArmor/sysctl changes, or unisolated execution is permitted.
+          node --input-type=module -e 'import { aggregateSandboxCommand } from "./services/bi-control/src/business-bi/permitted-aggregate-sandbox.mjs"; import { spawnSync } from "node:child_process"; import { readFileSync } from "node:fs"; const {command:c,args:a}=aggregateSandboxCommand(process.cwd()); const p=spawnSync(c,a,{input:readFileSync("examples/business-bi/k01-permitted-period-aggregates-v1.json"),encoding:"utf8",timeout:5000,maxBuffer:1048576,env:{}}); console.log("K01 runner sandbox status:",p.status,"signal:",p.signal,"error:",p.error?.code??null); process.stdout.write(p.stdout??""); process.stderr.write(p.stderr??""); if(p.status!==0)process.exit(1);'
           node scripts/run-permitted-aggregate-journey.mjs --input examples/business-bi/k01-permitted-period-aggregates-v1.json
       - run: npm run dist:agent-skill
       - run: npm test
