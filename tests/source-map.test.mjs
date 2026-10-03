@@ -83,6 +83,11 @@ import './issue-state-snapshot-metric.test.mjs';
 import './k4c-directory-upload.test.mjs';
 // K01 actual aggregate candidate retains the immutable canonical root, exactly once.
 import './permitted-aggregate-journey.test.mjs';
+// K02 real pinned DuckDB entry and executor denials use the same frozen canonical root.
+import './duckdb-file-profile.test.mjs';
+import './duckdb-file-security.test.mjs';
+import './duckdb-file-runtime.test.mjs';
+import './duckdb-file-boundary.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
