@@ -120,6 +120,23 @@ jobs:
                     tests/procurement-analysis-boundary.test.mjs \
                     tests/pan520-p2p-pair.test.mjs
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS286_PAN520_SOURCE="+process.env.KS286_PAN520_SOURCE+"\n");'
+      - name: Provision and execute the exact public PAN526 shared runtime contract
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          export GIT_TERMINAL_PROMPT=0
+          export KS292_PAN526_SOURCE="$RUNNER_TEMP/ks292-pan526-700c7ca3"
+          git init "$KS292_PAN526_SOURCE"
+          # One exact public implementation; no duplicate schema, auth or CLOSED gate.
+          git -C "$KS292_PAN526_SOURCE" -c credential.helper= -c http.extraheader= fetch --depth=1 https://github.com/JoFe2/PANSPHAIRA.git 700c7ca369e2ac7aca4973480b4e265bfcffb454
+          git -C "$KS292_PAN526_SOURCE" checkout --detach FETCH_HEAD
+          test "$(git -C "$KS292_PAN526_SOURCE" rev-parse HEAD)" = 700c7ca369e2ac7aca4973480b4e265bfcffb454
+          test "$(git -C "$KS292_PAN526_SOURCE" rev-parse 'HEAD^{tree}')" = 05f95b1ac76444a588c9a00b0e326f798d65221a
+          (cd "$KS292_PAN526_SOURCE" && npm ci --ignore-scripts && npm run build)
+          # Loader qualifies the complete committed source/dependency closure at use.
+          node --test tests/h01-local-stack-facts.test.mjs \
+                    tests/h01-pan-runtime-source.test.mjs \
+                    tests/h01-local-runtime-context.test.mjs
+          node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS292_PAN526_SOURCE="+process.env.KS292_PAN526_SOURCE+"\n");'
       - run: npm run dist:agent-skill
       - run: npm test
         env:

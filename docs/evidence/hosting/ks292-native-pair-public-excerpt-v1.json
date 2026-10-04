@@ -1,0 +1,415 @@
+{
+  "schemaVersion": "kaleidosphere/ks292-native-pair-public-excerpt/v1",
+  "scope": "PUBLIC_TECHNICAL_EXCERPT_OF_ACTUAL_NATIVE_EXECUTION_NOT_FULL_RAW_RECEIPT_OR_PRODUCER_ACCEPTANCE",
+  "rawReceiptSha256": "ee8ef23b3b635c0b21046937a4cd2fff413ee28b67d870c559a9f1720e171e57",
+  "nonpublicSecretReferencesAndLocalPathsOmitted": true,
+  "actualOwnedProject": "ks292stack5fb15cdacb",
+  "capturedAtUtc": "2026-10-04T20:07:17.374030+00:00",
+  "sourceCommit": "dfc7f2ae2399109b90fe8a101f2d4eed465a7cef",
+  "sourceTree": "ff9949615ec27bb37d848b0b01ca41d55f6994b7",
+  "imagePins": {
+    "superset-init": "sha256:f7c3fd96b2ae884d7fe2acf5e6fcaf2dce2bec5a32e5b0bb9136650504269adc",
+    "superset": "sha256:f7c3fd96b2ae884d7fe2acf5e6fcaf2dce2bec5a32e5b0bb9136650504269adc",
+    "bi-control": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+    "bi-agent": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386"
+  },
+  "defaultComposeSha256": "f702c7ed62edabc33b814a89043c92f5e631b5f1014b0f98b81b830467620356",
+  "installerSha256": "9d80f54f23e93b3453269fcb238af31250aac424ef999086ff5b6511a6a5270a",
+  "actualIdentity": {
+    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+    "componentId": "kaleidosphere-bi-agent",
+    "sourceCommit": "dfc7f2ae2399109b90fe8a101f2d4eed465a7cef",
+    "sourceTree": "ff9949615ec27bb37d848b0b01ca41d55f6994b7",
+    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+    "architecture": "x86_64",
+    "productVersion": "0.18.1",
+    "runtime": {
+      "name": "node",
+      "version": "24.14.0"
+    },
+    "contractVersion": "1.0.0",
+    "instanceId": "ks292stack5fb15cdacb",
+    "tenantId": "ks-local-synthetic",
+    "generation": 1,
+    "authorityProfile": "SAFE_GUIDED",
+    "effectiveRights": [
+      "bi.catalog.read"
+    ],
+    "configurationDigest": "2e0cbf96952dd904b15d1559868172cc193769cd46a44be2441af2b4c6c4652e",
+    "policyDigest": "86481fc6a63102d98fe5263da12e5054af00066824496e1dd3e50516bd9e28e9",
+    "networkDigest": "40bb57f70d0ba7bbb010797c1164aa874398e6402891de4c825ff31db5ad5586",
+    "templateDigest": "f702c7ed62edabc33b814a89043c92f5e631b5f1014b0f98b81b830467620356"
+  },
+  "sharedProducer": {
+    "commit": "700c7ca369e2ac7aca4973480b4e265bfcffb454",
+    "tree": "05f95b1ac76444a588c9a00b0e326f798d65221a",
+    "contractSha256": "7c49eb32b45d4942f81828713babd45ef643a4d63b230e039445e6e9c2c6ebcb"
+  },
+  "actualRuntimeAndSourceByteReadback": {
+    "architecture": "x64",
+    "runtime": {
+      "name": "node",
+      "version": "24.14.0"
+    },
+    "productVersion": "0.18.1",
+    "files": {
+      "assets/apple-touch-icon.png": "ab93cc34113bc0a984f4e80b771e6b6fa1ec0b267e6460864b8ddbf6b5f81acf",
+      "assets/brand-assets.json": "d957b7c28d1d825b95ea908df89cbd81a78f000e9b6720169783454a0d0fccdb",
+      "assets/favicon-16x16.png": "f324e36e53b518e6b1e9afa9d85bee975c6f90643b8134a6fb9b5f3c79e7c878",
+      "assets/favicon-32x32.png": "27b5512c35b441076f33b2f59d8f8ac09b13ee4e13cc0716617163c9383108e8",
+      "assets/icon-192.png": "56577e3c899559fc283a3e4ad41820c761755be32a798b8a5baabc6b182f5167",
+      "assets/icon-512.png": "6b597ea342729f3ae8e95e4e1aebd6211b89521b47d348bb4fbcf18f16026c4a",
+      "assets/kaleidosphere-logo.png": "b8cba4a7765488e90c71562b16a749a0ee4a9d17cdac5345acbdf5b77232dccd",
+      "assets/kaleidosphere-logo.svg": "d37b51c8a167a5a317f5d1b9804fdf647dfe58166bac391be84a26561df0a260",
+      "assets/site.webmanifest": "a82bfc020dae3d38cd77bd3720c45cf3eec16f622f41705977645a1c9e796d74",
+      "package.json": "826bcc27fa1a59514001b550a8d07c2fd129bf68089ddc98bdf626b2eb346145",
+      "src/ask-intent.mjs": "13d612bac0074a083126895214e5b2a0522596f09bec697a2d16a9cbea747110",
+      "src/capability-manifest-v1.mjs": "74d0d31bbd555776a6eaddc5874eb1bd98657e292d8890620424bca5ef692177",
+      "src/closed-intent-conformance-pack.mjs": "421514d601bf789b2d7870d8e2b316dcb54c6f59e0e160bb89a2b30918e08112",
+      "src/database-overview-handler-v1.mjs": "e015f9e408b676bdba7f55740b504bb364c66744c3f24e5a60aa938e4ca8f8a1",
+      "src/external-api-v2.mjs": "c443bced37ce0244e75efb8601170678232a2a8f086d628c26ebdf44c790c2f1",
+      "src/external-intent-evidence-bridge.mjs": "113117eeb5ccc796c565cf1fd4fa8e067e2c23c373d8e15fdc134cd6c063d5ac",
+      "src/object-capability-contract-v1.mjs": "c68e6aefef42362e1aadaeb0ae23614db38b33b2ef9991b1847be03963efae72",
+      "src/object-details-handler-v1.mjs": "abd5c5256737c8771c50ed7138be5fec4ed92b9fb791f46da6aaba2ec2fd8b79",
+      "src/object-search-handler-v1.mjs": "94e7ba13ca85cc10a407900e0049a9fa86e8dccfb6de8d26f90e50af5b492b37",
+      "src/pansphaira-analytics/analysis.mjs": "96453289bf05c60146ba830512a4f9a90229a8455775bf445d7458146b6cbc01",
+      "src/pansphaira-analytics/candidate.mjs": "f878aa1d6a563abecf16e5114573a2e03d90e27d0953ad731857af2df82c6c61",
+      "src/pansphaira-analytics/native-analysis.mjs": "a3baec56253ae20e72dc1eb0408f520a7cbb67bafa18651f13f9aae5227f83e1",
+      "src/pansphaira-analytics/native-candidate.mjs": "c03dbb07a8f751fb9d919fec60cf53c86444f243293aa3ad1c0085ce5d3fa134",
+      "src/pansphaira-analytics/native-contract.mjs": "495c40858b6d3e1fbb228af46cb535ea289f1ecd8288e053d05f7efe8c351873",
+      "src/pansphaira-analytics/native-pipeline.mjs": "1044107a6e6cf5e317cbf24f1a454b4df12324db0a0f92d808cc5626b674828a",
+      "src/pansphaira-analytics/pipeline.mjs": "027201872c1dc14b64cef10c9980b0db6cd4d2f23e3278509cbf5a233e519174",
+      "src/pansphaira-analytics/profile-contract.mjs": "8322fbb5847c0bdf653eb1d723a9fa59d9dccc2f45973b62ba0bd3d673f2219c",
+      "src/pansphaira-analytics/server.mjs": "1ff0e7476269e93a8bc52d446e7fc408199a7181103a54e54a8bc16149c844e5",
+      "src/server.mjs": "32a2ffa4b33416f60bf406cd358da0a0e53e80f0f02ce320eed0526d062f34f1"
+    }
+  },
+  "readiness": {
+    "baseline": {
+      "boundaryObservation": {
+        "dockerSocketMounted": false,
+        "loopbackOnly": true,
+        "ownedResourcesOnly": true,
+        "privileged": false
+      },
+      "executionAuthorityGranted": false,
+      "expectedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "observedAtMs": 1791144387920,
+      "observedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "probe": {
+        "expectedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "httpStatus": 200,
+        "observedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "probeId": "kaleidosphere-bi-readback-v1",
+        "sourceObservationDigest": "667db4c1b8cbb37b1721378d39d97547899398f775a1ee0bff5c3be2acd1806d"
+      },
+      "reasonCodes": [],
+      "schemaVersion": "pansphaira.portable-runtime/readiness/v1",
+      "state": "READY"
+    },
+    "requiredServiceMissing": {
+      "boundaryObservation": {
+        "dockerSocketMounted": false,
+        "loopbackOnly": true,
+        "ownedResourcesOnly": true,
+        "privileged": false
+      },
+      "executionAuthorityGranted": false,
+      "expectedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "observedAtMs": 1791144394418,
+      "observedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "probe": {
+        "expectedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "httpStatus": 200,
+        "observedValueDigest": "b01f8ff3b093d874f7d7a6fb23e34d5d478f1d14f217afa6c704baa28462fd2d",
+        "probeId": "kaleidosphere-bi-readback-v1",
+        "sourceObservationDigest": "efad98cf9c0c2f9ba85fcee95411fdd6e209f0d19d913f5fab7adadf4ff657c4"
+      },
+      "reasonCodes": [
+        "BUSINESS_PROBE_MISMATCH"
+      ],
+      "schemaVersion": "pansphaira.portable-runtime/readiness/v1",
+      "state": "NOT_READY"
+    },
+    "http200WrongBusiness": {
+      "boundaryObservation": {
+        "dockerSocketMounted": false,
+        "loopbackOnly": true,
+        "ownedResourcesOnly": true,
+        "privileged": false
+      },
+      "executionAuthorityGranted": false,
+      "expectedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "observedAtMs": 1791144401401,
+      "observedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "probe": {
+        "expectedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "httpStatus": 200,
+        "observedValueDigest": "39f92090b760bdd34c4084c8d9a1ebcc588fde3becf674bfbc8a783f77e1256e",
+        "probeId": "kaleidosphere-bi-readback-v1",
+        "sourceObservationDigest": "539a5b4ab252b159fd2a0b616be459cabdac93679a2f4e62985b8b6329aab3be"
+      },
+      "reasonCodes": [
+        "BUSINESS_PROBE_MISMATCH"
+      ],
+      "schemaVersion": "pansphaira.portable-runtime/readiness/v1",
+      "state": "NOT_READY"
+    },
+    "businessRecovery": {
+      "boundaryObservation": {
+        "dockerSocketMounted": false,
+        "loopbackOnly": true,
+        "ownedResourcesOnly": true,
+        "privileged": false
+      },
+      "executionAuthorityGranted": false,
+      "expectedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "observedAtMs": 1791144401955,
+      "observedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "probe": {
+        "expectedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "httpStatus": 200,
+        "observedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "probeId": "kaleidosphere-bi-readback-v1",
+        "sourceObservationDigest": "98ae0df682879769656db0cf4fc366d649e1a114ca6d4e882450de2731563913"
+      },
+      "reasonCodes": [],
+      "schemaVersion": "pansphaira.portable-runtime/readiness/v1",
+      "state": "READY"
+    },
+    "deploymentGenerationTwo": {
+      "boundaryObservation": {
+        "dockerSocketMounted": false,
+        "loopbackOnly": true,
+        "ownedResourcesOnly": true,
+        "privileged": false
+      },
+      "executionAuthorityGranted": false,
+      "expectedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "observedAtMs": 1791144418496,
+      "observedIdentityDigest": "e8daa5aea935385d6c5f0e16ce4969242ee4b2e15e2422c332bb14c3363a481d",
+      "probe": {
+        "expectedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "httpStatus": 200,
+        "observedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "probeId": "kaleidosphere-bi-readback-v1",
+        "sourceObservationDigest": "e6d3128b148ec9b6a53cc35d7e7efe84288afc97ffa34deb9a69dd457761d048"
+      },
+      "reasonCodes": [
+        "RUNTIME_IDENTITY_MISMATCH"
+      ],
+      "schemaVersion": "pansphaira.portable-runtime/readiness/v1",
+      "state": "NOT_READY"
+    },
+    "finalRecovery": {
+      "boundaryObservation": {
+        "dockerSocketMounted": false,
+        "loopbackOnly": true,
+        "ownedResourcesOnly": true,
+        "privileged": false
+      },
+      "executionAuthorityGranted": false,
+      "expectedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "observedAtMs": 1791144437294,
+      "observedIdentityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+      "probe": {
+        "expectedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "httpStatus": 200,
+        "observedValueDigest": "746a289fefeb75ebe0e07b7302d20b6f204af250917f23f0781dccb5e48dad49",
+        "probeId": "kaleidosphere-bi-readback-v1",
+        "sourceObservationDigest": "57952eb071eccbb0a9566ff1f76813886679228da9a527df002bae66875f7927"
+      },
+      "reasonCodes": [],
+      "schemaVersion": "pansphaira.portable-runtime/readiness/v1",
+      "state": "READY"
+    }
+  },
+  "actualHttp200WrongBusiness": {
+    "httpStatus": 200,
+    "relationCount": 3,
+    "projectionMirrorInSync": true,
+    "correctFaultGenerationSemanticOnlyDenial": {
+      "status": "NOT_READY",
+      "code": "LOCAL_DEMO_BUSINESS_VALUE_MISMATCH",
+      "hostedRouteOpen": false,
+      "scope": "LOCAL_COMPLETE_SERVICE_IMAGE_AND_BUSINESS_FACTS_NOT_PORTABLE_READINESS"
+    }
+  },
+  "actualTypedLifecycle": {
+    "stop": {
+      "job": {
+        "action": "stop",
+        "audience": "kaleidosphere-runtime-v1",
+        "componentId": "kaleidosphere-bi-agent",
+        "deadlineMs": 30000,
+        "desiredStateDigest": "c40147bed111d100012cddc49c33bddcfde318ce0d9ca358968d23a516e32208",
+        "generation": 1,
+        "identityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+        "instanceId": "ks292stack5fb15cdacb",
+        "issuedAtMs": 1791144388210,
+        "jobId": "native-stop",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-job/v1",
+        "tenantId": "ks-local-synthetic"
+      },
+      "receipt": {
+        "completedAtMs": 1791144393861,
+        "executionAuthorityGranted": false,
+        "jobDigest": "2289d0f4e76577dab6f8723224e6288b8f95697a78bb37e1178351b1a26e5f2b",
+        "jobId": "native-stop",
+        "observedStateDigest": "aadc1b6dc7f0999805fd1dc5b412f4f67747ae386cb772a622d01471cdd0127a",
+        "outcome": "succeeded",
+        "reasonCode": "OBSERVED_TARGET_REACHED",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-receipt/v1"
+      },
+      "actualCommand": {
+        "action": "stop",
+        "exactOwnedContainerId": "97b3e6ababdd94a6b6a0dcc4a33f6a32a9641955e238ccd3a27ef5243eb4985f",
+        "status": 0,
+        "signal": null,
+        "errorCode": null,
+        "interruptionTest": false
+      },
+      "observedPhase": "stopped"
+    },
+    "start": {
+      "job": {
+        "action": "start",
+        "audience": "kaleidosphere-runtime-v1",
+        "componentId": "kaleidosphere-bi-agent",
+        "deadlineMs": 30000,
+        "desiredStateDigest": "4e4aadfe22099ae518b8a07f46a4d1192b0cdde17cf8d68b9b6074a37bbf5ec1",
+        "generation": 1,
+        "identityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+        "instanceId": "ks292stack5fb15cdacb",
+        "issuedAtMs": 1791144394712,
+        "jobId": "native-start",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-job/v1",
+        "tenantId": "ks-local-synthetic"
+      },
+      "receipt": {
+        "completedAtMs": 1791144395176,
+        "executionAuthorityGranted": false,
+        "jobDigest": "4a5e590bd655101fa30b6c6ae173126c39517085c45bc91d9420ad66f01b6b2a",
+        "jobId": "native-start",
+        "observedStateDigest": "fb198f2646ca51e54a909af8bdb08e21af71328425750eb6aed2df1f02fff48c",
+        "outcome": "succeeded",
+        "reasonCode": "OBSERVED_TARGET_REACHED",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-receipt/v1"
+      },
+      "actualCommand": {
+        "action": "start",
+        "exactOwnedContainerId": "97b3e6ababdd94a6b6a0dcc4a33f6a32a9641955e238ccd3a27ef5243eb4985f",
+        "status": 0,
+        "signal": null,
+        "errorCode": null,
+        "interruptionTest": false
+      },
+      "observedPhase": "running"
+    },
+    "interruptedStop": {
+      "job": {
+        "action": "stop",
+        "audience": "kaleidosphere-runtime-v1",
+        "componentId": "kaleidosphere-bi-agent",
+        "deadlineMs": 30000,
+        "desiredStateDigest": "c40147bed111d100012cddc49c33bddcfde318ce0d9ca358968d23a516e32208",
+        "generation": 1,
+        "identityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+        "instanceId": "ks292stack5fb15cdacb",
+        "issuedAtMs": 1791144435867,
+        "jobId": "native-interrupt-stop",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-job/v1",
+        "tenantId": "ks-local-synthetic"
+      },
+      "receipt": {
+        "completedAtMs": 1791144436198,
+        "executionAuthorityGranted": false,
+        "jobDigest": "2d142afe586f831f16dd3be3034f7a2799644f6a1f86ee05c1010ae1a779e6a0",
+        "jobId": "native-interrupt-stop",
+        "observedStateDigest": null,
+        "outcome": "outcome_unknown",
+        "reasonCode": "DISPATCH_INTERRUPTED",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-receipt/v1"
+      },
+      "actualCommand": {
+        "action": "stop",
+        "exactOwnedContainerId": "f039929ae4af8da9a0812a6098b920fe8efcc2ea237861682d375ddacad37f14",
+        "status": null,
+        "signal": "SIGKILL",
+        "errorCode": "ETIMEDOUT",
+        "interruptionTest": true
+      },
+      "observedPhase": null
+    },
+    "newStartAfterUnknown": {
+      "job": {
+        "action": "start",
+        "audience": "kaleidosphere-runtime-v1",
+        "componentId": "kaleidosphere-bi-agent",
+        "deadlineMs": 30000,
+        "desiredStateDigest": "4e4aadfe22099ae518b8a07f46a4d1192b0cdde17cf8d68b9b6074a37bbf5ec1",
+        "generation": 1,
+        "identityDigest": "327d2ddb18a1b60b0d1d0b2eadbff7d47574daf8914c1b8e1b1c509c3893a5c7",
+        "instanceId": "ks292stack5fb15cdacb",
+        "issuedAtMs": 1791144436460,
+        "jobId": "native-start",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-job/v1",
+        "tenantId": "ks-local-synthetic"
+      },
+      "receipt": {
+        "completedAtMs": 1791144436807,
+        "executionAuthorityGranted": false,
+        "jobDigest": "c417c7066828acfa44dbb29fb454c09a8c34d6e0b1466f6aebc5d0758b6b4148",
+        "jobId": "native-start",
+        "observedStateDigest": "09a5d1d27ba6487947ead2f70d69cae53d52c926ac174d1ee88f9b2692f156b9",
+        "outcome": "succeeded",
+        "reasonCode": "OBSERVED_TARGET_REACHED",
+        "schemaVersion": "pansphaira.portable-runtime/lifecycle-receipt/v1"
+      },
+      "actualCommand": {
+        "action": "start",
+        "exactOwnedContainerId": "f039929ae4af8da9a0812a6098b920fe8efcc2ea237861682d375ddacad37f14",
+        "status": 0,
+        "signal": null,
+        "errorCode": null,
+        "interruptionTest": false
+      },
+      "observedPhase": "running"
+    }
+  },
+  "staleGenerationJobDeniedBeforeNativeDispatch": true,
+  "taskContainersRemaining": 0,
+  "taskNetworksRemaining": 0,
+  "hostedRouteOpened": false,
+  "modelLiveMssqlOrProviderClaim": false,
+  "historicalTenStartsNotRerunOrInflated": true,
+  "negativeObservationReplay": {
+    "scope": "ACTUAL_NATIVE_OBSERVATION_REPLAY_THROUGH_REAL_PRODUCT_API_NOT_NEW_NATIVE_RUN",
+    "passed": [
+      "source-main",
+      "source-latest",
+      "image-latest",
+      "unknown-component",
+      "new-right",
+      "secret-in-identity",
+      "not-loopback",
+      "privileged",
+      "docker-socket",
+      "foreign-resource",
+      "wrong-audience",
+      "wrong-tenant",
+      "wrong-instance",
+      "wrong-job-generation",
+      "wrong-identity-digest",
+      "wrong-desired-digest",
+      "secret-in-receipt"
+    ],
+    "count": 17,
+    "failed": 0,
+    "skipped": 0,
+    "baselineReady": true,
+    "executionAuthorityGranted": false,
+    "nativeReceiptSha256": "ee8ef23b3b635c0b21046937a4cd2fff413ee28b67d870c559a9f1720e171e57",
+    "executedCodeSha256": "82b2836c80ab3be374e34d5789dc65087f23c7c89cd9be0cf2a724fb3d36aab7"
+  }
+}

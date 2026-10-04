@@ -1,0 +1,96 @@
+{
+  "scope": "ACTUAL_PINNED_LOCAL_SYNTHETIC_DEMO_IMAGE_VERSION_OBSERVATIONS_NOT_RUNTIME_IDENTITY_OR_PERMISSION",
+  "capturedAtUtc": "2026-10-04T16:26:02Z",
+  "executedDemoSourceCommit": "dfc7f2ae2399109b90fe8a101f2d4eed465a7cef",
+  "executedDemoSourceTree": "ff9949615ec27bb37d848b0b01ca41d55f6994b7",
+  "allProbesNetworkNone": true,
+  "allProbesReadOnlyRoot": true,
+  "hostPortBindings": false,
+  "observations": [
+    {
+      "component": "bi-control",
+      "actualImageId": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+      "command": [
+        "node",
+        "--version"
+      ],
+      "stdout": "v24.14.0\n",
+      "stderr": "",
+      "processExitCode": 0,
+      "containerExitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "component": "bi-control",
+      "actualImageId": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+      "command": [
+        "node",
+        "-p",
+        "JSON.stringify({node:process.versions.node,v8:process.versions.v8,architecture:process.arch,platform:process.platform})"
+      ],
+      "stdout": "{\"node\":\"24.14.0\",\"v8\":\"13.6.233.17-node.41\",\"architecture\":\"x64\",\"platform\":\"linux\"}\n",
+      "stderr": "",
+      "processExitCode": 0,
+      "containerExitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "component": "superset",
+      "actualImageId": "sha256:f7c3fd96b2ae884d7fe2acf5e6fcaf2dce2bec5a32e5b0bb9136650504269adc",
+      "command": [
+        "python",
+        "--version"
+      ],
+      "stdout": "Python 3.10.20\n",
+      "stderr": "",
+      "processExitCode": 0,
+      "containerExitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "component": "superset",
+      "actualImageId": "sha256:f7c3fd96b2ae884d7fe2acf5e6fcaf2dce2bec5a32e5b0bb9136650504269adc",
+      "command": [
+        "python",
+        "-c",
+        "import importlib.metadata,json,platform; print(json.dumps({'apacheSuperset':importlib.metadata.version('apache-superset'),'python':platform.python_version(),'machine':platform.machine(),'sqlalchemy':importlib.metadata.version('sqlalchemy')}))"
+      ],
+      "stdout": "{\"apacheSuperset\": \"6.1.0\", \"python\": \"3.10.20\", \"machine\": \"x86_64\", \"sqlalchemy\": \"1.4.54\"}\n",
+      "stderr": "",
+      "processExitCode": 0,
+      "containerExitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "component": "bi-agent",
+      "actualImageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+      "command": [
+        "node",
+        "--version"
+      ],
+      "stdout": "v24.14.0\n",
+      "stderr": "",
+      "processExitCode": 0,
+      "containerExitCode": 0,
+      "oomKilled": false
+    },
+    {
+      "component": "bi-agent",
+      "actualImageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+      "command": [
+        "node",
+        "-p",
+        "require(\"./package.json\").version"
+      ],
+      "stdout": "0.18.1\n",
+      "stderr": "",
+      "processExitCode": 0,
+      "containerExitCode": 0,
+      "oomKilled": false
+    }
+  ],
+  "taskContainersRemaining": 0,
+  "hostedRouteOpen": false,
+  "canonicalPortableContractAccepted": false,
+  "priorAgentPythonExecutableAttemptFailedAndRetained": true
+}

@@ -164,6 +164,30 @@
         "tests/provider-pair-profile.test.mjs"
       ],
       "note": "Register the exact qualified agent package identity in the runtime-derived provider profile fixture and the byte-identity regression test. Preserve every predecessor occurrence and census revision; no scanner exclusion, technical rename, source rewrite, registry promotion, or historical baseline change."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "dfc7f2ae2399109b90fe8a101f2d4eed465a7cef",
+      "predecessorOccurrences": 1083,
+      "predecessorInventorySha256": "0e7278b9ecac0d390381479d9b73a5c91b4136866a2681f3ac5025d92dd40013",
+      "addedOccurrences": 6,
+      "removedOccurrences": 0,
+      "occurrences": 1089,
+      "addedIdentityClasses": [
+        "environment",
+        "schemaIdentity"
+      ],
+      "origin": "KS292_LOCAL_ONLY_EXISTING_READBACK_SCHEMA_AND_PUBLIC_FIXTURE_OBSERVATION",
+      "addedValues": [
+        "CM_BI_FIXTURE",
+        "chimpmaera.bi/readback/v1"
+      ],
+      "addedPaths": [
+        "scripts/lib/h01-local-demo-probe.mjs",
+        "tests/h01-local-bound-readback.test.mjs",
+        "tests/h01-local-demo-probe.test.mjs"
+      ],
+      "note": "Register only additional occurrences of the exact existing local readback schema and public synthetic fixture environment identity. Preserve every predecessor occurrence and census revision, stable IDs, legacy plan and base commit. No scanner exclusion, portable runtime contract definition or whole KS292 acceptance."
     }
   ],
   "occurrences": [
@@ -200,6 +224,11 @@
     {
       "identityClass": "environment",
       "value": "CM_BI_FIXTURE",
+      "path": "scripts/lib/h01-local-demo-probe.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
       "path": "services/bi-control/fixtures/mssql-profile-v1.json"
     },
     {
@@ -211,6 +240,26 @@
       "identityClass": "environment",
       "value": "CM_BI_FIXTURE",
       "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h01-local-bound-readback.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h01-local-demo-probe.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h01-local-runtime-context.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h01-local-stack-facts.test.mjs"
     },
     {
       "identityClass": "environment",
@@ -2150,7 +2199,32 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/readback/v1",
+      "path": "scripts/lib/h01-local-demo-probe.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
       "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h01-local-bound-readback.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h01-local-demo-probe.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h01-local-runtime-context.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h01-local-stack-facts.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",
