@@ -1,0 +1,16 @@
+{
+  "schema": "kaleidosphere/synthetic-p2p-fixture-routes/v1",
+  "id": "COMMON-TRADE-01",
+  "source_id": "SYN-COMMON",
+  "revision": 1,
+  "syntheticOnly": true,
+  "path": "examples/p2p/common-trade-01.json",
+  "sha256": "2b76e8537646f727b75b157a3b5529a44b94e2e8ee551b5fcef9f5d3bd3c8160",
+  "operations": [
+    "aggregate",
+    "chart",
+    "drilldown",
+    "export"
+  ],
+  "portableNativeGrant": false
+}

@@ -279,3 +279,12 @@ not derived PAN source. CI and canonical registration are additive; current
 workflow digest bindings advance without rewriting historical evidence, original
 invoice-date fixtures or the frozen package manifest. Public source availability
 is not source-use authority, business acceptance, or final release acceptance.
+K04 (#286) adds the COMMON-only procurement core, actual opaque native P2P consumer,
+bounded CLI and same-row table/chart/CSV/fact-lineage views. Native PAN516/frozen ERV
+is reused, never reimplemented. The separate public producer and23 closure pins
+remain at cf199bbd/e8e75614; no external producer source is bundled. See
+`docs/evidence/k04-native-p2p-procurement-v1.md`. Registration is additive through
+one imported parent per new suite, with only CURRENT CI bindings advanced. Existing
+K03, historical originals, Oracle provenance, canonical package manifest and accepted
+README remain unchanged. Reference routes and formatting are not source/rights
+authority; absent price/time facts do not suppress known procurement quantity.
