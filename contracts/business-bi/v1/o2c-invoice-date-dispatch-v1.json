@@ -1,0 +1,80 @@
+{
+  "schema": "kaleidosphere/o2c-invoice-date-dispatch/v1",
+  "source": "source-bound synthetic or explicitly permitted producer snapshot",
+  "scope": [
+    "source_id",
+    "tenant_id",
+    "entity_id",
+    "warehouse_id",
+    "item_id",
+    "currency",
+    "quantity_unit",
+    "business_timezone"
+  ],
+  "snapshot": [
+    "revision",
+    "sha256"
+  ],
+  "operations": [
+    "aggregate",
+    "chart",
+    "drilldown",
+    "export"
+  ],
+  "order_grain": [
+    "tenant_id",
+    "entity_id",
+    "order_id",
+    "position_id"
+  ],
+  "document_grain": [
+    "tenant_id",
+    "entity_id",
+    "document_id",
+    "position_id"
+  ],
+  "documents": [
+    "order_id",
+    "order_position_id",
+    "type:INVOICE|CREDIT",
+    "state:ISSUED|DRAFT|VOID",
+    "invoice_date:YYYY-MM-DD",
+    "quantity_absolute:positive integer STK",
+    "net_absolute_minor:nonnegative integer EUR minor",
+    "correction_of:invoice composite key for CREDIT"
+  ],
+  "orders": [
+    "accepted_at:offset ISO instant",
+    "quantity:positive integer STK",
+    "unit_net_minor:nonnegative integer EUR minor",
+    "promised_dispatch_at:original offset ISO instant",
+    "promise_revision:original positive integer"
+  ],
+  "shipments": [
+    "order_id",
+    "order_position_id",
+    "shipment_id",
+    "dispatched_at:offset ISO instant",
+    "quantity:positive integer STK",
+    "promise_revision:original positive integer",
+    "milestone:DISPATCH"
+  ],
+  "customer_receipts": "independent CUSTOMER_RECEIPT evidence; absence is UNKNOWN, not 0 or inferred dispatch",
+  "period": "startInclusive/endExclusive explicit business dates",
+  "semantics": {
+    "net": "INVOICE adds, CREDIT subtracts at each own invoice date; no ORDER_DATE or ledger fallback",
+    "OTIF": "full original promised quantity dispatched by original deadline; late completion never repairs history",
+    "fanout": "document, order, shipment composite keys unique; no receipts or returns join into billed net",
+    "rights": "metadata/descriptors/caller roles are not authority; operation allowed only under a separately trusted source/snapshot grant"
+  },
+  "known_mapping_profiles": [
+    "ks-camel-fixture/v1",
+    "common-snake-reference/v1"
+  ],
+  "scope_nonclaims": [
+    "not a new private source permission",
+    "not a second approved context",
+    "not universal ERP or second vendor validation",
+    "not existing P06 producer acceptance"
+  ]
+}

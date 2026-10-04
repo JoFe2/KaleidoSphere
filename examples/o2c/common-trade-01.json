@@ -1,0 +1,77 @@
+{
+  "id": "COMMON-TRADE-01",
+  "revision": 1,
+  "not_a_holdout": true,
+  "not_a_second_approved_context": true,
+  "scope": {
+    "source_id": "SYN-COMMON",
+    "tenant_id": "SYN-TENANT-01",
+    "entity_id": "SYN-ENTITY-01",
+    "warehouse_id": "WH-01",
+    "item_id": "ARTICLE-A",
+    "currency": "EUR",
+    "quantity_unit": "STK",
+    "business_timezone": "Europe/Berlin",
+    "date_basis": "invoice date for billed net; original promised dispatch milestone for delivery metric"
+  },
+  "sales_order": {
+    "id": "SO-01",
+    "line_id": "1",
+    "accepted_at": "2026-06-20T10:00:00+02:00",
+    "quantity": 10,
+    "unit_net_minor": 10000,
+    "promised_dispatch_at": "2026-06-30T23:59:59+02:00",
+    "promise_revision": 1
+  },
+  "sales_documents": [
+    {
+      "id": "AR-01",
+      "line_id": "1",
+      "type": "INVOICE",
+      "invoice_date": "2026-06-30",
+      "shipment_id": "SH-01",
+      "quantity_absolute": 8,
+      "net_absolute_minor": 80000
+    },
+    {
+      "id": "AR-02",
+      "line_id": "1",
+      "type": "INVOICE",
+      "invoice_date": "2026-07-03",
+      "shipment_id": "SH-02",
+      "quantity_absolute": 2,
+      "net_absolute_minor": 20000
+    },
+    {
+      "id": "CN-01",
+      "line_id": "1",
+      "type": "CREDIT",
+      "invoice_date": "2026-07-05",
+      "correction_of": [
+        "AR-01",
+        "1"
+      ],
+      "quantity_absolute": 1,
+      "net_absolute_minor": 10000
+    }
+  ],
+  "shipments": [
+    {
+      "id": "SH-01",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "dispatched_at": "2026-06-29T15:00:00+02:00",
+      "quantity": 8,
+      "promise_revision": 1
+    },
+    {
+      "id": "SH-02",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "dispatched_at": "2026-07-02T15:00:00+02:00",
+      "quantity": 2,
+      "promise_revision": 1
+    }
+  ],
+  "customer_receipts": []
+}

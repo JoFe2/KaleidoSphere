@@ -265,3 +265,17 @@ legacy-identity inventory was re-frozen additively (1043 -> 1046, 0 removed),
 and the canonical suites were re-run at the correction head (actual outputs recorded in
 `WORK_RESULT.md`). This entry describes committed evidence bytes only; public
 publication and anonymous readback remain controller-owned gates and are not claimed.
+
+K03 (#285) adds a repository-authored, COMMON-only native O2C consumer, disposable
+native fixture, pair/CLI tests and documentation. The external PANSPHAIRA source
+is not copied into this repository or its release: it is provisioned separately
+from public commit `cf199bbd35706bdeadb04679af7354c94caf482a`, Git tree
+`e8e75614ffb8f1d71a6715413386bfd5619e1c3e`, then built from its committed lock.
+`contracts/dependencies/pan520-o2c-source-v1.json` binds the exact source identity,
+native import closure and built contract. `docs/evidence/k03-native-pan520-pair-v1.md`
+records the real opaque native-plan/read seam, actual views and unavailable-fact
+boundaries. The new KS files are ordinary repository-authored `files` entries,
+not derived PAN source. CI and canonical registration are additive; current
+workflow digest bindings advance without rewriting historical evidence, original
+invoice-date fixtures or the frozen package manifest. Public source availability
+is not source-use authority, business acceptance, or final release acceptance.

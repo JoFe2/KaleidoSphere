@@ -92,6 +92,13 @@ import './duckdb-file-boundary.test.mjs';
 import './provider-pair-profile.test.mjs';
 import './provider-pair-http.test.mjs';
 import './provider-pair-execution.test.mjs';
+// K03 additive invoice-date source, views and real CLI denials retain this root exactly once.
+import './invoice-date-o2c-journey.test.mjs';
+import './invoice-date-o2c-negatives.test.mjs';
+import './invoice-date-o2c-views.test.mjs';
+import './invoice-date-o2c-boundary.test.mjs';
+// Actual frozen public PAN520 native-to-KS pair; required, never a fixture stub.
+import './pan520-o2c-pair.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
@@ -437,6 +444,27 @@ const ks255JourneyRuntimeFamily = Object.freeze([
   'docs/evidence/ks255-journey-runtime-binding-v1.md',
 ]);
 const ks255Suite = Object.freeze('tests/ks255-journey-runtime-binding.test.mjs');
+const pan520PairFamily=Object.freeze([
+  'contracts/dependencies/pan520-o2c-source-v1.json',
+  'services/bi-control/src/business-bi/pan520-o2c-consumer.mjs',
+  'tests/fixtures/business-bi/pan520-native-pair.mjs',
+  'tests/pan520-o2c-pair.test.mjs',
+  'scripts/run-pan520-o2c-consumer.mjs',
+  'docs/evidence/k03-native-pan520-pair-v1.md',
+]);
+test('K03 actual PAN520 pair is source-addressed once with required exact unauthenticated CI provisioning',async()=>{
+  const map=JSON.parse(await readFile('SOURCE-MAP.json','utf8'));
+  for(const name of pan520PairFamily){assert.match(map.files[name]??'',/^[a-f0-9]{64}$/,name);assert.equal(sha256(await readFile(name)),map.files[name],name);}
+  const parent=await readFile('tests/source-map.test.mjs','utf8'),pkg=JSON.parse(await readFile('package.json','utf8'));
+  assert.equal((parent.match(/import '\.\/pan520-o2c-pair\.test\.mjs';/g)??[]).length,1);
+  assert.equal(pkg.scripts.test.split(/\s+/).includes('tests/pan520-o2c-pair.test.mjs'),false);
+  const ci=await readFile('.github/workflows/ci.yml','utf8');
+  assert.match(ci,/credential\.helper= -c http\.extraheader= fetch --depth=1 https:\/\/github\.com\/JoFe2\/PANSPHAIRA\.git cf199bbd35706bdeadb04679af7354c94caf482a/);
+  assert.match(ci,/e8e75614ffb8f1d71a6715413386bfd5619e1c3e/);
+  assert.match(ci,/npm ci --ignore-scripts && npm run build/);
+  assert.match(ci,/node --test tests\/pan520-o2c-pair\.test\.mjs/);
+  assert.match(ci,/appendFileSync\(process\.env\.GITHUB_ENV/);
+});
 const ks255Parent = Object.freeze('tests/source-map.test.mjs');
 
 test('the KS255 journey-runtime binding family is content-addressed and its suite is registered once through the imported parent', async () => {

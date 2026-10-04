@@ -1,0 +1,42 @@
+{
+  "schema": "kaleidosphere/synthetic-o2c-fixture-grants/v1",
+  "only_synthetic_local_fixture_authority": true,
+  "sources": {
+    "KS-ORIGINAL-500-700": {
+      "path": "examples/o2c/ks-original-500-700.json",
+      "sha256": "14e5bd8237b8401212602fb48a9140fe5ad926c12117a532b9090213a6daf67d",
+      "mapping": "canonical-local/v1",
+      "operations": [
+        "aggregate",
+        "chart",
+        "drilldown",
+        "export"
+      ],
+      "source_id": "SYN-KS-ORIGINAL",
+      "revision": 1
+    },
+    "COMMON-TRADE-01": {
+      "source_id": "SYN-COMMON",
+      "revision": 1,
+      "operations": [
+        "aggregate",
+        "chart",
+        "drilldown",
+        "export"
+      ],
+      "defaultMapping": "common-snake-reference/v1",
+      "variants": {
+        "common-snake-reference/v1": {
+          "path": "examples/o2c/common-trade-01.json",
+          "sha256": "7bdea7a7586037325d2af8a4cf75095876dd61eb2d176580ab0a97912947c7e8",
+          "mapping": "common-snake-reference/v1"
+        },
+        "ks-camel-fixture/v1": {
+          "path": "examples/o2c/common-trade-01-camel.json",
+          "sha256": "2b53e5bec4a5c7f2784d1ddb3724ee5933cdf809a652fc8fc319cec6f8b2408d",
+          "mapping": "ks-camel-fixture/v1"
+        }
+      }
+    }
+  }
+}
