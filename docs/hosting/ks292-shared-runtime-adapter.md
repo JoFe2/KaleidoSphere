@@ -1,0 +1,49 @@
+# KS-H01: opt-in consumer of the single PAN runtime contract
+
+This is the optional local adapter for the existing KaleidoSphere demo. It adds no default endpoint, public listener, hosted route, Component-ID registry or execution right. The unchanged loopback installer and Compose stack remain the default. The earlier `ks292-local-observation-progress.md` is a retained incremental checkpoint, not the current contract-dependency disposition.
+
+## Exact producer and product identities
+
+`contracts/dependencies/pan526-runtime-source-v1.json` binds the public PANSPHAIRA implementation at commit `700c7ca369e2ac7aca4973480b4e265bfcffb454`, tree `05f95b1ac76444a588c9a00b0e326f798d65221a`, shared schema SHA-256 `7c49eb32b45d4942f81828713babd45ef643a4d63b230e039445e6e9c2c6ebcb`. The schema is a producer development candidate; successful KS consumption does not qualify every PAN runtime or grant producer release acceptance. There is no PAN CLOSED, release or Main-preapproval prerequisite.
+
+The independently reproduced native stack uses source `dfc7f2ae2399109b90fe8a101f2d4eed465a7cef`, tree `ff9949615ec27bb37d848b0b01ca41d55f6994b7` and the four image IDs recorded in `docs/evidence/hosting/ks292-measurement-evidence-index-v1.json`. Its Node agent is product 0.18.1 on Node 24.14.0, x86_64. Superset 6.1.0/Python 3.10.20 is a separate service, never a relabeling of the agent. The same immutable agent's executed source files were hash-matched to that source commit. The adapter itself is delivered in the KS release source; these native image observations describe the exact tested baseline, not an invented rebuilt image.
+
+A KS254 projection generation is a 64-lowercase-hex content digest. A portable deployment generation is a positive integer captured from the owned deployment. They are distinct bindings, not interchangeable representations.
+
+## Opt-in API and authority boundary
+
+The operator obtains a clean exact PAN Git checkout, runs `npm ci --ignore-scripts && npm run build` there, and passes its absolute root to `loadH01PanRuntimeSourceV1`. The loader verifies commit, tree and every bound source/build/dependency byte; it imports a private qualified closure. A branch alias, substituted byte, symlink/special source file, copied handle or released handle is not admitted. No network fetch is performed by the loader.
+
+The public entry points are in `services/bi-control/src/runtime/pan-runtime-source.mjs` and `services/bi-control/src/runtime/local-runtime-context.mjs`:
+
+1. `loadH01PanRuntimeSourceV1(qualifiedRoot)` creates process-local source custody.
+2. `captureH01LocalRuntimeContextV1(source, spec)` captures the operator's qualified identity, independently verified business readback, held projection-generation digest, four immutable image pins and opaque secret references.
+3. `assessH01LocalRuntimeReadinessV1(context, observation)` calls the actual PAN readiness assessor over independently acquired identity, HTTP readback, required service observations and boundary facts. `h01-local-stack-facts.mjs` requires all four services; the existing image helper intentionally still permits partial observations.
+4. `captureH01LocalLifecycleJobV1(context, options)` produces separate Desired state and a typed audience/tenant/instance/component/deployment-generation/identity-digest/desired-digest-bound job.
+5. Immediately before an independently authorized effect, `validateH01LocalLifecycleAtUseV1(context, job, desiredState, actualIdentity, nowMs)` checks the acquired physical identity, bound secret references and elapsed deadline. Its opaque dispatch handle is validation custody, not Docker permission.
+6. `recordH01LocalLifecycleOutcomeV1(dispatch, actualFacts)` records current bound observations and command exit facts. Interrupted, absent, stale or future observations remain `outcome_unknown` with no invented definitive result. Recording consumes the dispatch handle once.
+7. `releaseH01PanRuntimeSourceV1(source)` removes the private SDK copy and invalidates further calls.
+
+The transport/model cannot mint these WeakMap-backed handles. Data-only conversion rejects accessors, proxies, cycles, custom serialization and out-of-bound values before the producer sees wire JSON. Neither READY nor a validated lifecycle job grants execution authority. The caller must be a trusted collector/driver with separately scoped ownership and permission; caller-provided roles or receipt text are never a substitute.
+
+Actual native verification used an owned creating process with immutable per-call executables, exact container IDs, project labels, source roots and image pins. It acquired Docker configuration/policy/network/template digests, actual deployment labels, native version/source bytes and real HTTP business results. Only that process selected the stop/start target. The tested source and dependencies were private copies; no foreign resource or default listener was changed. Secret values stayed local. Public excerpts omit opaque secret reference values and local paths rather than publishing private custody data.
+
+## Original criteria and executed evidence
+
+- AC1: `ks292-native-pair-public-excerpt-v1.json` records the actual structured identity, exact source/image/product/runtime/contract pins, instance/tenant/deployment-generation and independently executed source-byte readback.
+- AC2: exactly ten cached-qualified-image cold starts, forty INIT/IDLE/LOAD/RESTORE phase records and 3948 raw samples. The additional release asset `KaleidoSphere-KS292-actual-coldstart-evidence-v1.tar.gz` contains forty exact raw JSON files plus the original profile, completed results and derived summary. Its exact file hashes, asset hash, measured intervals and resource summary are in `ks292-measurement-evidence-index-v1.json`. This is not an uncached pull benchmark or synchronous RSS/whole-host peak. The first failed strict-pointer restore attempt remains retained separately; only completed verified trials count.
+- AC3: real shared READY baseline; HTTP 200 with relation_count deliberately changed from 2 to 3 and a byte-verified in-sync native projection gives shared NOT_READY/BUSINESS_PROBE_MISMATCH. A separate local check with the correctly held fault-generation digest isolates the business failure. Removing the running agent while the control still returns HTTP 200 also yields NOT_READY; matching partial image facts do not pass the required-service caller. Actual deployment generation 2 is refused against held generation 1. Qualified business/deployment recovery ends READY. No route opens.
+- AC4: real typed stop and start produced independently observed stopped/running states and succeeded receipts. A stale generation-bound job was denied before native dispatch. A genuinely interrupted native Docker command returned ETIMEDOUT/SIGKILL; the adapter retained outcome_unknown and a null observation digest. A new typed job, rather than an invented successful retry receipt, recovered the owned runtime. Synthetic context regressions separately cover copied handles, foreign tenant, changed generation/secret references, elapsed deadline, single-use outcome and stale/future observation.
+- AC5: installer and Compose bytes are bound and unchanged. Native checks required loopback-only ports, read-only root filesystems, all capabilities dropped, no-new-privileges, no Docker socket mount and owned bind roots. No hosted adapter or default activation is added. The optional library was exercised in an isolated owned native stack. Exact container/network cleanup returned zero.
+
+The 17-case additional negative matrix replays retained actual native observations through the real product API, not a new native run: main/latest source and image aliases, unknown component, new rights, secrets in Identity/Receipt, non-loopback/privileged/socket/foreign-resource boundaries, and wrong audience/tenant/instance/generation/identity/desired digests are refused. Its exact scope and executed-code digest appear in the public native excerpt.
+
+## Regression and review scopes
+
+The required CI acquisition step anonymously fetches the exact PAN commit, checks its tree, builds the committed locked closure without install scripts, executes the actual stack/source/context suites and exports the same qualified checkout to the canonical run. A failed fetch/build/qualification/test fails CI; there is no fixture SDK or skip fallback. Local execution of that exact shell body passed nine tests, but is not a hosted-CI claim.
+
+After advancing only two explicitly current workflow digest pins and their source-map bindings, the owner-local canonical run passed 1929 of 1946 tests, with zero failures and seventeen explicitly retained optional/environment skips. Those omitted legs are not counted as PASS. Historical C1/C2 evidence and correction workflow bytes were preserved. Required hosted SQL/runtime execution, exact candidate CI, merge, new release, all-asset anonymous readback and downloaded-product execution are separate delivery obligations; local regression alone is not closure.
+
+Existing independent reviews are reused only where every file hash still matches. The twelve-file/six-test context review is synthetic-fixture execution against the real PAN API, not native/full-CI/release acceptance. The five-file source-consumer review covers actual exact-SDK loading, Node/Superset refusal, foreign handles and cleanup; an earlier incomplete reviewer input was not a product finding. Raw-measurement, local guard, image and wire reviews retain their original scopes. Remaining integration and evidence publication receive a focused owner self-check; Main checks afterward without a waiting gate.
+
+No live MSSQL, live model/provider, arbitrary tenant, production, Marketplace acceptance or universal runtime qualification is claimed. Original issue closure remains pending until the complete release/readback chain is verified.

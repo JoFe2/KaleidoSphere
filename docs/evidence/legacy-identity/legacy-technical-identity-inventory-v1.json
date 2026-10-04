@@ -254,6 +254,16 @@
     {
       "identityClass": "environment",
       "value": "CM_BI_FIXTURE",
+      "path": "tests/h01-local-runtime-context.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h01-local-stack-facts.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
       "path": "tests/object-inventory-authority-digest-v1.test.mjs"
     },
     {
@@ -2205,6 +2215,16 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/readback/v1",
       "path": "tests/h01-local-demo-probe.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h01-local-runtime-context.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h01-local-stack-facts.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",

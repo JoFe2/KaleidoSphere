@@ -191,6 +191,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-bound-readback.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-image-observations.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-wire-data.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-stack-facts.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-pan-runtime-source.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-runtime-context.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-runtime-ci-binding.test.mjs' },
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },

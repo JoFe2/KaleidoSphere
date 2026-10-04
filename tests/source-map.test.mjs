@@ -110,6 +110,11 @@ import './h01-owned-backup-guard.test.mjs';
 import './h01-local-bound-readback.test.mjs';
 import './h01-local-image-observations.test.mjs';
 import './h01-local-wire-data.test.mjs';
+// KS292 complete local caller and exact shared SDK/context integration, once.
+import './h01-local-stack-facts.test.mjs';
+import './h01-pan-runtime-source.test.mjs';
+import './h01-local-runtime-context.test.mjs';
+import './h01-runtime-ci-binding.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
