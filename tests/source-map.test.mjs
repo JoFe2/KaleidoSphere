@@ -104,6 +104,12 @@ import './procurement-analysis-negatives.test.mjs';
 import './procurement-analysis-views.test.mjs';
 import './procurement-analysis-boundary.test.mjs';
 import './pan520-p2p-pair.test.mjs';
+// KS292 independent local fact/backup adapters retain the frozen canonical root.
+import './h01-local-demo-probe.test.mjs';
+import './h01-owned-backup-guard.test.mjs';
+import './h01-local-bound-readback.test.mjs';
+import './h01-local-image-observations.test.mjs';
+import './h01-local-wire-data.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
