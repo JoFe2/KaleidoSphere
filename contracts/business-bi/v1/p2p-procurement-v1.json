@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "kaleidosphere.procurement-analysis/v1",
+  "profile": "p2p-procurement/v1",
+  "scope": "COMMON-TRADE-01 public synthetic PO-01/1 only; not productive source permission",
+  "grain": [
+    "source",
+    "tenant",
+    "entity",
+    "po",
+    "line",
+    "item",
+    "warehouse",
+    "currency",
+    "unit"
+  ],
+  "quantityKnownWithoutOptionalPriceOrTime": true,
+  "minorUnits": "EUR_MINOR",
+  "timeBasis": "receipt business accepted_at versus receipt-assigned confirmed supplier promise; not ledger posting date",
+  "sourcePermission": "actual source-owned opaque P06 plan/read only in native route",
+  "unknownPolicy": "null plus explicit UNKNOWN/UNAVAILABLE reason; not zero; malformed is denied",
+  "matcher": "reuse actual native PAN516 frozen ERV core; no KS invoice matcher",
+  "facts": [
+    "PROCUREMENT_QUANTITY",
+    "PROCUREMENT_PRICE_VARIANCE",
+    "PROCUREMENT_TIMELINESS"
+  ],
+  "mutationAuthority": false,
+  "rawInvoiceDocumentAccess": false,
+  "portableGrant": false
+}

@@ -99,6 +99,11 @@ import './invoice-date-o2c-views.test.mjs';
 import './invoice-date-o2c-boundary.test.mjs';
 // Actual frozen public PAN520 native-to-KS pair; required, never a fixture stub.
 import './pan520-o2c-pair.test.mjs';
+import './procurement-analysis-journey.test.mjs';
+import './procurement-analysis-negatives.test.mjs';
+import './procurement-analysis-views.test.mjs';
+import './procurement-analysis-boundary.test.mjs';
+import './pan520-p2p-pair.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

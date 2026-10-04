@@ -1,0 +1,181 @@
+{
+  "id": "COMMON-TRADE-01",
+  "revision": 1,
+  "not_a_holdout": true,
+  "not_a_second_approved_context": true,
+  "scope": {
+    "source_id": "SYN-COMMON",
+    "tenant_id": "SYN-TENANT-01",
+    "entity_id": "SYN-ENTITY-01",
+    "warehouse_id": "WH-01",
+    "item_id": "ARTICLE-A",
+    "currency": "EUR",
+    "quantity_unit": "STK",
+    "business_timezone": "Europe/Berlin",
+    "date_basis": "invoice date for billed net; original promised dispatch milestone for delivery metric"
+  },
+  "purchase_order": {
+    "id": "PO-01",
+    "line_id": "1",
+    "quantity": 10,
+    "unit_net_minor": 6000,
+    "promised_acceptance_at": "2026-06-25T23:59:59+02:00",
+    "promise_revision": 1
+  },
+  "sales_order": {
+    "id": "SO-01",
+    "line_id": "1",
+    "accepted_at": "2026-06-20T10:00:00+02:00",
+    "quantity": 10,
+    "unit_net_minor": 10000,
+    "promised_dispatch_at": "2026-06-30T23:59:59+02:00",
+    "promise_revision": 1
+  },
+  "receipts": [
+    {
+      "id": "GR-01",
+      "po_id": "PO-01",
+      "po_line_id": "1",
+      "accepted_at": "2026-06-24T10:00:00+02:00",
+      "accepted_quantity": 8
+    },
+    {
+      "id": "GR-02",
+      "po_id": "PO-01",
+      "po_line_id": "1",
+      "accepted_at": "2026-06-26T10:00:00+02:00",
+      "accepted_quantity": 2
+    }
+  ],
+  "purchase_invoice": {
+    "id": "AP-01",
+    "line_id": "1",
+    "po_id": "PO-01",
+    "po_line_id": "1",
+    "quantity": 10,
+    "unit_net_minor": 6200,
+    "net_minor": 62000
+  },
+  "reservation_events": [
+    {
+      "id": "RS-01",
+      "at": "2026-06-26T12:00:00+02:00",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "delta": 10,
+      "cause": "reserve accepted own stock"
+    },
+    {
+      "id": "RC-01",
+      "at": "2026-06-29T15:00:00+02:00",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "delta": -8,
+      "cause_shipment": "SH-01"
+    },
+    {
+      "id": "RC-02",
+      "at": "2026-07-02T15:00:00+02:00",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "delta": -2,
+      "cause_shipment": "SH-02"
+    }
+  ],
+  "shipments": [
+    {
+      "id": "SH-01",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "dispatched_at": "2026-06-29T15:00:00+02:00",
+      "quantity": 8,
+      "promise_revision": 1
+    },
+    {
+      "id": "SH-02",
+      "order_id": "SO-01",
+      "line_id": "1",
+      "dispatched_at": "2026-07-02T15:00:00+02:00",
+      "quantity": 2,
+      "promise_revision": 1
+    }
+  ],
+  "customer_receipts": [],
+  "sales_documents": [
+    {
+      "id": "AR-01",
+      "line_id": "1",
+      "type": "INVOICE",
+      "invoice_date": "2026-06-30",
+      "shipment_id": "SH-01",
+      "quantity_absolute": 8,
+      "net_absolute_minor": 80000
+    },
+    {
+      "id": "AR-02",
+      "line_id": "1",
+      "type": "INVOICE",
+      "invoice_date": "2026-07-03",
+      "shipment_id": "SH-02",
+      "quantity_absolute": 2,
+      "net_absolute_minor": 20000
+    },
+    {
+      "id": "CN-01",
+      "line_id": "1",
+      "type": "CREDIT",
+      "invoice_date": "2026-07-05",
+      "correction_of": [
+        "AR-01",
+        "1"
+      ],
+      "quantity_absolute": 1,
+      "net_absolute_minor": 10000
+    }
+  ],
+  "returns": [
+    {
+      "id": "RET-01",
+      "at": "2026-07-05T14:00:00+02:00",
+      "original_shipment_id": "SH-01",
+      "quantity": 1,
+      "disposition": "QUARANTINE",
+      "credit_ref": "CN-01"
+    }
+  ],
+  "expected": {
+    "order_intake_net_minor": 100000,
+    "billed_net_minor_by_month": {
+      "2026-06": 80000,
+      "2026-07": 10000
+    },
+    "billed_net_minor_total": 90000,
+    "supplier_price_variance_minor": 2000,
+    "supplier_on_time_accepted_quantity": 8,
+    "shipment_on_time_quantity": 8,
+    "shipment_on_time_quantity_percent": 80,
+    "shipment_position_otif_percent": 0,
+    "customer_receipt_otif_status": "UNKNOWN_NO_CUSTOMER_RECEIPT_EVIDENCE",
+    "stock_2026_06_30": {
+      "physical": 2,
+      "reserved": 2,
+      "quarantined": 0,
+      "free": 0
+    },
+    "stock_2026_07_31": {
+      "physical": 1,
+      "reserved": 0,
+      "quarantined": 1,
+      "free": 0
+    }
+  },
+  "negative_specs": [
+    "On-time dispatch with late customer receipt must not count as on-time customer receipt.",
+    "Late completion never repairs the original dispatch OTIF result.",
+    "Two receipts joined to one invoice must not double the billed quantity or price variance.",
+    "A credit without a return does not change physical stock; a return without a credit does not change billed net.",
+    "Absent reservation/hold evidence is UNKNOWN, not implicit zero.",
+    "Same position number in a foreign order or tenant must not join.",
+    "An invoice and its eventual ledger posting are not two revenues."
+  ]
+}

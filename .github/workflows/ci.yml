@@ -109,6 +109,17 @@ jobs:
           # Pair CLI is relative to the KS checkout, never the producer cwd.
           node --test tests/pan520-o2c-pair.test.mjs
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS285_PAN520_SOURCE="+process.env.KS285_PAN520_SOURCE+"\n");'
+      - name: Execute required actual native P2P procurement and independent question refusals
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          export KS286_PAN520_SOURCE="$KS285_PAN520_SOURCE"
+          # Reuse the exact public Git/build closure above, never a provider stub or CLOSED gate.
+          node --test tests/procurement-analysis-journey.test.mjs \
+                    tests/procurement-analysis-negatives.test.mjs \
+                    tests/procurement-analysis-views.test.mjs \
+                    tests/procurement-analysis-boundary.test.mjs \
+                    tests/pan520-p2p-pair.test.mjs
+          node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS286_PAN520_SOURCE="+process.env.KS286_PAN520_SOURCE+"\n");'
       - run: npm run dist:agent-skill
       - run: npm test
         env:
