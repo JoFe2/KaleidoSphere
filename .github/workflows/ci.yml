@@ -94,8 +94,25 @@ jobs:
                     tests/invoice-date-o2c-negatives.test.mjs \
                     tests/invoice-date-o2c-views.test.mjs \
                     tests/invoice-date-o2c-boundary.test.mjs
+      - name: Provision and execute the exact public PAN520 native O2C counterpart
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          export GIT_TERMINAL_PROMPT=0
+          export KS285_PAN520_SOURCE="$RUNNER_TEMP/ks285-pan520-cf199bbd"
+          git init "$KS285_PAN520_SOURCE"
+          # Public candidate only; no auth, branch-tip trust, merge/release or CLOSED gate.
+          git -C "$KS285_PAN520_SOURCE" -c credential.helper= -c http.extraheader= fetch --depth=1 https://github.com/JoFe2/PANSPHAIRA.git cf199bbd35706bdeadb04679af7354c94caf482a
+          git -C "$KS285_PAN520_SOURCE" checkout --detach FETCH_HEAD
+          test "$(git -C "$KS285_PAN520_SOURCE" rev-parse HEAD)" = cf199bbd35706bdeadb04679af7354c94caf482a
+          test "$(git -C "$KS285_PAN520_SOURCE" rev-parse 'HEAD^{tree}')" = e8e75614ffb8f1d71a6715413386bfd5619e1c3e
+          (cd "$KS285_PAN520_SOURCE" && npm ci --ignore-scripts && npm run build)
+          # Pair CLI is relative to the KS checkout, never the producer cwd.
+          node --test tests/pan520-o2c-pair.test.mjs
+          node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS285_PAN520_SOURCE="+process.env.KS285_PAN520_SOURCE+"\n");'
       - run: npm run dist:agent-skill
       - run: npm test
+        env:
+          TMPDIR: ${{ runner.temp }}
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over
       # the provisioned roots, including net-revenue-journey and net-revenue-ledger-mapping,
       # which read only the declared `/workspace/.ks-journey-runtime` fallback.
