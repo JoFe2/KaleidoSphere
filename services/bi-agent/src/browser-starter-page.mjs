@@ -28,9 +28,10 @@ export function renderH03BrowserStarterV1(prefix){
  <dt>Laufzeit / Template</dt><dd><pre id="template-identity">—</pre></dd><dt>Begrenzter Nachweis</dt><dd><pre id="evidence">—</pre></dd></dl></section>
  <p class="note">Reset löscht nur das eigene Starterresultat und erhöht dessen Generation. Quelldaten, analytische Generationen, Sessions und fremde Instanzen bleiben unverändert. Bei outcome_unknown ist Reset gesperrt. Technische Browserprobe, keine Human-PASS- oder Verständnismessung.</p>
  <script>
- const byId=id=>document.getElementById(id);let held=null,operationId=null,started=null;
+ const byId=id=>document.getElementById(id);let held=null,operationId=null,started=null,browserFirstValueMs=null;
  const pendingStates=['running','abort_requested','outcome_unknown'];
  function show(data){held=data.template?data:{...held,...data};const r=data.result??null;
+ if(r&&started!==null&&browserFirstValueMs===null)browserFirstValueMs=performance.now()-started;
  byId('reset').disabled=!held?.instanceId||pendingStates.includes(data.state);byId('abort').disabled=!operationId||!['running','abort_requested'].includes(data.state);
  for(const id of ['catalog-run','metric-run'])byId(id).disabled=pendingStates.includes(data.state);
  byId('notice').textContent='Starter: '+data.state+' · eigene Generation '+(held?.starterGeneration??'unbekannt');
@@ -39,19 +40,19 @@ export function renderH03BrowserStarterV1(prefix){
  byId('business-status').className=verified?'verified':r?'failed':'';
  const format=v=>Array.isArray(v)?v.join(', '):String(v);byId('expected').textContent=r?format(r.expectedValue)+(r.unit?' '+r.unit:''):'—';byId('observed').textContent=r?format(r.observedValue)+(r.unit?' '+r.unit:''):'—';
  byId('source').textContent=r?JSON.stringify({source:r.source,period:r.period??null}):'—';byId('rights').textContent=r?JSON.stringify(r.rights):'—';
- byId('first-value').textContent=r?'Server '+r.firstValueMs.toFixed(2)+' ms'+(started===null?'':' · Browser '+(performance.now()-started).toFixed(2)+' ms')+' · humanUsability: NOT_OBSERVED':'Noch nicht gemessen';
+ byId('first-value').textContent=r?'Server '+r.firstValueMs.toFixed(2)+' ms'+(browserFirstValueMs===null?'':' · Browser '+browserFirstValueMs.toFixed(2)+' ms')+' · humanUsability: NOT_OBSERVED':'Noch nicht gemessen';
  byId('template-identity').textContent=JSON.stringify(r?.template??held?.template??null,null,2);byId('evidence').textContent=r?JSON.stringify(r.evidence,null,2):'—';
  }
  async function send(action,extra={}){const cs=document.cookie.split(';').map(s=>s.trim()).filter(s=>s.startsWith('__Host-ks293-csrf='));const csrf=cs.length===1?cs[0].slice('__Host-ks293-csrf='.length):'';if(!/^[a-f0-9]{64}$/.test(csrf))throw new Error('AGENT_CSRF_TOKEN_DENIED');
  const response=await fetch('${prefix}/api/chat',{method:'POST',credentials:'same-origin',mode:'same-origin',referrerPolicy:'same-origin',redirect:'error',headers:{'content-type':'application/json','x-pan527-csrf':csrf},body:JSON.stringify({schemaVersion:'kaleidosphere/browser-starter-command/v1',action,...extra})});const data=await response.json();if(!response.ok)throw new Error(data.code??'STARTER_REQUEST_DENIED');return data;}
  function denied(error){show({state:'outcome_unknown',result:null});byId('notice').textContent=error.message+' · Ausgang nicht bestätigt; Status prüfen, kein automatischer Retry/Reset.';}
  async function refresh(){try{const data=await send('status');show(data);}catch(error){denied(error);}}
- async function run(journey){operationId=journey+'-'+crypto.randomUUID();started=performance.now();show({state:'running',result:null});try{const data=await send('run',{journey,operationId});operationId=null;show(data);await refresh();}catch(error){operationId=null;denied(error);}}
+ async function run(journey){operationId=journey+'-'+crypto.randomUUID();started=performance.now();browserFirstValueMs=null;show({state:'running',result:null});try{const data=await send('run',{journey,operationId});operationId=null;show(data);await refresh();}catch(error){operationId=null;denied(error);}}
  byId('catalog-run').addEventListener('click',()=>run('catalog'));byId('metric-run').addEventListener('click',()=>run('metric'));
  byId('refresh').addEventListener('click',refresh);
  byId('helper').addEventListener('click',async()=>{try{const data=await send('suggest',{journey:'metric'});byId('suggestion').textContent=JSON.stringify(data.suggestion)+' · dispatchAuthorized: false · modelCalled: false';}catch(error){byId('suggestion').textContent=error.message;}});
  byId('abort').addEventListener('click',async()=>{try{show(await send('abort',{operationId}));}catch(error){denied(error);}});
- byId('reset').addEventListener('click',async()=>{try{show(await send('reset',{instanceId:held.instanceId,expectedGeneration:held.starterGeneration}));started=null;}catch(error){denied(error);}});
+ byId('reset').addEventListener('click',async()=>{try{show(await send('reset',{instanceId:held.instanceId,expectedGeneration:held.starterGeneration}));started=null;browserFirstValueMs=null;}catch(error){denied(error);}});
  refresh();
  </script></main></body></html>`;
 }
