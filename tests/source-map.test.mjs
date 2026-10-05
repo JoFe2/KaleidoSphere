@@ -117,6 +117,9 @@ import './relational-core-runtime-ci-binding.test.mjs';
 // K07 required local HTTP execution and explicit external target nonclaim, each once.
 import './bounded-api-read-product.test.mjs';
 import './bounded-api-read-ci-binding.test.mjs';
+// K08 cold versioned O2C recipes reuse this immutable canonical root exactly once.
+import './o2c-investigation-profile-product.test.mjs';
+import './o2c-investigation-profile-ci-binding.test.mjs';
 // KS292 independent local fact/backup adapters retain the frozen canonical root.
 import './h01-local-demo-probe.test.mjs';
 import './h01-owned-backup-guard.test.mjs';

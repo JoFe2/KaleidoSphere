@@ -198,6 +198,9 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // K07 actual local bounded HTTP; external AC4 is not qualified by this route.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/bounded-api-read-product.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/bounded-api-read-ci-binding.test.mjs' },
+  // K08 immutable O2C recipes use the same canonical parent exactly once.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/o2c-investigation-profile-product.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/o2c-investigation-profile-ci-binding.test.mjs' },
   // KS292 local observation helpers only; not shared-contract/whole-issue acceptance.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-demo-probe.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-owned-backup-guard.test.mjs' },
