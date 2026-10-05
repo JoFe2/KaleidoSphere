@@ -104,6 +104,13 @@ import './procurement-analysis-negatives.test.mjs';
 import './procurement-analysis-views.test.mjs';
 import './procurement-analysis-boundary.test.mjs';
 import './pan520-p2p-pair.test.mjs';
+// K05 native event evidence, bounded deadline forecast and narrow-profile fallback each once.
+import './pan520-stock-pair.test.mjs';
+import './stock-deadline-product.test.mjs';
+import './stock-deadline-negatives.test.mjs';
+import './stock-source-boundary.test.mjs';
+import './stock-historical-profile.test.mjs';
+import './stock-runtime-ci-binding.test.mjs';
 // KS292 independent local fact/backup adapters retain the frozen canonical root.
 import './h01-local-demo-probe.test.mjs';
 import './h01-owned-backup-guard.test.mjs';

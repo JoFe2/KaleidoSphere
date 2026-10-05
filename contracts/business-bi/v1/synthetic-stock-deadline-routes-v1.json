@@ -1,0 +1,28 @@
+{
+  "schema": "kaleidosphere/stock-deadline-fixture-routes/v1",
+  "syntheticOnly": true,
+  "portableNativeGrant": false,
+  "operations": [
+    "aggregate"
+  ],
+  "routes": [
+    {
+      "id": "K05-DEMAND-ON-TIME",
+      "path": "examples/stock/k05-demand-on-time.json",
+      "sha256": "2beae259b8e76e48d1589dd621add083ddada8df039ae98da63815971f1b56ea",
+      "revision": 1
+    },
+    {
+      "id": "K05-DEMAND-LATE",
+      "path": "examples/stock/k05-demand-late.json",
+      "sha256": "999adee502fe11609cb24cade16aa1d1abf8947fde8bad1a438add2882f2bb68",
+      "revision": 1
+    },
+    {
+      "id": "K05-HISTORICAL-NARROW-M3",
+      "path": "examples/stock/k05-historical-narrow-m3.json",
+      "sha256": "e16e4742249a08594167f119c2a42b5f9ec7796888a04c9ad0580482116e5e02",
+      "revision": 1
+    }
+  ]
+}

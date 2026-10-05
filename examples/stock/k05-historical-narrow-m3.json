@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "kaleidosphere/narrow-m3-stock-source/v1",
+  "id": "K05-HISTORICAL-NARROW-M3",
+  "revision": 1,
+  "asOf": "2026-06-30T21:59:59Z",
+  "legacyStock": {
+    "schemaVersion": "cm.fachprofil/bestand/v1",
+    "positions": [
+      {
+        "artikelId": "SYN-ART-A01",
+        "lagerortId": "LAGER-01",
+        "einheit": "STK",
+        "physisch": 2,
+        "reserviert": 2,
+        "herkunft": {
+          "quelle": "k05-local-synthetic",
+          "beobachtetAm": "2026-06-30T21:59:59Z",
+          "quelleRevision": "k05-stock-rev1"
+        }
+      }
+    ],
+    "verlauf": [],
+    "lageDigest": "739251cb6eb0783c553ab2eb546abec1c3a0870f69369947e856df3854519605"
+  }
+}

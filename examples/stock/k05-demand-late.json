@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "kaleidosphere/stock-deadline-source/v1",
+  "id": "K05-DEMAND-LATE",
+  "revision": 1,
+  "scope": {
+    "source_id": "SYN-K05-DEADLINE",
+    "tenant_id": "SYN-TENANT-01",
+    "entity_id": "SYN-ENTITY-01",
+    "warehouse_id": "WH-01",
+    "item_id": "ARTICLE-A",
+    "currency": "EUR",
+    "quantity_unit": "STK"
+  },
+  "stock": {
+    "asOf": "2026-06-30T23:59:59+02:00",
+    "physical": 2,
+    "reserved": 2,
+    "blocked": 0,
+    "free": 0,
+    "reservationProvenance": "EXPLICIT_SYNTHETIC_SCENARIO_ASSUMPTION_NOT_EVENT_EVIDENCE"
+  },
+  "stockProvenance": {
+    "profile": "K05_DECLARED_SYNTHETIC_STOCK_SCENARIO_V1",
+    "revision": 1,
+    "asOf": "2026-06-30T23:59:59+02:00",
+    "disjointReservedAndBlocked": true
+  },
+  "coverage": {
+    "commitments": "COMPLETE_DECLARED_SYNTHETIC_SET",
+    "arrivals": "COMPLETE_DECLARED_SYNTHETIC_SET"
+  },
+  "commitments": [
+    {
+      "id": "DEMAND-01",
+      "quantity": 6,
+      "reservedQuantity": 2,
+      "acceptedAt": "2026-06-29T10:00:00+02:00",
+      "dueAt": "2026-07-01T10:00:00+02:00",
+      "sourceReference": "synthetic:k05-accepted-demand-rev1"
+    }
+  ],
+  "expectedArrivals": [
+    {
+      "id": "ARRIVAL-01",
+      "quantity": 4,
+      "knownAt": "2026-06-29T12:00:00+02:00",
+      "availableAt": "2026-07-01T11:00:00+02:00",
+      "sourceReference": "synthetic:k05-confirmed-arrival-rev1"
+    }
+  ],
+  "consumptionHistory": null,
+  "valuationProfile": null
+}

@@ -185,6 +185,13 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/procurement-analysis-views.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/procurement-analysis-boundary.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/pan520-p2p-pair.test.mjs' },
+  // K05 actual native and independently expected synthetic stock scopes, exactly once.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/pan520-stock-pair.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-deadline-product.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-deadline-negatives.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-source-boundary.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-historical-profile.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-runtime-ci-binding.test.mjs' },
   // KS292 local observation helpers only; not shared-contract/whole-issue acceptance.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-demo-probe.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-owned-backup-guard.test.mjs' },
