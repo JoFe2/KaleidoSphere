@@ -192,6 +192,9 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-source-boundary.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-historical-profile.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-runtime-ci-binding.test.mjs' },
+  // K06 real optional MariaDB worker and exact required runtime, never skipped/reached twice.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/relational-core-product.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/relational-core-runtime-ci-binding.test.mjs' },
   // KS292 local observation helpers only; not shared-contract/whole-issue acceptance.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-demo-probe.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-owned-backup-guard.test.mjs' },

@@ -4,6 +4,31 @@
   "censusRevisions": [
     {
       "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "a392665d69ebd7c0c900e710600dd401af480acb",
+      "predecessorOccurrences": 1118,
+      "predecessorInventorySha256": "ca0681314cce479d0b219c075aadef0a88f8f95d9822d8098056ffc6c8ffd38f",
+      "addedOccurrences": 16,
+      "removedOccurrences": 0,
+      "occurrences": 1134,
+      "addedIdentityClasses": [
+        "environment"
+      ],
+      "origin": "KS288_OPTIONAL_MARIADB_READ_ONLY_WORKER",
+      "addedValues": [
+        "CM_MARIADB_PASSWORD"
+      ],
+      "addedPaths": [
+        "docs/evidence/relational-core-worker-v1.md",
+        "services/bi-control/src/db-analyzer/relational-core-workflow.mjs",
+        "services/bi-control/src/db-analyzer/sqlalchemy-core-worker.py",
+        "tests/helpers/relational-core-native-worker-probe.py",
+        "tests/relational-core-product.test.mjs",
+        "tests/relational-core-runtime-ci-binding.test.mjs"
+      ],
+      "note": "Register only actual new task-private MariaDB worker password ENV KEY occurrences, never credential values. Preserve every predecessor occurrence/census revision, scanner/exclusions/baseCommit and all PostgreSQL/historical evidence. No namespace rename, runtime/source-right widening or migration."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
       "predecessorCensusCommit": "4602cb39d358b340c919894b942d816bca121964",
       "predecessorOccurrences": 1114,
       "predecessorInventorySha256": "71ad12698caf3c30090eb33d803374d175829b393eeac8d53f15d8beeabad562",
@@ -425,6 +450,86 @@
       "identityClass": "environment",
       "value": "CM_GOVERNED_INPUT",
       "path": "dependencies/pansphaira/dist/packages/contracts/src/voice-local-ptt.js"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "docs/evidence/relational-core-worker-v1.md"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "services/bi-control/src/db-analyzer/relational-core-workflow.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "services/bi-control/src/db-analyzer/relational-core-workflow.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "services/bi-control/src/db-analyzer/sqlalchemy-core-worker.py"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "services/bi-control/src/db-analyzer/sqlalchemy-core-worker.py"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/helpers/relational-core-native-worker-probe.py"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/helpers/relational-core-native-worker-probe.py"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-product.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/relational-core-runtime-ci-binding.test.mjs"
     },
     {
       "identityClass": "environment",

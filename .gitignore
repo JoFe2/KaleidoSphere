@@ -10,6 +10,8 @@
 .ks-journey-runtime/
 # K02 task-private pinned DuckDB runtime; only its binding/manifest is tracked.
 .ks-file-runtime/
+# K06 optional task-private SQLAlchemy Core runtime; only exact lock/source is tracked.
+.ks-relational-core-runtime/
 node_modules/
 npm-debug.log*
 *.tar
