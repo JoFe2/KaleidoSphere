@@ -16,4 +16,5 @@ test('H03 optional native browser serves two usable distinct starter controls an
  'id="expected"','id="observed"','id="business-status"','id="template-identity"','id="first-value"','__Host-ks293-csrf'])assert.ok(html.includes(text),'missing real starter surface '+text);
  assert.equal(html.includes('type="file"'),false);assert.equal(html.includes('localStorage'),false);
  assert.match(response.headers.get('content-security-policy'),/connect-src 'self'/);
+ assert.match(html,/mode:'same-origin',referrerPolicy:'same-origin'/,'the protected same-origin POST must preserve exact Origin under the ingress no-referrer policy');
 });
