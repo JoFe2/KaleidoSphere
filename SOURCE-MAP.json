@@ -20,7 +20,7 @@
   "files": {
     "tests/h05-template-native-product-route.test.mjs": "64531caf3262ed39e8b45d164af74a387621fd979f3cf100df040d88dc3a22a2",
     "tests/h05-shared-runtime-source.test.mjs": "5d17b52f9173c07c3aa835248c7f96d9e184790fd02ed0264b3c4418faa24fbc",
-    "tests/h05-runtime-ci-binding.test.mjs": "b4b9e45415438920998d5d3ead660be794d046c132c111ae53e03d599aece503",
+    "tests/h05-runtime-ci-binding.test.mjs": "8a53bf33017b8c47be8b987c2161aa9cedac20427779fcd2c2e5f074e7b33200",
     "tests/h05-native-resource-store.test.mjs": "18f690e7d9dd648cfc6484fc7af839c1600d243516c490a105ae9e7c160e9b70",
     "tests/h05-native-openai-consumer.test.mjs": "147ad2e8fb13c1e697a91de1ad88b0de5600fa1b96883cb0a9285f06f3214bbc",
     "tests/h05-native-model-unknown-restart.test.mjs": "a27977c305e8f583a13fe9df08c0ea0059e1ba35704b93933fe7487cf2e9d78c",
@@ -35,7 +35,7 @@
     "services/bi-control/src/runtime/h05-native-model-transport.mjs": "00c9e57b09183efa8b033ac35cdc25924bbcb8e309bd5691a62396756d29ed60",
     "services/bi-control/src/runtime/h05-native-broker-runtime.mjs": "d3c487e7cfd127d47a78f58dded78dd29cb29495aa2f6f19a6052eda43aba7b7",
     "services/bi-control/src/runtime/h05-closed-runtime-template.mjs": "a84e9db6d89a34ef2e55eea03635111d3d3a2509f9c3f612139a1d3a433398d5",
-    "services/bi-control/Dockerfile.h05-native": "91361a6335198e81c2f1309a8c5b12070ab2dcca38d16fe20cef88bc7e367603",
+    "services/bi-control/Dockerfile.h05-native": "d5923bdd66b88da56c284541e5eac73abe7ee13827be1bdc27d737d05e04d1bb",
     "scripts/hosting/h05-native-image-product.mjs": "950e21d958f0fa6f296fe466e14b6983438804938e95598a90a58b4c7017bf5b",
     "docs/hosting/ks295/README.md": "63b9eabb5b0f6de347cd58a852cb6d90e20d70c7db62135f14f4a45104722344",
     "contracts/dependencies/pan529-runtime-budget-development-v1.json": "4f8ed30d2446639fa4f3b28589a8c9ef362ca8b1083f702fabcc40d22b887255",
