@@ -1,0 +1,78 @@
+{
+  "schemaVersion": "kaleidosphere.api/bounded-read-local-verification/v1",
+  "issue": 289,
+  "scope": "LOCAL_SYNTHETIC_FIXTURE_ONLY",
+  "wholeIssueComplete": false,
+  "actualAuthorizedTargetSelected": false,
+  "actualVendorQualified": false,
+  "baselineCommit": "9bc846e90856a0646679fe1d23fa2f1d9c49a65f",
+  "originalIssueBodySha256": "8cf205f76194048dc261b16d8259741333484581cce3edbbfd6ac2a63980c5a2",
+  "executedProductCommand": "node --test --test-reporter=tap --test-concurrency=1 tests/bounded-api-read-product.test.mjs",
+  "actualRun": {
+    "label": "actual-executor-origin-binding-green",
+    "exit": 0,
+    "counts": {
+      "tests": 30,
+      "pass": 30,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0,
+      "todo": 0
+    },
+    "stderrBytes": 0,
+    "productSha256": "2918bc60ae75a3f0caddf17b217eb16bd473a360a0da5ff18e60bb1c2e538a28",
+    "testSha256": "40ca7447ea6ddb1918c3eb447cbf6e1cfea7a9d3a861a10361633496c09173be"
+  },
+  "sourcePins": {
+    "services/bi-control/src/db-analyzer/bounded-api-read-workflow.mjs": "2918bc60ae75a3f0caddf17b217eb16bd473a360a0da5ff18e60bb1c2e538a28",
+    "tests/bounded-api-read-product.test.mjs": "40ca7447ea6ddb1918c3eb447cbf6e1cfea7a9d3a861a10361633496c09173be",
+    "services/bi-control/src/db-analyzer/workflow.mjs": "15fc1e0ebbb3793d38ffcc12152c44bc3e2808d91b0621695a426013566071ba"
+  },
+  "localOracle": {
+    "uniqueObjects": 4,
+    "duplicateObjects": 1,
+    "pages": 3,
+    "nonNullFieldCounts": {
+      "id": 4,
+      "category": 3,
+      "quantity": 3
+    },
+    "source": "independent four-row synthetic collection in executable server test"
+  },
+  "originalCriteria": [
+    {
+      "id": "AC1",
+      "state": "LOCAL_SCOPE_VERIFIED_REAL_TARGET_UNVERIFIED",
+      "evidence": "Actual three-page GET, identical/conflicting duplicate IDs, looping/expired cursors, terminal count mismatch, page cap and true empty collection."
+    },
+    {
+      "id": "AC2",
+      "state": "LOCAL_SCOPE_VERIFIED_REAL_TARGET_UNVERIFIED",
+      "evidence": "Executor-only generated credential and executor origin binding; exact 127.0.0.1 origin, GET-only closed endpoint/field set; all redirects refused; no source row, origin, env name or token export."
+    },
+    {
+      "id": "AC3",
+      "state": "LOCAL_SCOPE_VERIFIED_REAL_TARGET_UNVERIFIED",
+      "evidence": "Actual collection revision/count drift and HTTP412 rejected; collection-wide ETag/If-Match bound per page."
+    },
+    {
+      "id": "AC4",
+      "state": "BLOCKED_EXTERNAL_AUTHORIZED_TARGET_ACCESS_DATA",
+      "evidence": "No concrete real target, approved identity/access or permitted source data was supplied or found. Local server is explicitly not a manufacturer integration."
+    }
+  ],
+  "originalNegativeCases": {
+    "Pagination-Schleife": "K07_PAGINATION_LOOP",
+    "abgelaufener Cursor": "K07_CURSOR_EXPIRED",
+    "429/Timeout als Ende interpretiert": "INCOMPLETE/K07_RATE_LIMITED or K07_TIMEOUT, never terminal success",
+    "Redirect zu fremdem Host": "K07_REDIRECT_DENIED; actual second server receives zero requests",
+    "doppelte IDs über Seiten": "Equal duplicate counted once; conflicting duplicate rejected K07_DUPLICATE_CONFLICT"
+  },
+  "resumeTrigger": "Concrete authorized endpoint/protocol/object/field scope, existing permitted executor identity/read-only access, minimized permitted real data and independent expected result. Then implement only that selected real adapter and qualify the separate real product scope.",
+  "sourceRightsAcquired": false,
+  "vendorRequestsMade": 0,
+  "credentialsPersistedInEvidence": false,
+  "localFixtureSubstitutesForAC4": false,
+  "requiredHostedCIClaimed": false,
+  "releaseClaimed": false
+}

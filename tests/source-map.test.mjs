@@ -114,6 +114,9 @@ import './stock-runtime-ci-binding.test.mjs';
 // K06 actual optional worker and mandatory exact-runtime binding retain this root once.
 import './relational-core-product.test.mjs';
 import './relational-core-runtime-ci-binding.test.mjs';
+// K07 required local HTTP execution and explicit external target nonclaim, each once.
+import './bounded-api-read-product.test.mjs';
+import './bounded-api-read-ci-binding.test.mjs';
 // KS292 independent local fact/backup adapters retain the frozen canonical root.
 import './h01-local-demo-probe.test.mjs';
 import './h01-owned-backup-guard.test.mjs';
