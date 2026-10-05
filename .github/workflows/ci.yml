@@ -163,6 +163,31 @@ jobs:
                     tests/h02-native-protected-ingress.test.mjs \
                     tests/h02-https-network-boundary.test.mjs
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS293_PAN527_SOURCE="+process.env.KS293_PAN527_SOURCE+"\nKS293_PAN527_SESSION_SOURCE="+process.env.KS293_PAN527_SESSION_SOURCE+"\n");'
+      - name: Provision and execute the exact public PAN529 template and native budget contract
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          export GIT_TERMINAL_PROMPT=0
+          export KS_H05_PAN_SOURCE_ROOT="$RUNNER_TEMP/ks295-pan529-6be21295"
+          git init "$KS_H05_PAN_SOURCE_ROOT"
+          # Exact public development contract only, not a source, execution or release grant.
+          git -C "$KS_H05_PAN_SOURCE_ROOT" -c credential.helper= -c http.extraheader= fetch --depth=1 https://github.com/JoFe2/PANSPHAIRA.git 6be212953b2cb52f46347e10132d13b95f881f29
+          git -C "$KS_H05_PAN_SOURCE_ROOT" checkout --detach FETCH_HEAD
+          test "$(git -C "$KS_H05_PAN_SOURCE_ROOT" rev-parse HEAD)" = 6be212953b2cb52f46347e10132d13b95f881f29
+          test "$(git -C "$KS_H05_PAN_SOURCE_ROOT" rev-parse 'HEAD^{tree}')" = 3b8d7b6b5f29fe4b0736a00d3db5dd380bfefcef
+          (cd "$KS_H05_PAN_SOURCE_ROOT" && npm ci --ignore-scripts && npm run build)
+          # Native consumer-owned SQLite, actual authenticated HTTP, race/restart and template paths.
+          node --test tests/h05-closed-runtime-template.test.mjs \
+                    tests/h05-native-broker-runtime.test.mjs \
+                    tests/h05-native-control-route.test.mjs \
+                    tests/h05-native-model-idempotency.test.mjs \
+                    tests/h05-native-model-retry-custody.test.mjs \
+                    tests/h05-native-model-unknown-restart.test.mjs \
+                    tests/h05-native-openai-consumer.test.mjs \
+                    tests/h05-native-resource-store.test.mjs \
+                    tests/h05-runtime-ci-binding.test.mjs \
+                    tests/h05-shared-runtime-source.test.mjs \
+                    tests/h05-template-native-product-route.test.mjs
+          node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS_H05_PAN_SOURCE_ROOT="+process.env.KS_H05_PAN_SOURCE_ROOT+"\n");'
       - run: npm run dist:agent-skill
       - run: npm test
         env:

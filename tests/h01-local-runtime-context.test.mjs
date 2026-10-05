@@ -147,3 +147,19 @@ test('H01 lifecycle never treats stale or post-receipt state as a definitive out
     }
   } finally { releaseH01PanRuntimeSourceV1(source); }
 });
+
+// Shape-only unit metadata; exporting this identity never grants execution or
+// makes these fixtures a native runtime/image qualification.
+test('H01 captured identity is available only through the held opaque owner context',async()=>{
+  const source=await loadH01PanRuntimeSourceV1(sourceRoot);
+  try{
+    const mod=await import(moduleUrl.href);
+    assert.equal(typeof mod.readH01CapturedRuntimeIdentityV1,'function','missing captured identity owner-only seam');
+    const handle=mod.captureH01LocalRuntimeContextV1(source,spec());
+    const captured=mod.readH01CapturedRuntimeIdentityV1(handle);
+    assert.deepEqual(captured.identity,identity());assert.equal(captured.executionAuthorityGranted,false);
+    assert.ok(Object.isFrozen(captured)&&Object.isFrozen(captured.identity));
+    assert.throws(()=>mod.readH01CapturedRuntimeIdentityV1({...handle}),/H01_LOCAL_CONTEXT_DENIED/);
+    assert.throws(()=>mod.readH01CapturedRuntimeIdentityV1({identity:identity(),state:'READY'}),/H01_LOCAL_CONTEXT_DENIED/);
+  }finally{releaseH01PanRuntimeSourceV1(source);}
+});

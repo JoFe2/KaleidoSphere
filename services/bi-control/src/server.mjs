@@ -309,6 +309,29 @@ function send(response, status, value) {
 
 const token = await secret('CONTROL_TOKEN_FILE', 'CONTROL_TOKEN_MISSING');
 await mkdir(receiptDir, {recursive: true});
+// Explicit local synthetic-only H05 composition. No default/provider change,
+// paid credential, arbitrary target, runtime grant or new authorization path.
+let h05Runtime, h05Source, releaseH05Source, h05OwnedTemplate, h05TemplateApi, h05NativeApi, h05NativeOptions, h05PlannedDigest;
+const h05OptIn = process.env.KS_H05_NATIVE_PROBE_OPT_IN ?? 'false';
+if (!['true', 'false'].includes(h05OptIn)) throw coded('H05_NATIVE_RUNTIME_OPT_IN_DENIED');
+if (h05OptIn === 'true') {
+  if (process.env.CONTROL_BIND_ADDRESS !== '127.0.0.1') throw coded('H05_NATIVE_RUNTIME_LOOPBACK_REQUIRED');
+  const sdk = await import('./runtime/h05-shared-runtime-source.mjs');
+  const native = await import('./runtime/h05-native-broker-runtime.mjs'); h05NativeApi = native;
+  h05Source = await sdk.loadH05SharedRuntimeSourceV1({ optIn: true, sourceRoot: process.env.KS_H05_PAN_SOURCE_ROOT });
+  releaseH05Source = () => { h05OwnedTemplate?.release(); sdk.releaseH05SharedRuntimeSourceV1(h05Source); };
+  try {
+    h05NativeOptions = { optIn: true,
+      stateRoot: process.env.KS_H05_NATIVE_STATE_ROOT, baseUrl: process.env.KS_H05_SYNTHETIC_BASE_URL,
+      limits: { modelUnits: Number(process.env.KS_H05_MODEL_UNITS ?? '64'), runtimeUnits: Number(process.env.KS_H05_RUNTIME_UNITS ?? '1') } };
+    if (process.env.KS_H05_OWNER_CONTEXT_ROOT !== undefined) {
+      h05TemplateApi = await import('./runtime/h05-closed-runtime-template.mjs');
+      h05OwnedTemplate = await h05TemplateApi.loadH05OwnedServerTemplateV1(h05Source,
+        process.env.KS292_PAN526_SOURCE, process.env.KS_H05_OWNER_CONTEXT_ROOT);
+      // Planning custody only; no ledger creation, reservation or dispatch.
+    } else h05Runtime = native.createH05NativeBrokerRuntimeV1(h05Source, h05NativeOptions);
+  } catch (error) { releaseH05Source(); throw error; }
+}
 const server = http.createServer(async (request, response) => {
   try {
     if (request.method === 'GET' && request.url === '/healthz') return send(response, 200, {status: 'ok'});
@@ -321,8 +344,34 @@ const server = http.createServer(async (request, response) => {
         catalogReady: latest?.analysis?.snapshotSha256 ? true : false,
         generation: {state: active.state, generationId: active.generationId ?? null, code: active.code}});
     }
+    if (request.method === 'GET' && request.url === '/v1/runtime/template') {
+      if (!h05OwnedTemplate) throw coded('H05_SERVER_TEMPLATE_DISABLED');
+      return send(response, 200, { template: h05TemplateApi.readH05ServerRuntimeTemplateV1(h05OwnedTemplate.templateContext),
+        planningMetadataOnly: true, runtimeActivationGranted: false });
+    }
+    if (request.method === 'GET' && request.url === '/v1/runtime/budget') {
+      if (!h05Runtime) throw coded('H05_NATIVE_RUNTIME_DISABLED');
+      return send(response, 200, h05Runtime.snapshot());
+    }
     if (request.method !== 'POST') throw coded('CONTROL_ROUTE_DENIED');
     const body = await bodyJson(request);
+    if (request.url === '/v1/runtime/plan') {
+      if (!h05OwnedTemplate) throw coded('H05_SERVER_TEMPLATE_DISABLED');
+      const plan = h05TemplateApi.planH05ClosedRuntimeTemplateV1(h05OwnedTemplate.templateContext, body, h05PlannedDigest ?? null);
+      h05PlannedDigest = plan.runtimeTemplateDigest;
+      return send(response, 200, plan);
+    }
+    if (request.url === '/v1/runtime/model-probe') {
+      if (h05OwnedTemplate && !h05Runtime) {
+        if (!h05PlannedDigest) throw coded('H05_TEMPLATE_PLAN_REQUIRED');
+        const preflight = h05NativeApi.preflightH05NativeModelRequestV1(h05Source, body, h05OwnedTemplate.templateContext);
+        if (preflight.outcome !== 'ALLOW') return send(response, 409, preflight);
+        h05Runtime = h05NativeApi.createH05NativeBrokerRuntimeV1(h05Source, h05NativeOptions, h05OwnedTemplate.templateContext);
+      }
+      if (!h05Runtime) throw coded('H05_NATIVE_RUNTIME_DISABLED');
+      const result = await h05Runtime.invoke(body);
+      return send(response, result.outcome === 'ALLOW' ? 200 : 409, result);
+    }
     if (request.url === '/v1/analyze') { validateActionRequest(body, 'analyze'); return send(response, 200, await analyze()); }
     if (request.url === '/v1/publish') { validateActionRequest(body, 'publish'); return send(response, 200, await publish()); }
     if (request.url === '/v1/readback') { validateActionRequest(body, 'readback'); return send(response, 200, await readback()); }
@@ -339,4 +388,8 @@ const server = http.createServer(async (request, response) => {
     send(response, code === 'CONTROL_AUTH_DENIED' ? 401 : 400, {status: 'DENIED', code});
   }
 });
+if (h05Source) {
+  server.once('close', () => { h05Runtime?.close(); releaseH05Source(); });
+  process.once('SIGTERM', () => server.close(() => process.exit(0)));
+}
 server.listen(port, process.env.CONTROL_BIND_ADDRESS ?? '0.0.0.0');
