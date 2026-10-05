@@ -268,6 +268,26 @@
         "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
       ],
       "note": "Register exact additional occurrences of existing fixture environment, package and stable schema identities in retained actual synthetic native readback. Every predecessor occurrence and census revision, original baseCommit, scanner/exclusions and compatibility plan remain unchanged. No technical identity rename, new authority, historical proof rewrite or broad migration."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "0be641c6926a959ba8a43d0d834d4f5bbeb0a0a4",
+      "predecessorOccurrences": 1134,
+      "predecessorInventorySha256": "9faffb265e499f1e4a0890a8b8a15d06fa5a1de8ff8fc751f68f9c6638887414",
+      "addedOccurrences": 1,
+      "removedOccurrences": 0,
+      "occurrences": 1135,
+      "addedIdentityClasses": [
+        "schemaIdentity"
+      ],
+      "origin": "KS296_REAL_NATIVE_RESTORE_WRONG_CONTRACT_VERSION_NEGATIVE",
+      "addedValues": [
+        "chimpmaera.bi/projection-generation/v999"
+      ],
+      "addedPaths": [
+        "tests/h08-portable-native-product.test.mjs"
+      ],
+      "note": "Register only the one actual deliberately unsupported legacy projection-generation contract version in the native H08 negative test. Every predecessor occurrence/revision, original baseCommit, scanner/exclusions, compatibility plan and accepted product bytes remain unchanged. The mismatched version is denied; no runtime migration, schema rename or expanded source rights."
     }
   ],
   "occurrences": [
@@ -2440,6 +2460,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/projection-generation/v1",
       "path": "services/bi-control/src/projection-generation.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v999",
+      "path": "tests/h08-portable-native-product.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",
