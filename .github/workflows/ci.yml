@@ -175,6 +175,9 @@ jobs:
           test "$(git -C "$KS_H05_PAN_SOURCE_ROOT" rev-parse HEAD)" = 6be212953b2cb52f46347e10132d13b95f881f29
           test "$(git -C "$KS_H05_PAN_SOURCE_ROOT" rev-parse 'HEAD^{tree}')" = 3b8d7b6b5f29fe4b0736a00d3db5dd380bfefcef
           (cd "$KS_H05_PAN_SOURCE_ROOT" && npm ci --ignore-scripts && npm run build)
+          # Persist only the owned checkout's ordinary stat cache before read-only use-time guards.
+          git -C "$KS_H05_PAN_SOURCE_ROOT" update-index --refresh
+          test "$(git -C "$KS_H05_PAN_SOURCE_ROOT" write-tree)" = 3b8d7b6b5f29fe4b0736a00d3db5dd380bfefcef
           # Native consumer-owned SQLite, actual authenticated HTTP, race/restart and template paths.
           # Serialize CPU-heavy suite processes, not the 100 actual reservations inside each test.
           node --test --test-concurrency=1 tests/h05-closed-runtime-template.test.mjs \
