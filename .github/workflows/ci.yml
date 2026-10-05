@@ -176,7 +176,8 @@ jobs:
           test "$(git -C "$KS_H05_PAN_SOURCE_ROOT" rev-parse 'HEAD^{tree}')" = 3b8d7b6b5f29fe4b0736a00d3db5dd380bfefcef
           (cd "$KS_H05_PAN_SOURCE_ROOT" && npm ci --ignore-scripts && npm run build)
           # Native consumer-owned SQLite, actual authenticated HTTP, race/restart and template paths.
-          node --test tests/h05-closed-runtime-template.test.mjs \
+          # Serialize CPU-heavy suite processes, not the 100 actual reservations inside each test.
+          node --test --test-concurrency=1 tests/h05-closed-runtime-template.test.mjs \
                     tests/h05-native-broker-runtime.test.mjs \
                     tests/h05-native-control-route.test.mjs \
                     tests/h05-native-model-idempotency.test.mjs \
