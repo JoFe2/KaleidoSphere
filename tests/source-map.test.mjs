@@ -158,6 +158,11 @@ import './h05-template-native-product-route.test.mjs';
 import './h03-starter-product.test.mjs';
 import './h03-starter-browser-surface.test.mjs';
 import './h03-starter-ci-binding.test.mjs';
+// KS296 optional portable native generation and owned lifecycle, canonical once.
+import './h08-portable-native-product.test.mjs';
+import './h08-portable-lifecycle.test.mjs';
+import './h08-portable-cli.test.mjs';
+import './h08-runtime-ci-binding.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
