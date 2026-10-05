@@ -120,6 +120,17 @@ jobs:
                     tests/procurement-analysis-boundary.test.mjs \
                     tests/pan520-p2p-pair.test.mjs
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS286_PAN520_SOURCE="+process.env.KS286_PAN520_SOURCE+"\n");'
+      - name: Execute required stock provenance and bounded deadline product
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          test -d "${KS285_PAN520_SOURCE:?}"
+          # Existing exact native source and separately declared synthetic forecast, never a stub.
+          node --test --test-concurrency=1 tests/pan520-stock-pair.test.mjs \
+                    tests/stock-deadline-product.test.mjs \
+                    tests/stock-deadline-negatives.test.mjs \
+                    tests/stock-source-boundary.test.mjs \
+                    tests/stock-historical-profile.test.mjs \
+                    tests/stock-runtime-ci-binding.test.mjs
       - name: Provision and execute the exact public PAN526 shared runtime contract
         run: |
           export TMPDIR="$RUNNER_TEMP"

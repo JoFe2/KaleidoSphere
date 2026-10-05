@@ -61,7 +61,7 @@ const WORKFLOW_PATH = '.github/workflows/ci.yml';
 // committed pinned provisioner moved THIS binding only; the historical C2-correction original
 // below is immutable and is never re-minted.
 // KS248 adds an exact public paired evaluation; all historical workflow/certificate pins stay fixed.
-const CURRENT_CI_SHA256 = '208a2d7768afe0f2ea992b8d3c37fa75283a7cf0d217b4d68aff183a30401744';
+const CURRENT_CI_SHA256 = 'b61640450a7ba02246da3becbc7e4fa694cf1b6d1f0d1c1da452d6e1e00f290d';
 const C2_CORRECTION_COMMIT = '4bf55758904f04369afb74b6d185a511f731c71d';
 // The recorded HISTORICAL workflow original at the C2 correction endpoint (frozen, not touched).
 const C2_CORRECTION_CI_SHA256 = '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9';
