@@ -154,6 +154,10 @@ import './h05-native-resource-store.test.mjs';
 import './h05-runtime-ci-binding.test.mjs';
 import './h05-shared-runtime-source.test.mjs';
 import './h05-template-native-product-route.test.mjs';
+// KS294 bounded actual starter, served script and binding, each exactly once.
+import './h03-starter-product.test.mjs';
+import './h03-starter-browser-surface.test.mjs';
+import './h03-starter-ci-binding.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

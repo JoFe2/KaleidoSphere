@@ -234,6 +234,10 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-runtime-ci-binding.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-shared-runtime-source.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-template-native-product-route.test.mjs' },
+  // KS294 bounded product/server-script/current binding, canonical once.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h03-starter-product.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h03-starter-browser-surface.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h03-starter-ci-binding.test.mjs' },
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },

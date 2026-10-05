@@ -14,6 +14,13 @@ if (controlBase !== 'http://bi-control:18089') throw new Error('AGENT_CONTROL_RO
 const routePrefix = process.env.AGENT_ROUTE_PREFIX ?? '';
 if (routePrefix !== '' && !/^\/t\/[a-z0-9][a-z0-9-]{0,63}$/.test(routePrefix)) throw new Error('AGENT_ROUTE_PREFIX_DENIED');
 
+let h03PageApi;
+const h03OptIn=process.env.KS_H03_STARTER_OPT_IN??'false';
+if(!['true','false'].includes(h03OptIn))throw new Error('H03_OPT_IN_DENIED');
+if(h03OptIn==='true'){
+ if(!routePrefix)throw new Error('H03_PROTECTED_PREFIX_REQUIRED');
+ h03PageApi=await import('./browser-starter-page.mjs');
+}
 const brandAssetSpecs = Object.freeze([
   ['/assets/kaleidosphere-logo.svg', 'kaleidosphere-logo.svg', 'image/svg+xml'],
   ['/assets/kaleidosphere-logo.png', 'kaleidosphere-logo.png', 'image/png'],
@@ -262,8 +269,12 @@ const server = http.createServer(async (request, response) => {
       const asset = brandAssets.get(requestPath);
       return send(response, 200, asset.contentType, asset.body, 'public, max-age=3600');
     }
-    if (request.method === 'GET' && requestPath === '/') return send(response, 200, 'text/html', page);
-    if (request.method === 'POST' && requestPath === '/api/chat') return send(response, 200, 'application/json', await execute(validatePrompt(await requestJson(request))));
+    if (request.method === 'GET' && requestPath === '/') return send(response, 200, 'text/html', h03PageApi?h03PageApi.renderH03BrowserStarterV1(routePrefix):page);
+    if (request.method === 'POST' && requestPath === '/api/chat') {
+      const body=await requestJson(request);
+      if(h03PageApi)return send(response,200,'application/json',await controlJson('/v1/starter',h03PageApi.validateH03BrowserCommandV1(body)));
+      return send(response,200,'application/json',await execute(validatePrompt(body)));
+    }
     if (request.method === 'POST' && requestPath === '/v2/intents') return send(response, 200, 'application/json', await executeExternal(await requestJson(request)));
     throw coded('AGENT_ROUTE_DENIED');
   } catch (error) {

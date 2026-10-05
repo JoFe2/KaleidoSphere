@@ -332,6 +332,17 @@ if (h05OptIn === 'true') {
     } else h05Runtime = native.createH05NativeBrokerRuntimeV1(h05Source, h05NativeOptions);
   } catch (error) { releaseH05Source(); throw error; }
 }
+// Optional bounded synthetic starter; existing default control routes remain unchanged.
+let h03Starter;
+const h03OptIn = process.env.KS_H03_STARTER_OPT_IN ?? 'false';
+if (!['true', 'false'].includes(h03OptIn)) throw coded('H03_OPT_IN_DENIED');
+if (h03OptIn === 'true') {
+  if (process.env.CONTROL_BIND_ADDRESS !== '127.0.0.1' || (process.env.BI_SOURCE_MODE ?? 'fixture') !== 'fixture' || engine !== 'mssql') throw coded('H03_SYNTHETIC_LOOPBACK_REQUIRED');
+  const starter = await import('./hosting/browser-starter.mjs');
+  h03Starter = await starter.loadH03BrowserStarterV1({panRoot:process.env.KS_H03_PAN_SOURCE_ROOT,
+    ownerRoot:process.env.KS_H03_OWNER_ROOT, tenantId:process.env.KS_H03_TENANT_ID,stateRoot:process.env.KS_H03_STATE_ROOT,
+    productRoot:process.env.KS_H03_PRODUCT_ROOT ?? path.resolve(import.meta.dirname,'../../..'), analyze, catalogQuestion});
+}
 const server = http.createServer(async (request, response) => {
   try {
     if (request.method === 'GET' && request.url === '/healthz') return send(response, 200, {status: 'ok'});
@@ -372,6 +383,10 @@ const server = http.createServer(async (request, response) => {
       const result = await h05Runtime.invoke(body);
       return send(response, result.outcome === 'ALLOW' ? 200 : 409, result);
     }
+    if (request.url === '/v1/starter') {
+      if (!h03Starter) throw coded('H03_STARTER_DISABLED');
+      return send(response, 200, await h03Starter.invoke(body));
+    }
     if (request.url === '/v1/analyze') { validateActionRequest(body, 'analyze'); return send(response, 200, await analyze()); }
     if (request.url === '/v1/publish') { validateActionRequest(body, 'publish'); return send(response, 200, await publish()); }
     if (request.url === '/v1/readback') { validateActionRequest(body, 'readback'); return send(response, 200, await readback()); }
@@ -388,6 +403,10 @@ const server = http.createServer(async (request, response) => {
     send(response, code === 'CONTROL_AUTH_DENIED' ? 401 : 400, {status: 'DENIED', code});
   }
 });
+if (h03Starter) {
+  server.once('close', () => h03Starter.close());
+  if (!h05Source) process.once('SIGTERM', () => server.close(() => process.exit(0)));
+}
 if (h05Source) {
   server.once('close', () => { h05Runtime?.close(); releaseH05Source(); });
   process.once('SIGTERM', () => server.close(() => process.exit(0)));
