@@ -65,6 +65,16 @@ export function assessH01LocalRuntimeReadinessV1(handle, value) {
       sourceObservationDigest: hash(observation) } });
 }
 
+// Owner-only read of the identity already held by the opaque local context.
+// This acquires no new observation, readiness, execution or activation grant;
+// a JSON copy or a client-supplied READY cannot reconstruct the capability.
+export function readH01CapturedRuntimeIdentityV1(handle) {
+  const held = contexts.get(handle);
+  if (!held) deny();
+  const identity = applyH01PanRuntimeContractV1(held.source, 'validateRuntimeIdentityV1', held.identity);
+  return Object.freeze({ identity, executionAuthorityGranted: false });
+}
+
 const dispatches = new WeakMap();
 
 export function captureH01LocalLifecycleJobV1(handle, value) {

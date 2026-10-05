@@ -4,6 +4,29 @@
   "censusRevisions": [
     {
       "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "4602cb39d358b340c919894b942d816bca121964",
+      "predecessorOccurrences": 1114,
+      "predecessorInventorySha256": "71ad12698caf3c30090eb33d803374d175829b393eeac8d53f15d8beeabad562",
+      "addedOccurrences": 4,
+      "removedOccurrences": 0,
+      "occurrences": 1118,
+      "addedIdentityClasses": [
+        "environment",
+        "schemaIdentity"
+      ],
+      "origin": "KS295_NATIVE_SHARED_TEMPLATE_SHAPE_ONLY_EXISTING_READBACK_FIXTURES",
+      "addedValues": [
+        "CM_BI_FIXTURE",
+        "chimpmaera.bi/readback/v1"
+      ],
+      "addedPaths": [
+        "tests/h05-closed-runtime-template.test.mjs",
+        "tests/h05-template-native-product-route.test.mjs"
+      ],
+      "note": "Register only additive occurrences of already existing readback schema and public synthetic fixture identity in explicitly SHAPE_ONLY H05 template/HTTP tests. Preserve every predecessor occurrence and census revision, baseCommit, scanner and exclusions. No namespace rename, new source authority, runtime qualification or historical proof rewrite."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
       "predecessorCensusCommit": "33beed8f387216a73621e1ff1cb0354612fad0e1",
       "predecessorOccurrences": 1046,
       "predecessorInventorySha256": "548e75c75d1a8f302315ab2f1ef39a1e875fcdfa049a197495e2360dffded9b2",
@@ -342,6 +365,16 @@
       "identityClass": "environment",
       "value": "CM_BI_FIXTURE",
       "path": "tests/h01-local-stack-facts.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h05-closed-runtime-template.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/h05-template-native-product-route.test.mjs"
     },
     {
       "identityClass": "environment",
@@ -2347,6 +2380,16 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/readback/v1",
       "path": "tests/h01-local-stack-facts.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h05-closed-runtime-template.test.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/h05-template-native-product-route.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",

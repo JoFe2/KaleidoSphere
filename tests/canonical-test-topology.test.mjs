@@ -206,6 +206,18 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-pan-session-source.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-protected-source-availability.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-runtime-ci-binding.test.mjs' },
+  // KS295 optional native consumer product paths, exactly one canonical route each.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-closed-runtime-template.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-broker-runtime.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-control-route.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-model-idempotency.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-model-retry-custody.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-model-unknown-restart.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-openai-consumer.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-native-resource-store.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-runtime-ci-binding.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-shared-runtime-source.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h05-template-native-product-route.test.mjs' },
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },

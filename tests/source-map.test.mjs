@@ -126,6 +126,18 @@ import './h02-pan-origin-source.test.mjs';
 import './h02-pan-session-source.test.mjs';
 import './h02-protected-source-availability.test.mjs';
 import './h02-runtime-ci-binding.test.mjs';
+// KS295 closed templates and actual native budget/product paths preserve this immutable root once.
+import './h05-closed-runtime-template.test.mjs';
+import './h05-native-broker-runtime.test.mjs';
+import './h05-native-control-route.test.mjs';
+import './h05-native-model-idempotency.test.mjs';
+import './h05-native-model-retry-custody.test.mjs';
+import './h05-native-model-unknown-restart.test.mjs';
+import './h05-native-openai-consumer.test.mjs';
+import './h05-native-resource-store.test.mjs';
+import './h05-runtime-ci-binding.test.mjs';
+import './h05-shared-runtime-source.test.mjs';
+import './h05-template-native-product-route.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.
