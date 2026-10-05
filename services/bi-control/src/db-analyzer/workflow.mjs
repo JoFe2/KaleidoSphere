@@ -16,6 +16,7 @@ import { buildOptionalParserEnrichment } from './parser-enrichment.mjs';
 import { auditQueryPackSafety } from './query-safety.mjs';
 import { runPostgresqlQueries } from './postgresql-runtime.mjs';
 import {RELATIONAL_CORE_PROFILE_SCHEMA, runRelationalCoreProfile} from './relational-core-workflow.mjs';
+import {BOUNDED_API_READ_PROFILE_SCHEMA, runBoundedApiReadProfile} from './bounded-api-read-workflow.mjs';
 import { buildOracleConnectString, selectProductDescriptor, assertProductSecretBinding } from '../runtime-config.mjs';
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -230,6 +231,9 @@ export async function runAnalyzeProfile(profileFile, options = {}) {
   const repositoryRoot = path.resolve(options.repositoryRoot ?? REPOSITORY_ROOT);
   const resolvedProfile = path.resolve(profileFile);
   const rawProfile = await readJson(resolvedProfile);
+  if (rawProfile?.schemaVersion === BOUNDED_API_READ_PROFILE_SCHEMA) {
+    return runBoundedApiReadProfile(rawProfile, {signal: options.signal});
+  }
   if (rawProfile?.schemaVersion === RELATIONAL_CORE_PROFILE_SCHEMA) {
     return runRelationalCoreProfile(rawProfile, {signal: options.signal});
   }

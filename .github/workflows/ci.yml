@@ -219,6 +219,10 @@ jobs:
           node --test --test-concurrency=1 tests/relational-core-product.test.mjs tests/relational-core-runtime-ci-binding.test.mjs
           # Keep the exact owned fixture for mandatory canonical execution; no skip/fallback.
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; const keys=["KS288_RELATIONAL_PYTHON","KS288_FIXTURE_ROOT","KS288_NATIVE_TEST_CONFIG","KS288_TEST_OWNER"]; appendFileSync(process.env.GITHUB_ENV,keys.map(k=>k+"="+process.env[k]+"\n").join(""));'
+      - name: Execute required bounded local HTTP read and explicit real-target boundary
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          node --test --test-concurrency=1 tests/bounded-api-read-product.test.mjs tests/bounded-api-read-ci-binding.test.mjs
       - run: npm run dist:agent-skill
       - run: npm test
         env:
