@@ -13,6 +13,11 @@ test('H05 CI provisions the exact public shared source and executes every native
   'tests/h05-native-model-idempotency.test.mjs','tests/h05-native-model-retry-custody.test.mjs','tests/h05-native-model-unknown-restart.test.mjs',
   'tests/h05-native-openai-consumer.test.mjs','tests/h05-native-resource-store.test.mjs','tests/h05-shared-runtime-source.test.mjs',
   'tests/h05-template-native-product-route.test.mjs','tests/h05-runtime-ci-binding.test.mjs','GITHUB_ENV'])assert.ok(block.includes(pin),pin);
- assert.doesNotMatch(block,/continue-on-error|\|\|\s*true|--test-skip-pattern|--test-name-pattern|refs\/heads\/main|latest/);
+ assert.match(block,/node --test --test-concurrency=1\s/,'CPU-heavy source qualification must be isolated across suites; the actual service100 test remains concurrent');
+ assert.ok(block.includes('git -C "$KS_H05_PAN_SOURCE_ROOT" update-index --refresh'),'Refresh only the acquired source index stat cache before read-only repeated use-time provenance guards');
+ assert.doesNotMatch(block,/--assume-unchanged|--skip-worktree|--fsmonitor-valid|core\.ignorestat|continue-on-error|\|\|\s*true|--test-skip-pattern|--test-name-pattern|refs\/heads\/main|latest/);
  assert.ok(workflow.indexOf('      - run: npm test',end)>end);
+ const image=await readFile(new URL('../services/bi-control/Dockerfile.h05-native',import.meta.url),'utf8');
+ assert.match(image,/USER 10001:10001\s+RUN git -C \/opt\/pan529 update-index --refresh\s+\\\s*\n\s*&& test "\$\(git -C \/opt\/pan529 write-tree\)" = 3b8d7b6b5f29fe4b0736a00d3db5dd380bfefcef/,'Refresh the copied source stat cache as its runtime owner and enforce the exact immutable tree');
+ assert.doesNotMatch(image,/--assume-unchanged|--skip-worktree|--fsmonitor-valid|core\.ignorestat|\|\|\s*true/);
 });
