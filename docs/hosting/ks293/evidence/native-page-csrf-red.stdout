@@ -1,0 +1,59 @@
+TAP version 13
+# Subtest: H02 prefixed native form copies only its exact current owner-issued anti-CSRF token into the same native POST
+not ok 1 - H02 prefixed native form copies only its exact current owner-issued anti-CSRF token into the same native POST
+  ---
+  duration_ms: 52.867572
+  type: 'test'
+  location: '<KS_SOURCE_ROOT>/tests/h02-native-page-csrf.test.mjs:53:1'
+  failureType: 'testCodeFailure'
+  error: |-
+    Expected values to be strictly deep-equal:
+    + actual - expected
+    
+      {
+        body: '{"message":"Status"}',
+        headers: {
+          'content-type': 'application/json',
+    -     'x-pan527-csrf': 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+        },
+        method: 'POST',
+        url: '/t/tenant-a/api/chat'
+      }
+    
+  code: 'ERR_ASSERTION'
+  name: 'AssertionError'
+  expected:
+    url: '/t/tenant-a/api/chat'
+    method: 'POST'
+    headers:
+      content-type: 'application/json'
+      x-pan527-csrf: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    body: '{"message":"Status"}'
+  actual:
+    url: '/t/tenant-a/api/chat'
+    method: 'POST'
+    headers:
+      content-type: 'application/json'
+    body: '{"message":"Status"}'
+  operator: 'deepStrictEqual'
+  stack: |-
+    TestContext.<anonymous> (file://<KS_SOURCE_ROOT>/tests/h02-native-page-csrf.test.mjs:58:10)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: H02 absent hosted prefix preserves accepted local HTML bytes and original cookie-free form submission
+ok 2 - H02 absent hosted prefix preserves accepted local HTML bytes and original cookie-free form submission
+  ---
+  duration_ms: 31.124989
+  type: 'test'
+  ...
+1..2
+# tests 2
+# suites 0
+# pass 1
+# fail 1
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 131.923371

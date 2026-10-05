@@ -1,0 +1,8 @@
+{
+  "name": "ks293-browser-runtime",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "puppeteer-core": "25.12.0"
+  }
+}

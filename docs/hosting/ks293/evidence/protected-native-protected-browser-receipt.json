@@ -1,0 +1,671 @@
+{
+  "scope": "Actual pinned PAN v3 protected KS control-route session / verified TLS / native browser-click integration development run; existing images with read-only agent overlay, NOT release/delivery or real-model acceptance",
+  "producerCommit": "6a7752be07405bd03ccbc40c13a9936d1b8d0d2b",
+  "nativeBindings": [
+    {
+      "schemaVersion": "pansphaira.hosted-origin-session/protected-route-binding/v1",
+      "componentId": "kaleidosphere-bi-control",
+      "entrypointPath": "services/bi-control/src/server.mjs",
+      "sourceCommit": "67c611c6b523d8d8ee329a65f8a00a589de81e1e",
+      "sourceTree": "c36229b762bac232eb5cc942c9d68272076ee46c",
+      "entrypointSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "runtime": {
+        "name": "node",
+        "version": "24.14.0"
+      },
+      "instanceId": "ks293protected29deed769887-tenant-a-control",
+      "tenantId": "tenant-a",
+      "generation": 1
+    },
+    {
+      "schemaVersion": "pansphaira.hosted-origin-session/protected-route-binding/v1",
+      "componentId": "kaleidosphere-bi-control",
+      "entrypointPath": "services/bi-control/src/server.mjs",
+      "sourceCommit": "67c611c6b523d8d8ee329a65f8a00a589de81e1e",
+      "sourceTree": "c36229b762bac232eb5cc942c9d68272076ee46c",
+      "entrypointSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "runtime": {
+        "name": "node",
+        "version": "24.14.0"
+      },
+      "instanceId": "ks293protected29deed769887-tenant-b-control",
+      "tenantId": "tenant-b",
+      "generation": 1
+    }
+  ],
+  "browserCertificateVerificationEnabled": true,
+  "systemTrustUnchanged": true,
+  "syntheticFixture": true,
+  "modelMode": "stub",
+  "tests": 17,
+  "pass": 17,
+  "fail": 0,
+  "skipped": 0,
+  "cases": [
+    {
+      "id": "actual-verified-TLS-native-page-and-producer-cookie-response",
+      "status": "PASS",
+      "value": {
+        "status": 200,
+        "tlsAuthorized": true,
+        "tlsProtocol": "TLSv1.3"
+      }
+    },
+    {
+      "id": "actual-certificate-verifying-browser-native-page-cookie",
+      "status": "PASS",
+      "value": {
+        "browser": "firefox/153.0",
+        "secureContext": true,
+        "sessionCookieHttpOnly": true,
+        "secure": true,
+        "sameSite": "Strict",
+        "certificateErrorsIgnored": false
+      }
+    },
+    {
+      "id": "actual-native-prefixed-click-CSRF-status-two-tenants",
+      "status": "PASS",
+      "value": {
+        "a": {
+          "intent": "STATUS",
+          "status": {
+            "status": "READY",
+            "engine": "mssql",
+            "sourceMode": "fixture",
+            "latestReceiptId": null,
+            "scope": null,
+            "catalogReady": false,
+            "generation": {
+              "state": "ABSENT",
+              "generationId": null,
+              "code": "GENERATION_POINTER_ABSENT"
+            }
+          }
+        },
+        "b": {
+          "intent": "STATUS",
+          "status": {
+            "status": "READY",
+            "engine": "mssql",
+            "sourceMode": "fixture",
+            "latestReceiptId": null,
+            "scope": null,
+            "catalogReady": false,
+            "generation": {
+              "state": "ABSENT",
+              "generationId": null,
+              "code": "GENERATION_POINTER_ABSENT"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "actual-existing-browser-analysis-and-native-readback",
+      "status": "PASS",
+      "value": {
+        "schemaVersion": "superset-bi-agent/agent-result/v2",
+        "intent": "ANALYZE",
+        "providerMode": "stub",
+        "tools": [
+          "status",
+          "analyze",
+          "catalog_ingest",
+          "readback",
+          "catalog_question"
+        ],
+        "status": {
+          "status": "READY",
+          "engine": "mssql",
+          "sourceMode": "fixture",
+          "latestReceiptId": null,
+          "scope": null,
+          "catalogReady": false,
+          "generation": {
+            "state": "ABSENT",
+            "generationId": null,
+            "code": "GENERATION_POINTER_ABSENT"
+          }
+        },
+        "analysisReceipt": {
+          "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+          "status": "ANALYZED_READ_ONLY",
+          "sourceMode": "fixture",
+          "scope": {
+            "container": null,
+            "database": "CM_BI_FIXTURE",
+            "schemas": [
+              "dbo"
+            ]
+          },
+          "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+          "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+        },
+        "catalog": {
+          "status": "INGESTED_LOCAL_TECHNICAL_CATALOG",
+          "coverageQuestion": {
+            "schemaVersion": "chimpmaera.bi/catalog-answer/v1",
+            "status": "ANSWERED_WITH_EVIDENCE",
+            "family": "coverage_blind_spots",
+            "answer": "Coverage states are authoritative; UNKNOWN or DENIED is never converted into absence.",
+            "rows": [
+              {
+                "query_id": "mssql.preflight.identity",
+                "category": "preflight",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.preflight.rights",
+                "category": "preflight",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 2,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.columns",
+                "category": "columns",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 3,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.constraints",
+                "category": "constraints",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.indexes",
+                "category": "indexes",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.relations",
+                "category": "relations",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 2,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.schemas",
+                "category": "schemas",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.sequences",
+                "category": "sequences",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 0,
+                "empty_interpretation": "VERIFIED_EMPTY",
+                "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.synonyms",
+                "category": "synonyms",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 0,
+                "empty_interpretation": "VERIFIED_EMPTY",
+                "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+              }
+            ],
+            "provenance": {
+              "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+              "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+              "engine": "mssql",
+              "database": "CM_BI_FIXTURE",
+              "sourceMode": "fixture",
+              "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+              "coverage": [
+                {
+                  "queryId": "mssql.preflight.identity",
+                  "category": "preflight",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.preflight.rights",
+                  "category": "preflight",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.columns",
+                  "category": "columns",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.constraints",
+                  "category": "constraints",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.indexes",
+                  "category": "indexes",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.relations",
+                  "category": "relations",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.schemas",
+                  "category": "schemas",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.sequences",
+                  "category": "sequences",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.synonyms",
+                  "category": "synonyms",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+                }
+              ]
+            }
+          }
+        },
+        "publication": {
+          "status": "AWAITING_TRUSTED_APPROVAL",
+          "mutationPerformed": false,
+          "requiredWorkflow": [
+            "preview",
+            "direct-trusted-ui-approval",
+            "apply",
+            "readback",
+            "rollback"
+          ]
+        },
+        "readback": {
+          "schemaVersion": "chimpmaera.bi/readback/v1",
+          "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+          "generationId": "4f08fb021970f7630776f5237a4fb7e152e3d51dbb63750c5bc17ea90843229a",
+          "summary": {
+            "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+            "source_engine": "mssql",
+            "source_database": "CM_BI_FIXTURE",
+            "source_mode": "fixture",
+            "runtime_validation": "SYNTHETIC_UNVALIDATED",
+            "status": "ANALYZED_READ_ONLY",
+            "analyzed_at": "2026-10-05T00:01:29.170Z",
+            "relation_count": 2,
+            "column_count": 3,
+            "constraint_count": 1,
+            "index_count": 1,
+            "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+            "source_read_only": 1
+          },
+          "detailCount": 3,
+          "catalogSnapshot": {
+            "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+            "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+            "schema_version": "chimpmaera.bi/local-technical-catalog/v1"
+          },
+          "technicalOverview": {
+            "systemSchemaRows": 1,
+            "tableCapacityRows": 2,
+            "codeDependencyRows": 0,
+            "coverageRows": 9,
+            "biCandidateRows": 2
+          },
+          "publication": null,
+          "projectionMirror": {
+            "path": "/task/projection/analytics.db",
+            "state": "IN_SYNC",
+            "sha256": "acab8a9ec2ae52d264d7ec884d2069d11b60b0dbf6fe9e6288f3be3f6242df2e",
+            "inSync": true
+          }
+        }
+      }
+    },
+    {
+      "id": "actual-native-B-remains-unchanged-after-protected-A",
+      "status": "PASS",
+      "value": {
+        "intent": "STATUS",
+        "status": {
+          "status": "READY",
+          "engine": "mssql",
+          "sourceMode": "fixture",
+          "latestReceiptId": null,
+          "scope": null,
+          "catalogReady": false,
+          "generation": {
+            "state": "ABSENT",
+            "generationId": null,
+            "code": "GENERATION_POINTER_ABSENT"
+          }
+        }
+      }
+    },
+    {
+      "id": "native-closed-input-denied-AGENT_UNSAFE_INPUT_DENIED-5",
+      "status": "PASS",
+      "value": {
+        "status": 400,
+        "code": "AGENT_UNSAFE_INPUT_DENIED"
+      }
+    },
+    {
+      "id": "native-closed-input-denied-AGENT_UNKNOWN_ACTION_DENIED-6",
+      "status": "PASS",
+      "value": {
+        "status": 400,
+        "code": "AGENT_UNKNOWN_ACTION_DENIED"
+      }
+    },
+    {
+      "id": "native-closed-input-denied-AGENT_UNKNOWN_ACTION_DENIED-7",
+      "status": "PASS",
+      "value": {
+        "status": 400,
+        "code": "AGENT_UNKNOWN_ACTION_DENIED"
+      }
+    },
+    {
+      "id": "actual-browser-missing-invalid-CSRF-and-role-spoof-denied",
+      "status": "PASS",
+      "value": [
+        {
+          "status": 403,
+          "body": {
+            "status": "DENIED",
+            "code": "HOSTED_CSRF_DENIED"
+          }
+        },
+        {
+          "status": 403,
+          "body": {
+            "status": "DENIED",
+            "code": "HOSTED_CSRF_DENIED"
+          }
+        },
+        {
+          "status": 403,
+          "body": {
+            "status": "DENIED",
+            "code": "HOSTED_HEADER_AUTHORITY_DENIED"
+          }
+        }
+      ]
+    },
+    {
+      "id": "actual-browser-foreign-file-effect-and-redirect-alias-denials",
+      "status": "PASS",
+      "value": [
+        {
+          "target": "/t/tenant-b/",
+          "status": 401,
+          "location": null,
+          "body": {
+            "status": "DENIED",
+            "code": "HOSTED_SESSION_DENIED"
+          }
+        },
+        {
+          "target": "/t/tenant-b/assets/kaleidosphere-logo.svg",
+          "status": 401,
+          "location": null,
+          "body": {
+            "status": "DENIED",
+            "code": "HOSTED_SESSION_DENIED"
+          }
+        },
+        {
+          "target": "/t/tenant-a/run/secrets/control-auth",
+          "status": 404,
+          "location": null,
+          "body": {
+            "status": "DENIED",
+            "code": "H02_PRODUCT_ROUTE_DENIED"
+          }
+        },
+        {
+          "target": "/t/tenant-a/?redirect=https://not-owned.invalid",
+          "status": 404,
+          "location": null,
+          "body": {
+            "status": "DENIED",
+            "code": "H02_PRODUCT_ROUTE_DENIED"
+          }
+        },
+        {
+          "target": "/t/tenant-a/v1/publish",
+          "status": 404,
+          "location": null,
+          "body": {
+            "status": "DENIED",
+            "code": "H02_PRODUCT_ROUTE_DENIED"
+          }
+        }
+      ]
+    },
+    {
+      "id": "actual-verified-TLS-host-origin-tenant-header-authority-denials",
+      "status": "PASS",
+      "value": [
+        {
+          "status": 421,
+          "tlsAuthorized": true
+        },
+        {
+          "status": 403,
+          "tlsAuthorized": true
+        },
+        {
+          "status": 403,
+          "tlsAuthorized": true
+        },
+        {
+          "status": 403,
+          "tlsAuthorized": true
+        },
+        {
+          "status": 403,
+          "tlsAuthorized": true
+        }
+      ]
+    },
+    {
+      "id": "actual-verified-TLS-WebSocket-upgrade-denied",
+      "status": "PASS",
+      "value": {
+        "status": 403,
+        "tlsAuthorized": true
+      }
+    },
+    {
+      "id": "actual-auth-key-outage-fail-closed-no-portal-fallback",
+      "status": "PASS",
+      "value": {
+        "status": 503
+      }
+    },
+    {
+      "id": "actual-browser-cookie-and-persisted-session-expiry-denied",
+      "status": "PASS",
+      "value": {
+        "status": 401
+      }
+    },
+    {
+      "id": "actual-verified-TLS-expired-cookie-replay-denied",
+      "status": "PASS",
+      "value": {
+        "status": 401,
+        "code": "HOSTED_SESSION_DENIED"
+      }
+    },
+    {
+      "id": "actual-verified-TLS-valid-MAC-wrong-audience-denied",
+      "status": "PASS",
+      "value": {
+        "status": 401,
+        "code": "HOSTED_SESSION_DENIED",
+        "changedOnlyClaim": "binding.audience",
+        "isolatedSyntheticStore": true,
+        "noSigningImplementationAddedToProduct": true
+      }
+    },
+    {
+      "id": "actual-native-bound-store-instance-generation-source-mismatch-denied",
+      "status": "PASS",
+      "value": {
+        "cases": 3,
+        "mutationAuthorizationAbsent": true
+      }
+    }
+  ],
+  "navigations": [
+    {
+      "url": "https://127.0.0.1:45393/t/tenant-a/",
+      "status": 200,
+      "gotoReturnedNull": true,
+      "navigationRequest": true,
+      "documentUrl": "https://127.0.0.1:45393/t/tenant-a/",
+      "title": "KaleidoSphere",
+      "secureContext": true
+    },
+    {
+      "url": "https://127.0.0.1:45393/t/tenant-b/",
+      "status": 200,
+      "gotoReturnedNull": true,
+      "navigationRequest": true,
+      "documentUrl": "https://127.0.0.1:45393/t/tenant-b/",
+      "title": "KaleidoSphere",
+      "secureContext": true
+    },
+    {
+      "url": "https://127.0.0.1:45393/t/tenant-a/",
+      "status": 200,
+      "gotoReturnedNull": true,
+      "navigationRequest": true,
+      "documentUrl": "https://127.0.0.1:45393/t/tenant-a/",
+      "title": "KaleidoSphere",
+      "secureContext": true
+    },
+    {
+      "url": "https://127.0.0.1:45393/t/tenant-a/",
+      "status": 401,
+      "gotoReturnedNull": false,
+      "navigationRequest": true,
+      "documentUrl": "https://127.0.0.1:45393/t/tenant-a/",
+      "title": "",
+      "secureContext": true
+    }
+  ],
+  "submissions": [
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-a/",
+      "status": 200,
+      "code": null,
+      "intent": "STATUS"
+    },
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-b/",
+      "status": 200,
+      "code": null,
+      "intent": "STATUS"
+    },
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-a/",
+      "status": 200,
+      "code": null,
+      "intent": "ANALYZE"
+    },
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-b/",
+      "status": 200,
+      "code": null,
+      "intent": "STATUS"
+    },
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-a/",
+      "status": 400,
+      "code": "AGENT_UNSAFE_INPUT_DENIED",
+      "intent": null
+    },
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-a/",
+      "status": 400,
+      "code": "AGENT_UNKNOWN_ACTION_DENIED",
+      "intent": null
+    },
+    {
+      "origin": "https://127.0.0.1:45393",
+      "path": "/t/tenant-a/",
+      "status": 400,
+      "code": "AGENT_UNKNOWN_ACTION_DENIED",
+      "intent": null
+    }
+  ],
+  "failure": null,
+  "browserProfileRemoved": true,
+  "ownedIngressClosed": true
+}

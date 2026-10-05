@@ -1,0 +1,56 @@
+TAP version 13
+# Subtest: H02 real verified TLS protocol refuses redirects and duplicate authority headers without forwarding caller credentials
+not ok 1 - H02 real verified TLS protocol refuses redirects and duplicate authority headers without forwarding caller credentials
+  ---
+  duration_ms: 194.043877
+  type: 'test'
+  location: '<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:81:1'
+  failureType: 'testCodeFailure'
+  error: 'server.closeAllConnections is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    close (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:23:10)
+    setup (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:49:85)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async TestContext.<anonymous> (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:82:19)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+  ...
+# Subtest: H02 session expiry during admitted async request body denies before native dispatch
+not ok 2 - H02 session expiry during admitted async request body denies before native dispatch
+  ---
+  duration_ms: 172.49044
+  type: 'test'
+  location: '<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:108:1'
+  failureType: 'testCodeFailure'
+  error: 'server.closeAllConnections is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    close (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:23:10)
+    setup (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:49:85)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async TestContext.<anonymous> (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:109:19)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Subtest: H02 session expiry during actual upstream response await denies before native bytes or cookie release
+not ok 3 - H02 session expiry during actual upstream response await denies before native bytes or cookie release
+  ---
+  duration_ms: 339.346683
+  type: 'test'
+  location: '<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:122:1'
+  failureType: 'testCodeFailure'
+  error: 'server.closeAllConnections is not a function'
+  code: 'ERR_TEST_FAILURE'
+  name: 'TypeError'
+  stack: |-
+    close (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:23:10)
+    setup (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:49:85)
+    process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    async TestContext.<anonymous> (file://<KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:123:19)
+    async Test.run (node:internal/test_runner/test:1389:7)
+    async Test.processPendingSubtests (node:internal/test_runner/test:960:7)
+  ...
+# Interrupted while running: tests/h02-https-network-boundary.test.mjs at <KS_SOURCE_ROOT>/tests/h02-https-network-boundary.test.mjs:1:1

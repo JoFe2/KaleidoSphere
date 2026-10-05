@@ -1,0 +1,433 @@
+{
+  "generationId": "4f08fb021970f7630776f5237a4fb7e152e3d51dbb63750c5bc17ea90843229a",
+  "activeRelativeTarget": "generations/4f08fb021970f7630776f5237a4fb7e152e3d51dbb63750c5bc17ea90843229a",
+  "receiptIdMatchesBrowser": true,
+  "nativeReceipt": {
+    "schemaVersion": "chimpmaera.bi/analysis-receipt/v1",
+    "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+    "status": "ANALYZED_READ_ONLY",
+    "analyzedAt": "2026-10-05T00:01:29.170Z",
+    "sourceMode": "fixture",
+    "engine": "mssql",
+    "scope": {
+      "container": null,
+      "database": "CM_BI_FIXTURE",
+      "schemas": [
+        "dbo"
+      ]
+    },
+    "safety": {
+      "queryPackSelectOnly": true,
+      "rowSamples": false,
+      "database": "CM_BI_FIXTURE",
+      "databaseUpdateability": "FIXTURE",
+      "principalDmlDdlPermissions": false,
+      "readOnlyIntent": true
+    },
+    "analysis": {
+      "coverage": {
+        "DENIED": 0,
+        "ERROR": 0,
+        "PARTIAL": 0,
+        "SUCCEEDED": 9,
+        "TIMEOUT": 0,
+        "UNSUPPORTED": 0
+      },
+      "coverageLedger": {
+        "allComplete": true,
+        "completeQueries": 9,
+        "entries": [
+          {
+            "category": "preflight",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.preflight.identity",
+            "reasonCode": null,
+            "rowCount": 1,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "preflight",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.preflight.rights",
+            "reasonCode": null,
+            "rowCount": 2,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "schemas",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.structure.schemas",
+            "reasonCode": null,
+            "rowCount": 1,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "relations",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.structure.relations",
+            "reasonCode": null,
+            "rowCount": 2,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "columns",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.structure.columns",
+            "reasonCode": null,
+            "rowCount": 3,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "constraints",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.structure.constraints",
+            "reasonCode": null,
+            "rowCount": 1,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "indexes",
+            "emptyInterpretation": "NOT_CLAIMED",
+            "queryId": "mssql.structure.indexes",
+            "reasonCode": null,
+            "rowCount": 1,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "sequences",
+            "emptyInterpretation": "VERIFIED_EMPTY",
+            "queryId": "mssql.structure.sequences",
+            "reasonCode": null,
+            "rowCount": 0,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          },
+          {
+            "category": "synonyms",
+            "emptyInterpretation": "VERIFIED_EMPTY",
+            "queryId": "mssql.structure.synonyms",
+            "reasonCode": null,
+            "rowCount": 0,
+            "state": "SUCCEEDED",
+            "visibility": "VISIBLE_COMPLETE"
+          }
+        ],
+        "invisibleOrUnknownQueries": 0,
+        "partialQueries": 0,
+        "schemaVersion": "chimpmaera.db/coverage-ledger/v1",
+        "stateCounts": {
+          "DENIED": 0,
+          "ERROR": 0,
+          "PARTIAL": 0,
+          "SUCCEEDED": 9,
+          "TIMEOUT": 0,
+          "UNSUPPORTED": 0
+        },
+        "totalQueries": 9,
+        "verifiedEmptyQueries": 2
+      },
+      "engine": "mssql",
+      "extracts": [
+        {
+          "category": "preflight",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.preflight.identity",
+          "querySha256": "c2b913a8c489e8c539a3955aa38c441cfafec3c0460c5a72fb5d638ab52721b1",
+          "reasonCode": null,
+          "rows": [
+            {
+              "compatibility_level": 160,
+              "container_name": null,
+              "database_name": "CM_BI_FIXTURE",
+              "engine": "mssql",
+              "engine_edition": "Developer fixture",
+              "engine_version": "16.0-fixture",
+              "objectSha256": "40019dc39ce5615f86e13607723c075cbf04ec307161806d8978f67e28a8c3ca"
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "preflight",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.preflight.rights",
+          "querySha256": "54a3434d8db5b24f809cb408bf7d2ad45825402dd1d71670ff101df60891dc63",
+          "reasonCode": null,
+          "rows": [
+            {
+              "has_permission": 1,
+              "objectSha256": "3ea26a46ff2dada922f3a3b46e0989305106baefdbb08a671a42c5c1de344a33",
+              "permission_name": "CONNECT"
+            },
+            {
+              "has_permission": 1,
+              "objectSha256": "e4bda7f02d84aef19faab060caa2a7597fdff0d6a357386e66b06fbbafbb2bec",
+              "permission_name": "VIEW DEFINITION"
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "schemas",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.structure.schemas",
+          "querySha256": "99b1d2f5f44e65e6b829c0bb0e9609da322311341ce781654c289b907e85b8b1",
+          "reasonCode": null,
+          "rows": [
+            {
+              "objectSha256": "cf69cd871a25c3bb869269f8c134ec527ea4d7a70687882d6f349de65b5b267a",
+              "owner_name": "dbo",
+              "schema_id": 1,
+              "schema_name": "dbo"
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "relations",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.structure.relations",
+          "querySha256": "3cddc002e4a1a5ce9b2998e490a84ee96b206dbd4409785ff0ee0c1cb0bc72d4",
+          "reasonCode": null,
+          "rows": [
+            {
+              "created_at": "2026-08-01T10:00:00",
+              "is_ms_shipped": false,
+              "modified_at": "2026-08-02T10:00:00",
+              "objectSha256": "df35a87fc37ce204ec10bb8bae4b9e2da1983ace3244c4373ab3d1b6f190b145",
+              "object_id": 102,
+              "relation_kind": "TABLE",
+              "relation_name": "customers",
+              "schema_name": "dbo"
+            },
+            {
+              "created_at": "2026-08-01T10:00:00",
+              "is_ms_shipped": false,
+              "modified_at": "2026-08-02T10:00:00",
+              "objectSha256": "6314e0e0396a8ee8a848885c32e25fff7a7e5ebdc877760fca220e60eca15bd4",
+              "object_id": 101,
+              "relation_kind": "TABLE",
+              "relation_name": "orders",
+              "schema_name": "dbo"
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "columns",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.structure.columns",
+          "querySha256": "3a51482540692d15c10e4dc46c696844baa3616fe80a44c1b5278ee69f6ea4dc",
+          "reasonCode": null,
+          "rows": [
+            {
+              "column_name": "customer_id",
+              "data_type": "bigint",
+              "data_type_schema": "sys",
+              "default_expression": null,
+              "generation_expression": null,
+              "generation_kind": "IDENTITY",
+              "identity_generation": null,
+              "identity_increment": "1",
+              "identity_options": null,
+              "identity_seed": "1",
+              "is_identity": true,
+              "is_nullable": false,
+              "max_length": 8,
+              "numeric_precision": 19,
+              "numeric_scale": 0,
+              "objectSha256": "3445fbeb17477d8b8619c879fd4896fdf71aaab25f261e4ed211f42763446ece",
+              "ordinal_position": 1,
+              "relation_kind": "TABLE",
+              "relation_name": "customers",
+              "schema_name": "dbo"
+            },
+            {
+              "column_name": "order_id",
+              "data_type": "bigint",
+              "data_type_schema": "sys",
+              "default_expression": null,
+              "generation_expression": null,
+              "generation_kind": "IDENTITY",
+              "identity_generation": null,
+              "identity_increment": "1",
+              "identity_options": null,
+              "identity_seed": "1",
+              "is_identity": true,
+              "is_nullable": false,
+              "max_length": 8,
+              "numeric_precision": 19,
+              "numeric_scale": 0,
+              "objectSha256": "c3230b76e81d27e8c5004abf9add72d7992e77e7d2efa40ff84a93856cccb003",
+              "ordinal_position": 1,
+              "relation_kind": "TABLE",
+              "relation_name": "orders",
+              "schema_name": "dbo"
+            },
+            {
+              "column_name": "amount",
+              "data_type": "decimal",
+              "data_type_schema": "sys",
+              "default_expression": null,
+              "generation_expression": null,
+              "generation_kind": "NONE",
+              "identity_generation": null,
+              "identity_increment": null,
+              "identity_options": null,
+              "identity_seed": null,
+              "is_identity": false,
+              "is_nullable": false,
+              "max_length": 9,
+              "numeric_precision": 18,
+              "numeric_scale": 2,
+              "objectSha256": "6850157ea98b0948b61eb5b0b05035c2b381287a95bf0104e079484783339cda",
+              "ordinal_position": 2,
+              "relation_kind": "TABLE",
+              "relation_name": "orders",
+              "schema_name": "dbo"
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "constraints",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.structure.constraints",
+          "querySha256": "b4dd4b62be71ad2e629596a7df6c8d99cd5b31341a821a266f0e73fd90ded4ba",
+          "reasonCode": null,
+          "rows": [
+            {
+              "check_expression": null,
+              "column_name": "order_id",
+              "constraint_kind": "PRIMARY_KEY",
+              "constraint_name": "pk_orders",
+              "delete_rule": null,
+              "is_deferrable": false,
+              "is_enabled": true,
+              "is_initially_deferred": false,
+              "is_validated": true,
+              "objectSha256": "1c9cc8fff004e80a6550469db416148dc3d824520b65d751109650122cc9e9d4",
+              "ordinal_position": 1,
+              "referenced_column_name": null,
+              "referenced_relation_name": null,
+              "referenced_schema_name": null,
+              "relation_name": "orders",
+              "schema_name": "dbo",
+              "update_rule": null
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "indexes",
+          "emptyInterpretation": "NOT_CLAIMED",
+          "queryId": "mssql.structure.indexes",
+          "querySha256": "3043aab8362d7159d155da09ca5ac96d03cf836e9e9be105fa3935a67a3f5c03",
+          "reasonCode": null,
+          "rows": [
+            {
+              "column_expression": null,
+              "column_name": "order_id",
+              "data_space_name": "PRIMARY",
+              "filter_expression": null,
+              "index_kind": "CLUSTERED",
+              "index_name": "pk_orders",
+              "is_enabled": true,
+              "is_included": false,
+              "is_partition_key": false,
+              "is_primary_key": true,
+              "is_unique": true,
+              "is_unique_constraint": false,
+              "objectSha256": "262a0cec6976259a1fe04078e683df98267bb9a0c2af44d45055af97de6fe8ad",
+              "ordinal_position": 1,
+              "partition_count": 1,
+              "partition_ordinal": null,
+              "partitioning_kind": "NONE",
+              "relation_name": "orders",
+              "schema_name": "dbo"
+            }
+          ],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "sequences",
+          "emptyInterpretation": "VERIFIED_EMPTY",
+          "queryId": "mssql.structure.sequences",
+          "querySha256": "e3ca57f83a7d52e642ee12f30970021d1c141bcae9a5085be938c0325c7dd389",
+          "reasonCode": null,
+          "rows": [],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        },
+        {
+          "category": "synonyms",
+          "emptyInterpretation": "VERIFIED_EMPTY",
+          "queryId": "mssql.structure.synonyms",
+          "querySha256": "21ec1fdf746ecfc431d82f345c6afe9411ed3826dbeae1b8db0785c1b9e711f0",
+          "reasonCode": null,
+          "rows": [],
+          "state": "SUCCEEDED",
+          "visibility": "VISIBLE_COMPLETE"
+        }
+      ],
+      "identityContract": {
+        "algorithm": "SHA-256",
+        "encoding": "UTF-8",
+        "excludedObservationFields": [
+          "observationTimestamp",
+          "observation_timestamp",
+          "observedAt"
+        ],
+        "lineEndings": "LF",
+        "schemaVersion": "chimpmaera.db/canonical-identity/v1",
+        "stringNormalization": "NFC"
+      },
+      "packId": "chimpmaera.db.structure-map.mssql",
+      "packVersion": "1.0.0",
+      "profile": {
+        "adapter": "synthetic",
+        "mode": "SYNTHETIC",
+        "policy": {
+          "access": "READ_ONLY",
+          "allowRowSamples": false,
+          "maxQueryTimeoutMs": 5000
+        },
+        "profileId": "chimpmaera-bi-portable-mssql-fixture",
+        "scope": {
+          "container": null,
+          "database": "CM_BI_FIXTURE",
+          "schemas": [
+            "dbo"
+          ]
+        }
+      },
+      "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+      "schemaVersion": "chimpmaera.db/preflight-evidence/v1",
+      "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+    },
+    "projection": {
+      "path": "analytics.db",
+      "sha256": "acab8a9ec2ae52d264d7ec884d2069d11b60b0dbf6fe9e6288f3be3f6242df2e",
+      "tables": [
+        "bi_analysis_summary",
+        "bi_analysis_detail"
+      ]
+    }
+  },
+  "nativeReceiptSha256": "04734c94156d24afe9c4bdb3b23e1a6e76fde65e24d9e9e8390a2cb90f02dca1",
+  "tenantBActiveGenerationAbsent": true
+}

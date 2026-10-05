@@ -1,0 +1,79 @@
+{
+  "scope": "AC4 current KS source overlay, original unprefixed local/selfhosting native browser regression; existing images, fixture/stub only, not protected-session or real-model acceptance",
+  "prefix": "ks293localregressiond25fccc38441",
+  "startedAtUtc": "2026-10-04T23:49:23.443503+00:00",
+  "images": {
+    "agent": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+    "control": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472"
+  },
+  "taskPrivateUser": "1000:1000",
+  "imageDefaultUserNotRelabelled": "10001:10001; explicitly overridden only inside owned test containers",
+  "commonRuntimeIdentityEnumUnchanged": [
+    "pansphaira-local-demo",
+    "kaleidosphere-bi-agent"
+  ],
+  "noNewControlIdentityClaimed": true,
+  "externalOIDCOrPortalUsed": false,
+  "actualNativeProcesses": [
+    {
+      "containerId": "973179c0739e6ddf44f9af84bcb08b3a54f99de9957d3ab9a59b5f1af4288801",
+      "imageId": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+      "name": "/ks293localregressiond25fccc38441-tenant-a-control",
+      "node": "v24.14.0",
+      "sourceSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "state": "running",
+      "networks": [
+        "ks293localregressiond25fccc38441-tenant-a"
+      ]
+    },
+    {
+      "containerId": "da85b9d2195aa6126a5934bee294209ab309045efa59ce2e3e381aaf994ce8bb",
+      "imageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+      "name": "/ks293localregressiond25fccc38441-tenant-a-agent",
+      "node": "v24.14.0",
+      "sourceSha256": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae",
+      "state": "running",
+      "networks": [
+        "ks293localregressiond25fccc38441-tenant-a"
+      ]
+    },
+    {
+      "containerId": "56c85fac71f29bb16464d3e66b41957ebfe1449d2326c4563c1405d936690c6b",
+      "imageId": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+      "name": "/ks293localregressiond25fccc38441-tenant-b-control",
+      "node": "v24.14.0",
+      "sourceSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "state": "running",
+      "networks": [
+        "ks293localregressiond25fccc38441-tenant-b"
+      ]
+    },
+    {
+      "containerId": "936ec4265df7f7477b597b5d67d87dde138eb5fdc2868de17f29309ac546fa48",
+      "imageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+      "name": "/ks293localregressiond25fccc38441-tenant-b-agent",
+      "node": "v24.14.0",
+      "sourceSha256": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae",
+      "state": "running",
+      "networks": [
+        "ks293localregressiond25fccc38441-tenant-b"
+      ]
+    }
+  ],
+  "browserExit": 0,
+  "actualNativeGeneration": "5145e1d395122327c884ca592e5f670c37c4b0985cbcddd9d732c621dba23942",
+  "status": "PASS_AC4_CURRENT_OVERLAY_LOCAL_ONLY_SCOPE",
+  "browserTests": 8,
+  "browserPass": 8,
+  "browserFail": 0,
+  "browserSkipped": 0,
+  "actualDistinctOwnedPersistence": true,
+  "currentAgentSourceByteMatchingMountedOverlay": true,
+  "unalteredBaseImageUsed": true,
+  "cleanup": {
+    "remainingOwnedContainers": 0,
+    "remainingOwnedNetworks": 0,
+    "exactOwnerReadback": true
+  },
+  "endedAtUtc": "2026-10-04T23:50:01.593100+00:00"
+}

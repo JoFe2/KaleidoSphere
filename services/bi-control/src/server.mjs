@@ -339,4 +339,4 @@ const server = http.createServer(async (request, response) => {
     send(response, code === 'CONTROL_AUTH_DENIED' ? 401 : 400, {status: 'DENIED', code});
   }
 });
-server.listen(port, '0.0.0.0');
+server.listen(port, process.env.CONTROL_BIND_ADDRESS ?? '0.0.0.0');

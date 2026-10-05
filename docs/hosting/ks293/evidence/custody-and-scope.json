@@ -1,0 +1,42 @@
+{
+  "scope": "Only synthetic technical development evidence, not release/delivery acceptance",
+  "redaction": "Private host custody paths replaced with explicit placeholders; native IDs, source hashes, statuses and executed test values unchanged; no cookie/token/private-key values published",
+  "nativeProtectedRun": "ks293protected29deed769887",
+  "nativeProtectedCases": 17,
+  "localCurrentOverlayRun": "ks293localregressiond25fccc38441",
+  "independentReviews": [
+    {
+      "receipt": "ks293-native-protected-csrf-correction-independent-pass.json",
+      "receiptSha256": "4753bb13a056e537fc4cff3f0ca41a1afdcfa27032ab7f4bc8a215c0f57066ae",
+      "approvedScope": "Independent actual corrected KS native protected HTTPS/browser run; synthetic fixtures and model stub, not release or external source qualification",
+      "matchedRepositoryPins": {
+        "services/bi-agent/src/server.mjs": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae",
+        "services/bi-agent/src/hosted-route-policy.mjs": "f3965b43815b925b8ee785e051eea908f8abb57f6e5ba11712e8df511070ad08",
+        "services/bi-control/src/runtime/pan-origin-source.mjs": "66c22d65f375e2e0bc9e67c323e0d2ccd64db7adc5e5e5415d7b2c4e6f898a81",
+        "services/bi-control/src/hosting/origin-session-ingress.mjs": "87ef088880d0a8bcd5d3cdcb257b6fedede96e5aac13953155efd8253c533028",
+        "contracts/dependencies/pan527-origin-source-development-v1.json": "c46710a0d3f48e144c1ccb85a857e6e3c2c527821277bf52799262d4aaeeff50",
+        "contracts/dependencies/pan527-origin-session-source-development-v3.json": "044d2189b05b3015e7bd302ef02e8291d7f0a09eea606ccb683cb83cd5af0a91"
+      },
+      "noNewApprovalGate": true
+    },
+    {
+      "receipt": "ks293-https-async-boundary-independent-fixed.json",
+      "receiptSha256": "684ee40b1bfbbca23cf34875a708fcdcd58c03b85233f827bcf72ddbdf162355",
+      "approvedScope": "Independent real TLS protocol tests with controlled HTTP upstream, not native KS browser rerun",
+      "matchedRepositoryPins": {
+        "services/bi-agent/src/hosted-route-policy.mjs": "f3965b43815b925b8ee785e051eea908f8abb57f6e5ba11712e8df511070ad08",
+        "services/bi-control/src/runtime/pan-origin-source.mjs": "66c22d65f375e2e0bc9e67c323e0d2ccd64db7adc5e5e5415d7b2c4e6f898a81",
+        "services/bi-control/src/hosting/origin-session-ingress.mjs": "87ef088880d0a8bcd5d3cdcb257b6fedede96e5aac13953155efd8253c533028",
+        "contracts/dependencies/pan527-origin-source-development-v1.json": "c46710a0d3f48e144c1ccb85a857e6e3c2c527821277bf52799262d4aaeeff50",
+        "contracts/dependencies/pan527-origin-session-source-development-v3.json": "044d2189b05b3015e7bd302ef02e8291d7f0a09eea606ccb683cb83cd5af0a91",
+        "tests/h02-https-network-boundary.test.mjs": "6064d3858e36ed78f20c2c6a656f153d2f84700955f490d799f0ae56bc44a210"
+      },
+      "noNewApprovalGate": true
+    }
+  ],
+  "developmentDeliveryComplete": false,
+  "sourceFixture": true,
+  "modelMode": "stub",
+  "existingImagesWithReadOnlyOverlay": true,
+  "systemTrustChanged": false
+}

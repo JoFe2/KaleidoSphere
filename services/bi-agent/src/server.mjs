@@ -8,6 +8,11 @@ import { capabilityAttestationV2, executeExternalIntentV2, externalBiProviderPro
 const port = Number(process.env.PORT ?? 18790);
 const controlBase = process.env.CONTROL_BASE_URL;
 if (controlBase !== 'http://bi-control:18089') throw new Error('AGENT_CONTROL_ROUTE_DENIED');
+// An owner-fixed product route prefix prepares the native page for a protected
+// ingress; it grants no session identity, tenant rights or hosted authority.
+// The absent option retains the existing local/self-hosting routes byte-for-byte.
+const routePrefix = process.env.AGENT_ROUTE_PREFIX ?? '';
+if (routePrefix !== '' && !/^\/t\/[a-z0-9][a-z0-9-]{0,63}$/.test(routePrefix)) throw new Error('AGENT_ROUTE_PREFIX_DENIED');
 
 const brandAssetSpecs = Object.freeze([
   ['/assets/kaleidosphere-logo.svg', 'kaleidosphere-logo.svg', 'image/svg+xml'],
@@ -214,20 +219,25 @@ async function executeExternal(request) {
   });
 }
 
+// Only the explicitly prefixed hosted page copies its owner-issued anti-CSRF
+// token at click time. It never reads the HttpOnly session or creates authority.
+// Empty additions preserve the accepted local page bytes and request exactly.
+const hostedCsrfScript = routePrefix ? "const c=document.cookie.split(';').map(v=>v.trim()).filter(v=>v.startsWith('__Host-ks293-csrf='));const csrf=c.length===1?c[0].slice('__Host-ks293-csrf='.length):'';if(!/^[a-f0-9]{64}$/.test(csrf))throw new Error('AGENT_CSRF_TOKEN_DENIED');" : '';
+const hostedCsrfHeader = routePrefix ? ",'x-pan527-csrf':csrf" : '';
 const page = `<!doctype html>
 <html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" href="/assets/kaleidosphere-logo.svg" type="image/svg+xml">
-<link rel="icon" href="/assets/favicon-32x32.png" sizes="32x32" type="image/png">
-<link rel="icon" href="/assets/favicon-16x16.png" sizes="16x16" type="image/png">
-<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png" sizes="180x180">
-<link rel="manifest" href="/assets/site.webmanifest">
+<link rel="icon" href="${routePrefix}/assets/kaleidosphere-logo.svg" type="image/svg+xml">
+<link rel="icon" href="${routePrefix}/assets/favicon-32x32.png" sizes="32x32" type="image/png">
+<link rel="icon" href="${routePrefix}/assets/favicon-16x16.png" sizes="16x16" type="image/png">
+<link rel="apple-touch-icon" href="${routePrefix}/assets/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="${routePrefix}/assets/site.webmanifest">
 <meta name="theme-color" content="#172033">
 <title>KaleidoSphere</title><style>
 body{font:16px system-ui,sans-serif;max-width:860px;margin:3rem auto;padding:0 1rem;color:#172033;background:#f5f7fb}main{background:white;border:1px solid #dce3ee;border-radius:12px;padding:2rem;box-shadow:0 8px 30px #20305012}.brand{display:flex;align-items:center;gap:1rem}.brand-logo{width:112px;height:112px;object-fit:contain}.brand h1{margin:0}@media(max-width:480px){.brand-logo{width:88px;height:88px}}textarea{width:100%;box-sizing:border-box;min-height:90px;padding:.8rem}button{margin-top:.8rem;padding:.7rem 1.1rem;background:#1677ff;color:white;border:0;border-radius:6px;font-weight:600}pre{white-space:pre-wrap;background:#101827;color:#d9e7ff;padding:1rem;border-radius:8px;overflow:auto}small{color:#596579}</style></head>
-<body><main><div class="brand"><img class="brand-logo" src="/assets/kaleidosphere-logo.svg" width="112" height="112" alt=""><h1>KaleidoSphere</h1></div><p><strong>Multi-perspective Business &amp; Decision Intelligence</strong></p><p>Analysiert ausschließlich die konfigurierte MSSQL- oder Oracle-Datenbank read-only und erzeugt einen prüfbaren BI-Vorschlag.</p>
+<body><main><div class="brand"><img class="brand-logo" src="${routePrefix}/assets/kaleidosphere-logo.svg" width="112" height="112" alt=""><h1>KaleidoSphere</h1></div><p><strong>Multi-perspective Business &amp; Decision Intelligence</strong></p><p>Analysiert ausschließlich die konfigurierte MSSQL- oder Oracle-Datenbank read-only und erzeugt einen prüfbaren BI-Vorschlag.</p>
 <form id="f"><label for="m">Auftrag</label><textarea id="m">Analysiere die konfigurierte Datenbank</textarea><br><button>Analyse starten</button></form>
 <p><small>Erlaubt: Status, Analyse, lokaler technischer Katalog, Suche, evidenzgebundene technische Fragen und geführte BI Discovery. Persistente Superset-Aktionen benötigen den gebundenen Trusted-Workflow. Raw SQL, Credentials, Rohsource, Schreibaktionen und unbekannte Tools werden abgewiesen.</small></p><pre id="o">Bereit.</pre></main>
-<script>document.getElementById('f').addEventListener('submit',async(e)=>{e.preventDefault();const o=document.getElementById('o');o.textContent='Arbeite…';try{const r=await fetch('/api/chat',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({message:document.getElementById('m').value})});const j=await r.json();o.textContent=JSON.stringify(j,null,2)}catch(x){o.textContent='Fehler: '+x.message}})</script></body></html>`;
+<script>document.getElementById('f').addEventListener('submit',async(e)=>{e.preventDefault();const o=document.getElementById('o');o.textContent='Arbeite…';try{${hostedCsrfScript}const r=await fetch('${routePrefix}/api/chat',{method:'POST',headers:{'content-type':'application/json'${hostedCsrfHeader}},body:JSON.stringify({message:document.getElementById('m').value})});const j=await r.json();o.textContent=JSON.stringify(j,null,2)}catch(x){o.textContent='Fehler: '+x.message}})</script></body></html>`;
 
 function send(response, status, contentType, value, cacheControl = 'no-store') {
   const body = contentType === 'application/json' ? `${JSON.stringify(value)}\n` : value;
@@ -242,17 +252,19 @@ function send(response, status, contentType, value, cacheControl = 'no-store') {
 
 const server = http.createServer(async (request, response) => {
   try {
-    if (request.method === 'GET' && request.url === '/healthz') return send(response, 200, 'application/json', {status: 'ok'});
-    if (request.method === 'GET' && request.url === '/v2/capabilities') return send(response, 200, 'application/json', capabilityAttestationV2());
-    if (request.method === 'GET' && request.url === '/v2/provider-profile') return send(response, 200, 'application/json', externalBiProviderProfileV1());
-    if (request.method === 'GET' && request.url === '/v2/capability-manifest') return send(response, 200, 'application/json', capabilityManifestV1());
-    if (request.method === 'GET' && brandAssets.has(request.url)) {
-      const asset = brandAssets.get(request.url);
+    if (routePrefix && !request.url?.startsWith(routePrefix + '/')) throw coded('AGENT_ROUTE_DENIED');
+    const requestPath = routePrefix ? request.url.slice(routePrefix.length) : request.url;
+    if (request.method === 'GET' && requestPath === '/healthz') return send(response, 200, 'application/json', {status: 'ok'});
+    if (request.method === 'GET' && requestPath === '/v2/capabilities') return send(response, 200, 'application/json', capabilityAttestationV2());
+    if (request.method === 'GET' && requestPath === '/v2/provider-profile') return send(response, 200, 'application/json', externalBiProviderProfileV1());
+    if (request.method === 'GET' && requestPath === '/v2/capability-manifest') return send(response, 200, 'application/json', capabilityManifestV1());
+    if (request.method === 'GET' && brandAssets.has(requestPath)) {
+      const asset = brandAssets.get(requestPath);
       return send(response, 200, asset.contentType, asset.body, 'public, max-age=3600');
     }
-    if (request.method === 'GET' && request.url === '/') return send(response, 200, 'text/html', page);
-    if (request.method === 'POST' && request.url === '/api/chat') return send(response, 200, 'application/json', await execute(validatePrompt(await requestJson(request))));
-    if (request.method === 'POST' && request.url === '/v2/intents') return send(response, 200, 'application/json', await executeExternal(await requestJson(request)));
+    if (request.method === 'GET' && requestPath === '/') return send(response, 200, 'text/html', page);
+    if (request.method === 'POST' && requestPath === '/api/chat') return send(response, 200, 'application/json', await execute(validatePrompt(await requestJson(request))));
+    if (request.method === 'POST' && requestPath === '/v2/intents') return send(response, 200, 'application/json', await executeExternal(await requestJson(request)));
     throw coded('AGENT_ROUTE_DENIED');
   } catch (error) {
     const code = String(error.code ?? error.message ?? 'AGENT_INTERNAL_ERROR').replace(/[^A-Z0-9_]/g, '_').slice(0, 128);

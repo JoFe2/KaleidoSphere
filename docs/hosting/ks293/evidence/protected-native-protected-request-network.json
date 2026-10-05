@@ -1,0 +1,278 @@
+[
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/assets/kaleidosphere-logo.svg",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/assets/apple-touch-icon.png",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/assets/kaleidosphere-logo.svg",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/assets/kaleidosphere-logo.svg",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/assets/kaleidosphere-logo.svg",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/assets/apple-touch-icon.png",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-b",
+    "url": "https://127.0.0.1:45393/t/tenant-b/",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-b",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-b",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/kaleidosphere-logo.svg",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-b",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/apple-touch-icon.png",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-b",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/kaleidosphere-logo.svg",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-b",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/kaleidosphere-logo.svg",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-b",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/kaleidosphere-logo.svg",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-b",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/apple-touch-icon.png",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-b",
+    "url": "https://127.0.0.1:45393/t/tenant-b/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-b",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/api/chat",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-b",
+    "url": "https://127.0.0.1:45393/t/tenant-b/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-b",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/api/chat",
+    "status": 200
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 400
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 400
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 400
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 403
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": true
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 403
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "method": "POST",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/api/chat",
+    "status": 403
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-b/",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/",
+    "status": 401
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/kaleidosphere-logo.svg",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-b/assets/kaleidosphere-logo.svg",
+    "status": 401
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/run/secrets/control-auth",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/run/secrets/control-auth",
+    "status": 404
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/?redirect=https://not-owned.invalid",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/?redirect=https://not-owned.invalid",
+    "status": 404
+  },
+  {
+    "tenant": "tenant-a",
+    "url": "https://127.0.0.1:45393/t/tenant-a/v1/publish",
+    "method": "GET",
+    "hasCsrfHeader": false
+  },
+  {
+    "tenant": "tenant-a",
+    "kind": "response",
+    "url": "https://127.0.0.1:45393/t/tenant-a/v1/publish",
+    "status": 404
+  }
+]

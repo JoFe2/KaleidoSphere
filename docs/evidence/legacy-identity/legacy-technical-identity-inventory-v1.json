@@ -188,6 +188,38 @@
         "tests/h01-local-demo-probe.test.mjs"
       ],
       "note": "Register only additional occurrences of the exact existing local readback schema and public synthetic fixture environment identity. Preserve every predecessor occurrence and census revision, stable IDs, legacy plan and base commit. No scanner exclusion, portable runtime contract definition or whole KS292 acceptance."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "67c611c6b523d8d8ee329a65f8a00a589de81e1e",
+      "predecessorOccurrences": 1093,
+      "predecessorInventorySha256": "348242e72fd6f8c8f94032b4ea55e19f2791cbb4ef695bffd6f2b1c68aa574e6",
+      "addedOccurrences": 21,
+      "removedOccurrences": 0,
+      "occurrences": 1114,
+      "addedIdentityClasses": [
+        "environment",
+        "packageContainer",
+        "schemaIdentity"
+      ],
+      "origin": "KS293_NATIVE_SYNTHETIC_TECHNICAL_EVIDENCE_OF_EXISTING_IDENTITIES",
+      "addedValues": [
+        "CM_BI_FIXTURE",
+        "chimpmaera-bi-portable-mssql-fixture",
+        "chimpmaera.bi/analysis-receipt/v1",
+        "chimpmaera.bi/catalog-answer/v1",
+        "chimpmaera.bi/local-technical-catalog/v1",
+        "chimpmaera.bi/readback/v1",
+        "chimpmaera.db/canonical-identity/v1",
+        "chimpmaera.db/coverage-ledger/v1",
+        "chimpmaera.db/preflight-evidence/v1"
+      ],
+      "addedPaths": [
+        "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json",
+        "docs/hosting/ks293/evidence/protected-native-generation-readback.json",
+        "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
+      ],
+      "note": "Register exact additional occurrences of existing fixture environment, package and stable schema identities in retained actual synthetic native readback. Every predecessor occurrence and census revision, original baseCommit, scanner/exclusions and compatibility plan remain unchanged. No technical identity rename, new authority, historical proof rewrite or broad migration."
     }
   ],
   "occurrences": [
@@ -220,6 +252,56 @@
       "identityClass": "environment",
       "value": "CM_BI_FIXTURE",
       "path": "compose.yaml"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
     },
     {
       "identityClass": "environment",
@@ -869,6 +951,11 @@
     {
       "identityClass": "packageContainer",
       "value": "chimpmaera-bi-portable-mssql-fixture",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "packageContainer",
+      "value": "chimpmaera-bi-portable-mssql-fixture",
       "path": "services/bi-control/fixtures/mssql-profile-v1.json"
     },
     {
@@ -1389,6 +1476,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/analysis-receipt/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/analysis-receipt/v1",
       "path": "services/bi-control/src/catalog.mjs"
     },
     {
@@ -1485,6 +1577,16 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/capability-descriptor/v1",
       "path": "services/bi-control/src/assistant-foundation/capability-registry.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
     },
     {
       "identityClass": "schemaIdentity",
@@ -1884,6 +1986,16 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
       "path": "services/bi-control/src/catalog.mjs"
     },
     {
@@ -2195,6 +2307,16 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/readback/v1",
       "path": "docs/evidence/M2_ORACLE_TECHNICAL_INVENTORY.md"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "docs/hosting/ks293/evidence/local-native-existing-local-browser-receipt.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-protected-browser-receipt.json"
     },
     {
       "identityClass": "schemaIdentity",
@@ -5149,6 +5271,11 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/canonical-identity/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/canonical-identity/v1",
       "path": "services/bi-control/src/db-analyzer/core.mjs"
     },
     {
@@ -5200,6 +5327,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/coverage-ledger/v1",
       "path": "docs/evidence/postgresql-e2e/run-2/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/coverage-ledger/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
     },
     {
       "identityClass": "schemaIdentity",
@@ -5395,6 +5527,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.db/preflight-evidence/v1",
       "path": "docs/evidence/postgresql-e2e/run-2/evidence.canonical.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.db/preflight-evidence/v1",
+      "path": "docs/hosting/ks293/evidence/protected-native-generation-readback.json"
     },
     {
       "identityClass": "schemaIdentity",
