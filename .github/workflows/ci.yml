@@ -137,6 +137,32 @@ jobs:
                     tests/h01-pan-runtime-source.test.mjs \
                     tests/h01-local-runtime-context.test.mjs
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS292_PAN526_SOURCE="+process.env.KS292_PAN526_SOURCE+"\n");'
+      - name: Provision and execute the exact public PAN527 origin and protected-session contract
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          export GIT_TERMINAL_PROMPT=0
+          export KS293_PAN527_SOURCE="$RUNNER_TEMP/ks293-pan527-8ed58034"
+          export KS293_PAN527_SESSION_SOURCE="$RUNNER_TEMP/ks293-pan527-6a7752be"
+          git init "$KS293_PAN527_SOURCE"
+          git -C "$KS293_PAN527_SOURCE" -c credential.helper= -c http.extraheader= fetch --depth=1 https://github.com/JoFe2/PANSPHAIRA.git 8ed580342b1b7392ff3c56175d507084cdbaa8ad
+          git -C "$KS293_PAN527_SOURCE" checkout --detach FETCH_HEAD
+          test "$(git -C "$KS293_PAN527_SOURCE" rev-parse HEAD)" = 8ed580342b1b7392ff3c56175d507084cdbaa8ad
+          test "$(git -C "$KS293_PAN527_SOURCE" rev-parse 'HEAD^{tree}')" = 83c8f0f439969736624a5bd6f0d165fc9dc4f6b6
+          (cd "$KS293_PAN527_SOURCE" && npm ci --ignore-scripts && npm run build)
+          git init "$KS293_PAN527_SESSION_SOURCE"
+          git -C "$KS293_PAN527_SESSION_SOURCE" -c credential.helper= -c http.extraheader= fetch --depth=1 https://github.com/JoFe2/PANSPHAIRA.git 6a7752be07405bd03ccbc40c13a9936d1b8d0d2b
+          git -C "$KS293_PAN527_SESSION_SOURCE" checkout --detach FETCH_HEAD
+          test "$(git -C "$KS293_PAN527_SESSION_SOURCE" rev-parse HEAD)" = 6a7752be07405bd03ccbc40c13a9936d1b8d0d2b
+          test "$(git -C "$KS293_PAN527_SESSION_SOURCE" rev-parse 'HEAD^{tree}')" = 43f33d0c3c14aacc23f1497aae7a0f83f1cd7f30
+          (cd "$KS293_PAN527_SESSION_SOURCE" && npm ci --ignore-scripts && npm run build)
+          # Origin-only v1 remains a negative predecessor, never promoted.
+          # The exact v3 loader and controlled TLS protocol must execute, not skip.
+          node --test tests/h02-pan-origin-source.test.mjs \
+                    tests/h02-pan-session-source.test.mjs \
+                    tests/h02-protected-source-availability.test.mjs \
+                    tests/h02-native-protected-ingress.test.mjs \
+                    tests/h02-https-network-boundary.test.mjs
+          node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS293_PAN527_SOURCE="+process.env.KS293_PAN527_SOURCE+"\nKS293_PAN527_SESSION_SOURCE="+process.env.KS293_PAN527_SESSION_SOURCE+"\n");'
       - run: npm run dist:agent-skill
       - run: npm test
         env:

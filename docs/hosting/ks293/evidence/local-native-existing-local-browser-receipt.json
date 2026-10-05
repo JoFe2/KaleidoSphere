@@ -1,0 +1,388 @@
+{
+  "scope": "actual existing local/self-hosting native product browser preparation; NOT HTTPS/shared session/CSRF/OIDC/tenant-session H02 acceptance",
+  "browser": "firefox/153.0",
+  "commonCandidateNotUsedAsKSSession": true,
+  "syntheticFixture": true,
+  "existingStubModeNotModelQualification": true,
+  "tests": 8,
+  "pass": 8,
+  "fail": 0,
+  "skipped": 0,
+  "cases": [
+    {
+      "id": "existing-local-native-agent-page",
+      "status": "PASS",
+      "actualSourceSha256": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae"
+    },
+    {
+      "id": "two-distinct-native-local-statuses",
+      "status": "PASS",
+      "a": {
+        "intent": "STATUS",
+        "status": {
+          "status": "READY",
+          "engine": "mssql",
+          "sourceMode": "fixture",
+          "latestReceiptId": null,
+          "scope": null,
+          "catalogReady": false,
+          "generation": {
+            "state": "ABSENT",
+            "generationId": null,
+            "code": "GENERATION_POINTER_ABSENT"
+          }
+        }
+      },
+      "b": {
+        "intent": "STATUS",
+        "status": {
+          "status": "READY",
+          "engine": "mssql",
+          "sourceMode": "fixture",
+          "latestReceiptId": null,
+          "scope": null,
+          "catalogReady": false,
+          "generation": {
+            "state": "ABSENT",
+            "generationId": null,
+            "code": "GENERATION_POINTER_ABSENT"
+          }
+        }
+      }
+    },
+    {
+      "id": "actual-existing-browser-analysis-and-native-readback",
+      "status": "PASS",
+      "value": {
+        "schemaVersion": "superset-bi-agent/agent-result/v2",
+        "intent": "ANALYZE",
+        "providerMode": "stub",
+        "tools": [
+          "status",
+          "analyze",
+          "catalog_ingest",
+          "readback",
+          "catalog_question"
+        ],
+        "status": {
+          "status": "READY",
+          "engine": "mssql",
+          "sourceMode": "fixture",
+          "latestReceiptId": null,
+          "scope": null,
+          "catalogReady": false,
+          "generation": {
+            "state": "ABSENT",
+            "generationId": null,
+            "code": "GENERATION_POINTER_ABSENT"
+          }
+        },
+        "analysisReceipt": {
+          "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+          "status": "ANALYZED_READ_ONLY",
+          "sourceMode": "fixture",
+          "scope": {
+            "container": null,
+            "database": "CM_BI_FIXTURE",
+            "schemas": [
+              "dbo"
+            ]
+          },
+          "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+          "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+        },
+        "catalog": {
+          "status": "INGESTED_LOCAL_TECHNICAL_CATALOG",
+          "coverageQuestion": {
+            "schemaVersion": "chimpmaera.bi/catalog-answer/v1",
+            "status": "ANSWERED_WITH_EVIDENCE",
+            "family": "coverage_blind_spots",
+            "answer": "Coverage states are authoritative; UNKNOWN or DENIED is never converted into absence.",
+            "rows": [
+              {
+                "query_id": "mssql.preflight.identity",
+                "category": "preflight",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.preflight.rights",
+                "category": "preflight",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 2,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.columns",
+                "category": "columns",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 3,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.constraints",
+                "category": "constraints",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.indexes",
+                "category": "indexes",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.relations",
+                "category": "relations",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 2,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.schemas",
+                "category": "schemas",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 1,
+                "empty_interpretation": "NOT_CLAIMED",
+                "caveat": "Collector succeeded for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.sequences",
+                "category": "sequences",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 0,
+                "empty_interpretation": "VERIFIED_EMPTY",
+                "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+              },
+              {
+                "query_id": "mssql.structure.synonyms",
+                "category": "synonyms",
+                "state": "SUCCEEDED",
+                "visibility": "VISIBLE_COMPLETE",
+                "reason_code": null,
+                "row_count": 0,
+                "empty_interpretation": "VERIFIED_EMPTY",
+                "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+              }
+            ],
+            "provenance": {
+              "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+              "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+              "engine": "mssql",
+              "database": "CM_BI_FIXTURE",
+              "sourceMode": "fixture",
+              "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+              "coverage": [
+                {
+                  "queryId": "mssql.preflight.identity",
+                  "category": "preflight",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.preflight.rights",
+                  "category": "preflight",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.columns",
+                  "category": "columns",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.constraints",
+                  "category": "constraints",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.indexes",
+                  "category": "indexes",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.relations",
+                  "category": "relations",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.schemas",
+                  "category": "schemas",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.sequences",
+                  "category": "sequences",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+                },
+                {
+                  "queryId": "mssql.structure.synonyms",
+                  "category": "synonyms",
+                  "state": "SUCCEEDED",
+                  "visibility": "VISIBLE_COMPLETE",
+                  "reasonCode": null,
+                  "caveat": "Collector succeeded with verified empty metadata for its bounded scope."
+                }
+              ]
+            }
+          }
+        },
+        "publication": {
+          "status": "AWAITING_TRUSTED_APPROVAL",
+          "mutationPerformed": false,
+          "requiredWorkflow": [
+            "preview",
+            "direct-trusted-ui-approval",
+            "apply",
+            "readback",
+            "rollback"
+          ]
+        },
+        "readback": {
+          "schemaVersion": "chimpmaera.bi/readback/v1",
+          "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+          "generationId": "5145e1d395122327c884ca592e5f670c37c4b0985cbcddd9d732c621dba23942",
+          "summary": {
+            "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+            "source_engine": "mssql",
+            "source_database": "CM_BI_FIXTURE",
+            "source_mode": "fixture",
+            "runtime_validation": "SYNTHETIC_UNVALIDATED",
+            "status": "ANALYZED_READ_ONLY",
+            "analyzed_at": "2026-10-04T23:49:33.809Z",
+            "relation_count": 2,
+            "column_count": 3,
+            "constraint_count": 1,
+            "index_count": 1,
+            "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+            "source_read_only": 1
+          },
+          "detailCount": 3,
+          "catalogSnapshot": {
+            "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+            "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+            "schema_version": "chimpmaera.bi/local-technical-catalog/v1"
+          },
+          "technicalOverview": {
+            "systemSchemaRows": 1,
+            "tableCapacityRows": 2,
+            "codeDependencyRows": 0,
+            "coverageRows": 9,
+            "biCandidateRows": 2
+          },
+          "publication": null,
+          "projectionMirror": {
+            "path": "/task/projection/analytics.db",
+            "state": "IN_SYNC",
+            "sha256": "e35960310c05cf4b519224ce0b20836f0afc59447978cb02cbe40a440f0b67fe",
+            "inSync": true
+          }
+        }
+      }
+    },
+    {
+      "id": "distinct-owned-native-B-remains-unchanged-after-A",
+      "status": "PASS",
+      "value": {
+        "intent": "STATUS",
+        "status": {
+          "status": "READY",
+          "engine": "mssql",
+          "sourceMode": "fixture",
+          "latestReceiptId": null,
+          "scope": null,
+          "catalogReady": false,
+          "generation": {
+            "state": "ABSENT",
+            "generationId": null,
+            "code": "GENERATION_POINTER_ABSENT"
+          }
+        }
+      }
+    },
+    {
+      "id": "existing-native-SQL-input-denial",
+      "status": "PASS",
+      "value": {
+        "status": "DENIED",
+        "code": "AGENT_UNSAFE_INPUT_DENIED"
+      }
+    },
+    {
+      "id": "existing-native-unknown-action-denial",
+      "status": "PASS",
+      "value": {
+        "status": "DENIED",
+        "code": "AGENT_UNKNOWN_ACTION_DENIED"
+      }
+    },
+    {
+      "id": "existing-native-arbitrary-file-route-denial",
+      "status": "PASS",
+      "value": {
+        "status": 400,
+        "body": {
+          "status": "DENIED",
+          "code": "AGENT_ROUTE_DENIED"
+        }
+      }
+    },
+    {
+      "id": "existing-native-local-mobile-reload",
+      "status": "PASS",
+      "value": {
+        "viewport": 390,
+        "scroll": 383,
+        "form": true,
+        "logoLoaded": true
+      }
+    }
+  ]
+}

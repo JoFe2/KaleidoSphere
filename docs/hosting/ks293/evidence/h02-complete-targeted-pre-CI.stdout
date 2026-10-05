@@ -1,0 +1,94 @@
+TAP version 13
+# Subtest: H02 owner-configured agent route prefix keeps browser calls on the exact native tenant route
+ok 1 - H02 owner-configured agent route prefix keeps browser calls on the exact native tenant route
+  ---
+  duration_ms: 102.845779
+  type: 'test'
+  ...
+# Subtest: H02 task-owned native control can bind only loopback without changing its local HTTP product
+ok 2 - H02 task-owned native control can bind only loopback without changing its local HTTP product
+  ---
+  duration_ms: 85.764237
+  type: 'test'
+  ...
+# Subtest: H02 real verified TLS protocol refuses redirects and duplicate authority headers without forwarding caller credentials
+ok 3 - H02 real verified TLS protocol refuses redirects and duplicate authority headers without forwarding caller credentials
+  ---
+  duration_ms: 3633.724217
+  type: 'test'
+  ...
+# Subtest: H02 session expiry during admitted async request body denies before native dispatch
+ok 4 - H02 session expiry during admitted async request body denies before native dispatch
+  ---
+  duration_ms: 7569.281544
+  type: 'test'
+  ...
+# Subtest: H02 session expiry during actual upstream response await denies before native bytes or cookie release
+ok 5 - H02 session expiry during actual upstream response await denies before native bytes or cookie release
+  ---
+  duration_ms: 7998.124929
+  type: 'test'
+  ...
+# Subtest: H02 native browser route selection is closed to the fixed owning tenant
+ok 6 - H02 native browser route selection is closed to the fixed owning tenant
+  ---
+  duration_ms: 0.90066
+  type: 'test'
+  ...
+# Subtest: H02 native route selection denies foreign tenants, effects, files and URL aliases
+ok 7 - H02 native route selection denies foreign tenants, effects, files and URL aliases
+  ---
+  duration_ms: 0.929936
+  type: 'test'
+  ...
+# Subtest: H02 prefixed native form copies only its exact current owner-issued anti-CSRF token into the same native POST
+ok 8 - H02 prefixed native form copies only its exact current owner-issued anti-CSRF token into the same native POST
+  ---
+  duration_ms: 58.420537
+  type: 'test'
+  ...
+# Subtest: H02 absent hosted prefix preserves accepted local HTML bytes and original cookie-free form submission
+ok 9 - H02 absent hosted prefix preserves accepted local HTML bytes and original cookie-free form submission
+  ---
+  duration_ms: 61.441631
+  type: 'test'
+  ...
+# Subtest: H02 optional native ingress requires explicit opt-in and the real KS-capable pinned producer
+ok 10 - H02 optional native ingress requires explicit opt-in and the real KS-capable pinned producer
+  ---
+  duration_ms: 733.348582
+  type: 'test'
+  ...
+# Subtest: H02 consumes the exact public PAN origin rule without inventing a KS protected-session capability
+ok 11 - H02 consumes the exact public PAN origin rule without inventing a KS protected-session capability
+  ---
+  duration_ms: 851.894156
+  type: 'test'
+  ...
+# Subtest: H02 origin consumer denies alias origins and copied or released source handles
+ok 12 - H02 origin consumer denies alias origins and copied or released source handles
+  ---
+  duration_ms: 4219.913108
+  type: 'test'
+  ...
+# Subtest: H02 consumes executable pinned PAN v3 without a RuntimeIdentity enum extension or mutation adapter
+ok 13 - H02 consumes executable pinned PAN v3 without a RuntimeIdentity enum extension or mutation adapter
+  ---
+  duration_ms: 1850.459531
+  type: 'test'
+  ...
+# Subtest: H02 cannot turn the actual PAN-only development source or a copied handle into KS sessions
+ok 14 - H02 cannot turn the actual PAN-only development source or a copied handle into KS sessions
+  ---
+  duration_ms: 498.26665
+  type: 'test'
+  ...
+1..14
+# tests 14
+# suites 0
+# pass 14
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 19261.563148

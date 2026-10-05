@@ -1,0 +1,9 @@
+{
+  "scope": "actual existing local/self-hosting native product browser preparation; NOT HTTPS/shared session/CSRF/OIDC/tenant-session H02 acceptance",
+  "browser": "firefox/153.0",
+  "tests": 8,
+  "pass": 8,
+  "fail": 0,
+  "skipped": 0,
+  "receipt": "<PRIVATE_EVIDENCE_ROOT>/h02-evidence/ks293localregressiond25fccc38441/native-existing-local-browser-receipt.json"
+}

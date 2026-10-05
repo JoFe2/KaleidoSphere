@@ -115,6 +115,17 @@ import './h01-local-stack-facts.test.mjs';
 import './h01-pan-runtime-source.test.mjs';
 import './h01-local-runtime-context.test.mjs';
 import './h01-runtime-ci-binding.test.mjs';
+// KS293 optional exact producer/session and native route/TLS protocol, once.
+import './h02-agent-route-prefix.test.mjs';
+import './h02-control-loopback-binding.test.mjs';
+import './h02-https-network-boundary.test.mjs';
+import './h02-native-browser-route-policy.test.mjs';
+import './h02-native-page-csrf.test.mjs';
+import './h02-native-protected-ingress.test.mjs';
+import './h02-pan-origin-source.test.mjs';
+import './h02-pan-session-source.test.mjs';
+import './h02-protected-source-availability.test.mjs';
+import './h02-runtime-ci-binding.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

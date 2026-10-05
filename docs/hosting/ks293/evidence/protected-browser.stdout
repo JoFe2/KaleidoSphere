@@ -1,0 +1,24 @@
+{"case":"actual-verified-TLS-native-page-and-producer-cookie-response","status":"PASS"}
+{"case":"actual-certificate-verifying-browser-native-page-cookie","status":"PASS"}
+{"case":"actual-native-prefixed-click-CSRF-status-two-tenants","status":"PASS"}
+{"case":"actual-existing-browser-analysis-and-native-readback","status":"PASS"}
+{"case":"actual-native-B-remains-unchanged-after-protected-A","status":"PASS"}
+{"case":"native-closed-input-denied-AGENT_UNSAFE_INPUT_DENIED-5","status":"PASS"}
+{"case":"native-closed-input-denied-AGENT_UNKNOWN_ACTION_DENIED-6","status":"PASS"}
+{"case":"native-closed-input-denied-AGENT_UNKNOWN_ACTION_DENIED-7","status":"PASS"}
+{"case":"actual-browser-missing-invalid-CSRF-and-role-spoof-denied","status":"PASS"}
+{"case":"actual-browser-foreign-file-effect-and-redirect-alias-denials","status":"PASS"}
+{"case":"actual-verified-TLS-host-origin-tenant-header-authority-denials","status":"PASS"}
+{"case":"actual-verified-TLS-WebSocket-upgrade-denied","status":"PASS"}
+{"case":"actual-auth-key-outage-fail-closed-no-portal-fallback","status":"PASS"}
+{"case":"actual-browser-cookie-and-persisted-session-expiry-denied","status":"PASS"}
+{"case":"actual-verified-TLS-expired-cookie-replay-denied","status":"PASS"}
+{"case":"actual-verified-TLS-valid-MAC-wrong-audience-denied","status":"PASS"}
+{"case":"actual-native-bound-store-instance-generation-source-mismatch-denied","status":"PASS"}
+{
+  "pass": 17,
+  "fail": 0,
+  "skipped": 0,
+  "receipt": "<PRIVATE_EVIDENCE_ROOT>/h02-evidence/ks293protected29deed769887/native-protected-browser-receipt.json",
+  "failure": null
+}

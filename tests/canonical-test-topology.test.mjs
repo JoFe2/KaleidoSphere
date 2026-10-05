@@ -195,6 +195,17 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-pan-runtime-source.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-local-runtime-context.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h01-runtime-ci-binding.test.mjs' },
+  // KS293 current origin/session consumer and bounded TLS protocol integration.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-agent-route-prefix.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-control-loopback-binding.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-https-network-boundary.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-native-browser-route-policy.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-native-page-csrf.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-native-protected-ingress.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-pan-origin-source.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-pan-session-source.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-protected-source-availability.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/h02-runtime-ci-binding.test.mjs' },
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },

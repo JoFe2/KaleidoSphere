@@ -1,0 +1,132 @@
+{
+  "scope": "pinned PAN v3 protected KS control-route session, verified TLS, native browser development integration; existing image plus read-only agent overlay, not release/delivery or real-model acceptance",
+  "prefix": "ks293protected29deed769887",
+  "startedAtUtc": "2026-10-05T00:01:10.017992+00:00",
+  "images": {
+    "agent": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+    "control": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472"
+  },
+  "taskPrivateUser": "1000:1000",
+  "imageDefaultUserNotRelabelled": "10001:10001; explicitly overridden only inside owned test containers",
+  "commonRuntimeIdentityEnumUnchanged": [
+    "pansphaira-local-demo",
+    "kaleidosphere-bi-agent"
+  ],
+  "noNewControlIdentityClaimed": true,
+  "externalOIDCOrPortalUsed": false,
+  "actualNativeProcesses": [
+    {
+      "containerId": "9ff41a17af05f14e28622d213e2413a5fbe447b74a46df9dbf8bbe98ef82811b",
+      "imageId": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+      "name": "/ks293protected29deed769887-tenant-a-control",
+      "node": "v24.14.0",
+      "sourceSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "state": "running",
+      "networks": [
+        "ks293protected29deed769887-tenant-a"
+      ]
+    },
+    {
+      "containerId": "a4833c8e5bb93eff1eb75786081eabdfdb69e9897c8c63bab6672e6cb6f87cd5",
+      "imageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+      "name": "/ks293protected29deed769887-tenant-a-agent",
+      "node": "v24.14.0",
+      "sourceSha256": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae",
+      "state": "running",
+      "networks": [
+        "ks293protected29deed769887-tenant-a"
+      ]
+    },
+    {
+      "containerId": "61adeebef5fe04c823c7a2c9492b832db326cdae127250cde8b2f24d516d75f6",
+      "imageId": "sha256:0aec85f2f1d0b8446f107b798d7826633b0c580cec5d6d13df02be20d33cc472",
+      "name": "/ks293protected29deed769887-tenant-b-control",
+      "node": "v24.14.0",
+      "sourceSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "state": "running",
+      "networks": [
+        "ks293protected29deed769887-tenant-b"
+      ]
+    },
+    {
+      "containerId": "46a1006191c9e4b1e2512d609c50afe2d15787d0baef9c249f46a47afd7428a3",
+      "imageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+      "name": "/ks293protected29deed769887-tenant-b-agent",
+      "node": "v24.14.0",
+      "sourceSha256": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae",
+      "state": "running",
+      "networks": [
+        "ks293protected29deed769887-tenant-b"
+      ]
+    }
+  ],
+  "isolatedCertificateChain": {
+    "leafSha256": "d5ffcd9995128d535991dafdb1293250fa2262733b58caffcbd90d115274255b",
+    "caSha256": "cdc6f953ada72647e6815d0c86e7ab12f529aff60a1bf946564aac0a7630685a",
+    "verifiedPurpose": "sslserver",
+    "verifiedIP": "127.0.0.1",
+    "systemTrustChanged": false
+  },
+  "protectedNativeBindings": [
+    {
+      "schemaVersion": "pansphaira.hosted-origin-session/protected-route-binding/v1",
+      "componentId": "kaleidosphere-bi-control",
+      "entrypointPath": "services/bi-control/src/server.mjs",
+      "sourceCommit": "67c611c6b523d8d8ee329a65f8a00a589de81e1e",
+      "sourceTree": "c36229b762bac232eb5cc942c9d68272076ee46c",
+      "entrypointSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "runtime": {
+        "name": "node",
+        "version": "24.14.0"
+      },
+      "instanceId": "ks293protected29deed769887-tenant-a-control",
+      "tenantId": "tenant-a",
+      "generation": 1
+    },
+    {
+      "schemaVersion": "pansphaira.hosted-origin-session/protected-route-binding/v1",
+      "componentId": "kaleidosphere-bi-control",
+      "entrypointPath": "services/bi-control/src/server.mjs",
+      "sourceCommit": "67c611c6b523d8d8ee329a65f8a00a589de81e1e",
+      "sourceTree": "c36229b762bac232eb5cc942c9d68272076ee46c",
+      "entrypointSha256": "8b4e3bed4aec797dd4d556148c48530736fe991fa25cfaae1412c8b97319eda1",
+      "runtime": {
+        "name": "node",
+        "version": "24.14.0"
+      },
+      "instanceId": "ks293protected29deed769887-tenant-b-control",
+      "tenantId": "tenant-b",
+      "generation": 1
+    }
+  ],
+  "generationBasis": "Owned native process start epoch 1, distinct from analysis-generation digest; exact owner-created instance name independently read back, raw Docker ID preserved separately, entrypoint bytes acquired",
+  "browserHarness": {
+    "path": "<PRIVATE_EVIDENCE_ROOT>/h02-evidence/ks293protected29deed769887/native-protected-5f6400c3981210a76cf584e78dae51d5440b9ea8a3eebc30e0d467287c8ae964.mjs",
+    "sha256": "5f6400c3981210a76cf584e78dae51d5440b9ea8a3eebc30e0d467287c8ae964",
+    "immutableRecipe": true
+  },
+  "productSourcePins": {
+    "services/bi-agent/src/server.mjs": "6dbb7fb218d770b32305e9c35b5b27eb5f62a38ffdaacc499a9b023f538b31ae",
+    "services/bi-agent/src/hosted-route-policy.mjs": "f3965b43815b925b8ee785e051eea908f8abb57f6e5ba11712e8df511070ad08",
+    "services/bi-control/src/runtime/pan-origin-source.mjs": "66c22d65f375e2e0bc9e67c323e0d2ccd64db7adc5e5e5415d7b2c4e6f898a81",
+    "services/bi-control/src/hosting/origin-session-ingress.mjs": "87ef088880d0a8bcd5d3cdcb257b6fedede96e5aac13953155efd8253c533028",
+    "contracts/dependencies/pan527-origin-session-source-development-v3.json": "044d2189b05b3015e7bd302ef02e8291d7f0a09eea606ccb683cb83cd5af0a91"
+  },
+  "browserExit": 0,
+  "actualNativeGeneration": "4f08fb021970f7630776f5237a4fb7e152e3d51dbb63750c5bc17ea90843229a",
+  "status": "PASS_DEVELOPMENT_NATIVE_PROTECTED_V3_SCOPE",
+  "browserTests": 17,
+  "browserPass": 17,
+  "browserFail": 0,
+  "browserSkipped": 0,
+  "actualDistinctOwnedPersistence": true,
+  "currentAgentSourceByteMatchingMountedOverlay": true,
+  "unalteredBaseImageUsed": true,
+  "cleanup": {
+    "remainingOwnedContainers": 0,
+    "remainingOwnedNetworks": 0,
+    "exactOwnerReadback": true
+  },
+  "ownedTransientStateRemoved": true,
+  "endedAtUtc": "2026-10-05T00:02:10.655294+00:00"
+}
