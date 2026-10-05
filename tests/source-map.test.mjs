@@ -111,6 +111,9 @@ import './stock-deadline-negatives.test.mjs';
 import './stock-source-boundary.test.mjs';
 import './stock-historical-profile.test.mjs';
 import './stock-runtime-ci-binding.test.mjs';
+// K06 actual optional worker and mandatory exact-runtime binding retain this root once.
+import './relational-core-product.test.mjs';
+import './relational-core-runtime-ci-binding.test.mjs';
 // KS292 independent local fact/backup adapters retain the frozen canonical root.
 import './h01-local-demo-probe.test.mjs';
 import './h01-owned-backup-guard.test.mjs';
@@ -536,4 +539,24 @@ test('the KS255 journey-runtime binding family is content-addressed and its suit
   assert.equal(lockEntry.integrity, manifest.artifact.integrity);
   assert.match(lockEntry.integrity, /^sha512-/);
   assert.equal(manifest.files.length, manifest.closureFileCount);
+});
+
+const relationalCoreFamily=Object.freeze([
+  "contracts/dependencies/relational-core-worker-lock-v1.json",
+  "docs/evidence/relational-core-worker-v1.md",
+  "scripts/prepare-relational-core-native-fixture.py",
+  "scripts/provision-relational-core-runtime.py",
+  "scripts/update-relational-core-source-map.mjs",
+  "services/bi-control/src/db-analyzer/relational-core-workflow.mjs",
+  "services/bi-control/src/db-analyzer/sqlalchemy-core-worker.py",
+  "tests/helpers/relational-core-native-worker-probe.py",
+  "tests/helpers/relational-core-owned-fixture.py",
+  "tests/relational-core-product.test.mjs",
+  "tests/relational-core-runtime-ci-binding.test.mjs",
+  "verification/relational-core-worker-comparison-v1.json"
+]);
+test('K06 actual MariaDB worker/minimal runtime/observed comparison are content-addressed and canonically registered once',async()=>{
+ const map=JSON.parse(await readFile('SOURCE-MAP.json','utf8'));for(const name of relationalCoreFamily){assert.match(map.files[name]??'',/^[a-f0-9]{64}$/,name);assert.equal(sha256(await readFile(name)),map.files[name],name);}
+ const parent=await readFile('tests/source-map.test.mjs','utf8'),pkg=JSON.parse(await readFile('package.json','utf8'));
+ for(const suite of ['relational-core-product.test.mjs','relational-core-runtime-ci-binding.test.mjs']){assert.equal(parent.split("import './"+suite+"';").length-1,1);assert.equal(pkg.scripts.test.split(/\s+/).includes('tests/'+suite),false);}
 });

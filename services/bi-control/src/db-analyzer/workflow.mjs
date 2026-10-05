@@ -15,6 +15,7 @@ import {
 import { buildOptionalParserEnrichment } from './parser-enrichment.mjs';
 import { auditQueryPackSafety } from './query-safety.mjs';
 import { runPostgresqlQueries } from './postgresql-runtime.mjs';
+import {RELATIONAL_CORE_PROFILE_SCHEMA, runRelationalCoreProfile} from './relational-core-workflow.mjs';
 import { buildOracleConnectString, selectProductDescriptor, assertProductSecretBinding } from '../runtime-config.mjs';
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -228,7 +229,11 @@ export async function runAnalyzeProfile(profileFile, options = {}) {
   assertActive();
   const repositoryRoot = path.resolve(options.repositoryRoot ?? REPOSITORY_ROOT);
   const resolvedProfile = path.resolve(profileFile);
-  const profile = validateAnalyzeProfile(await readJson(resolvedProfile));
+  const rawProfile = await readJson(resolvedProfile);
+  if (rawProfile?.schemaVersion === RELATIONAL_CORE_PROFILE_SCHEMA) {
+    return runRelationalCoreProfile(rawProfile, {signal: options.signal});
+  }
+  const profile = validateAnalyzeProfile(rawProfile);
   assertActive();
   if (profile.mode === 'RUNTIME' && profile.policy.profiling !== undefined) fail('DB_PROFILING_RUNTIME_NOT_AUTHORIZED');
   if (profile.mode === 'RUNTIME' && profile.policy.storedLogic !== undefined) fail('DB_STORED_LOGIC_RUNTIME_NOT_AUTHORIZED');

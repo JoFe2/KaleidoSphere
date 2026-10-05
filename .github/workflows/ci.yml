@@ -203,6 +203,22 @@ jobs:
                     tests/h05-shared-runtime-source.test.mjs \
                     tests/h05-template-native-product-route.test.mjs
           node --input-type=module -e 'import {appendFileSync} from "node:fs"; appendFileSync(process.env.GITHUB_ENV,"KS_H05_PAN_SOURCE_ROOT="+process.env.KS_H05_PAN_SOURCE_ROOT+"\n");'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12.3'
+      - name: Provision and execute the pinned relational Core MariaDB worker
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          python scripts/provision-relational-core-runtime.py --install
+          python scripts/provision-relational-core-runtime.py --verify
+          export KS288_RELATIONAL_PYTHON="$PWD/.ks-relational-core-runtime/venv/bin/python"
+          export KS288_FIXTURE_ROOT="$RUNNER_TEMP/ks288-owned-native-fixture"
+          "$KS288_RELATIONAL_PYTHON" -I -B scripts/prepare-relational-core-native-fixture.py --start --root "$KS288_FIXTURE_ROOT"
+          export KS288_NATIVE_TEST_CONFIG="$KS288_FIXTURE_ROOT/config.json"
+          export KS288_TEST_OWNER="$("$KS288_RELATIONAL_PYTHON" -I -B -c 'import json,os; from pathlib import Path; print(json.loads((Path(os.environ["KS288_FIXTURE_ROOT"])/"owned-state.json").read_text())["nonce"])')"
+          node --test --test-concurrency=1 tests/relational-core-product.test.mjs tests/relational-core-runtime-ci-binding.test.mjs
+          # Keep the exact owned fixture for mandatory canonical execution; no skip/fallback.
+          node --input-type=module -e 'import {appendFileSync} from "node:fs"; const keys=["KS288_RELATIONAL_PYTHON","KS288_FIXTURE_ROOT","KS288_NATIVE_TEST_CONFIG","KS288_TEST_OWNER"]; appendFileSync(process.env.GITHUB_ENV,keys.map(k=>k+"="+process.env[k]+"\n").join(""));'
       - run: npm run dist:agent-skill
       - run: npm test
         env:
@@ -233,3 +249,11 @@ jobs:
           node scripts/run-ks248-paired-access-evaluation.mjs --producer-checkout "$KS247_PRODUCER_CHECKOUT" --pglite "$KS247_PGLITE_PATH" > "$RUNNER_TEMP/ks248-paired-evaluation.json"
       - name: Validate Docker Compose
         run: docker compose --env-file .env.example --file compose.yaml config --quiet
+      - name: Read back exact owned relational fixture cleanup
+        if: always()
+        run: |
+          if test -n "${KS288_FIXTURE_ROOT:-}" && test -f "$KS288_FIXTURE_ROOT/owned-state.json"; then
+            "$KS288_RELATIONAL_PYTHON" -I -B scripts/prepare-relational-core-native-fixture.py --cleanup --root "$KS288_FIXTURE_ROOT"
+          elif test -f "$RUNNER_TEMP/ks288-owned-native-fixture/owned-state.json"; then
+            "$PWD/.ks-relational-core-runtime/venv/bin/python" -I -B scripts/prepare-relational-core-native-fixture.py --cleanup --root "$RUNNER_TEMP/ks288-owned-native-fixture"
+          fi

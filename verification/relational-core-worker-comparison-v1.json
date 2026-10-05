@@ -1,0 +1,170 @@
+{
+  "schemaVersion": "kaleidosphere.db/relational-core-comparison/v1",
+  "issue": 288,
+  "scope": "ACTUAL_PREIMPLEMENTATION_COMPARISON_ON_DECLARED_SYNTHETIC_TASK_DATA_IN_REAL_PINNED_SERVERS_NOT_PRODUCTION_DATA_OR_NEW_SOURCE_PERMISSION",
+  "baselineCommit": "a392665d69ebd7c0c900e710600dd401af480acb",
+  "originalBodySha256": "0eff8a2c32e2606f84b574a26af0dd189d2519a7a8c8292b269ac7b439cf802c",
+  "fixtureOracle": {
+    "schema": "ks288",
+    "relations": [
+      "accounts",
+      "payments"
+    ],
+    "orderedPrimaryKeys": {
+      "accounts": [
+        "tenant",
+        "id"
+      ],
+      "payments": [
+        "tenant",
+        "id"
+      ]
+    },
+    "orderedForeignKey": {
+      "table": "payments",
+      "columns": [
+        "tenant",
+        "account_id"
+      ],
+      "target": "accounts",
+      "targetColumns": [
+        "tenant",
+        "id"
+      ]
+    },
+    "numeric": {
+      "column": "amount",
+      "precision": 20,
+      "scale": 4
+    },
+    "counts": {
+      "accounts": 2,
+      "payments": 3,
+      "nonnullAmounts": 2,
+      "distinctLabelsBinary": 2
+    },
+    "exactDecimalSum": "1234567890123456.1235",
+    "binaryCollationNotAssumedEqualToCaseInsensitive": true
+  },
+  "matrix": [
+    {
+      "engine": "postgresql",
+      "candidate": "sqlalchemy-core",
+      "actualResultState": "SAME_DATA_QUERY_ORACLE_MATCH",
+      "sameCountsAndExactDecimalSumMatchIndependentOracle": true,
+      "exactDecimalReturnedAs": "Decimal",
+      "metadataScope": {
+        "orderedCompositePK": "MATCH",
+        "orderedCompositeFK": "MATCH",
+        "Decimal20_4": "MATCH",
+        "labelCollation": "C",
+        "nativeOIDAndValidation": "NOT_PORTABLY_REPRESENTED"
+      },
+      "vendorFieldsNotInferred": true
+    },
+    {
+      "engine": "postgresql",
+      "candidate": "adbc",
+      "actualResultState": "SAME_DATA_QUERY_ORACLE_MATCH",
+      "sameCountsAndExactDecimalSumMatchIndependentOracle": true,
+      "exactDecimalReturnedAs": "str",
+      "metadataScope": {
+        "orderedCompositePK": "MATCH",
+        "orderedCompositeFK": "MATCH",
+        "DecimalPrecisionScale": "UNKNOWN",
+        "nullable": "UNKNOWN",
+        "labelCollation": "UNKNOWN",
+        "nativeOIDAndValidation": "UNKNOWN"
+      },
+      "vendorFieldsNotInferred": true
+    },
+    {
+      "engine": "mariadb",
+      "candidate": "sqlalchemy-core",
+      "actualResultState": "SAME_DATA_QUERY_ORACLE_MATCH",
+      "sameCountsAndExactDecimalSumMatchIndependentOracle": true,
+      "exactDecimalReturnedAs": "Decimal",
+      "metadataScope": {
+        "orderedCompositePK": "MATCH",
+        "orderedCompositeFK": "MATCH",
+        "Decimal20_4": "MATCH",
+        "labelCollation": "UNKNOWN_NOT_ASSUMED",
+        "nativeOIDAndValidation": "NOT_PORTABLY_REPRESENTED"
+      },
+      "vendorFieldsNotInferred": true
+    },
+    {
+      "engine": "mariadb",
+      "candidate": "adbc",
+      "actualResultState": "SAME_DATA_QUERY_ORACLE_MATCH",
+      "sameCountsAndExactDecimalSumMatchIndependentOracle": true,
+      "exactDecimalReturnedAs": "Decimal",
+      "metadataScope": {
+        "orderedCompositePK": "UNKNOWN",
+        "orderedCompositeFK": "UNKNOWN",
+        "DecimalColumnPrecisionScale": "UNKNOWN",
+        "labelCollation": "UNKNOWN",
+        "notCountedAsConstraintAbsence": true,
+        "actualDecimalAggregateArrowSchema": "row_count: int64 not null\n  -- field metadata --\n  sql.column_name: 'row_count'\n  sql.database_type_name: 'BIGINT'\nnonnull_amounts: int64 not null\n  -- field metadata --\n  sql.column_name: 'nonnull_amounts'\n  sql.database_type_name: 'BIGINT'\ndistinct_labels: int64 not null\n  -- field metadata --\n  sql.column_name: 'distinct_labels'\n  sql.database_type_name: 'BIGINT'\nexact_sum: decimal256(42, 4)\n  -- field metadata --\n  sql.column_name: 'exact_sum'\n  sql.database_type_name: 'DECIMAL'\n  sql.precision: '42'\n  sql.scale: '4'"
+      },
+      "vendorFieldsNotInferred": true
+    },
+    {
+      "engine": "postgresql",
+      "candidate": "existing-native-workflow",
+      "state": "ACTUAL_STRUCTURE_AND_AGGREGATE_ORACLE_MATCH",
+      "sameCommonTaskCountsAndCompositeKeys": "MATCH",
+      "nativeOIDAndValidation": "ACTUAL_PRESENT",
+      "DecimalSUM": "NOT_EXECUTED_EXISTING_PUBLIC_NATIVE_POLICY_EXCLUDES_IT",
+      "DecimalPrecisionScaleAndCollation": "NOT_IN_CURRENT_V2_PACK"
+    },
+    {
+      "engine": "mariadb",
+      "candidate": "existing-native-workflow",
+      "state": "UNSUPPORTED_BEFORE_CONNECTION",
+      "actualCode": "DB_ANALYZE_PROFILE_ENGINE_INVALID",
+      "notProductCapabilityPass": true
+    }
+  ],
+  "selectedTarget": {
+    "engine": "mariadb",
+    "server": "11.8.3-MariaDB-ubu2404",
+    "serverImage": "mariadb@sha256:ae6119716edac6998ae85508431b3d2e666530ddf4e94c61a10710caec9b0f71",
+    "path": "OPTIONAL_SQLALCHEMY_CORE_PYMYSQL_CHILD_WORKER",
+    "packages": {
+      "Python": "3.12.3",
+      "SQLAlchemy": "2.0.54",
+      "PyMySQL": "1.1.2"
+    },
+    "usefulDelta": "New actual MariaDB bounded structure/count target with explicit ordered composite PK/FK and Decimal20_4 metadata; no such existing native executor.",
+    "choiceReason": "SQLAlchemy Core actually returns ordered composite PK/FK and Decimal precision/scale. Matching Foundry ADBC v0.6.1 executes exact data/Decimal query successfully but actual GetObjects table_constraints is null and column precision/scale/collation are unknown. Both need explicit native collation evidence; existing Node adapters retained.",
+    "collationGap": "Actual SQLAlchemy MariaDB reflection collation is UNKNOWN, not inferred from counts/default dialect; selected worker must bind native scoped column metadata before claiming collation.",
+    "MySQL": "NOT_DELIVERED_NOT_EXECUTED_NOT_A_MARIADB_PASS",
+    "adbc": "VALID_SCOPED_COMPARISON_CANDIDATE_NOT_INTEGRATED_OR_BLANKET_FAILED",
+    "noNewProductCapabilityYet": true
+  },
+  "comparisonRuntime": {
+    "Python": "3.12.3",
+    "SQLAlchemy": "2.0.54",
+    "PyMySQL": "1.1.2",
+    "psycopg2-binary": "2.9.11",
+    "adbc-driver-postgresql": "1.12.0",
+    "adbc-driver-manager": "1.12.0",
+    "pyarrow": "25.0.1",
+    "dbc": "0.3.1",
+    "adbc-mysql": "adbc-drivers/mysql go/v0.6.1 linux-amd64 official released native library"
+  },
+  "preimplementationInputs": {
+    "initialize-comparison.py": "ca4474a5cd3b824fefdbb980c4d51695b2d860d6c689451a0b1f2a078ffd2bbd",
+    "compare-python-paths.py": "927200500a3f9381a033b8413a0765512e03c6203fcd35d1d57a281f62d0f847",
+    "compare-native-path.mjs": "0bc01344e2d4947fc6644bb2b5042f7680937f12e71d49e07a2fc7eecca58a04",
+    "independent-declared-oracle.json": "b63ac770a9ebd948f5c4576a1d9dcdfe5735688075efdd082dd611abba991910",
+    "actual-python-comparison-results.json": "e39cca04330a7c3e9528ee0afd67583595f6f7fde8144f7c331202192f6258dd",
+    "actual-native-postgresql-comparison.json": "ea9d25fb70b331d346ced51e23bd316f5e66f3fcb85b0f9e254d8928814d10b2",
+    "actual-native-mariadb-unsupported.json": "35f2a3967916ca63dac60574994ee88388b1b6942a9860bab523e3c0c4c2f6d9"
+  },
+  "historicalObservationUtc": "2026-10-05T11:00:36.431027+00:00",
+  "currentWorkerEvidence": "tests/relational-core-product.test.mjs; prior noNewProductCapabilityYet describes only this earlier comparison, not subsequent actual worker execution",
+  "noBroadVendorParityClaims": true,
+  "noCredentialsHostAddressesPrivatePathsOrProductionRows": true
+}
