@@ -1,0 +1,2455 @@
+{
+  "scope": "ACTUAL_OBSERVED_DEVELOPMENT_INPUT_TRACE_NOT_FROZEN_OR_RELEASE_NATIVE_PASS",
+  "native": {
+    "status": "PASS_ACTUAL_NATIVE_DEVELOPMENT_SCOPE",
+    "owner": "ks282nativeb1060618a5aa",
+    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+    "actualNativeProcesses": [
+      {
+        "containerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+        "imageId": "sha256:b9829bd06c4dcd03b70ae9365058a95fb9fa9ef8cc9bf84f5890e2a02bf04e86",
+        "name": "/ks282nativeb1060618a5aa-tenant-a-control",
+        "role": "control",
+        "tenantId": "tenant-a",
+        "node": "v24.14.0",
+        "entrypointSha256": "266677847b72ea28983443ca3e669b1bf61492bb754f5f70f99969b45e7a24bb",
+        "sourceOverlayReadOnly": true
+      },
+      {
+        "containerId": "2a7d35d6124d33a743c6f0a5c64c844b987491b6859174378acfea0eebc7d9e6",
+        "imageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+        "name": "/ks282nativeb1060618a5aa-tenant-a-agent",
+        "role": "agent",
+        "tenantId": "tenant-a",
+        "node": "v24.14.0",
+        "entrypointSha256": "6cc0cef11f77ae30839825805c02e4b679fb476bbf694885bfef56c97530b384",
+        "sourceOverlayReadOnly": true
+      },
+      {
+        "containerId": "f727a4503a1f4071e60267cd8841ce51067c5f5275fc7376f7ebff002459ce47",
+        "imageId": "sha256:b9829bd06c4dcd03b70ae9365058a95fb9fa9ef8cc9bf84f5890e2a02bf04e86",
+        "name": "/ks282nativeb1060618a5aa-tenant-b-control",
+        "role": "control",
+        "tenantId": "tenant-b",
+        "node": "v24.14.0",
+        "entrypointSha256": "266677847b72ea28983443ca3e669b1bf61492bb754f5f70f99969b45e7a24bb",
+        "sourceOverlayReadOnly": true
+      },
+      {
+        "containerId": "dd572bfcf270f75c7f7dd34492d299746a319df1ff8e1b4a40fd15032f9df728",
+        "imageId": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+        "name": "/ks282nativeb1060618a5aa-tenant-b-agent",
+        "role": "agent",
+        "tenantId": "tenant-b",
+        "node": "v24.14.0",
+        "entrypointSha256": "6cc0cef11f77ae30839825805c02e4b679fb476bbf694885bfef56c97530b384",
+        "sourceOverlayReadOnly": true
+      }
+    ],
+    "exactProductPins": {
+      "services/bi-agent/src/server.mjs": "6cc0cef11f77ae30839825805c02e4b679fb476bbf694885bfef56c97530b384",
+      "services/bi-agent/src/browser-starter-page.mjs": "02e32a77b65b57f05c65af739a6c780844c68b5724f9c7879f50277f7940e5b7",
+      "services/bi-control/src/server.mjs": "266677847b72ea28983443ca3e669b1bf61492bb754f5f70f99969b45e7a24bb",
+      "services/bi-control/src/hosting/browser-starter.mjs": "c0c2b46e8162e4a7851ca2c2d03a66bc1ad638566f60e7a172bc8bb6badacba1",
+      "services/bi-control/src/hosting/browser-starter-store.mjs": "d22026535e4cbe1b1a3f77208a9a1040b9c303c8722c0a5a086121e9422db33b",
+      "services/bi-control/src/hosting/origin-session-ingress.mjs": "87ef088880d0a8bcd5d3cdcb257b6fedede96e5aac13953155efd8253c533028",
+      "services/bi-control/src/runtime/pan-origin-source.mjs": "66c22d65f375e2e0bc9e67c323e0d2ccd64db7adc5e5e5415d7b2c4e6f898a81",
+      "scripts/run-invoice-date-o2c.mjs": "0068ce39530b7961c49177576dd48be7a162c136f473bfdc30313871db415777"
+    },
+    "exactEpicInputPins": {
+      "scripts/hosting/run-native-host-epic.py": "094aee999fbe4b05ee74535dd4bf83dc122be082fae8fe495f950b5ae60dc095",
+      "scripts/hosting/native-host-epic-browser.mjs": "667f3a76a2f4f195638058acd7e65a82b3faf47a94fa37eae8ac5ab3e67cbb99",
+      "scripts/hosting/native-host-epic-owner.py": "6169e7b2c25b048a193bef62d7e13b885dbd439190a1679133625a8956c27ed0",
+      "scripts/hosting/host-epic-native-owner-probe.mjs": "6de492a155024724bfd6d5a19139f39bb4c0cb25258d48564c6fb2523b3447ff",
+      "scripts/hosting/host-epic-native-budget-request.mjs": "2d48e4edd4e333bc4b492bc6f7301c588ef065090f1bae79b31e22d32d91f98b",
+      "scripts/hosting/host-epic-native-receipt.mjs": "9fedeac7154d16db1d7f247c46f91f32c66c0b37e68c25d4448c210ceac146cb",
+      "services/bi-control/src/hosting/portable-runtime.mjs": "e81f3154f3643ca980a58ebaab35280f8202a2c6b670b7ef270765c6a82eb26b",
+      "services/bi-control/src/hosting/portable-runtime-lifecycle.mjs": "635b09530791c56860c4a7a6e150f41911840596bd6c5bb9bc031992d42b3e29",
+      "services/bi-control/src/runtime/h05-native-broker-runtime.mjs": "d3c487e7cfd127d47a78f58dded78dd29cb29495aa2f6f19a6052eda43aba7b7"
+    },
+    "cleanup": {
+      "remainingOwnedContainers": 0,
+      "remainingOwnedNetworks": 0,
+      "transientOwnedStateRemoved": true,
+      "foreignResourcesRemoved": false,
+      "exactOwnedReadback": true
+    }
+  },
+  "browser": {
+    "scope": "ACTUAL_CONNECTED_NATIVE_HOST_EPIC_WITH_VERIFIED_FIREFOX_ORIGIN_SHARED_TEMPLATE_BUDGET_AND_COLD_RESTORE",
+    "hostEpicFlow": {
+      "schemaVersion": "kaleidosphere/host-epic-native-flow/v1",
+      "owner": "ks282nativeb1060618a5aa",
+      "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+      "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+      "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+      "browserOriginReceiptId": "mssql-c8cc52a50bc776e118821d7b",
+      "browserOriginSnapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+      "exportedGenerationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+      "reacquiredGenerationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+      "ownedSyntheticHTTPFixtureRequests": 2,
+      "vendorProviderQualificationClaimed": false,
+      "budgetPersistenceAcrossColdNativeControlReacquisition": true,
+      "storeScope": "PROJECTION_AND_RECEIPT_NOT_FULL_APP_NOT_TOKENS_OR_H03_H05_STORES",
+      "humanUsability": "NOT_OBSERVED"
+    },
+    "tests": 25,
+    "pass": 25,
+    "fail": 0,
+    "skipped": 0,
+    "cases": [
+      {
+        "id": "actual-verified-TLS-non-admin-browser-tenant-a",
+        "status": "PASS",
+        "value": {
+          "httpStatus": 200,
+          "browser": "firefox/153.0",
+          "secureContext": true,
+          "sessionHttpOnly": true,
+          "certificateVerificationDisabled": false,
+          "actualHeldTemplate": {
+            "schemaVersion": "pansphaira.portable-runtime/template/v1",
+            "templateId": "bounded-kaleidosphere-bi-agent-v1",
+            "identity": {
+              "architecture": "x86_64",
+              "authorityProfile": "SAFE_GUIDED",
+              "componentId": "kaleidosphere-bi-agent",
+              "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+              "contractVersion": "1.0.0",
+              "effectiveRights": [
+                "bi.catalog.read"
+              ],
+              "generation": 1,
+              "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+              "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+              "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+              "productVersion": "0.26.0",
+              "runtime": {
+                "name": "node",
+                "version": "24.14.0"
+              },
+              "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+              "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+              "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+              "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+              "tenantId": "tenant-a"
+            },
+            "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+            "providerMode": "SYNTHETIC_ONLY",
+            "resourceClass": {
+              "name": "bounded-native-read-v1",
+              "modelReservationUnits": 64,
+              "runtimeReservationUnits": 1,
+              "maxInputBytes": 4096,
+              "maxOutputBytes": 8192,
+              "maxTokens": 32,
+              "maxRequests": 32,
+              "timeoutMs": 20000
+            },
+            "activationAuthorized": false,
+            "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+          }
+        }
+      },
+      {
+        "id": "actual-verified-TLS-non-admin-browser-tenant-b",
+        "status": "PASS",
+        "value": {
+          "httpStatus": 200,
+          "browser": "firefox/153.0",
+          "secureContext": true,
+          "sessionHttpOnly": true,
+          "certificateVerificationDisabled": false,
+          "actualHeldTemplate": {
+            "schemaVersion": "pansphaira.portable-runtime/template/v1",
+            "templateId": "bounded-kaleidosphere-bi-agent-v1",
+            "identity": {
+              "architecture": "x86_64",
+              "authorityProfile": "SAFE_GUIDED",
+              "componentId": "kaleidosphere-bi-agent",
+              "configurationDigest": "9ad2d991979b295bc5acccfd553d394a35b6da2e72d65c607e6115ba2b442bd9",
+              "contractVersion": "1.0.0",
+              "effectiveRights": [
+                "bi.catalog.read"
+              ],
+              "generation": 1,
+              "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-b-agent",
+              "networkDigest": "c5eaed898a6aaf11c31eef6d627e3944ad679129dda9fee7654299705c33107f",
+              "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+              "productVersion": "0.26.0",
+              "runtime": {
+                "name": "node",
+                "version": "24.14.0"
+              },
+              "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+              "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+              "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+              "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+              "tenantId": "tenant-b"
+            },
+            "identityDigest": "b372c1c01afc88d8a081e77df461a93a066d518628d7893b9ed3ac415f63d9a4",
+            "providerMode": "SYNTHETIC_ONLY",
+            "resourceClass": {
+              "name": "bounded-native-read-v1",
+              "modelReservationUnits": 64,
+              "runtimeReservationUnits": 1,
+              "maxInputBytes": 4096,
+              "maxOutputBytes": 8192,
+              "maxTokens": 32,
+              "maxRequests": 32,
+              "timeoutMs": 20000
+            },
+            "activationAuthorized": false,
+            "runtimeTemplateDigest": "b0f228630c1e9446f69f536d860c72ffece7b31b15334d9cc31bc9463b9d930c"
+          }
+        }
+      },
+      {
+        "id": "actual-epic-native-template-and-budget",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "budget": {
+            "node": "24.14.0",
+            "uid": 1000,
+            "schemaVersion": "kaleidosphere/host-epic-native-budget-observation/v1",
+            "sourceDescriptorSha256": "4f8ed30d2446639fa4f3b28589a8c9ef362ca8b1083f702fabcc40d22b887255",
+            "planningTemplate": {
+              "schemaVersion": "pansphaira.portable-runtime/template/v1",
+              "templateId": "bounded-kaleidosphere-bi-agent-v1",
+              "identity": {
+                "architecture": "x86_64",
+                "authorityProfile": "SAFE_GUIDED",
+                "componentId": "kaleidosphere-bi-agent",
+                "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                "contractVersion": "1.0.0",
+                "effectiveRights": [
+                  "bi.catalog.read"
+                ],
+                "generation": 1,
+                "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                "productVersion": "0.26.0",
+                "runtime": {
+                  "name": "node",
+                  "version": "24.14.0"
+                },
+                "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                "tenantId": "tenant-a"
+              },
+              "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+              "providerMode": "SYNTHETIC_ONLY",
+              "resourceClass": {
+                "name": "bounded-native-read-v1",
+                "modelReservationUnits": 64,
+                "runtimeReservationUnits": 1,
+                "maxInputBytes": 4096,
+                "maxOutputBytes": 8192,
+                "maxTokens": 32,
+                "maxRequests": 32,
+                "timeoutMs": 20000
+              },
+              "activationAuthorized": false,
+              "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+            },
+            "plan": {
+              "schemaVersion": "pansphaira.portable-runtime/template-plan/v1",
+              "operationId": "operation:epic282-template-plan",
+              "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+              "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6",
+              "diff": {
+                "from": null,
+                "to": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6",
+                "componentId": "kaleidosphere-bi-agent",
+                "effectiveRights": [
+                  "bi.catalog.read"
+                ],
+                "sourceTemplateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                }
+              },
+              "humanReadableDiff": "Template: not selected -> 10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6\nComponent: kaleidosphere-bi-agent; rights unchanged: bi.catalog.read\nTemplate/Policy/Network: 44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0/86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8/0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1\nResource class: bounded-native-read-v1; model reserve <= 64; runtime reserve <= 1\nProvider mode: SYNTHETIC_ONLY; no paid provider or business pricing.\nPlan only: no activation, budget reservation, dispatch or rights grant.",
+              "planOnly": true,
+              "activationAuthorized": false,
+              "planDigest": "eab562ac2eb2bd464b8478cc49974915f0070668bab7c9b56ecc0b3369450a48"
+            },
+            "planOnlyNoLedgerOrRequest": true,
+            "ownedSyntheticHTTPFixtureRequests": 2,
+            "vendorProviderQualificationClaimed": false,
+            "runtimeActivationGranted": false,
+            "budgetBefore": {
+              "model": {
+                "schemaVersion": "cm.ccp-cost-budget/v1",
+                "budgetId": "budget:ks295-model",
+                "ledgerId": "ledger:ks295-native",
+                "tenantId": "tenant:synthetic-zoo",
+                "repositoryId": "repository:kaleidosphere",
+                "contributionId": "contribution:ks295-runtime",
+                "logicalAtMs": 0,
+                "budgetUnits": 128,
+                "committedUnits": 69,
+                "consumedUnits": 5,
+                "remainingUnits": 59,
+                "exhausted": false,
+                "budgetDigest": "7d86c4f7ed4bf937f540d6e2623c953f18a49cde091ec6937c7677519fbc658f"
+              },
+              "runtime": {
+                "schemaVersion": "cm.ccp-cost-budget/v1",
+                "budgetId": "budget:ks295-runtime",
+                "ledgerId": "ledger:ks295-native",
+                "tenantId": "tenant:synthetic-zoo",
+                "repositoryId": "repository:kaleidosphere",
+                "contributionId": "contribution:ks295-runtime",
+                "logicalAtMs": 0,
+                "budgetUnits": 2,
+                "committedUnits": 2,
+                "consumedUnits": 1,
+                "remainingUnits": 0,
+                "exhausted": true,
+                "budgetDigest": "ea0dcb6c1a31f57c4fbd8a17473ae3b5018704b038d421cc159c111f33e8494e"
+              },
+              "reservations": 2
+            },
+            "budgetAfter": {
+              "model": {
+                "schemaVersion": "cm.ccp-cost-budget/v1",
+                "budgetId": "budget:ks295-model",
+                "ledgerId": "ledger:ks295-native",
+                "tenantId": "tenant:synthetic-zoo",
+                "repositoryId": "repository:kaleidosphere",
+                "contributionId": "contribution:ks295-runtime",
+                "logicalAtMs": 0,
+                "budgetUnits": 128,
+                "committedUnits": 69,
+                "consumedUnits": 5,
+                "remainingUnits": 59,
+                "exhausted": false,
+                "budgetDigest": "7d86c4f7ed4bf937f540d6e2623c953f18a49cde091ec6937c7677519fbc658f"
+              },
+              "runtime": {
+                "schemaVersion": "cm.ccp-cost-budget/v1",
+                "budgetId": "budget:ks295-runtime",
+                "ledgerId": "ledger:ks295-native",
+                "tenantId": "tenant:synthetic-zoo",
+                "repositoryId": "repository:kaleidosphere",
+                "contributionId": "contribution:ks295-runtime",
+                "logicalAtMs": 0,
+                "budgetUnits": 2,
+                "committedUnits": 2,
+                "consumedUnits": 1,
+                "remainingUnits": 0,
+                "exhausted": true,
+                "budgetDigest": "ea0dcb6c1a31f57c4fbd8a17473ae3b5018704b038d421cc159c111f33e8494e"
+              },
+              "reservations": 2
+            },
+            "rows": [
+              {
+                "operation_id": "operation:epic282-native-model-001",
+                "state": "SETTLED",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 5,
+                "runtime_consumed": 1
+              },
+              {
+                "operation_id": "operation:epic282-native-model-unknown",
+                "state": "UNKNOWN_USAGE",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 0,
+                "runtime_consumed": 0
+              }
+            ],
+            "unknownReopenNoRedispatch": true,
+            "exhaustedBeforeDispatch": true,
+            "modelTextCannotGrantRightsOrZeroObservedUsage": true
+          }
+        }
+      },
+      {
+        "id": "actual-separate-catalog-browser-and-native-result",
+        "status": "PASS",
+        "value": {
+          "response": {
+            "status": 200,
+            "body": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "catalog",
+                "expectedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "observedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "businessStatus": "VALUE_VERIFIED",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "mode": "BUNDLED_SYNTHETIC_METADATA",
+                  "database": "CM_BI_FIXTURE",
+                  "schemas": [
+                    "dbo"
+                  ],
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true
+                },
+                "evidence": {
+                  "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                  "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+                  "rawSourceReturned": false
+                },
+                "firstValueMs": 367.50277300000016,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              }
+            }
+          },
+          "renderedFields": {
+            "notice": "Starter: succeeded \u00b7 eigene Generation 1",
+            "business-status": "VALUE_VERIFIED \u00b7 Fachwert stimmt",
+            "expected": "dbo.customers, dbo.orders",
+            "observed": "dbo.customers, dbo.orders",
+            "first-value": "Server 367.50 ms \u00b7 Browser 1606.00 ms \u00b7 humanUsability: NOT_OBSERVED",
+            "template-identity": "{\n  \"schemaVersion\": \"pansphaira.portable-runtime/template/v1\",\n  \"templateId\": \"bounded-kaleidosphere-bi-agent-v1\",\n  \"identity\": {\n    \"architecture\": \"x86_64\",\n    \"authorityProfile\": \"SAFE_GUIDED\",\n    \"componentId\": \"kaleidosphere-bi-agent\",\n    \"configurationDigest\": \"30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0\",\n    \"contractVersion\": \"1.0.0\",\n    \"effectiveRights\": [\n      \"bi.catalog.read\"\n    ],\n    \"generation\": 1,\n    \"imageDigest\": \"sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386\",\n    \"instanceId\": \"ks282nativeb1060618a5aa-tenant-a-agent\",\n    \"networkDigest\": \"0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1\",\n    \"policyDigest\": \"86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8\",\n    \"productVersion\": \"0.26.0\",\n    \"runtime\": {\n      \"name\": \"node\",\n      \"version\": \"24.14.0\"\n    },\n    \"schemaVersion\": \"pansphaira.portable-runtime/identity/v1\",\n    \"sourceCommit\": \"c7e4eb90628156c82e3b6f7115ebb41d247ad2b1\",\n    \"sourceTree\": \"28b1179c5760794213c6ed9177d6de4c5b7a47c6\",\n    \"templateDigest\": \"44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0\",\n    \"tenantId\": \"tenant-a\"\n  },\n  \"identityDigest\": \"57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead\",\n  \"providerMode\": \"SYNTHETIC_ONLY\",\n  \"resourceClass\": {\n    \"name\": \"bounded-native-read-v1\",\n    \"modelReservationUnits\": 64,\n    \"runtimeReservationUnits\": 1,\n    \"maxInputBytes\": 4096,\n    \"maxOutputBytes\": 8192,\n    \"maxTokens\": 32,\n    \"maxRequests\": 32,\n    \"timeoutMs\": 20000\n  },\n  \"activationAuthorized\": false,\n  \"runtimeTemplateDigest\": \"10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6\"\n}",
+            "source": "{\"source\":{\"mode\":\"BUNDLED_SYNTHETIC_METADATA\",\"database\":\"CM_BI_FIXTURE\",\"schemas\":[\"dbo\"],\"snapshotSha256\":\"293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a\"},\"period\":null}",
+            "rights": "{\"principal\":\"NON_ADMIN_READER\",\"scope\":\"OWNED_SYNTHETIC_STARTER\",\"sourceWriteAuthorized\":false,\"adminAuthorized\":false,\"templateIsNotGrant\":true}",
+            "evidence": "{\n  \"receiptId\": \"mssql-c8cc52a50bc776e118821d7b\",\n  \"snapshotSha256\": \"293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a\",\n  \"observedValueSha256\": \"839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38\",\n  \"rawSourceReturned\": false\n}"
+          }
+        }
+      },
+      {
+        "id": "actual-epic-export-from-browser-origin",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "firstBrowserCatalogReceipt": {
+            "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+            "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+            "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+            "rawSourceReturned": false
+          },
+          "exported": {
+            "state": "EXPORTED_LOCAL",
+            "operatorAccountRequired": false,
+            "checkpoint": {
+              "schemaVersion": "kaleidosphere/checkpoint-manifest/v1",
+              "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+              "generationManifest": {
+                "contract": "chimpmaera.bi/generation-store/v1",
+                "label": "receipt:mssql-c8cc52a50bc776e118821d7b",
+                "files": [
+                  {
+                    "path": "analytics.db",
+                    "sha256": "6a3a1b10f882dcbbe48bbaf476f4377237fa9f687f7c03979ee5e998656a4dc6"
+                  },
+                  {
+                    "path": "receipt.json",
+                    "sha256": "51fb44eaa2120bf2d06d5c8df58c5c7232ada11d39fdde61a8d7440ae6819293"
+                  }
+                ],
+                "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+                "stagedAt": "2026-10-06T01:04:42.010Z"
+              },
+              "configuration": {
+                "engine": "mssql",
+                "sourceMode": "fixture"
+              },
+              "contracts": {
+                "generationStore": "chimpmaera.bi/generation-store/v1",
+                "projectionGeneration": "chimpmaera.bi/projection-generation/v1"
+              },
+              "runtime": {
+                "name": "node",
+                "version": "24.14.0",
+                "productVersion": "0.26.0"
+              },
+              "sourcePins": {
+                "generation-store.mjs": "e4a48ab02a73bff2e1b9a74c04861a497c8c18fbcd8ae4924225047fbea1438d",
+                "projection-generation.mjs": "fff85ea3ab710864aa2624de8cc9f0abd34c26c6bbfe4ba4f2108bac2353c67a",
+                "catalog.mjs": "9e8096baf2959834638b182dea683e5ff39599019155d82559e181436587a950"
+              },
+              "origin": {
+                "receiptDir": "/task/receipts",
+                "device": 66307,
+                "inode": 70708238
+              },
+              "files": [
+                {
+                  "path": "analytics.db",
+                  "sha256": "6a3a1b10f882dcbbe48bbaf476f4377237fa9f687f7c03979ee5e998656a4dc6",
+                  "bytes": 155648
+                },
+                {
+                  "path": "receipt.json",
+                  "sha256": "51fb44eaa2120bf2d06d5c8df58c5c7232ada11d39fdde61a8d7440ae6819293",
+                  "bytes": 14038
+                }
+              ],
+              "scope": "OWNED_SYNTHETIC_NATIVE_PROJECTION_RECEIPT_NOT_FULL_APP",
+              "runtimeReadyClaimed": false,
+              "operatorAccountRequired": false
+            },
+            "bundleSha256": "b1a1f9842a6dc4783b7aaacc0e98a259f6989302bc38a487083e6761a7c54e5b",
+            "runtimeReadyClaimed": false
+          },
+          "before": {
+            "node": "24.14.0",
+            "uid": 1000,
+            "readback": {
+              "schemaVersion": "chimpmaera.bi/readback/v1",
+              "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+              "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+              "summary": {
+                "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+                "source_engine": "mssql",
+                "source_database": "CM_BI_FIXTURE",
+                "source_mode": "fixture",
+                "runtime_validation": "SYNTHETIC_UNVALIDATED",
+                "status": "ANALYZED_READ_ONLY",
+                "analyzed_at": "2026-10-06T01:04:41.649Z",
+                "relation_count": 2,
+                "column_count": 3,
+                "constraint_count": 1,
+                "index_count": 1,
+                "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "source_read_only": 1
+              },
+              "detailCount": 3,
+              "catalogSnapshot": {
+                "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+                "schema_version": "chimpmaera.bi/local-technical-catalog/v1"
+              },
+              "technicalOverview": {
+                "systemSchemaRows": 1,
+                "tableCapacityRows": 2,
+                "codeDependencyRows": 0,
+                "coverageRows": 9,
+                "biCandidateRows": 2
+              },
+              "publication": null,
+              "projectionMirror": {
+                "path": "/task/projection/analytics.db",
+                "state": "IN_SYNC",
+                "sha256": "6a3a1b10f882dcbbe48bbaf476f4377237fa9f687f7c03979ee5e998656a4dc6",
+                "inSync": true
+              }
+            },
+            "question": {
+              "schemaVersion": "chimpmaera.bi/catalog-answer/v1",
+              "status": "ANSWERED_WITH_EVIDENCE",
+              "family": "largest_tables",
+              "answer": "Largest tables are ranked only from visible size/statistics metadata; unknown bytes remain unknown.",
+              "rows": [
+                {
+                  "schema_name": "dbo",
+                  "relation_name": "customers",
+                  "relation_kind": "TABLE",
+                  "bytes": null,
+                  "blocks": null,
+                  "num_rows_estimate": null,
+                  "size_semantics": null,
+                  "row_count_semantics": null
+                },
+                {
+                  "schema_name": "dbo",
+                  "relation_name": "orders",
+                  "relation_kind": "TABLE",
+                  "bytes": null,
+                  "blocks": null,
+                  "num_rows_estimate": null,
+                  "size_semantics": null,
+                  "row_count_semantics": null
+                }
+              ],
+              "provenance": {
+                "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "engine": "mssql",
+                "database": "CM_BI_FIXTURE",
+                "sourceMode": "fixture",
+                "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+                "coverage": [
+                  {
+                    "queryId": "mssql.structure.relations",
+                    "category": "relations",
+                    "state": "SUCCEEDED",
+                    "visibility": "VISIBLE_COMPLETE",
+                    "reasonCode": null,
+                    "caveat": "Collector succeeded for its bounded scope."
+                  }
+                ]
+              }
+            },
+            "starter": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "catalog",
+                "expectedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "observedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "businessStatus": "VALUE_VERIFIED",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "mode": "BUNDLED_SYNTHETIC_METADATA",
+                  "database": "CM_BI_FIXTURE",
+                  "schemas": [
+                    "dbo"
+                  ],
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true
+                },
+                "evidence": {
+                  "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                  "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+                  "rawSourceReturned": false
+                },
+                "firstValueMs": 367.50277300000016,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              },
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "starterGeneration": 1,
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent"
+            },
+            "nativeBudgetRows": [
+              {
+                "operation_id": "operation:epic282-native-model-001",
+                "state": "SETTLED",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 5,
+                "runtime_consumed": 1
+              },
+              {
+                "operation_id": "operation:epic282-native-model-unknown",
+                "state": "UNKNOWN_USAGE",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 0,
+                "runtime_consumed": 0
+              }
+            ]
+          },
+          "sourceAndBackupByteIdentical": true
+        }
+      },
+      {
+        "id": "actual-epic-bad-restore-retains-origin",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "badKey": {
+            "candidateActivated": false,
+            "lastQualifiedGenerationRetained": true,
+            "quarantinePersisted": true,
+            "reason": "H08_BUNDLE_INVALID",
+            "runtimeReadyClaimed": false,
+            "state": "QUARANTINED",
+            "actualLifecycleCliDenial": {
+              "state": "DENIED",
+              "reason": "H08_LIFECYCLE_RESTORE_DENIED",
+              "runtimeReadyClaimed": false
+            }
+          },
+          "badGeneration": {
+            "candidateActivated": false,
+            "lastQualifiedGenerationRetained": true,
+            "quarantinePersisted": true,
+            "reason": "H08_CHECKPOINT_MISMATCH",
+            "runtimeReadyClaimed": false,
+            "state": "QUARANTINED",
+            "actualLifecycleCliDenial": {
+              "state": "DENIED",
+              "reason": "H08_LIFECYCLE_RESTORE_DENIED",
+              "runtimeReadyClaimed": false
+            }
+          },
+          "descendant": {
+            "state": "QUARANTINED",
+            "reason": "H08_ORIGINAL_STORE_RESTORE_DENIED",
+            "candidateActivated": false,
+            "runtimeReadyClaimed": false,
+            "lastQualifiedGenerationRetained": true,
+            "quarantinePersisted": false,
+            "actualLifecycleCliDenial": {
+              "state": "DENIED",
+              "reason": "H08_LIFECYCLE_RESTORE_DENIED",
+              "runtimeReadyClaimed": false
+            }
+          },
+          "sourceAndBackupByteIdentical": true
+        }
+      },
+      {
+        "id": "actual-epic-restored-native-and-protected-browser",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "restored": {
+            "bundleSha256": "b1a1f9842a6dc4783b7aaacc0e98a259f6989302bc38a487083e6761a7c54e5b",
+            "configuration": {
+              "engine": "mssql",
+              "sourceMode": "fixture"
+            },
+            "contracts": {
+              "generationStore": "chimpmaera.bi/generation-store/v1",
+              "projectionGeneration": "chimpmaera.bi/projection-generation/v1"
+            },
+            "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+            "operatorAccountRequired": false,
+            "otherInfrastructureTested": false,
+            "projectionDb": "/task/h282-restore1/projection/analytics.db",
+            "receiptDir": "/task/h282-restore1/receipts",
+            "runtime": {
+              "name": "node",
+              "productVersion": "0.26.0",
+              "version": "24.14.0"
+            },
+            "runtimeReadyClaimed": false,
+            "state": "RESTORED_LOCAL",
+            "restoredDataRemoved": false,
+            "declaredBackupRetained": true,
+            "externalBackupErasure": "UNKNOWN"
+          },
+          "nativeReadback": {
+            "node": "24.14.0",
+            "uid": 1000,
+            "readback": {
+              "schemaVersion": "chimpmaera.bi/readback/v1",
+              "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+              "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+              "summary": {
+                "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+                "source_engine": "mssql",
+                "source_database": "CM_BI_FIXTURE",
+                "source_mode": "fixture",
+                "runtime_validation": "SYNTHETIC_UNVALIDATED",
+                "status": "ANALYZED_READ_ONLY",
+                "analyzed_at": "2026-10-06T01:04:41.649Z",
+                "relation_count": 2,
+                "column_count": 3,
+                "constraint_count": 1,
+                "index_count": 1,
+                "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "source_read_only": 1
+              },
+              "detailCount": 3,
+              "catalogSnapshot": {
+                "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+                "schema_version": "chimpmaera.bi/local-technical-catalog/v1"
+              },
+              "technicalOverview": {
+                "systemSchemaRows": 1,
+                "tableCapacityRows": 2,
+                "codeDependencyRows": 0,
+                "coverageRows": 9,
+                "biCandidateRows": 2
+              },
+              "publication": null,
+              "projectionMirror": {
+                "path": "/task/h282-restore1/projection/analytics.db",
+                "state": "IN_SYNC",
+                "sha256": "6a3a1b10f882dcbbe48bbaf476f4377237fa9f687f7c03979ee5e998656a4dc6",
+                "inSync": true
+              }
+            },
+            "question": {
+              "schemaVersion": "chimpmaera.bi/catalog-answer/v1",
+              "status": "ANSWERED_WITH_EVIDENCE",
+              "family": "largest_tables",
+              "answer": "Largest tables are ranked only from visible size/statistics metadata; unknown bytes remain unknown.",
+              "rows": [
+                {
+                  "schema_name": "dbo",
+                  "relation_name": "customers",
+                  "relation_kind": "TABLE",
+                  "bytes": null,
+                  "blocks": null,
+                  "num_rows_estimate": null,
+                  "size_semantics": null,
+                  "row_count_semantics": null
+                },
+                {
+                  "schema_name": "dbo",
+                  "relation_name": "orders",
+                  "relation_kind": "TABLE",
+                  "bytes": null,
+                  "blocks": null,
+                  "num_rows_estimate": null,
+                  "size_semantics": null,
+                  "row_count_semantics": null
+                }
+              ],
+              "provenance": {
+                "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "engine": "mssql",
+                "database": "CM_BI_FIXTURE",
+                "sourceMode": "fixture",
+                "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+                "coverage": [
+                  {
+                    "queryId": "mssql.structure.relations",
+                    "category": "relations",
+                    "state": "SUCCEEDED",
+                    "visibility": "VISIBLE_COMPLETE",
+                    "reasonCode": null,
+                    "caveat": "Collector succeeded for its bounded scope."
+                  }
+                ]
+              }
+            },
+            "starter": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "catalog",
+                "expectedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "observedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "businessStatus": "VALUE_VERIFIED",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "mode": "BUNDLED_SYNTHETIC_METADATA",
+                  "database": "CM_BI_FIXTURE",
+                  "schemas": [
+                    "dbo"
+                  ],
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true
+                },
+                "evidence": {
+                  "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                  "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+                  "rawSourceReturned": false
+                },
+                "firstValueMs": 367.50277300000016,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              },
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "starterGeneration": 1,
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent"
+            },
+            "nativeBudgetRows": [
+              {
+                "operation_id": "operation:epic282-native-model-001",
+                "state": "SETTLED",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 5,
+                "runtime_consumed": 1
+              },
+              {
+                "operation_id": "operation:epic282-native-model-unknown",
+                "state": "UNKNOWN_USAGE",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 0,
+                "runtime_consumed": 0
+              }
+            ]
+          },
+          "session": {
+            "oldSessionStatus": 401,
+            "controlEpoch": 2,
+            "otherTenantUnchanged": true
+          },
+          "actualBrowserResponse": {
+            "status": 200,
+            "body": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "catalog",
+                "expectedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "observedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "businessStatus": "VALUE_VERIFIED",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "mode": "BUNDLED_SYNTHETIC_METADATA",
+                  "database": "CM_BI_FIXTURE",
+                  "schemas": [
+                    "dbo"
+                  ],
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true
+                },
+                "evidence": {
+                  "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                  "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+                  "rawSourceReturned": false
+                },
+                "firstValueMs": 367.50277300000016,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              },
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "starterGeneration": 1,
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent"
+            }
+          },
+          "renderedFields": {
+            "notice": "Starter: succeeded \u00b7 eigene Generation 1",
+            "business-status": "VALUE_VERIFIED \u00b7 Fachwert stimmt",
+            "expected": "dbo.customers, dbo.orders",
+            "observed": "dbo.customers, dbo.orders",
+            "first-value": "Server 367.50 ms \u00b7 Browser 1606.00 ms \u00b7 humanUsability: NOT_OBSERVED",
+            "template-identity": "{\n  \"schemaVersion\": \"pansphaira.portable-runtime/template/v1\",\n  \"templateId\": \"bounded-kaleidosphere-bi-agent-v1\",\n  \"identity\": {\n    \"architecture\": \"x86_64\",\n    \"authorityProfile\": \"SAFE_GUIDED\",\n    \"componentId\": \"kaleidosphere-bi-agent\",\n    \"configurationDigest\": \"30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0\",\n    \"contractVersion\": \"1.0.0\",\n    \"effectiveRights\": [\n      \"bi.catalog.read\"\n    ],\n    \"generation\": 1,\n    \"imageDigest\": \"sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386\",\n    \"instanceId\": \"ks282nativeb1060618a5aa-tenant-a-agent\",\n    \"networkDigest\": \"0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1\",\n    \"policyDigest\": \"86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8\",\n    \"productVersion\": \"0.26.0\",\n    \"runtime\": {\n      \"name\": \"node\",\n      \"version\": \"24.14.0\"\n    },\n    \"schemaVersion\": \"pansphaira.portable-runtime/identity/v1\",\n    \"sourceCommit\": \"c7e4eb90628156c82e3b6f7115ebb41d247ad2b1\",\n    \"sourceTree\": \"28b1179c5760794213c6ed9177d6de4c5b7a47c6\",\n    \"templateDigest\": \"44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0\",\n    \"tenantId\": \"tenant-a\"\n  },\n  \"identityDigest\": \"57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead\",\n  \"providerMode\": \"SYNTHETIC_ONLY\",\n  \"resourceClass\": {\n    \"name\": \"bounded-native-read-v1\",\n    \"modelReservationUnits\": 64,\n    \"runtimeReservationUnits\": 1,\n    \"maxInputBytes\": 4096,\n    \"maxOutputBytes\": 8192,\n    \"maxTokens\": 32,\n    \"maxRequests\": 32,\n    \"timeoutMs\": 20000\n  },\n  \"activationAuthorized\": false,\n  \"runtimeTemplateDigest\": \"10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6\"\n}",
+            "source": "{\"source\":{\"mode\":\"BUNDLED_SYNTHETIC_METADATA\",\"database\":\"CM_BI_FIXTURE\",\"schemas\":[\"dbo\"],\"snapshotSha256\":\"293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a\"},\"period\":null}",
+            "rights": "{\"principal\":\"NON_ADMIN_READER\",\"scope\":\"OWNED_SYNTHETIC_STARTER\",\"sourceWriteAuthorized\":false,\"adminAuthorized\":false,\"templateIsNotGrant\":true}",
+            "evidence": "{\n  \"receiptId\": \"mssql-c8cc52a50bc776e118821d7b\",\n  \"snapshotSha256\": \"293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a\",\n  \"observedValueSha256\": \"839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38\",\n  \"rawSourceReturned\": false\n}"
+          }
+        }
+      },
+      {
+        "id": "actual-epic-tombstone-scoped-cleanup",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "wrongGeneration": {
+            "state": "DENIED",
+            "reason": "H08_LIFECYCLE_BINDING_DENIED",
+            "runtimeReadyClaimed": false
+          },
+          "prematureCleanup": {
+            "state": "DENIED",
+            "reason": "H08_TOMBSTONE_REQUIRED",
+            "runtimeReadyClaimed": false
+          },
+          "foreignResourceDenial": {
+            "state": "DENIED",
+            "reason": "H08_FOREIGN_RESOURCE_DENIED",
+            "runtimeReadyClaimed": false
+          },
+          "tombstone": {
+            "bundleSha256": "b1a1f9842a6dc4783b7aaacc0e98a259f6989302bc38a487083e6761a7c54e5b",
+            "configuration": {
+              "engine": "mssql",
+              "sourceMode": "fixture"
+            },
+            "contracts": {
+              "generationStore": "chimpmaera.bi/generation-store/v1",
+              "projectionGeneration": "chimpmaera.bi/projection-generation/v1"
+            },
+            "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+            "operatorAccountRequired": false,
+            "otherInfrastructureTested": false,
+            "projectionDb": "/task/h282-restore1/projection/analytics.db",
+            "receiptDir": "/task/h282-restore1/receipts",
+            "runtime": {
+              "name": "node",
+              "productVersion": "0.26.0",
+              "version": "24.14.0"
+            },
+            "runtimeReadyClaimed": false,
+            "state": "TOMBSTONED",
+            "restoredDataRemoved": false,
+            "declaredBackupRetained": true,
+            "externalBackupErasure": "UNKNOWN"
+          },
+          "cleaned": {
+            "bundleSha256": "b1a1f9842a6dc4783b7aaacc0e98a259f6989302bc38a487083e6761a7c54e5b",
+            "configuration": {
+              "engine": "mssql",
+              "sourceMode": "fixture"
+            },
+            "contracts": {
+              "generationStore": "chimpmaera.bi/generation-store/v1",
+              "projectionGeneration": "chimpmaera.bi/projection-generation/v1"
+            },
+            "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+            "operatorAccountRequired": false,
+            "otherInfrastructureTested": false,
+            "projectionDb": "/task/h282-restore1/projection/analytics.db",
+            "receiptDir": "/task/h282-restore1/receipts",
+            "runtime": {
+              "name": "node",
+              "productVersion": "0.26.0",
+              "version": "24.14.0"
+            },
+            "runtimeReadyClaimed": false,
+            "state": "SCOPED_DATA_REMOVED",
+            "restoredDataRemoved": true,
+            "declaredBackupRetained": true,
+            "externalBackupErasure": "UNKNOWN"
+          },
+          "sourceAndBackupByteIdentical": true
+        }
+      },
+      {
+        "id": "actual-epic-retained-backup-reacquisition",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "restored": {
+            "bundleSha256": "b1a1f9842a6dc4783b7aaacc0e98a259f6989302bc38a487083e6761a7c54e5b",
+            "configuration": {
+              "engine": "mssql",
+              "sourceMode": "fixture"
+            },
+            "contracts": {
+              "generationStore": "chimpmaera.bi/generation-store/v1",
+              "projectionGeneration": "chimpmaera.bi/projection-generation/v1"
+            },
+            "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+            "operatorAccountRequired": false,
+            "otherInfrastructureTested": false,
+            "projectionDb": "/task/h282-restore2/projection/analytics.db",
+            "receiptDir": "/task/h282-restore2/receipts",
+            "runtime": {
+              "name": "node",
+              "productVersion": "0.26.0",
+              "version": "24.14.0"
+            },
+            "runtimeReadyClaimed": false,
+            "state": "RESTORED_LOCAL",
+            "restoredDataRemoved": false,
+            "declaredBackupRetained": true,
+            "externalBackupErasure": "UNKNOWN"
+          },
+          "nativeReadback": {
+            "node": "24.14.0",
+            "uid": 1000,
+            "readback": {
+              "schemaVersion": "chimpmaera.bi/readback/v1",
+              "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+              "generationId": "b66d21f53c35c7220730016106a8112cb60ccc7ba6ad350fa0865064d9d454a6",
+              "summary": {
+                "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+                "source_engine": "mssql",
+                "source_database": "CM_BI_FIXTURE",
+                "source_mode": "fixture",
+                "runtime_validation": "SYNTHETIC_UNVALIDATED",
+                "status": "ANALYZED_READ_ONLY",
+                "analyzed_at": "2026-10-06T01:04:41.649Z",
+                "relation_count": 2,
+                "column_count": 3,
+                "constraint_count": 1,
+                "index_count": 1,
+                "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "source_read_only": 1
+              },
+              "detailCount": 3,
+              "catalogSnapshot": {
+                "snapshot_sha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "receipt_id": "mssql-c8cc52a50bc776e118821d7b",
+                "schema_version": "chimpmaera.bi/local-technical-catalog/v1"
+              },
+              "technicalOverview": {
+                "systemSchemaRows": 1,
+                "tableCapacityRows": 2,
+                "codeDependencyRows": 0,
+                "coverageRows": 9,
+                "biCandidateRows": 2
+              },
+              "publication": null,
+              "projectionMirror": {
+                "path": "/task/h282-restore2/projection/analytics.db",
+                "state": "IN_SYNC",
+                "sha256": "6a3a1b10f882dcbbe48bbaf476f4377237fa9f687f7c03979ee5e998656a4dc6",
+                "inSync": true
+              }
+            },
+            "question": {
+              "schemaVersion": "chimpmaera.bi/catalog-answer/v1",
+              "status": "ANSWERED_WITH_EVIDENCE",
+              "family": "largest_tables",
+              "answer": "Largest tables are ranked only from visible size/statistics metadata; unknown bytes remain unknown.",
+              "rows": [
+                {
+                  "schema_name": "dbo",
+                  "relation_name": "customers",
+                  "relation_kind": "TABLE",
+                  "bytes": null,
+                  "blocks": null,
+                  "num_rows_estimate": null,
+                  "size_semantics": null,
+                  "row_count_semantics": null
+                },
+                {
+                  "schema_name": "dbo",
+                  "relation_name": "orders",
+                  "relation_kind": "TABLE",
+                  "bytes": null,
+                  "blocks": null,
+                  "num_rows_estimate": null,
+                  "size_semantics": null,
+                  "row_count_semantics": null
+                }
+              ],
+              "provenance": {
+                "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                "engine": "mssql",
+                "database": "CM_BI_FIXTURE",
+                "sourceMode": "fixture",
+                "runtimeValidation": "SYNTHETIC_UNVALIDATED",
+                "coverage": [
+                  {
+                    "queryId": "mssql.structure.relations",
+                    "category": "relations",
+                    "state": "SUCCEEDED",
+                    "visibility": "VISIBLE_COMPLETE",
+                    "reasonCode": null,
+                    "caveat": "Collector succeeded for its bounded scope."
+                  }
+                ]
+              }
+            },
+            "starter": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "catalog",
+                "expectedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "observedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "businessStatus": "VALUE_VERIFIED",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "mode": "BUNDLED_SYNTHETIC_METADATA",
+                  "database": "CM_BI_FIXTURE",
+                  "schemas": [
+                    "dbo"
+                  ],
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true
+                },
+                "evidence": {
+                  "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                  "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+                  "rawSourceReturned": false
+                },
+                "firstValueMs": 367.50277300000016,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              },
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "starterGeneration": 1,
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent"
+            },
+            "nativeBudgetRows": [
+              {
+                "operation_id": "operation:epic282-native-model-001",
+                "state": "SETTLED",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 5,
+                "runtime_consumed": 1
+              },
+              {
+                "operation_id": "operation:epic282-native-model-unknown",
+                "state": "UNKNOWN_USAGE",
+                "model_units": 64,
+                "runtime_units": 1,
+                "model_consumed": 0,
+                "runtime_consumed": 0
+              }
+            ]
+          },
+          "session": {
+            "oldSessionStatus": 401,
+            "controlEpoch": 3,
+            "otherTenantUnchanged": true
+          },
+          "actualBrowserResponse": {
+            "status": 200,
+            "body": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "catalog",
+                "expectedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "observedValue": [
+                  "dbo.customers",
+                  "dbo.orders"
+                ],
+                "businessStatus": "VALUE_VERIFIED",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "mode": "BUNDLED_SYNTHETIC_METADATA",
+                  "database": "CM_BI_FIXTURE",
+                  "schemas": [
+                    "dbo"
+                  ],
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true
+                },
+                "evidence": {
+                  "receiptId": "mssql-c8cc52a50bc776e118821d7b",
+                  "snapshotSha256": "293a896156d8f6269c4ad33e8d632da653ea180d35a4ea5f390b0be52ce3e44a",
+                  "observedValueSha256": "839e6350dc1783857d4ba363cbdba8bba15bd147d542f19a28985d49e9e67b38",
+                  "rawSourceReturned": false
+                },
+                "firstValueMs": 367.50277300000016,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              },
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "starterGeneration": 1,
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent"
+            }
+          },
+          "qualifiedOriginalSourceRetained": true
+        }
+      },
+      {
+        "id": "actual-separate-metric-browser-and-bound-result",
+        "status": "PASS",
+        "value": {
+          "response": {
+            "status": 200,
+            "body": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "metric",
+                "expectedValue": 90000,
+                "observedValue": 90000,
+                "businessStatus": "VALUE_VERIFIED",
+                "unit": "EUR_MINOR",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "id": "COMMON-TRADE-01",
+                  "revision": 1,
+                  "sha256": "7bdea7a7586037325d2af8a4cf75095876dd61eb2d176580ab0a97912947c7e8",
+                  "mapping": "common-snake-reference/v1",
+                  "syntheticOnly": true
+                },
+                "period": {
+                  "start": "2026-06-01",
+                  "end": "2026-08-01",
+                  "dateBasis": "INVOICE_DATE"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true,
+                  "operationAuthority": "BUNDLED_EXACT_SYNTHETIC_FIXTURE_NOT_CALLER_ROLE"
+                },
+                "evidence": {
+                  "table": {
+                    "rows": [
+                      {
+                        "month": "2026-06",
+                        "net_minor": 80000,
+                        "currency": "EUR"
+                      },
+                      {
+                        "month": "2026-07",
+                        "net_minor": 10000,
+                        "currency": "EUR"
+                      }
+                    ]
+                  },
+                  "observedValueSha256": "ac911e4a8f2b48c071ce0fbb434c039c48e60e8d96dff768f69daa740af0c3bb",
+                  "rawSourceReturned": false,
+                  "producerPairing": "NOT_EXECUTED_LOCAL_FIXTURE_ONLY"
+                },
+                "firstValueMs": 27.191655999999966,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              }
+            }
+          },
+          "renderedFields": {
+            "notice": "Starter: succeeded \u00b7 eigene Generation 1",
+            "business-status": "VALUE_VERIFIED \u00b7 Fachwert stimmt",
+            "expected": "90000 EUR_MINOR",
+            "observed": "90000 EUR_MINOR",
+            "first-value": "Server 27.19 ms \u00b7 Browser 1295.00 ms \u00b7 humanUsability: NOT_OBSERVED",
+            "template-identity": "{\n  \"schemaVersion\": \"pansphaira.portable-runtime/template/v1\",\n  \"templateId\": \"bounded-kaleidosphere-bi-agent-v1\",\n  \"identity\": {\n    \"architecture\": \"x86_64\",\n    \"authorityProfile\": \"SAFE_GUIDED\",\n    \"componentId\": \"kaleidosphere-bi-agent\",\n    \"configurationDigest\": \"30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0\",\n    \"contractVersion\": \"1.0.0\",\n    \"effectiveRights\": [\n      \"bi.catalog.read\"\n    ],\n    \"generation\": 1,\n    \"imageDigest\": \"sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386\",\n    \"instanceId\": \"ks282nativeb1060618a5aa-tenant-a-agent\",\n    \"networkDigest\": \"0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1\",\n    \"policyDigest\": \"86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8\",\n    \"productVersion\": \"0.26.0\",\n    \"runtime\": {\n      \"name\": \"node\",\n      \"version\": \"24.14.0\"\n    },\n    \"schemaVersion\": \"pansphaira.portable-runtime/identity/v1\",\n    \"sourceCommit\": \"c7e4eb90628156c82e3b6f7115ebb41d247ad2b1\",\n    \"sourceTree\": \"28b1179c5760794213c6ed9177d6de4c5b7a47c6\",\n    \"templateDigest\": \"44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0\",\n    \"tenantId\": \"tenant-a\"\n  },\n  \"identityDigest\": \"57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead\",\n  \"providerMode\": \"SYNTHETIC_ONLY\",\n  \"resourceClass\": {\n    \"name\": \"bounded-native-read-v1\",\n    \"modelReservationUnits\": 64,\n    \"runtimeReservationUnits\": 1,\n    \"maxInputBytes\": 4096,\n    \"maxOutputBytes\": 8192,\n    \"maxTokens\": 32,\n    \"maxRequests\": 32,\n    \"timeoutMs\": 20000\n  },\n  \"activationAuthorized\": false,\n  \"runtimeTemplateDigest\": \"10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6\"\n}",
+            "source": "{\"source\":{\"id\":\"COMMON-TRADE-01\",\"revision\":1,\"sha256\":\"7bdea7a7586037325d2af8a4cf75095876dd61eb2d176580ab0a97912947c7e8\",\"mapping\":\"common-snake-reference/v1\",\"syntheticOnly\":true},\"period\":{\"start\":\"2026-06-01\",\"end\":\"2026-08-01\",\"dateBasis\":\"INVOICE_DATE\"}}",
+            "rights": "{\"principal\":\"NON_ADMIN_READER\",\"scope\":\"OWNED_SYNTHETIC_STARTER\",\"sourceWriteAuthorized\":false,\"adminAuthorized\":false,\"templateIsNotGrant\":true,\"operationAuthority\":\"BUNDLED_EXACT_SYNTHETIC_FIXTURE_NOT_CALLER_ROLE\"}",
+            "evidence": "{\n  \"table\": {\n    \"rows\": [\n      {\n        \"month\": \"2026-06\",\n        \"net_minor\": 80000,\n        \"currency\": \"EUR\"\n      },\n      {\n        \"month\": \"2026-07\",\n        \"net_minor\": 10000,\n        \"currency\": \"EUR\"\n      }\n    ]\n  },\n  \"observedValueSha256\": \"ac911e4a8f2b48c071ce0fbb434c039c48e60e8d96dff768f69daa740af0c3bb\",\n  \"rawSourceReturned\": false,\n  \"producerPairing\": \"NOT_EXECUTED_LOCAL_FIXTURE_ONLY\"\n}"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-first-value-frozen-after-status-refresh",
+        "status": "PASS",
+        "value": {
+          "firstValue": "Server 27.19 ms \u00b7 Browser 1295.00 ms \u00b7 humanUsability: NOT_OBSERVED"
+        }
+      },
+      {
+        "id": "actual-typed-proposal-only-helper-browser",
+        "status": "PASS",
+        "value": {
+          "response": {
+            "status": 200,
+            "body": {
+              "state": "succeeded",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "metric",
+                "expectedValue": 90000,
+                "observedValue": 90000,
+                "businessStatus": "VALUE_VERIFIED",
+                "unit": "EUR_MINOR",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                    "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-a"
+                  },
+                  "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+                },
+                "source": {
+                  "id": "COMMON-TRADE-01",
+                  "revision": 1,
+                  "sha256": "7bdea7a7586037325d2af8a4cf75095876dd61eb2d176580ab0a97912947c7e8",
+                  "mapping": "common-snake-reference/v1",
+                  "syntheticOnly": true
+                },
+                "period": {
+                  "start": "2026-06-01",
+                  "end": "2026-08-01",
+                  "dateBasis": "INVOICE_DATE"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true,
+                  "operationAuthority": "BUNDLED_EXACT_SYNTHETIC_FIXTURE_NOT_CALLER_ROLE"
+                },
+                "evidence": {
+                  "table": {
+                    "rows": [
+                      {
+                        "month": "2026-06",
+                        "net_minor": 80000,
+                        "currency": "EUR"
+                      },
+                      {
+                        "month": "2026-07",
+                        "net_minor": 10000,
+                        "currency": "EUR"
+                      }
+                    ]
+                  },
+                  "observedValueSha256": "ac911e4a8f2b48c071ce0fbb434c039c48e60e8d96dff768f69daa740af0c3bb",
+                  "rawSourceReturned": false,
+                  "producerPairing": "NOT_EXECUTED_LOCAL_FIXTURE_ONLY"
+                },
+                "firstValueMs": 27.191655999999966,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              },
+              "starterGeneration": 1,
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+              "suggestion": {
+                "type": "STARTER_JOURNEY",
+                "journey": "metric",
+                "command": {
+                  "schemaVersion": "kaleidosphere/browser-starter-command/v1",
+                  "action": "run",
+                  "journey": "metric"
+                }
+              },
+              "dispatchAuthorized": false,
+              "modelCalled": false
+            }
+          },
+          "rendered": "{\"type\":\"STARTER_JOURNEY\",\"journey\":\"metric\",\"command\":{\"schemaVersion\":\"kaleidosphere/browser-starter-command/v1\",\"action\":\"run\",\"journey\":\"metric\"}} \u00b7 dispatchAuthorized: false \u00b7 modelCalled: false"
+        }
+      },
+      {
+        "id": "actual-browser-admin-route-denied",
+        "status": "PASS",
+        "value": {
+          "status": 404,
+          "body": {
+            "status": "DENIED",
+            "code": "H02_PRODUCT_ROUTE_DENIED"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-unchecked-upload-denied",
+        "status": "PASS",
+        "value": {
+          "status": 400,
+          "body": {
+            "status": "DENIED",
+            "code": "H03_BROWSER_COMMAND_DENIED"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-free-shell-denied",
+        "status": "PASS",
+        "value": {
+          "status": 400,
+          "body": {
+            "status": "DENIED",
+            "code": "H03_BROWSER_COMMAND_DENIED"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-free-url-denied",
+        "status": "PASS",
+        "value": {
+          "status": 400,
+          "body": {
+            "status": "DENIED",
+            "code": "H03_BROWSER_COMMAND_DENIED"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-caller-role-denied",
+        "status": "PASS",
+        "value": {
+          "status": 400,
+          "body": {
+            "status": "DENIED",
+            "code": "H03_BROWSER_COMMAND_DENIED"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-foreign-instance-reset-denied",
+        "status": "PASS",
+        "value": {
+          "status": 400,
+          "body": {
+            "status": "DENIED",
+            "code": "H03_RESET_BINDING_DENIED"
+          }
+        }
+      },
+      {
+        "id": "actual-browser-own-reset-other-tenant-unchanged",
+        "status": "PASS",
+        "value": {
+          "status": 200,
+          "body": {
+            "state": "idle",
+            "result": null,
+            "template": {
+              "schemaVersion": "pansphaira.portable-runtime/template/v1",
+              "templateId": "bounded-kaleidosphere-bi-agent-v1",
+              "identity": {
+                "architecture": "x86_64",
+                "authorityProfile": "SAFE_GUIDED",
+                "componentId": "kaleidosphere-bi-agent",
+                "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                "contractVersion": "1.0.0",
+                "effectiveRights": [
+                  "bi.catalog.read"
+                ],
+                "generation": 1,
+                "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                "productVersion": "0.26.0",
+                "runtime": {
+                  "name": "node",
+                  "version": "24.14.0"
+                },
+                "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                "tenantId": "tenant-a"
+              },
+              "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+              "providerMode": "SYNTHETIC_ONLY",
+              "resourceClass": {
+                "name": "bounded-native-read-v1",
+                "modelReservationUnits": 64,
+                "runtimeReservationUnits": 1,
+                "maxInputBytes": 4096,
+                "maxOutputBytes": 8192,
+                "maxTokens": 32,
+                "maxRequests": 32,
+                "timeoutMs": 20000
+              },
+              "activationAuthorized": false,
+              "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+            },
+            "starterGeneration": 2,
+            "tenantId": "tenant-a",
+            "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+            "sourceResourcesRemoved": false,
+            "foreignResourcesRemoved": false
+          }
+        }
+      },
+      {
+        "id": "actual-browser-wrong-actual-business-value-not-UI-success",
+        "status": "PASS",
+        "value": {
+          "response": {
+            "status": 200,
+            "body": {
+              "state": "failed",
+              "result": {
+                "schemaVersion": "kaleidosphere/browser-starter-result/v1",
+                "journey": "metric",
+                "expectedValue": 90000,
+                "observedValue": 91000,
+                "businessStatus": "VALUE_MISMATCH",
+                "unit": "EUR_MINOR",
+                "template": {
+                  "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                  "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                  "identity": {
+                    "architecture": "x86_64",
+                    "authorityProfile": "SAFE_GUIDED",
+                    "componentId": "kaleidosphere-bi-agent",
+                    "configurationDigest": "9ad2d991979b295bc5acccfd553d394a35b6da2e72d65c607e6115ba2b442bd9",
+                    "contractVersion": "1.0.0",
+                    "effectiveRights": [
+                      "bi.catalog.read"
+                    ],
+                    "generation": 1,
+                    "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                    "instanceId": "ks282nativeb1060618a5aa-tenant-b-agent",
+                    "networkDigest": "c5eaed898a6aaf11c31eef6d627e3944ad679129dda9fee7654299705c33107f",
+                    "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                    "productVersion": "0.26.0",
+                    "runtime": {
+                      "name": "node",
+                      "version": "24.14.0"
+                    },
+                    "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                    "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                    "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                    "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                    "tenantId": "tenant-b"
+                  },
+                  "identityDigest": "b372c1c01afc88d8a081e77df461a93a066d518628d7893b9ed3ac415f63d9a4",
+                  "providerMode": "SYNTHETIC_ONLY",
+                  "resourceClass": {
+                    "name": "bounded-native-read-v1",
+                    "modelReservationUnits": 64,
+                    "runtimeReservationUnits": 1,
+                    "maxInputBytes": 4096,
+                    "maxOutputBytes": 8192,
+                    "maxTokens": 32,
+                    "maxRequests": 32,
+                    "timeoutMs": 20000
+                  },
+                  "activationAuthorized": false,
+                  "runtimeTemplateDigest": "b0f228630c1e9446f69f536d860c72ffece7b31b15334d9cc31bc9463b9d930c"
+                },
+                "source": {
+                  "id": "COMMON-TRADE-01",
+                  "revision": 1,
+                  "sha256": "8294731751161bcfb616c14af53dc40e4a681cb6d9422eb2fe943028bf91ec7e",
+                  "mapping": "common-snake-reference/v1",
+                  "syntheticOnly": true
+                },
+                "period": {
+                  "start": "2026-06-01",
+                  "end": "2026-08-01",
+                  "dateBasis": "INVOICE_DATE"
+                },
+                "rights": {
+                  "principal": "NON_ADMIN_READER",
+                  "scope": "OWNED_SYNTHETIC_STARTER",
+                  "sourceWriteAuthorized": false,
+                  "adminAuthorized": false,
+                  "templateIsNotGrant": true,
+                  "operationAuthority": "BUNDLED_EXACT_SYNTHETIC_FIXTURE_NOT_CALLER_ROLE"
+                },
+                "evidence": {
+                  "table": {
+                    "rows": [
+                      {
+                        "month": "2026-06",
+                        "net_minor": 81000,
+                        "currency": "EUR"
+                      },
+                      {
+                        "month": "2026-07",
+                        "net_minor": 10000,
+                        "currency": "EUR"
+                      }
+                    ]
+                  },
+                  "observedValueSha256": "1edc279d65bebdbc9f695ae34b61e1b29db969f42fd79da8e77c91d9eecd3860",
+                  "rawSourceReturned": false,
+                  "producerPairing": "NOT_EXECUTED_LOCAL_FIXTURE_ONLY"
+                },
+                "firstValueMs": 29.631373000003805,
+                "humanUsability": "NOT_OBSERVED",
+                "runtimeReadinessClaimed": false
+              }
+            }
+          },
+          "renderedFields": {
+            "notice": "Starter: failed \u00b7 eigene Generation 1",
+            "business-status": "VALUE_MISMATCH",
+            "expected": "90000 EUR_MINOR",
+            "observed": "91000 EUR_MINOR",
+            "first-value": "Server 29.63 ms \u00b7 Browser 1244.00 ms \u00b7 humanUsability: NOT_OBSERVED",
+            "template-identity": "{\n  \"schemaVersion\": \"pansphaira.portable-runtime/template/v1\",\n  \"templateId\": \"bounded-kaleidosphere-bi-agent-v1\",\n  \"identity\": {\n    \"architecture\": \"x86_64\",\n    \"authorityProfile\": \"SAFE_GUIDED\",\n    \"componentId\": \"kaleidosphere-bi-agent\",\n    \"configurationDigest\": \"9ad2d991979b295bc5acccfd553d394a35b6da2e72d65c607e6115ba2b442bd9\",\n    \"contractVersion\": \"1.0.0\",\n    \"effectiveRights\": [\n      \"bi.catalog.read\"\n    ],\n    \"generation\": 1,\n    \"imageDigest\": \"sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386\",\n    \"instanceId\": \"ks282nativeb1060618a5aa-tenant-b-agent\",\n    \"networkDigest\": \"c5eaed898a6aaf11c31eef6d627e3944ad679129dda9fee7654299705c33107f\",\n    \"policyDigest\": \"86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8\",\n    \"productVersion\": \"0.26.0\",\n    \"runtime\": {\n      \"name\": \"node\",\n      \"version\": \"24.14.0\"\n    },\n    \"schemaVersion\": \"pansphaira.portable-runtime/identity/v1\",\n    \"sourceCommit\": \"c7e4eb90628156c82e3b6f7115ebb41d247ad2b1\",\n    \"sourceTree\": \"28b1179c5760794213c6ed9177d6de4c5b7a47c6\",\n    \"templateDigest\": \"44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0\",\n    \"tenantId\": \"tenant-b\"\n  },\n  \"identityDigest\": \"b372c1c01afc88d8a081e77df461a93a066d518628d7893b9ed3ac415f63d9a4\",\n  \"providerMode\": \"SYNTHETIC_ONLY\",\n  \"resourceClass\": {\n    \"name\": \"bounded-native-read-v1\",\n    \"modelReservationUnits\": 64,\n    \"runtimeReservationUnits\": 1,\n    \"maxInputBytes\": 4096,\n    \"maxOutputBytes\": 8192,\n    \"maxTokens\": 32,\n    \"maxRequests\": 32,\n    \"timeoutMs\": 20000\n  },\n  \"activationAuthorized\": false,\n  \"runtimeTemplateDigest\": \"b0f228630c1e9446f69f536d860c72ffece7b31b15334d9cc31bc9463b9d930c\"\n}",
+            "source": "{\"source\":{\"id\":\"COMMON-TRADE-01\",\"revision\":1,\"sha256\":\"8294731751161bcfb616c14af53dc40e4a681cb6d9422eb2fe943028bf91ec7e\",\"mapping\":\"common-snake-reference/v1\",\"syntheticOnly\":true},\"period\":{\"start\":\"2026-06-01\",\"end\":\"2026-08-01\",\"dateBasis\":\"INVOICE_DATE\"}}",
+            "rights": "{\"principal\":\"NON_ADMIN_READER\",\"scope\":\"OWNED_SYNTHETIC_STARTER\",\"sourceWriteAuthorized\":false,\"adminAuthorized\":false,\"templateIsNotGrant\":true,\"operationAuthority\":\"BUNDLED_EXACT_SYNTHETIC_FIXTURE_NOT_CALLER_ROLE\"}",
+            "evidence": "{\n  \"table\": {\n    \"rows\": [\n      {\n        \"month\": \"2026-06\",\n        \"net_minor\": 81000,\n        \"currency\": \"EUR\"\n      },\n      {\n        \"month\": \"2026-07\",\n        \"net_minor\": 10000,\n        \"currency\": \"EUR\"\n      }\n    ]\n  },\n  \"observedValueSha256\": \"1edc279d65bebdbc9f695ae34b61e1b29db969f42fd79da8e77c91d9eecd3860\",\n  \"rawSourceReturned\": false,\n  \"producerPairing\": \"NOT_EXECUTED_LOCAL_FIXTURE_ONLY\"\n}"
+          }
+        }
+      },
+      {
+        "id": "actual-non-admin-browser-abort-known-child-completion",
+        "status": "PASS",
+        "value": {
+          "abort": {
+            "status": 200,
+            "body": {
+              "state": "abort_requested",
+              "result": null,
+              "starterGeneration": 2
+            }
+          },
+          "aborted": {
+            "status": 200,
+            "body": {
+              "state": "aborted",
+              "result": null,
+              "sourceEffectsPerformed": false
+            }
+          }
+        }
+      },
+      {
+        "id": "actual-control-process-reacquisition-old-session-denied",
+        "status": "PASS",
+        "value": {
+          "owner": "ks282nativeb1060618a5aa",
+          "controlContainerId": "9c051a9bab1d3542c5144f05f27b9a598e457f3a42554ceda38bc1e936dff9c5",
+          "oldPid": "587",
+          "newPid": "894",
+          "nativeControlGeneration": 4,
+          "agentRestarted": false,
+          "restoredIndex": 2,
+          "oldSessionStatus": 401,
+          "controlEpoch": 4,
+          "otherTenantUnchanged": true,
+          "agentNativeGeneration": 1
+        }
+      },
+      {
+        "id": "actual-browser-real-interruption-restart-UNKNOWN-reset-hold",
+        "status": "PASS",
+        "value": {
+          "unknown": {
+            "status": 200,
+            "body": {
+              "state": "outcome_unknown",
+              "result": null,
+              "template": {
+                "schemaVersion": "pansphaira.portable-runtime/template/v1",
+                "templateId": "bounded-kaleidosphere-bi-agent-v1",
+                "identity": {
+                  "architecture": "x86_64",
+                  "authorityProfile": "SAFE_GUIDED",
+                  "componentId": "kaleidosphere-bi-agent",
+                  "configurationDigest": "30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0",
+                  "contractVersion": "1.0.0",
+                  "effectiveRights": [
+                    "bi.catalog.read"
+                  ],
+                  "generation": 1,
+                  "imageDigest": "sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386",
+                  "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent",
+                  "networkDigest": "0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1",
+                  "policyDigest": "86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8",
+                  "productVersion": "0.26.0",
+                  "runtime": {
+                    "name": "node",
+                    "version": "24.14.0"
+                  },
+                  "schemaVersion": "pansphaira.portable-runtime/identity/v1",
+                  "sourceCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+                  "sourceTree": "28b1179c5760794213c6ed9177d6de4c5b7a47c6",
+                  "templateDigest": "44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0",
+                  "tenantId": "tenant-a"
+                },
+                "identityDigest": "57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead",
+                "providerMode": "SYNTHETIC_ONLY",
+                "resourceClass": {
+                  "name": "bounded-native-read-v1",
+                  "modelReservationUnits": 64,
+                  "runtimeReservationUnits": 1,
+                  "maxInputBytes": 4096,
+                  "maxOutputBytes": 8192,
+                  "maxTokens": 32,
+                  "maxRequests": 32,
+                  "timeoutMs": 20000
+                },
+                "activationAuthorized": false,
+                "runtimeTemplateDigest": "10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6"
+              },
+              "starterGeneration": 3,
+              "tenantId": "tenant-a",
+              "instanceId": "ks282nativeb1060618a5aa-tenant-a-agent"
+            }
+          },
+          "unknownReset": {
+            "status": 400,
+            "body": {
+              "status": "DENIED",
+              "code": "H03_RESET_OUTCOME_UNKNOWN_DENIED"
+            }
+          },
+          "renderedFields": {
+            "notice": "Starter: outcome_unknown \u00b7 eigene Generation 3",
+            "business-status": "outcome_unknown",
+            "expected": "\u2014",
+            "observed": "\u2014",
+            "first-value": "Noch nicht gemessen",
+            "template-identity": "{\n  \"schemaVersion\": \"pansphaira.portable-runtime/template/v1\",\n  \"templateId\": \"bounded-kaleidosphere-bi-agent-v1\",\n  \"identity\": {\n    \"architecture\": \"x86_64\",\n    \"authorityProfile\": \"SAFE_GUIDED\",\n    \"componentId\": \"kaleidosphere-bi-agent\",\n    \"configurationDigest\": \"30f277451ba6eb6fad3c57dc2bc7159576c581d17b2aaa7dca4b40f5160a0dc0\",\n    \"contractVersion\": \"1.0.0\",\n    \"effectiveRights\": [\n      \"bi.catalog.read\"\n    ],\n    \"generation\": 1,\n    \"imageDigest\": \"sha256:8d36d93aa4c04bd1578432744df073a8d7963c415f628d79013cf32df25ed386\",\n    \"instanceId\": \"ks282nativeb1060618a5aa-tenant-a-agent\",\n    \"networkDigest\": \"0e5062d90134807c47acf960a9aa85129c3e4d25aed1ab79183e461a2bf175b1\",\n    \"policyDigest\": \"86a05bcea6d9b50a38a743e2454fba0d4e95dbc06d05a6d765e3f8ce73423db8\",\n    \"productVersion\": \"0.26.0\",\n    \"runtime\": {\n      \"name\": \"node\",\n      \"version\": \"24.14.0\"\n    },\n    \"schemaVersion\": \"pansphaira.portable-runtime/identity/v1\",\n    \"sourceCommit\": \"c7e4eb90628156c82e3b6f7115ebb41d247ad2b1\",\n    \"sourceTree\": \"28b1179c5760794213c6ed9177d6de4c5b7a47c6\",\n    \"templateDigest\": \"44de40c58f1a2709a5bda0097cbe42e8f9d7c8236de7e585916dec6392613db0\",\n    \"tenantId\": \"tenant-a\"\n  },\n  \"identityDigest\": \"57c51df73e213ea7c993af06ac1540b5bc87015964cd22d3cf9d6207e4441ead\",\n  \"providerMode\": \"SYNTHETIC_ONLY\",\n  \"resourceClass\": {\n    \"name\": \"bounded-native-read-v1\",\n    \"modelReservationUnits\": 64,\n    \"runtimeReservationUnits\": 1,\n    \"maxInputBytes\": 4096,\n    \"maxOutputBytes\": 8192,\n    \"maxTokens\": 32,\n    \"maxRequests\": 32,\n    \"timeoutMs\": 20000\n  },\n  \"activationAuthorized\": false,\n  \"runtimeTemplateDigest\": \"10e77559eac53f3e8bde88bc146549c9a23815ad349e312fc446a2dc7909e2f6\"\n}",
+            "source": "\u2014",
+            "rights": "\u2014",
+            "evidence": "\u2014"
+          }
+        }
+      },
+      {
+        "id": "actual-mobile-contained-390px-browser",
+        "status": "PASS",
+        "value": {
+          "width": 390,
+          "clientWidth": 378,
+          "scrollWidth": 378,
+          "buttons": [
+            {
+              "id": "catalog-run",
+              "x": 34,
+              "right": 186.06666564941406
+            },
+            {
+              "id": "metric-run",
+              "x": 34,
+              "right": 229.3333282470703
+            },
+            {
+              "id": "abort",
+              "x": 17,
+              "right": 290.933349609375
+            },
+            {
+              "id": "refresh",
+              "x": 17,
+              "right": 158.10000610351562
+            },
+            {
+              "id": "reset",
+              "x": 17,
+              "right": 283.9666748046875
+            },
+            {
+              "id": "helper",
+              "x": 17,
+              "right": 361
+            }
+          ]
+        }
+      },
+      {
+        "id": "actual-browser-no-page-errors",
+        "status": "PASS",
+        "value": {
+          "pageErrors": []
+        }
+      }
+    ],
+    "humanUsability": "NOT_OBSERVED",
+    "certificateErrorsIgnored": false
+  }
+}

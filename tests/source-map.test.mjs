@@ -163,6 +163,9 @@ import './h08-portable-native-product.test.mjs';
 import './h08-portable-lifecycle.test.mjs';
 import './h08-portable-cli.test.mjs';
 import './h08-runtime-ci-binding.test.mjs';
+// KS282 connected-native qualification and scoped caller binding, each once.
+import './h282-host-epic-native-binding.test.mjs';
+import './h282-host-epic-budget-request.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

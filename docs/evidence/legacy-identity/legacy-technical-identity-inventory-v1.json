@@ -288,6 +288,32 @@
         "tests/h08-portable-native-product.test.mjs"
       ],
       "note": "Register only the one actual deliberately unsupported legacy projection-generation contract version in the native H08 negative test. Every predecessor occurrence/revision, original baseCommit, scanner/exclusions, compatibility plan and accepted product bytes remain unchanged. The mismatched version is denied; no runtime migration, schema rename or expanded source rights."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "c7e4eb90628156c82e3b6f7115ebb41d247ad2b1",
+      "predecessorOccurrences": 1135,
+      "predecessorInventorySha256": "c720190619abc632853ae650ddb37d9dd22a4c28ee01ffa4a0971b110bda532f",
+      "addedOccurrences": 34,
+      "removedOccurrences": 0,
+      "occurrences": 1169,
+      "addedIdentityClasses": [
+        "environment",
+        "schemaIdentity"
+      ],
+      "origin": "KS282_ACTUAL_OBSERVED_NATIVE_DEVELOPMENT_TRACE_NOT_A_NEW_EXECUTION",
+      "addedValues": [
+        "CM_BI_FIXTURE",
+        "chimpmaera.bi/catalog-answer/v1",
+        "chimpmaera.bi/generation-store/v1",
+        "chimpmaera.bi/local-technical-catalog/v1",
+        "chimpmaera.bi/projection-generation/v1",
+        "chimpmaera.bi/readback/v1"
+      ],
+      "addedPaths": [
+        "tests/fixtures/h282-actual-native-development-observation.json"
+      ],
+      "note": "Register actual retained native fixture identity bytes only. Preserve every predecessor occurrence, revision, scanner rule, exclusion and baseCommit. No namespace migration, new source rights, reminted native run or historical proof rewrite."
     }
   ],
   "occurrences": [
@@ -390,6 +416,76 @@
       "identityClass": "environment",
       "value": "CM_BI_FIXTURE",
       "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_BI_FIXTURE",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
     },
     {
       "identityClass": "environment",
@@ -1758,6 +1854,21 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/catalog-answer/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/catalog-promotion-evidence/v1",
       "path": "services/bi-control/src/promotion-bundle.mjs"
     },
@@ -2114,6 +2225,36 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/generation-store/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/generation-store/v1",
       "path": "tests/ks254-superset-init-recovery.test.mjs"
     },
     {
@@ -2155,6 +2296,21 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/local-technical-catalog/v1",
       "path": "services/bi-control/src/catalog.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/local-technical-catalog/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
     },
     {
       "identityClass": "schemaIdentity",
@@ -2463,6 +2619,31 @@
     },
     {
       "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/projection-generation/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/projection-generation/v999",
       "path": "tests/h08-portable-native-product.test.mjs"
     },
@@ -2490,6 +2671,21 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/readback/v1",
       "path": "services/bi-control/src/server.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/readback/v1",
+      "path": "tests/fixtures/h282-actual-native-development-observation.json"
     },
     {
       "identityClass": "schemaIdentity",
