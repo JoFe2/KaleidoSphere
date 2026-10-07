@@ -246,6 +246,7 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // KS282 preserves immutable canonical roots; each native qualification suite once.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h282-host-epic-native-binding.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/h282-host-epic-budget-request.test.mjs' },
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/ks303-pan541-ui-state-binding.test.mjs' },
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },

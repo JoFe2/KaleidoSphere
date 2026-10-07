@@ -314,6 +314,30 @@
         "tests/fixtures/h282-actual-native-development-observation.json"
       ],
       "note": "Register actual retained native fixture identity bytes only. Preserve every predecessor occurrence, revision, scanner rule, exclusion and baseCommit. No namespace migration, new source rights, reminted native run or historical proof rewrite."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "0a0488d6a5f48ce86702d0daacf8dc450377e4b5",
+      "predecessorLocalIndexTree": "61d95ba256854f34fb21b5ffd203fffe312e088b",
+      "predecessorOccurrences": 1169,
+      "predecessorInventorySha256": "bbb4f522248de2a3efdc9c293b27b7a3de8aa3c5fab63845c90029f9eca1f617",
+      "addedOccurrences": 5,
+      "removedOccurrences": 0,
+      "occurrences": 1174,
+      "addedIdentityClasses": [
+        "schemaIdentity"
+      ],
+      "origin": "KS303_EXISTING_UISTATE_TECHNICAL_IDENTITY_REUSE_WITH_PUBLIC541_CORE_NOT_IDENTITY_MIGRATION",
+      "addedValues": [
+        "chimpmaera.bi/dashboard-capability-manifest/v1",
+        "chimpmaera.bi/ui-action/v1"
+      ],
+      "addedPaths": [
+        "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.d.mts",
+        "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.mjs",
+        "tests/ks303-pan541-ui-state-binding.test.mjs"
+      ],
+      "note": "Register exact existing UIState/action identities in the new thin consumer, declarations and tests. All prior occurrences/revisions/baseCommit and scanner rules preserved; no namespace migration, new source rights or new browser/result PASS."
     }
   ],
   "occurrences": [
@@ -1910,12 +1934,22 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
+      "path": "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.d.mts"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
       "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
     },
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
       "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/dashboard-capability-manifest/v1",
+      "path": "tests/ks303-pan541-ui-state-binding.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",
@@ -5450,6 +5484,16 @@
     {
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.d.mts"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
       "path": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs"
     },
     {
@@ -5481,6 +5525,11 @@
       "identityClass": "schemaIdentity",
       "value": "chimpmaera.bi/ui-action/v1",
       "path": "services/bi-control/src/visual-scenario-lab/scenario-engine.mjs"
+    },
+    {
+      "identityClass": "schemaIdentity",
+      "value": "chimpmaera.bi/ui-action/v1",
+      "path": "tests/ks303-pan541-ui-state-binding.test.mjs"
     },
     {
       "identityClass": "schemaIdentity",
