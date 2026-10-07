@@ -46,8 +46,14 @@ export function createPan541UIStateConsumerV1(options) {
   let adapter=new InMemoryDashboardStateAdapter(ownedManifest);
   let closed=false;
   const lifetime=new AbortController();
+  const renderDisposals=new Set();
   let unsubscribe=()=>{};
-  function close(){if(closed)return;closed=true;lifetime.abort();adapter=null;unsubscribe();}
+  function close(){
+    if(closed)return;closed=true;lifetime.abort();adapter=null;unsubscribe();
+    let failed=false;
+    for(const dispose of [...renderDisposals]){try{dispose();}catch{failed=true;}}
+    if(failed)throw new Error('KS303_RENDER_DISPOSAL_FAILED');
+  }
   unsubscribe=owner.onDispose(close);
   const ensureActive=()=>{if(closed)throw new Error('KS303_CONSUMER_CLOSED');};
   const descriptor={schemaVersion:'pansphaira.browser-plugin/v1',id:'ks.session-state',version:'1.0.0',shellVersion:'1.0.0',enabled:true,trustBoundary:'TRUSTED_IN_PROCESS_CODE_OWNED_FACTORIES',needs:{data:['ks.session-state'],context:['tenantId','sessionId','objectId','revision'],rights:[],dependencies:[]},contributions:[
@@ -66,10 +72,16 @@ export function createPan541UIStateConsumerV1(options) {
     catch {return false;}
   }
   const factory=(kind,operation,render)=>({kind,async render(frame){
-    const allowed=await authorize(operation,frame.signal);
-    if(frame.signal.aborted||closed)return;
+    const signal=AbortSignal.any([frame.signal,lifetime.signal]);
+    const allowed=await authorize(operation,signal);
+    if(signal.aborted||closed)throw new Error('KS303_CONSUMER_CLOSED');
     const presentation=allowed?{outcome:'SESSION_VIEW',binding:binding(),state:adapter.read(),persistentSupersetMutation:false,analysisResult:null}:{outcome:'DENIED',binding:null,state:null,persistentSupersetMutation:false,analysisResult:null};
-    return render({target:frame.target,signal:frame.signal,presentation});
+    const cleanup=await render({target:frame.target,signal,presentation});
+    let disposed=false;
+    const dispose=()=>{if(disposed)return;disposed=true;renderDisposals.delete(dispose);if(typeof cleanup==='function')cleanup();};
+    if(signal.aborted||closed){dispose();throw new Error('KS303_CONSUMER_CLOSED');}
+    renderDisposals.add(dispose);
+    return dispose;
   }});
   return Object.freeze({
     descriptor:validated.descriptor,

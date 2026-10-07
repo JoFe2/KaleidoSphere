@@ -139,3 +139,81 @@ test('all public source and compiled pins match their exact package files and ex
   for(const [path,digest] of Object.entries(binding.compiledRuntimeSha256))assert.equal(createHash('sha256').update(readFileSync(new URL('runtime/'+path,root))).digest('hex'),digest);
   assert.equal(createHash('sha256').update(readFileSync(new URL('../'+binding.KSExistingConsumer.entry,import.meta.url))).digest('hex'),binding.KSExistingConsumer.sha256);assert.equal(binding.PAN549ResultCapabilityIncluded,false);assert.equal(binding.whole303CompositionQualified,false);
 });
+
+
+test('owner context retirement aborts an already-running consumer renderer before stale target writes',async()=>{
+  let enteredResolve;let release;let seenSignal;let pending;
+  const entered=new Promise(resolve=>{enteredResolve=resolve;});
+  const gate=new Promise(resolve=>{release=resolve;});
+  const target={writes:0};
+  const f=await fixture({renderView:async({signal,target})=>{seenSignal=signal;enteredResolve();await gate;if(!signal.aborted)target.writes++;}});
+  try {
+    f.registry.register(f.consumer.descriptor);
+    pending=f.registry.render('ks.session-state.view',target);await entered;
+    f.owner.switchContext({...context(),revision:8});
+    assert.equal(seenSignal.aborted,true,'consumer context retirement did not abort the running renderer');
+    release();const result=await pending;
+    assert.notEqual(result.outcome,'RENDERED','retired consumer must not claim a successful render');
+    assert.equal(target.writes,0);
+  } finally {release();await pending?.catch(()=>{});f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+
+test('completed consumer render cleanup belongs to both consumer and shell and runs exactly once',async()=>{
+  let cleaned=0;let signal;
+  const f=await fixture({renderPanel:frame=>{signal=frame.signal;return ()=>{cleaned++;};}});
+  try {
+    f.registry.register(f.consumer.descriptor);
+    assert.equal((await f.registry.render('ks.session-state.panel',{})).outcome,'RENDERED');
+    f.consumer.close();
+    assert.equal(signal.aborted,true);
+    assert.equal(cleaned,1,'owner close did not run its completed-render cleanup');
+    f.registry.retireAll();f.registry.close();f.consumer.close();
+    assert.equal(cleaned,1,'shared lifetime cleanup must be idempotent');
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+
+test('a late consumer renderer cleanup runs once after context retirement and cannot claim success',async()=>{
+  let enteredResolve;let release;let cleaned=0;let pending;
+  const entered=new Promise(resolve=>{enteredResolve=resolve;});const gate=new Promise(resolve=>{release=resolve;});
+  const f=await fixture({renderPanel:async()=>{enteredResolve();await gate;return ()=>{cleaned++;};}});
+  try {
+    f.registry.register(f.consumer.descriptor);pending=f.registry.render('ks.session-state.panel',{});await entered;
+    f.consumer.close();release();
+    assert.equal((await pending).outcome,'RENDER_FAILED');assert.equal(cleaned,1);
+    f.registry.retireAll();f.registry.close();assert.equal(cleaned,1);
+  } finally {release();await pending?.catch(()=>{});f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+test('shell retirement aborts the combined render lifetime and disposes its resources once',async()=>{
+  let signal;let cleaned=0;
+  const f=await fixture({renderView:frame=>{signal=frame.signal;return ()=>{cleaned++;};}});
+  try {
+    f.registry.register(f.consumer.descriptor);assert.equal((await f.registry.render('ks.session-state.view',{})).outcome,'RENDERED');
+    f.registry.retireAll();assert.equal(signal.aborted,true);assert.equal(cleaned,1);
+    f.consumer.close();assert.equal(cleaned,1);
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+test('owner retirement during pending authorization does not report a rendered consumer or call its renderer',async()=>{
+  let release;const gate=new Promise(resolve=>{release=resolve;});
+  const f=await fixture({authorizeSession:async()=>gate});let pending;
+  try {
+    f.registry.register(f.consumer.descriptor);pending=f.registry.render('ks.session-state.view',{});
+    f.owner.switchContext({...context(),revision:8});release(true);
+    assert.notEqual((await pending).outcome,'RENDERED');assert.equal(f.views.length,0);
+  } finally {release(true);await pending?.catch(()=>{});f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+test('one disposal fault is reported by the actual context owner without skipping another render cleanup',async()=>{
+  let cleaned=0;
+  const f=await fixture({renderView:()=>()=>{throw new Error('owned-disposal-fault');},renderPanel:()=>()=>{cleaned++;}});
+  try {
+    f.registry.register(f.consumer.descriptor);await f.registry.render('ks.session-state.view',{});await f.registry.render('ks.session-state.panel',{});
+    const retired=f.owner.switchContext({...context(),revision:8});
+    assert.equal(retired.disposalFailures,1);assert.equal(cleaned,1);
+    f.registry.retireAll();assert.equal(cleaned,1);assert.throws(()=>f.consumer.readSession(),/KS303_CONSUMER_CLOSED/);
+    const fresh=await fixture();try{fresh.registry.register(fresh.consumer.descriptor);assert.equal((await fresh.registry.render('ks.session-state.view',{})).outcome,'RENDERED');}finally{fresh.consumer.close();fresh.registry.close();fresh.owner.close();}
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
