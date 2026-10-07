@@ -8,6 +8,9 @@ import {buildBrowserDeepLinkV1,parseBrowserDeepLinkV1} from '../../../../contrac
 
 export const KS303_SESSION_CONSUMER_SCHEMA_V1='kaleidosphere/pan541-ui-state-consumer/v1';
 const ids={view:'ks.session-state.view',panel:'ks.session-state.panel'};
+// Capture attribution at module consumption; a shared JSON cache alias is not a new source.
+// This preserves metadata identity, not a sandbox against trusted owner code.
+const sourceIdentity=Object.freeze({consumerSource:Object.freeze({...sourceBinding.KSExistingConsumer}),producerCommit:sourceBinding.producerCommit,producerTree:sourceBinding.producerTree,producerContractSha256:sourceBinding.upstreamSourceSha256['packages/contracts/src/browser-shell-plugin-v1.ts']});
 const denied=()=>({status:'denied',denialReason:'KS303_SESSION_AUTHORIZATION_DENIED',sideEffect:'none',persistentSupersetMutation:false});
 
 function dataRecord(value,required,optional=[]) {
@@ -64,7 +67,7 @@ export function createPan541UIStateConsumerV1(options) {
   const validated=validateBrowserShellPluginV1(descriptor,new Set(Object.values(ids)));
   if(validated.outcome!=='DESCRIPTOR_VALID')throw new Error('KS303_DESCRIPTOR_BINDING_DENIED');
   function binding() {
-    ensureActive();return Object.freeze({schemaVersion:KS303_SESSION_CONSUMER_SCHEMA_V1,context:owner.context(),sessionStateVersion:adapter.read().version,consumerContract:'chimpmaera.bi/ui-action/v1',consumerSource:Object.freeze({...sourceBinding.KSExistingConsumer}),producerCommit:sourceBinding.producerCommit,producerTree:sourceBinding.producerTree,producerContractSha256:sourceBinding.upstreamSourceSha256['packages/contracts/src/browser-shell-plugin-v1.ts'],dataResultRevision:null,PAN549ResultCapability:false,grantedRights:Object.freeze([]),persistentMutationAuthority:false});
+    ensureActive();return Object.freeze({schemaVersion:KS303_SESSION_CONSUMER_SCHEMA_V1,context:owner.context(),sessionStateVersion:adapter.read().version,consumerContract:'chimpmaera.bi/ui-action/v1',...sourceIdentity,dataResultRevision:null,PAN549ResultCapability:false,grantedRights:Object.freeze([]),persistentMutationAuthority:false});
   }
   async function authorize(operation,signal=lifetime.signal) {
     ensureActive();const context=owner.context();

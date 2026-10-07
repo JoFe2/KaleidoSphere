@@ -78,6 +78,34 @@ test('exposed source identity is immutable and cannot poison later context bindi
   finally {f.consumer.close();f.registry.close();f.owner.close();}
 });
 
+test('shared JSON metadata alias cannot rewrite the consumed source identity of existing or later consumers',async()=>{
+  const f=await fixture();let later;
+  const bindingURL=new URL('../contracts/dependencies/pan541-browser-shell-v1/binding.json',import.meta.url);
+  const fileBefore=readFileSync(bindingURL);
+  const expected=JSON.parse(fileBefore);
+  const {default:shared}=await import(bindingURL,{with:{type:'json'}});
+  const original=structuredClone(shared);
+  const identity=value=>({consumerSource:value.consumerSource,producerCommit:value.producerCommit,producerTree:value.producerTree,producerContractSha256:value.producerContractSha256});
+  const expectedIdentity={consumerSource:expected.KSExistingConsumer,producerCommit:expected.producerCommit,producerTree:expected.producerTree,producerContractSha256:expected.upstreamSourceSha256['packages/contracts/src/browser-shell-plugin-v1.ts']};
+  try {
+    assert.deepEqual(identity(f.consumer.binding()),expectedIdentity);
+    shared.producerCommit='0'.repeat(40);shared.producerTree='1'.repeat(40);
+    shared.upstreamSourceSha256['packages/contracts/src/browser-shell-plugin-v1.ts']='2'.repeat(64);
+    shared.KSExistingConsumer.sha256='3'.repeat(64);
+    assert.deepEqual(readFileSync(bindingURL),fileBefore,'the probe must not alter the installed source-binding file');
+    assert.deepEqual(identity(f.consumer.binding()),expectedIdentity,'a shared JSON alias rewrote an already consumed source identity');
+    later=await fixture();
+    assert.deepEqual(identity(later.consumer.binding()),expectedIdentity,'a later consumer inherited alias-mutated provenance');
+    assert.equal(later.consumer.binding().PAN549ResultCapability,false);
+    assert.deepEqual(later.consumer.binding().grantedRights,[]);
+  } finally {
+    for(const key of Object.keys(shared))delete shared[key];Object.assign(shared,original);
+    later?.consumer.close();later?.registry.close();later?.owner.close();
+    f.consumer.close();f.registry.close();f.owner.close();
+    assert.deepEqual(readFileSync(bindingURL),fileBefore);
+  }
+});
+
 test('typed session deep links use UIState version separately from shell-context revision and deny wrong object/source route',async()=>{
   const f=await fixture();try {
     assert.equal(typeof f.consumer.sessionDeepLink,'function','session deep-link binding absent');
