@@ -79,6 +79,8 @@ export function createPan541UIStateConsumerV1(options) {
     const cleanup=await render({target:frame.target,signal,presentation});
     let disposed=false;
     const dispose=()=>{if(disposed)return;disposed=true;renderDisposals.delete(dispose);if(typeof cleanup==='function')cleanup();};
+    // Let the actual retired shell own late cleanup and report disposal faults.
+    if(frame.signal.aborted)return dispose;
     if(signal.aborted||closed){dispose();throw new Error('KS303_CONSUMER_CLOSED');}
     renderDisposals.add(dispose);
     return dispose;

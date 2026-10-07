@@ -217,3 +217,17 @@ test('one disposal fault is reported by the actual context owner without skippin
     const fresh=await fixture();try{fresh.registry.register(fresh.consumer.descriptor);assert.equal((await fresh.registry.render('ks.session-state.view',{})).outcome,'RENDERED');}finally{fresh.consumer.close();fresh.registry.close();fresh.owner.close();}
   } finally {f.consumer.close();f.registry.close();f.owner.close();}
 });
+
+test('shell retirement reports a late renderer disposal failure instead of hiding it as stale',async()=>{
+  let enter;let release;let pending;let cleaned=0;
+  const entered=new Promise(resolve=>{enter=resolve;});const gate=new Promise(resolve=>{release=resolve;});
+  const f=await fixture({renderView:async()=>{enter();await gate;return ()=>{cleaned++;throw new Error('owned-late-disposal-fault');};}});
+  try {
+    assert.equal(f.registry.register(f.consumer.descriptor).outcome,'REGISTERED');
+    pending=f.registry.render('ks.session-state.view',{});await entered;
+    f.registry.retireAll();release();
+    assert.equal((await pending).outcome,'STALE_RENDER');assert.equal(cleaned,1);
+    assert.deepEqual(f.faults,[{pluginId:f.consumer.descriptor.id,outcome:'DISPOSAL_FAILED',reason:'OWNED_DISPOSAL_FAILED'}],'actual registry lost a late owned cleanup failure');
+    f.consumer.close();f.registry.retireAll();assert.equal(cleaned,1);assert.equal(f.faults.length,1);
+  } finally {release();await pending?.catch(()=>{});f.consumer.close();f.registry.close();f.owner.close();}
+});
