@@ -1,5 +1,6 @@
 // Thin existing-KS UIState binding, not an analysis renderer or backend grant.
 import {types} from 'node:util';
+import {randomUUID} from 'node:crypto';
 import {InMemoryDashboardStateAdapter,assertDashboardCapabilityManifest} from './ui-state-adapter.mjs';
 import sourceBinding from '../../../../contracts/dependencies/pan541-browser-shell-v1/binding.json' with {type:'json'};
 import {validateBrowserShellPluginV1} from '../../../../contracts/dependencies/pan541-browser-shell-v1/runtime/packages/contracts/src/browser-shell-plugin-v1.js';
@@ -49,6 +50,8 @@ export function createPan541UIStateConsumerV1(options) {
   let adapter=new InMemoryDashboardStateAdapter(ownedManifest);
   let closed=false;
   const lifetime=new AbortController();
+  // Adapter tokens identify actions, not owner lifetimes; keep the public token opaque and owned.
+  const undoPrefix=`ks303:${randomUUID()}:`;
   const renderDisposals=new Set();
   let unsubscribe=()=>{};
   function close(){
@@ -99,9 +102,15 @@ export function createPan541UIStateConsumerV1(options) {
       ensureActive();let captured;
       try {if(!dataRecord(request,['schemaVersion','actionId','idempotencyKey','action','args','stateVersion','preconditions']))throw new Error('KS303_SESSION_REQUEST_DENIED');captured=captureData(request);if(!dataRecord(captured.preconditions,['dashboardId'])||captured.preconditions.dashboardId!==ownedManifest.dashboardId)throw new Error('KS303_SESSION_REQUEST_DENIED');}
       catch {return {...denied(),denialReason:'KS303_SESSION_REQUEST_DENIED'};}
-      if(!await authorize('APPLY_SESSION')||closed||lifetime.signal.aborted)return denied();return adapter.attempt(captured);
+      if(!await authorize('APPLY_SESSION')||closed||lifetime.signal.aborted)return denied();
+      const receipt=adapter.attempt(captured);
+      return typeof receipt.undoToken==='string'?{...receipt,undoToken:undoPrefix+receipt.undoToken}:receipt;
     },
-    async undoSession(token,version){if(!await authorize('UNDO_SESSION')||closed||lifetime.signal.aborted)return denied();return adapter.undo(token,version);},
+    async undoSession(token,version){
+      if(!await authorize('UNDO_SESSION')||closed||lifetime.signal.aborted)return denied();
+      if(typeof token!=='string'||!token.startsWith(undoPrefix))return {...denied(),denialReason:'UI_UNDO_TOKEN_INVALID'};
+      return adapter.undo(token.slice(undoPrefix.length),version);
+    },
     close,
   });
 }

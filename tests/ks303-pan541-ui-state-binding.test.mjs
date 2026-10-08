@@ -289,3 +289,24 @@ test('authorization guard resolution cannot cross context retirement before undo
     assert.equal(f.owner.context().revision,8);assert.throws(()=>f.consumer.readSession(),/KS303_CONSUMER_CLOSED/);
   } finally {f.consumer.close();f.registry.close();f.owner.close();}
 });
+
+test('undo tokens are owned by a consumer lifetime, including an identical later context',async()=>{
+  for(const nextContext of [{...context(),tenantId:'tenant-second-owned-synthetic',sessionId:'session-second-owned-synthetic'},context()]){
+    const first=await fixture();
+    const nextOwner=createBrowserContextOwnerV1({initialContext:nextContext,readBackend:async()=>({status:403,value:null})});
+    const second=first.module.createPan541UIStateConsumerV1({contextOwner:nextOwner,manifest:manifest(),authorizeSession:async(c)=>{assert.equal(c,nextOwner.context());return true;},renderView:()=>{},renderPanel:()=>{}});
+    try {
+      const initial=await first.consumer.applySession(request());const current=await second.applySession(request());
+      assert.equal(initial.status,'applied');assert.equal(current.status,'applied');
+      const before=second.readSession();assert.equal(before.version,2);assert.equal(before.tab,'details');
+      const foreign=await second.undoSession(initial.undoToken,2);
+      assert.equal(foreign.status,'denied','a token from another consumer lifetime rolled back the current owned session');
+      assert.equal(foreign.denialReason,'UI_UNDO_TOKEN_INVALID');assert.equal(foreign.sideEffect,'none');assert.equal(foreign.persistentSupersetMutation,false);
+      assert.deepEqual(second.readSession(),before);
+      const replay=await second.applySession(request());assert.equal(replay.status,'already_applied');assert.equal(replay.undoToken,current.undoToken,'idempotency must preserve the current lifetime token');
+      const own=await second.undoSession(current.undoToken,2);assert.equal(own.status,'undone');assert.equal(second.readSession().tab,null);assert.equal(second.readSession().version,3);
+      assert.equal(first.consumer.readSession().tab,'details');assert.equal(first.consumer.readSession().version,2);
+      assert.equal(second.binding().PAN549ResultCapability,false);assert.deepEqual(second.binding().grantedRights,[]);
+    } finally {second.close();nextOwner.close();first.consumer.close();first.registry.close();first.owner.close();}
+  }
+});
