@@ -109,7 +109,11 @@ export function createPan541UIStateConsumerV1(options) {
     async undoSession(token,version){
       if(!await authorize('UNDO_SESSION')||closed||lifetime.signal.aborted)return denied();
       if(typeof token!=='string'||!token.startsWith(undoPrefix))return {...denied(),denialReason:'UI_UNDO_TOKEN_INVALID'};
-      return adapter.undo(token.slice(undoPrefix.length),version);
+      try {return adapter.undo(token.slice(undoPrefix.length),version);}
+      catch(error) {
+        if(error.code==='DASHBOARD_STATE_STALE'||error.code==='UI_UNDO_TOKEN_INVALID')return {...denied(),denialReason:error.code,stateVersion:adapter.read().version};
+        throw error;
+      }
     },
     close,
   });

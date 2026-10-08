@@ -18,6 +18,36 @@ async function fixture(overrides={}) {
   const registry=createBrowserShellRegistryV1({factories:consumer.factories,reportFault:fault=>faults.push(fault)});
   return {module,owner,consumer,registry,views,panels,faults,authorizations};
 }
+test('invalid current-lifetime undo tokens return controlled no-effect denials',async()=>{
+  const f=await fixture();try {
+    const applied=await f.consumer.applySession(request());assert.equal(applied.status,'applied');
+    const before=f.consumer.readSession();
+    const corrupt=await f.consumer.undoSession(applied.undoToken+'-corrupted',2);
+    assert.equal(corrupt.status,'denied');assert.equal(corrupt.denialReason,'UI_UNDO_TOKEN_INVALID');
+    assert.equal(corrupt.sideEffect,'none');assert.equal(corrupt.persistentSupersetMutation,false);
+    assert.equal(corrupt.stateVersion,2);assert.deepEqual(f.consumer.readSession(),before);
+    assert.equal((await f.consumer.undoSession(applied.undoToken,2)).status,'undone');
+    const undoneState=f.consumer.readSession();
+    const consumed=await f.consumer.undoSession(applied.undoToken,3);
+    assert.equal(consumed.status,'denied');assert.equal(consumed.denialReason,'UI_UNDO_TOKEN_INVALID');
+    assert.equal(consumed.sideEffect,'none');assert.equal(consumed.persistentSupersetMutation,false);
+    assert.equal(consumed.stateVersion,3);assert.deepEqual(f.consumer.readSession(),undoneState);
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+test('stale current-lifetime undo returns controlled denial while preserving the valid undo',async()=>{
+  const f=await fixture();try {
+    const applied=await f.consumer.applySession(request());assert.equal(applied.status,'applied');
+    const before=f.consumer.readSession();
+    const stale=await f.consumer.undoSession(applied.undoToken,1);
+    assert.equal(stale.status,'denied');assert.equal(stale.denialReason,'DASHBOARD_STATE_STALE');
+    assert.equal(stale.sideEffect,'none');assert.equal(stale.persistentSupersetMutation,false);
+    assert.equal(stale.stateVersion,2);assert.deepEqual(f.consumer.readSession(),before);
+    const undone=await f.consumer.undoSession(applied.undoToken,2);
+    assert.equal(undone.status,'undone');assert.equal(f.consumer.readSession().version,3);assert.equal(f.consumer.readSession().tab,null);
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
+
 test('existing KS UIState thin consumer renders via actual published PAN541 registry and stays reversible-session-only',async()=>{
   const f=await fixture();try {
     const registered=f.registry.register(f.consumer.descriptor);assert.equal(registered.outcome,'REGISTERED');assert.deepEqual(registered.grantedRights,[]);
