@@ -4,6 +4,26 @@
   "censusRevisions": [
     {
       "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "cdcf09c66882ea5b9be8d7ca136187b97ad6d47e",
+      "predecessorOccurrences": 1169,
+      "predecessorInventorySha256": "bbb4f522248de2a3efdc9c293b27b7a3de8aa3c5fab63845c90029f9eca1f617",
+      "addedOccurrences": 3,
+      "removedOccurrences": 0,
+      "occurrences": 1172,
+      "addedIdentityClasses": [
+        "environment"
+      ],
+      "origin": "KS281_ACTUAL_EXISTING_CORE_COMPOSITION_TEST_ENV_KEY_ONLY",
+      "addedValues": [
+        "CM_MARIADB_PASSWORD"
+      ],
+      "addedPaths": [
+        "tests/ks281-native-next-composition.test.mjs"
+      ],
+      "note": "Register only the exact existing optional owned MariaDB fixture environment KEY in actual combined product tests. Preserve every predecessor occurrence/revision, baseline commit, scanner/exclusions, source/runtime guards and historical proof. Never register credential values or grant new source authority."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
       "predecessorCensusCommit": "a392665d69ebd7c0c900e710600dd401af480acb",
       "predecessorOccurrences": 1118,
       "predecessorInventorySha256": "ca0681314cce479d0b219c075aadef0a88f8f95d9822d8098056ffc6c8ffd38f",
@@ -601,6 +621,21 @@
       "identityClass": "environment",
       "value": "CM_MARIADB_PASSWORD",
       "path": "tests/helpers/relational-core-native-worker-probe.py"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/ks281-native-next-composition.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/ks281-native-next-composition.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/ks281-native-next-composition.test.mjs"
     },
     {
       "identityClass": "environment",
