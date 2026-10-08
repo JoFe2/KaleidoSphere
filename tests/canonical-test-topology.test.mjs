@@ -187,6 +187,8 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   { parent: 'tests/source-map.test.mjs', suite: 'tests/pan520-p2p-pair.test.mjs' },
   // K05 actual native and independently expected synthetic stock scopes, exactly once.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/pan520-stock-pair.test.mjs' },
+  // KS281 connected first-wave and actual shared native source, canonical exactly once.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/ks281-native-business-composition.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-deadline-product.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-deadline-negatives.test.mjs' },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/stock-source-boundary.test.mjs' },
