@@ -106,6 +106,10 @@ import './procurement-analysis-boundary.test.mjs';
 import './pan520-p2p-pair.test.mjs';
 // K05 native event evidence, bounded deadline forecast and narrow-profile fallback each once.
 import './pan520-stock-pair.test.mjs';
+// KS281 executes one real first-wave/native activation; child PASS records are not its proof.
+import './ks281-native-business-composition.test.mjs';
+// KS281 actual Core/local-API/saved-profile composition, same canonical parent once.
+import './ks281-native-next-composition.test.mjs';
 import './stock-deadline-product.test.mjs';
 import './stock-deadline-negatives.test.mjs';
 import './stock-source-boundary.test.mjs';

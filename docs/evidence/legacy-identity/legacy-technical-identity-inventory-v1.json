@@ -4,6 +4,26 @@
   "censusRevisions": [
     {
       "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "cdcf09c66882ea5b9be8d7ca136187b97ad6d47e",
+      "predecessorOccurrences": 1169,
+      "predecessorInventorySha256": "bbb4f522248de2a3efdc9c293b27b7a3de8aa3c5fab63845c90029f9eca1f617",
+      "addedOccurrences": 3,
+      "removedOccurrences": 0,
+      "occurrences": 1172,
+      "addedIdentityClasses": [
+        "environment"
+      ],
+      "origin": "KS281_ACTUAL_EXISTING_CORE_COMPOSITION_TEST_ENV_KEY_ONLY",
+      "addedValues": [
+        "CM_MARIADB_PASSWORD"
+      ],
+      "addedPaths": [
+        "tests/ks281-native-next-composition.test.mjs"
+      ],
+      "note": "Register only the exact existing optional owned MariaDB fixture environment KEY in actual combined product tests. Preserve every predecessor occurrence/revision, baseline commit, scanner/exclusions, source/runtime guards and historical proof. Never register credential values or grant new source authority."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
       "predecessorCensusCommit": "a392665d69ebd7c0c900e710600dd401af480acb",
       "predecessorOccurrences": 1118,
       "predecessorInventorySha256": "ca0681314cce479d0b219c075aadef0a88f8f95d9822d8098056ffc6c8ffd38f",
@@ -338,6 +358,23 @@
         "tests/ks303-pan541-ui-state-binding.test.mjs"
       ],
       "note": "Register exact existing UIState/action identities in the new thin consumer, declarations and tests. All prior occurrences/revisions/baseCommit and scanner rules preserved; no namespace migration, new source rights or new browser/result PASS."
+    },
+    {
+      "kind": "ADDITIVE_RE_FREEZE",
+      "predecessorCensusCommit": "b06b275db14cf3f446c8dd94ee054c9171fc26f2",
+      "predecessorInventorySha256": "2194b1ac8fd12d3078cb4f9132ae59bee6d67a2c9e549a0aa473eb94df1052f3",
+      "predecessorOccurrences": 1174,
+      "preservedMainCommit": "f831bb689afa9bba10982a95b9db0863d34e0353",
+      "preservedMainInventorySha256": "71fca17a4ceec93a1c458064fa246508285560d7fa35a944f1ba1b393cf46714",
+      "preservedMainOccurrences": 1172,
+      "addedOccurrences": 3,
+      "removedOccurrences": 0,
+      "occurrences": 1177,
+      "addedIdentityClasses": ["environment"],
+      "addedValues": ["CM_MARIADB_PASSWORD"],
+      "addedPaths": ["tests/ks281-native-next-composition.test.mjs"],
+      "origin": "KS303_CURRENT_MAIN_RECONCILIATION_PRESERVES_ALREADY_RELEASED_KS281_NEGATIVE_IDENTITY_OCCURRENCES",
+      "note": "Union the exact predecessor303 and already released Main281 occurrence multisets. These three occurrences already existed in Main; no new product identities are authored. Every occurrence from both parents, every historical census revision, original baseCommit, scanner rule and exclusion remains unchanged. Current total1177 is metadata reconciliation only, not identity migration, shared-browser/result acceptance, a new source right or original303 completion."
     }
   ],
   "occurrences": [
@@ -625,6 +662,21 @@
       "identityClass": "environment",
       "value": "CM_MARIADB_PASSWORD",
       "path": "tests/helpers/relational-core-native-worker-probe.py"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/ks281-native-next-composition.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/ks281-native-next-composition.test.mjs"
+    },
+    {
+      "identityClass": "environment",
+      "value": "CM_MARIADB_PASSWORD",
+      "path": "tests/ks281-native-next-composition.test.mjs"
     },
     {
       "identityClass": "environment",
