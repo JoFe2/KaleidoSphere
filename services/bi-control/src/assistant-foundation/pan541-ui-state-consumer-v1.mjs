@@ -99,9 +99,9 @@ export function createPan541UIStateConsumerV1(options) {
       ensureActive();let captured;
       try {if(!dataRecord(request,['schemaVersion','actionId','idempotencyKey','action','args','stateVersion','preconditions']))throw new Error('KS303_SESSION_REQUEST_DENIED');captured=captureData(request);if(!dataRecord(captured.preconditions,['dashboardId'])||captured.preconditions.dashboardId!==ownedManifest.dashboardId)throw new Error('KS303_SESSION_REQUEST_DENIED');}
       catch {return {...denied(),denialReason:'KS303_SESSION_REQUEST_DENIED'};}
-      if(!await authorize('APPLY_SESSION'))return denied();return adapter.attempt(captured);
+      if(!await authorize('APPLY_SESSION')||closed||lifetime.signal.aborted)return denied();return adapter.attempt(captured);
     },
-    async undoSession(token,version){if(!await authorize('UNDO_SESSION'))return denied();return adapter.undo(token,version);},
+    async undoSession(token,version){if(!await authorize('UNDO_SESSION')||closed||lifetime.signal.aborted)return denied();return adapter.undo(token,version);},
     close,
   });
 }

@@ -259,3 +259,33 @@ test('shell retirement reports a late renderer disposal failure instead of hidin
     f.consumer.close();f.registry.retireAll();assert.equal(cleaned,1);assert.equal(f.faults.length,1);
   } finally {release();await pending?.catch(()=>{});f.consumer.close();f.registry.close();f.owner.close();}
 });
+
+test('authorization guard resolution cannot cross context retirement before apply',async()=>{
+  const f=await fixture({authorizeSession:async(_context,operation)=>{
+    assert.equal(operation,'APPLY_SESSION');
+    // Retire after authorize() resumes, but before its awaiting caller resumes.
+    queueMicrotask(()=>queueMicrotask(()=>f.owner.switchContext({...context(),revision:8})));
+    return true;
+  }});
+  try {
+    const result=await f.consumer.applySession(request());
+    assert.equal(result.status,'denied');assert.equal(result.denialReason,'KS303_SESSION_AUTHORIZATION_DENIED');
+    assert.equal(result.sideEffect,'none');assert.equal(result.persistentSupersetMutation,false);
+    assert.equal(f.owner.context().revision,8);assert.throws(()=>f.consumer.readSession(),/KS303_CONSUMER_CLOSED/);
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
+
+test('authorization guard resolution cannot cross context retirement before undo',async()=>{
+  const f=await fixture({authorizeSession:async(_context,operation)=>{
+    if(operation==='UNDO_SESSION')queueMicrotask(()=>queueMicrotask(()=>f.owner.switchContext({...context(),revision:8})));
+    return true;
+  }});
+  try {
+    const action=await f.consumer.applySession(request());assert.equal(action.status,'applied');
+    assert.equal(f.consumer.readSession().tab,'details');assert.equal(f.consumer.readSession().version,2);
+    const result=await f.consumer.undoSession(action.undoToken,2);
+    assert.equal(result.status,'denied');assert.equal(result.denialReason,'KS303_SESSION_AUTHORIZATION_DENIED');
+    assert.equal(result.sideEffect,'none');assert.equal(result.persistentSupersetMutation,false);
+    assert.equal(f.owner.context().revision,8);assert.throws(()=>f.consumer.readSession(),/KS303_CONSUMER_CLOSED/);
+  } finally {f.consumer.close();f.registry.close();f.owner.close();}
+});
