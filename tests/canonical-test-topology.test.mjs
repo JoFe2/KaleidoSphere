@@ -253,6 +253,8 @@ const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
   // KS249 (#249) bounded metric-compiler adapter: a new suite that must not become a second
   // direct root, riding the same parent exactly once so the exactly-one-route invariant holds.
   { parent: 'tests/source-map.test.mjs', suite: 'tests/metric-compiler-adapter.test.mjs' },
+  // #317 existing mapping/plan/result-owner stock extension, exactly one canonical route.
+  { parent: 'tests/source-map.test.mjs', suite: 'tests/overdue-stock-product-v1.test.mjs' },
 ]);
 const SLICE_FILES = Object.freeze([
   'scripts/check-canonical-test-topology.mjs',
