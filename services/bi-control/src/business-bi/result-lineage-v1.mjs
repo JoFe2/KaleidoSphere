@@ -49,6 +49,29 @@
 
 import { createHash } from 'node:crypto';
 
+// #317 stock results are issued by the existing business-bi plan owner, not caller DTOs.
+import {assertOwnedOverdueReceiptV1} from './overdue-stock-plan-v1.mjs';
+export const OVERDUE_RESULT_ADAPTER_SCHEMA = 'kaleidosphere.business-bi/overdue-stock-result-adapter/v1';
+export function buildOverdueStockResultAdapterV1(receipt) {
+  const issued = assertOwnedOverdueReceiptV1(receipt);
+  const adapter = {
+    schemaVersion:OVERDUE_RESULT_ADAPTER_SCHEMA,
+    classification:'SYNTHETIC_NON_CUSTOMER_BYTES',
+    metricId:issued.result.metricId,
+    resultRevision:issued.bindings.resultRevision,
+    sourceSnapshot:{sourceId:issued.bindings.sourceId,sourceRevision:issued.bindings.sourceRevision,
+      snapshotId:issued.bindings.snapshotId,actualSnapshotSHA256:issued.bindings.actualSnapshotSHA256},
+    bindings:{...issued.bindings},
+    result:issued.result,
+    intendedConsumers:['PAN549','KS303','PAN607','PAN612'],
+    runtimeAuthority:'PORTABLE_JSON_IS_IDENTITY_NOT_AUTHORITY_USE_PROTECTED_OWNER_READ',
+    futureVoiceTableChart:'ALL_MUST_REFERENCE_THIS_EXACT_RESULT_REVISION_NOT_RECOMPUTE_OR_RENAME',
+    uiBrowserVoicePairing:'NOT_EXECUTED_NOT_CLAIMED',
+  };
+  const deepFreeze = (o) => { if (o && typeof o==='object') {for (const v of Object.values(o)) deepFreeze(v);Object.freeze(o);}return o; };
+  return deepFreeze(adapter);
+}
+
 import { canonicalJson } from '../canonical-json.js';
 
 export const RESULT_LINEAGE_SCHEMA = 'kaleidosphere.business-bi/read-only-result-lineage/v1';
