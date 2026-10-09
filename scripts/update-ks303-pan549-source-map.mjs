@@ -24,8 +24,16 @@ const names=[
  'contracts/dependencies/pan549-stock-workspace-v1/owned-browser/read-companion-v28.js',
  'contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v30.json',
  'contracts/dependencies/pan549-stock-workspace-v1/owned-browser/read-companion-v30.js',
+ 'contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v31.json',
+ 'contracts/dependencies/pan549-stock-workspace-v1/owned-browser/read-companion-v31.js',
+ 'contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v32.json',
+ 'contracts/dependencies/pan549-stock-workspace-v1/owned-browser/read-companion-v32.js',
+ ...['v33','v34','v39'].flatMap(v=>['contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-'+v+'.json','contracts/dependencies/pan549-stock-workspace-v1/owned-browser/read-companion-'+v+'.js']),
+ ...['mjs','html','entry.mjs'].map(ext=>'services/bi-control/src/assistant-foundation/pan549-k05-read-companion-v2.'+ext),
+ ...['binding-v2.json','ui-attribution-v2.json','released-workspace-input-byte-closure-v1.json',...['workspace-analysis-v1.js','workspace-analysis-v1.ts','canonical-json.js','canonical-json.ts','package.json'].map(n=>'released-runtime-v2/'+n)].map(n=>'contracts/dependencies/pan549-stock-workspace-v1/'+n),
  'scripts/build-ks303-owned-browser.mjs','scripts/qualify-ks303-owned-compiler.py',
- ...['package.json','package-lock.json','compiler-integrity-v1.json','THIRD-PARTY-LICENSES.txt'].map(p=>'dependencies/ks303-owned-browser-build/'+p),
+ 'scripts/qualify-ks303-pan-esbuild.py','scripts/verify-ks303-build-compiler.mjs',
+ ...['package.json','package-lock.json','compiler-integrity-v1.json','THIRD-PARTY-LICENSES.txt','pan-esbuild-integrity-v1.json','pan-esbuild-integrity-v2.json','ESBUILD-THIRD-PARTY-LICENSES.txt'].map(p=>'dependencies/ks303-owned-browser-build/'+p),
  'tests/h03-starter-ci-binding.test.mjs','tests/h08-runtime-ci-binding.test.mjs',
  'tests/ks255-journey-runtime-binding.test.mjs','tests/postgresql-c2-safe-aggregate.test.mjs'
 ];

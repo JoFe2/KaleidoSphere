@@ -5,7 +5,7 @@ import {pathToFileURL} from 'node:url';
 
 import {loadPan520StockSourceV1,capturePan520StockPlanV1} from '../services/bi-control/src/business-bi/pan520-stock-consumer.mjs';
 import {createPan549K05StockReadPairV1} from '../services/bi-control/src/assistant-foundation/pan549-k05-stock-read-pair-v1.mjs';
-import binding from '../contracts/dependencies/pan549-stock-workspace-v1/binding.json' with {type:'json'};
+import binding from '../contracts/dependencies/pan549-stock-workspace-v1/binding-v2.json' with {type:'json'};
 const selector={schemaVersion:'pansphaira.workspace-analysis/read/v1',objectId:'analysis:common-trade-01:stock',expectedNativeRevision:null,expectedResultRevision:null,asOf:binding.cutoff};
 const load=(root,path)=>import(pathToFileURL(join(root,path)).href);
 for(const fault of ['ACTUAL_KS_REVOKED_DURING_NATIVE_RESULT_INTEGRITY','ACTUAL_NATIVE_SOURCE_DRIFT_AFTER_READ']){

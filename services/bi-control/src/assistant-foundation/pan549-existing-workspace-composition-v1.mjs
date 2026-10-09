@@ -6,7 +6,7 @@ import {lstatSync,readFileSync,realpathSync} from 'node:fs';
 import {resolve,join,isAbsolute} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
-import closureJSON from '../../../../contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v30.json' with {type:'json'};
+import closureJSON from '../../../../contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v39.json' with {type:'json'};
 import {createPan549K05StockReadPairV1} from './pan549-k05-stock-read-pair-v1.mjs';
 const loaded=new WeakMap(),KSROOT=resolve(fileURLToPath(new URL('../../../../',import.meta.url)));
 const sha=b=>createHash('sha256').update(b).digest('hex');
@@ -39,30 +39,39 @@ export function mountExistingPan549K05WorkspaceV1(options){
  const ingress=m['src/pan527/origin-session-adapter.mjs'];
  const sessions=gateway.sessionAdapter(tenantId);
  const owner=ingress.protectedGuidedOwnerContextV1(gateway,{optIn:true,tenantId,origin,identityDigest:sessions.binding.identityDigest});
+ let pair,profiles,documentMount,analysisMount,closed=false;
+ const cleanup=()=>{try{analysisMount?.close();}finally{try{documentMount?.close();}finally{try{pair?.close();}finally{profiles?.close();}}}};
+ try{
  const nativeAnalysis=m['src/pan549/native-analysis-read.mjs'].createNativeAnalysisReadAdapterV1({optIn:true,root:nativeRoot,sessions});
  const nativeErv=m['src/pan541/native-erv-read-adapter.mjs'].createNativeErvReadAdapterV1({tenantId,root:nativeRoot});
- const pair=createPan549K05StockReadPairV1({ksSource,nativeRoot,sessions,nativeReader:nativeAnalysis,isNativeReader:m['src/pan549/native-analysis-read.mjs'].isNativeAnalysisReadAdapterV1});
+ pair=createPan549K05StockReadPairV1({ksSource,nativeRoot,sessions,nativeReader:nativeAnalysis,isNativeReader:m['src/pan549/native-analysis-read.mjs'].isNativeAnalysisReadAdapterV1});
  const defaults=m['dist/packages/contracts/src/browser-profile-v1.js'].defaultBrowserProfileV1;
- const profiles=m['src/pan543/profile-store.mjs'].createBrowserProfileStoreV1({root:owner.productRoot,catalog:()=>defaults().items.map(i=>({id:i.id,version:i.version,state:'AVAILABLE'}))});
+ profiles=m['src/pan543/profile-store.mjs'].createBrowserProfileStoreV1({root:owner.productRoot,catalog:()=>defaults().items.map(i=>({id:i.id,version:i.version,state:'AVAILABLE'}))});
  const addonPath=closure.ownedKSBrowserScriptPath,stylePath=closure.ownedKSBrowserStylePath;
  const addon=pinnedBytes(KSROOT,addonPath,closure.ownedKSAdditionPins[addonPath]).toString('utf8'),addonStyle=pinnedBytes(KSROOT,stylePath,closure.ownedKSAdditionPins[stylePath]).toString('utf8');
  // Preserve every original app byte; append static, code-owned KS presentation.
  // It shares the original analysis contribution, context, request and lifecycle.
  // Existing PAN-owned fault profile, opt-in only at code-owner construction;
  // no HTTP/query/DOM/caller plugin installer or replacement factory.
- const script=entry.assets.script+'\n;\n'+addon,html=entry.assets.html.replace('<body>','<body data-owner-analysis-reader="true"'+(options.ownerDiagnosticPlugins===true?' data-owner-diagnostic-plugins="true"':'')+'>'),style=entry.assets.style+entry.assets.analysisStyle+addonStyle;
+ const meta=JSON.parse(pinnedBytes(KSROOT,closure.ownedKSAttributionPath,closure.ownedKSAdditionPins[closure.ownedKSAttributionPath])),p=meta.PAN549,k=meta.existingKSConsumer;
+ const values=[p.commit,p.tree,p.contractRuntimeSHA256,k.entry,k.sha256,k.sourceKSCommit,k.sourceKSTree,k.producerCommit,k.contract,'',''];let valueIndex=0;
+ const escape=value=>String(value).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ const template=pinnedBytes(KSROOT,closure.ownedKSTemplatePath,closure.ownedKSAdditionPins[closure.ownedKSTemplatePath]).toString('utf8').replace(/<dd><\/dd>/g,()=>'<dd>'+escape(values[valueIndex++])+'</dd>');
+ if(valueIndex!==values.length||!entry.assets.html.includes('</body>')||closure.compositionDelimiter!==''||!entry.assets.script.endsWith('\n'))throw new Error('KS303_OWNED_DOCUMENT_FRAGMENT_DENIED');
+ // Inert display-only template/JSON inside the SAME original document. No
+ // inline executable script, eval, blob, iframe, second shell or CSP relaxation.
+ const fragment=template+'<script type="application/json" id="ks303-existing-k05-read-companion-attribution">'+JSON.stringify(meta).replaceAll('<','\\u003c')+'</script>';
+ const script=entry.assets.script+addon,html=entry.assets.html.replace('<body>','<body data-owner-analysis-reader="true"'+(options.ownerDiagnosticPlugins===true?' data-owner-diagnostic-plugins="true"':'')+'>').replace('</body>',fragment+'</body>'),style=entry.assets.style+entry.assets.analysisStyle+addonStyle;
  if(sha(Buffer.from(entry.assets.script))!==entry.binding.existingPANBundleSHA256||!script.startsWith(entry.assets.script)||Buffer.byteLength(script)>closure.publishedScriptByteBound)throw new Error('KS303_EXISTING_BROWSER_ENTRY_DENIED');
- let documentMount,analysisMount,closed=false;
- try{
   documentMount=ingress.mountProtectedWorkspaceDocumentV1(gateway,{optIn:true,tenantId,origin,identityDigest:sessions.binding.identityDigest,html,script,style,readErv:(request,principal)=>{entry.assertCurrent();return nativeErv.read({tenantId:principal.tenantId,objectId:request.objectId,expectedRevision:request.expectedRevision});},profilesV1:{schemaVersion:'pansphaira.workspace-profile-adapter/v1',read:p=>{entry.assertCurrent();return profiles.read(p);},write:(c,p)=>{entry.assertCurrent();return profiles.write(p,c);}}});
   analysisMount=ingress.mountProtectedWorkspaceAnalysisV1(gateway,{optIn:true,tenantId,origin,identityDigest:sessions.binding.identityDigest,adapterVersion:'pan520-stock-analysis/v1',read:async(headers,selector)=>{entry.assertCurrent();const result=await pair.read(headers,selector);entry.assertCurrent();return result;}});
- }catch(error){pair.close();analysisMount?.close();documentMount?.close();profiles.close();throw error;}
  return Object.freeze({
   binding:freeze({...entry.binding,schemaVersion:'kaleidosphere/ks303-existing-PAN-K05-workspace-composition/v1',existingPANEntryPreserved:true,secondShell:false,ownerDiagnosticProfile:options.ownerDiagnosticPlugins===true,protectedHTMLSHA256:sha(Buffer.from(html)),composedOwnedScriptSHA256:sha(Buffer.from(script)),composedStyleSHA256:sha(Buffer.from(style)),commonViewContribution:'pan.analysis.view',commonPanel:'kaleidosphere.ks303.k05-source-panel/v1',sessionActionsPersistent:false,authorityFromMetadata:false}),
   readPairEvidence(){if(closed)throw new Error('KS303_WORKSPACE_CLOSED');entry.assertCurrent();return pair.readPairEvidence();},
   // Process-owner lifecycle capability, never a browser route or portable grant.
   // Retire just this composition's read counterpart; retain other native modules.
   retireAnalysis(){if(closed)return;pair.close();analysisMount.close();},
-  close(){if(closed)return;closed=true;pair.close();analysisMount.close();documentMount.close();profiles.close();},
+  close(){if(closed)return;closed=true;cleanup();},
  });
+ }catch(error){try{cleanup();}catch(cleanupError){throw new AggregateError([error,cleanupError],'KS303_WORKSPACE_CONSTRUCTION_AND_CLEANUP_FAILED');}throw error;}
 }

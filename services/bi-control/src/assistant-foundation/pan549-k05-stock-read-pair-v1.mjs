@@ -4,9 +4,9 @@ import {createHash} from 'node:crypto';
 import {types} from 'node:util';
 import {readFileSync} from 'node:fs';
 import {capturePan520StockPlanV1,executePan520StockReadV1} from '../business-bi/pan520-stock-consumer.mjs';
-import {canonicalJson} from '../../../../contracts/dependencies/pan549-stock-workspace-v1/runtime/canonical-json.js';
-import {validateWorkspaceAnalysisReadV1,verifyWorkspaceAnalysisResultIntegrityV1} from '../../../../contracts/dependencies/pan549-stock-workspace-v1/runtime/workspace-analysis-v1.js';
-import sourceBinding from '../../../../contracts/dependencies/pan549-stock-workspace-v1/binding.json' with {type:'json'};
+import {canonicalJson} from '../../../../contracts/dependencies/pan549-stock-workspace-v1/released-runtime-v2/canonical-json.js';
+import {validateWorkspaceAnalysisReadV1,verifyWorkspaceAnalysisResultIntegrityV1} from '../../../../contracts/dependencies/pan549-stock-workspace-v1/released-runtime-v2/workspace-analysis-v1.js';
+import sourceBinding from '../../../../contracts/dependencies/pan549-stock-workspace-v1/binding-v2.json' with {type:'json'};
 
 const digest=value=>createHash('sha256').update(typeof value==='string'?value:canonicalJson(value)).digest('hex');
 const clone=value=>structuredClone(value);
