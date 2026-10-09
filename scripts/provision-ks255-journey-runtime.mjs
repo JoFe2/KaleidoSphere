@@ -213,8 +213,20 @@ const measureTestRoot = (sources) => {
     const injectedEnv = consultsEnvOverride(executable);
     if (!injectedEnv && !executable.includes(ENTRY_SUFFIX)) continue;
     const declaredEntryPaths = [];
+    // A relative static ESM specifier is resolved from the importer, not REPO_ROOT/cwd.
+    // Other released literal candidate roots retain their existing repository-root semantics.
+    const staticEntries = new Map();
+    const staticImport = /(?:^|[;\n])\s*import\s+(?:[^'";]*?\s+from\s+)?(['"])(\.{1,2}\/[^'"\n]+)\1/g;
+    for (const declaration of executable.matchAll(staticImport)) {
+      const specifier = declaration[2];
+      if (specifier.endsWith(ENTRY_SUFFIX)) {
+        staticEntries.set(declaration.index + declaration[0].lastIndexOf(specifier),
+          path.resolve(path.dirname(absolute(file)), specifier));
+      }
+    }
     for (const match of executable.matchAll(entryPattern)) {
-      const entryPath = `${normalizeRootPrefix(match[1])}/${ENTRY_SUFFIX}`;
+      const entryPath = staticEntries.get(match.index)
+        ?? `${normalizeRootPrefix(match[1])}/${ENTRY_SUFFIX}`;
       if (!declaredEntryPaths.includes(entryPath)) declaredEntryPaths.push(entryPath);
     }
     const candidates = [

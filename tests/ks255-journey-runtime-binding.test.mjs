@@ -290,6 +290,40 @@ test('the runtime dependency closure is MEASURED from the current test root, not
   assert.match(driftedPin.stderr, /PROVISION-DENIED WORKFLOW_PIN_DISAGREES_WITH_MANIFEST:/);
 });
 
+test('static module-relative runtime measurement follows the actual importer, not the repository cwd', () => {
+  const sandbox = mkdtempSync(path.join(tmpdir(), 'ks317-static-runtime-'));
+  try {
+    const entry = path.join(sandbox, 'runtime', ENTRY_SUFFIX);
+    mkdirSync(path.dirname(entry), {recursive: true});
+    writeFileSync(entry, 'module.exports = {value: "MODULE_RELATIVE"};\n');
+    const suite = path.join(sandbox, 'nested', 'static-runtime.test.mjs');
+    mkdirSync(path.dirname(suite), {recursive: true});
+    const specifier = `../runtime/${ENTRY_SUFFIX}`;
+    writeFileSync(suite, `import runtime from '${specifier}';\nconsole.log(runtime.value);\n`);
+    const actual = spawnSync(process.execPath, [suite], {cwd: ROOT, encoding: 'utf8'});
+    assert.equal(actual.status, 0, actual.stderr);
+    assert.equal(actual.stdout.trim(), 'MODULE_RELATIVE');
+    const report = measure(['--suite', suite]);
+    assert.deepStrictEqual(report.requiredSuites[0].declaredEntryPaths, [entry]);
+    assert.deepStrictEqual(report.unresolvedSuites, []);
+    assert.equal(report.requiredSuites[0].verified, false, 'readable is not pinned');
+    const rejected = runProvisioner(['--measure', '--suite', suite, '--require-verified']);
+    assert.equal(rejected.status, 1);
+    assert.match(rejected.stderr, /PROVISION-DENIED REQUIRED_SUITE_UNVERIFIED:/);
+    const stock = measure(['--suite', 'tests/overdue-stock-product-v1.test.mjs']);
+    assert.deepStrictEqual(stock.requiredSuites[0].declaredEntryPaths, [path.join(ROOT, '.ks-journey-runtime', ENTRY_SUFFIX)]);
+    rmSync(entry);
+    const absent = measure(['--suite', suite], {env: {...PROBE_ENV, [CORE_PATH_ENV]: path.join(ROOT, '.ks-journey-runtime', ENTRY_SUFFIX)}});
+    assert.deepStrictEqual(absent.unresolvedSuites, [suite]);
+    assert.equal(absent.requiredSuites[0].injectedEnv, false, 'a static import never consults the override');
+    const denied = runProvisioner(['--measure', '--suite', suite, '--require-resolved']);
+    assert.equal(denied.status, 1);
+    assert.match(denied.stderr, /PROVISION-DENIED REQUIRED_SUITE_UNRESOLVED:/);
+  } finally {
+    rmSync(sandbox, {recursive: true, force: true});
+  }
+});
+
 test('measurement credits the environment-selected override only to the suites that ACTUALLY read it, never a declaration', () => {
   const sandbox = mkdtempSync(path.join(tmpdir(), 'ks255-env-'));
   try {
