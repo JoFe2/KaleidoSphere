@@ -1,0 +1,83 @@
+{
+  "schemaVersion": "kaleidosphere/ks303-locked-pan-esbuild-integrity/v1",
+  "PANCommit": "81de8d2cacfd6b697ebe2295aec8142812397ae8",
+  "PANTree": "ffed01563de0d79b72bf552f30d22128bd52f778",
+  "buildOnly": true,
+  "onlyOwnedKSInput": true,
+  "packageSHA256": "f4c21a37435a85e56ef64c7d39692d5995d7227ccc191cf956777b9e0f9a0043",
+  "packageLockSHA256": "a3cc62b6d7f82385f1b90879242a9dcd7f971702156d2d46e16e2c374d351516",
+  "noticeSHA256": "723a01b7c974310517e61cf38ca83687c0f31577b2d3436f7925135242389459",
+  "executablePath": "node_modules/@esbuild/linux-x64/bin/esbuild",
+  "hostPlatform": "linux",
+  "hostArch": "x64",
+  "packages": {
+    "node_modules/esbuild": {
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/esbuild/-/esbuild-0.25.12.tgz",
+      "integrity": "sha512-bbPBYYrtZbkt6Os6FiTLCTFxvq4tt3JKall1vRwshA3fdVztsLAatFaZobhkBC8/BrPetoa0oksYoKXoG4ryJg==",
+      "actualArchiveSHA256": "227584145829e5c4782734b3fb7b91b49c6aa12876d6cf070e6a3d9d4de543f9",
+      "actualArchiveBytes": 30947,
+      "license": "MIT",
+      "licensePaths": [
+        "LICENSE.md"
+      ],
+      "installedBytePins": {
+        "bin/esbuild": {
+          "bytes": 9351,
+          "sha256": "3d1037d9a128440856daec17f4358ebb465b73823858a88a5fe1ce702cc17944"
+        },
+        "install.js": {
+          "bytes": 11160,
+          "sha256": "10f6fa3644d8d23d066ff67b0ae449074e75884503546a9fedb667f1dcb9ade2"
+        },
+        "lib/main.js": {
+          "bytes": 88706,
+          "sha256": "0d1241812c443111d39475dfc66836003e9ef8b87e54d990dd67df29d20010e1"
+        },
+        "package.json": {
+          "bytes": 1490,
+          "sha256": "cb7d5b1fe478f8cbaae566a86031b6fdf5f7d444354f35d1cb3cba9adf6d2935"
+        },
+        "LICENSE.md": {
+          "bytes": 1069,
+          "sha256": "b40ec5baec7bb34fa5b1c09521fa3cd52d5fad7adafed74932a2010d3612a681"
+        },
+        "README.md": {
+          "bytes": 175,
+          "sha256": "6d481cd60ec3c679e5e395f547ab4221147f35642894f6b95a8df38fd25c87bd"
+        },
+        "lib/main.d.ts": {
+          "bytes": 23392,
+          "sha256": "161c8e0690c46021506e32fda85956d785b70f309ae97011fd27374c065cac9b"
+        }
+      }
+    },
+    "node_modules/@esbuild/linux-x64": {
+      "version": "0.25.12",
+      "resolved": "https://registry.npmjs.org/@esbuild/linux-x64/-/linux-x64-0.25.12.tgz",
+      "integrity": "sha512-uqZMTLr/zR/ed4jIGnwSLkaHmPjOjJvnm6TVVitAa08SLS9Z0VM8wIRx7gWbJB5/J54YuIMInDquWyYvQLZkgw==",
+      "actualArchiveSHA256": "f7efc127658a108dcda9d4210b01804ee8f5d6b3acbd6d63f20aa51d3b50bd5f",
+      "actualArchiveBytes": 4395720,
+      "license": "MIT",
+      "licensePaths": [],
+      "installedBytePins": {
+        "bin/esbuild": {
+          "bytes": 10358936,
+          "sha256": "bab29b2ca7a9e89b67cf720b77b2d743f9f31f5cf0d5bd74ee8c8de30ced7014"
+        },
+        "package.json": {
+          "bytes": 373,
+          "sha256": "fdf02f1b53a4651a3eea731e2ad0a9c7d4fd8646430a5935d551e610e8d469fc"
+        },
+        "README.md": {
+          "bytes": 141,
+          "sha256": "3b0ebdffe92e5b77c948c4ac0bf4bc4a38803b15405d0425b517705221c27a2f"
+        }
+      }
+    }
+  },
+  "actualTarballIntegrityVerified": true,
+  "allArchiveFilesEqualInstalledBytes": true,
+  "noLifecycleScriptExecuted": true,
+  "compilerExecutedDuringQualification": false
+}
