@@ -1,0 +1,13 @@
+#ks303-existing-k05-read-companion{min-width:0;max-width:100%;margin-top:1.5rem;padding-top:1rem;border-top:1px solid currentColor;overflow-wrap:anywhere}
+#ks303-existing-k05-read-companion figure{margin:0;min-width:0;max-width:100%}
+#ks303-existing-k05-read-companion .ks303-bars p{font-size:1rem;line-height:1.5;margin:.75rem 0 .25rem}
+#ks303-existing-k05-read-companion .ks303-bars>div{height:1rem;max-width:100%;background:#edf1f5}
+#ks303-existing-k05-read-companion .ks303-bars span{display:block;height:100%;background:#7da5c8}
+#ks303-existing-k05-read-companion .ks303-controls{display:flex;flex-wrap:wrap;gap:.5rem;max-width:100%}
+#ks303-existing-k05-read-companion button{min-height:44px;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+#ks303-existing-k05-read-companion aside{min-width:0;max-width:100%;margin-top:1rem;padding:.75rem;border:1px solid currentColor}
+#ks303-existing-k05-read-companion aside[hidden]{display:none}
+#ks303-existing-k05-read-companion dl{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:.5rem}
+#ks303-existing-k05-read-companion dd{margin:0;min-width:0;overflow-wrap:anywhere}
+@media(max-width:600px){#ks303-existing-k05-read-companion dl{grid-template-columns:minmax(0,1fr)}#ks303-existing-k05-read-companion dt{font-weight:700}}
+@media(prefers-reduced-motion:reduce){#ks303-existing-k05-read-companion *{animation:none;transition:none}}

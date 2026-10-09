@@ -223,10 +223,39 @@ jobs:
         run: |
           export TMPDIR="$RUNNER_TEMP"
           node --test --test-concurrency=1 tests/bounded-api-read-product.test.mjs tests/bounded-api-read-ci-binding.test.mjs
+      - name: Prepare required exact PAN549 and unchanged K05 browser composition
+        run: |
+          export TMPDIR="$RUNNER_TEMP"
+          # Own extraction only: no host package installation, global trust or auth writes.
+          export KS303_NSS_ROOT="$RUNNER_TEMP/ks303-owned-nss-tools"
+          mkdir "$KS303_NSS_ROOT"
+          (cd "$KS303_NSS_ROOT" && apt-get download libnss3-tools)
+          for package in "$KS303_NSS_ROOT"/*.deb; do
+            dpkg-deb --extract "$package" "$KS303_NSS_ROOT/extracted"
+          done
+          node scripts/provision-ks303-pan549-workspace.mjs --prepare \
+            --root "$RUNNER_TEMP/ks303-exact-owned-workspace" \
+            --k05-source "${KS285_PAN520_SOURCE:?}" \
+            --certutil "$KS303_NSS_ROOT/extracted/usr/bin/certutil" \
+            --output "$RUNNER_TEMP/ks303-exact-workspace-provision.json"
+          # Both actual composition and integrity-retirement suites run once in npm test.
+          # Missing inputs fail, not skip. Do not export HOME/PATH or auth configuration.
+          node --input-type=module -e 'import {readFileSync,appendFileSync} from "node:fs"; const p=JSON.parse(readFileSync(process.env.RUNNER_TEMP+"/ks303-exact-workspace-provision.json")); const env=Object.entries(p.productEnv).filter(([k])=>k.startsWith("KS303_")||k==="PLAYWRIGHT_BROWSERS_PATH"); appendFileSync(process.env.GITHUB_ENV,env.map(([k,v])=>k+"="+v+"\n").join(""));'
       - run: npm run dist:agent-skill
       - run: npm test
         env:
           TMPDIR: ${{ runner.temp }}
+      - name: Preserve actual exact-head KS303 browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ks303-exact-head-product-${{ github.sha }}
+          if-no-files-found: error
+          retention-days: 7
+          path: |
+            ${{ runner.temp }}/ks303-exact-workspace-provision.json
+            ${{ runner.temp }}/ks303-exact-owned-workspace/product-evidence/*.json
+            ${{ runner.temp }}/ks303-exact-owned-workspace/product-evidence/*.png
       # Every suite whose real-SQL legs require the pinned closure is executed explicitly over
       # the provisioned roots, including net-revenue-journey and net-revenue-ledger-mapping,
       # which read only the declared `/workspace/.ks-journey-runtime` fallback.
