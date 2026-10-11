@@ -23,7 +23,7 @@ const family=[
 const protectedPins={
   "README.md": "f68c19174eaeddadedca5485410e7c6f03c7245f6579a895908167a2f6f07bc1",
   "package.json": "85ca0ccac0fa41d937e2ce62768bff6b1cfe3b2ec3d04886343fcd905646c401",
-  ".github/workflows/ci.yml": "3c8aac32f3711ad05330947025e60146c242539bd5cb92278ffb16830bd8be86",
+  ".github/workflows/ci.yml": "09807b18dbd5594d93bd9355eb653d1e9fc931e0dc0f360d86512bea934160ec",
   "services/bi-control/src/hosting/origin-session-ingress.mjs": "87ef088880d0a8bcd5d3cdcb257b6fedede96e5aac13953155efd8253c533028",
   "services/bi-control/src/runtime/pan-origin-source.mjs": "66c22d65f375e2e0bc9e67c323e0d2ccd64db7adc5e5e5415d7b2c4e6f898a81",
   "services/bi-agent/src/hosted-route-policy.mjs": "f3965b43815b925b8ee785e051eea908f8abb57f6e5ba11712e8df511070ad08",

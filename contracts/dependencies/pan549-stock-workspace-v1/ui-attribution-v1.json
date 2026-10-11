@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "kaleidosphere/ks303-code-owned-ui-attribution/v1",
+  "PAN549": {
+    "commit": "fd1fcf3b0392a7069169b7459c8ff8923466f38b",
+    "tree": "98be34b4cd219cf54fb539de547e0cebf8a71691",
+    "contractRuntimeSHA256": "0b5a00e5fa620b3dba26501a5e17214dbba8e63e1f4d1564c77be26a34d6e725"
+  },
+  "existingKSConsumer": {
+    "entry": "services/bi-control/src/business-bi/pan520-stock-consumer.mjs",
+    "sha256": "4f6b89dbeabea498a0a3386ae00306f5991fa8d203843a6989e7f8a0faf2e62b",
+    "sourceKSCommit": "761b492056bca872a1b3f04207d99d70bc685955",
+    "sourceKSTree": "4374aba324bc5fa7b5d9f071dcce9e2c2cc1ee38",
+    "contract": "kaleidosphere/pan520-stock-consumer/v1",
+    "contractSha256": "fcff403d002b1b877a895e0c8c1b4c9532e9785acdc300310e997fe76835f85e",
+    "producerCommit": "cf199bbd35706bdeadb04679af7354c94caf482a"
+  },
+  "boundedProjectionRequest": {
+    "scope": {
+      "sourceId": "SYN-COMMON",
+      "tenantId": "SYN-TENANT-01",
+      "entityId": "SYN-ENTITY-01",
+      "orderId": "SO-01",
+      "lineId": "1",
+      "articleId": "ARTICLE-A",
+      "warehouseId": "WH-01",
+      "currency": "EUR",
+      "unit": "STK"
+    }
+  },
+  "cutoff": "2026-06-30T23:59:59+02:00",
+  "coverage": "COMPLETE_OWNED_EVENT_LEDGER_ONLY",
+  "authorityFromAttribution": false
+}

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "kaleidosphere/pan541-browser-core-source/v1",
+  "producerRepository": "JoFe2/PANSPHAIRA",
+  "producerCommit": "6153161c3d9510bab305a28a20c7099dbba6a7ff",
+  "producerTree": "1a63a35acd9c3fee0b7a9cba1a335cdd177adaa6",
+  "publicReleaseId": 405200494,
+  "publicReleaseTag": "2026_10_07_v1",
+  "publicReleaseClass": "SOURCE_EVIDENCE_ONLY",
+  "sourceArchiveSha256": "e1e5e61d40efb97d7ba5458a718937302f82c2d7c37a9372b579ffd822a1624a",
+  "upstreamSourceSha256": {
+    "packages/contracts/src/browser-shell-plugin-v1.ts": "75f992328d8057634c0939acf7828b8f010a6ccbb19b926d604c93cbbb4e16b6",
+    "packages/browser-shell/src/registry-v1.ts": "d38bfac66906e07da947d7cc6dd9bd5ad381a3e95ff891c8d973dbfe1aac28be",
+    "packages/browser-shell/src/context-owner-v1.ts": "fa49b2c57510cf5041686b4aea73b1c73bd0215bf5c371f992b205d3d64b043b",
+    "packages/browser-shell/src/deep-link-v1.ts": "7bc562f2fa8bfb773272d486af7ee5f178094af7ee600b641ca89df5e9a2a16b"
+  },
+  "compiledRuntimeSha256": {
+    "packages/browser-shell/src/deep-link-v1.js": "32dfd33117f8b2af01a92b4534d361ea17ef0b62fb93237401f9215428d0eb91",
+    "packages/browser-shell/src/registry-v1.js": "658d6ed38b9b019ad9b309d53989dfdaf09516a5758a232f95e59aac68d6e008",
+    "packages/browser-shell/src/context-owner-v1.js": "8486cfec0202cba036bdfb25e25c17d5b53fe1219f0c6a968eea8d3356cec335",
+    "packages/contracts/src/browser-shell-plugin-v1.js": "eef9f6f40b9b3aac4f2c9c62cb35f8799254d96c3eac0929df9124b768a360bc"
+  },
+  "compilation": {
+    "compiler": "TypeScript",
+    "version": "6.0.3",
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "noEmitOnError": true,
+    "runtimeCodeChanges": "NONE_TYPES_ERASED_BY_COMPILER_ONLY"
+  },
+  "KSExistingConsumer": {
+    "entry": "services/bi-control/src/assistant-foundation/ui-state-adapter.mjs",
+    "sha256": "2cf726cab00898bc1d507ba4fd882dc44172b5ddbef0002657e39e9c2d8d3a55",
+    "sourceBaseCommit": "0a0488d6a5f48ce86702d0daacf8dc450377e4b5",
+    "sourceBaseTree": "95dc35323117f98f485a4da018b5b6f9e280ae59"
+  },
+  "grantedRights": [],
+  "persistentMutationAuthority": false,
+  "PAN549ResultCapabilityIncluded": false,
+  "whole303CompositionQualified": false
+}

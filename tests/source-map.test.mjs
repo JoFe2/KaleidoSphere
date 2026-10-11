@@ -170,6 +170,11 @@ import './h08-runtime-ci-binding.test.mjs';
 // KS282 connected-native qualification and scoped caller binding, each once.
 import './h282-host-epic-native-binding.test.mjs';
 import './h282-host-epic-budget-request.test.mjs';
+// KS303 independent public541/core UIState binding, not whole shared-browser acceptance.
+import './ks303-pan541-ui-state-binding.test.mjs';
+// Original KS303 composition and actual K05 use-time retirement, exactly once.
+import './ks303-existing-pan549-k05-workspace.test.mjs';
+import './ks303-k05-integrity-retirement.test.mjs';
 /**
  * KS249 (KS-EVO-04) parity: the bounded metric-compiler adapter and its adopt-or-reject
  * decision ride the same tracked-file check.

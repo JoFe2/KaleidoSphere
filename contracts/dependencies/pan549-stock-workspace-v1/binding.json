@@ -1,0 +1,67 @@
+{
+  "schema": "kaleidosphere/ks303-pan549-existing-k05-stock-binding/v1",
+  "sourceClassification": "ACTUAL_PUBLIC_IMMUTABLE_EARLY_CANDIDATE_NOT_FULL_PRODUCER_ACCEPTANCE",
+  "PAN549": {
+    "repository": "JoFe2/PANSPHAIRA",
+    "commit": "fd1fcf3b0392a7069169b7459c8ff8923466f38b",
+    "tree": "98be34b4cd219cf54fb539de547e0cebf8a71691",
+    "comment": "https://github.com/JoFe2/PANSPHAIRA/issues/549#issuecomment-6069205368",
+    "descriptor": "contracts/workspace-analysis/pan549-early-candidate-v1.json",
+    "descriptorSHA256": "bdc57ee9dcebd007e70b1f24b06cf8d794a4fbccfa2e145e1b541cd75c8c0a5e",
+    "contractSourceSHA256": "cc2fb8bc93070fad83a96f729491342efcad3ab42fcfc59de6a8d12c9343d6d0",
+    "contractRuntimeSHA256": "0b5a00e5fa620b3dba26501a5e17214dbba8e63e1f4d1564c77be26a34d6e725",
+    "nativeReaderSourceSHA256": "ee085e6f2fcc649c59e6b3a220e88b49a8acb52b4c59f80d4053d2e32c81aaa7",
+    "existingBrowserAssemblySHA256": "10feb217a88c6b989273553e839af2680f4f802b12a5e790eb846d2f115ce498",
+    "existingBrowserAppSourceSHA256": "5cc10d0bf9920aee657b7d33753f829a2a86b8cb4c1033a1a9158ae8a303a1f4",
+    "existingBrowserBundleSHA256": "e55ef2662723896a77ed7db994015764271b7c61f8aca8e9c587e42880c83a1b"
+  },
+  "existingKSConsumer": {
+    "entry": "services/bi-control/src/business-bi/pan520-stock-consumer.mjs",
+    "sha256": "4f6b89dbeabea498a0a3386ae00306f5991fa8d203843a6989e7f8a0faf2e62b",
+    "sourceKSCommit": "761b492056bca872a1b3f04207d99d70bc685955",
+    "sourceKSTree": "4374aba324bc5fa7b5d9f071dcce9e2c2cc1ee38",
+    "contract": "kaleidosphere/pan520-stock-consumer/v1",
+    "producerCommit": "cf199bbd35706bdeadb04679af7354c94caf482a",
+    "producerTree": "e8e75614ffb8f1d71a6715413386bfd5619e1c3e",
+    "contractSha256": "fcff403d002b1b877a895e0c8c1b4c9532e9785acdc300310e997fe76835f85e"
+  },
+  "boundedProjectionRequest": {
+    "schemaVersion": "pansphaira.pan520/projection-request/v1",
+    "profile": "STOCK",
+    "scope": {
+      "sourceId": "SYN-COMMON",
+      "tenantId": "SYN-TENANT-01",
+      "entityId": "SYN-ENTITY-01",
+      "orderId": "SO-01",
+      "lineId": "1",
+      "articleId": "ARTICLE-A",
+      "warehouseId": "WH-01",
+      "currency": "EUR",
+      "unit": "STK"
+    },
+    "questions": [
+      "STOCK_POSITION",
+      "STOCK_RUNWAY",
+      "STOCK_VALUE"
+    ]
+  },
+  "cutoff": "2026-06-30T23:59:59+02:00",
+  "coverage": "COMPLETE_OWNED_EVENT_LEDGER_ONLY",
+  "fileSHA256": {
+    "source/workspace-analysis-v1.ts": "cc2fb8bc93070fad83a96f729491342efcad3ab42fcfc59de6a8d12c9343d6d0",
+    "source/canonical-json.ts": "666513ba9a89c0eae0daa0e0159a262eb4e0aa105971a151a19bac1a9b6c4826",
+    "runtime/canonical-json.js": "de0215e19c2f0bb36c18b9a7cdae969e2771a32f57f8c80d833d2a75643b79ea",
+    "runtime/workspace-analysis-v1.js": "0b5a00e5fa620b3dba26501a5e17214dbba8e63e1f4d1564c77be26a34d6e725",
+    "runtime/package.json": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae"
+  },
+  "selectedExistingConsumerCount": 1,
+  "samePANAndKSProducerCommitClaimed": false,
+  "coreRegistryContextDeepLinkBytesUnchangedFromExistingPAN541Binding": true,
+  "existingUIStatePreparationPreservedNotRelabelledAsBrowserResult": true,
+  "newBIEngine": false,
+  "newStandaloneBrowserShell": false,
+  "foreignProducerCompletionGate": false,
+  "newSourceRights": false,
+  "productiveDataOrExecutionAuthority": false,
+  "whole303AcceptanceClaimedByDependencyBinding": false
+}
