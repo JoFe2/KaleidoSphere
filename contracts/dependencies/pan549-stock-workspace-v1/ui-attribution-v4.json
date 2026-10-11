@@ -1,0 +1,110 @@
+{
+  "schema": "kaleidosphere/ks303-k05-source-panel-attribution/v4",
+  "sourceClassification": "ACTUAL_PUBLIC_IMMUTABLE_MERGED_PAN640_SOURCE_NOT_PRODUCER_RELEASE_ACCEPTANCE",
+  "PAN549": {
+    "repository": "JoFe2/PANSPHAIRA",
+    "commit": "874957c958564cbf55793ba7df86193a573d1fca",
+    "tree": "1b281a3c2735075b8edf67ccc12ba54be4306afe",
+    "comment": "https://github.com/JoFe2/PANSPHAIRA/commit/874957c958564cbf55793ba7df86193a573d1fca",
+    "descriptor": "docs/architecture/pan549-workspace-analysis-v1.md",
+    "descriptorSHA256": "d9f142154a9684591abc1f73e7ab5c52634565e043cd731321cd5085ab5d52e1",
+    "contractSourceSHA256": "5045700ac41b534fdb95ddaa2b317c2551f02383d2849be8d6fba48cd444db77",
+    "contractRuntimeSHA256": "c49d6201c4771f2e7d684a54ab1a7f859fa8e129626731d3163175bf966e877f",
+    "nativeReaderSourceSHA256": "7df5dc1e8b60344c3081105fddd4a384d2209add6c877ba2f11aa19728c138b6",
+    "existingBrowserAssemblySHA256": "9a8dbcdfc81e98ba0528cc052c7c46727da4c9e317d8f34c46980b93724514d5",
+    "existingBrowserAppSourceSHA256": "a1cc3cc1ffc0a4c17d741e6f4961807d636e71e01576b835c523cd4cdc1e409f",
+    "existingBrowserBundleSHA256": "a370195969de260fc8d46ba245ed521f9fd393f0e0a32ac6ccfc1c116afa1b45"
+  },
+  "existingKSConsumer": {
+    "entry": "services/bi-control/src/business-bi/pan520-stock-consumer.mjs",
+    "sha256": "4f6b89dbeabea498a0a3386ae00306f5991fa8d203843a6989e7f8a0faf2e62b",
+    "sourceKSCommit": "761b492056bca872a1b3f04207d99d70bc685955",
+    "sourceKSTree": "4374aba324bc5fa7b5d9f071dcce9e2c2cc1ee38",
+    "contract": "kaleidosphere/pan520-stock-consumer/v1",
+    "producerCommit": "cf199bbd35706bdeadb04679af7354c94caf482a",
+    "producerTree": "e8e75614ffb8f1d71a6715413386bfd5619e1c3e",
+    "contractSha256": "fcff403d002b1b877a895e0c8c1b4c9532e9785acdc300310e997fe76835f85e"
+  },
+  "boundedProjectionRequest": {
+    "schemaVersion": "pansphaira.pan520/projection-request/v1",
+    "profile": "STOCK",
+    "scope": {
+      "sourceId": "SYN-COMMON",
+      "tenantId": "SYN-TENANT-01",
+      "entityId": "SYN-ENTITY-01",
+      "orderId": "SO-01",
+      "lineId": "1",
+      "articleId": "ARTICLE-A",
+      "warehouseId": "WH-01",
+      "currency": "EUR",
+      "unit": "STK"
+    },
+    "questions": [
+      "STOCK_POSITION",
+      "STOCK_RUNWAY",
+      "STOCK_VALUE"
+    ]
+  },
+  "cutoff": "2026-06-30T23:59:59+02:00",
+  "coverage": "COMPLETE_OWNED_EVENT_LEDGER_ONLY",
+  "fileSHA256": {
+    "candidate-runtime-v3/workspace-analysis-v1.js": "c49d6201c4771f2e7d684a54ab1a7f859fa8e129626731d3163175bf966e877f",
+    "candidate-runtime-v3/canonical-json.js": "de0215e19c2f0bb36c18b9a7cdae969e2771a32f57f8c80d833d2a75643b79ea",
+    "candidate-runtime-v3/workspace-analysis-v1.ts": "5045700ac41b534fdb95ddaa2b317c2551f02383d2849be8d6fba48cd444db77",
+    "candidate-runtime-v3/canonical-json.ts": "666513ba9a89c0eae0daa0e0159a262eb4e0aa105971a151a19bac1a9b6c4826",
+    "candidate-runtime-v3/package.json": "1239d4d885dcad42201a27ed9324f8f0f760b78700d8db9ced39a511cffe7eae",
+    "candidate-runtime-v3/browser-shell-plugin-v1.js": "a71f0e3d103663dff792af3ba8cd0fa33e99237bb78527bfaa71dbf0f7a1fc33",
+    "candidate-runtime-v3/browser-shell-plugin-v1.ts": "e21cd69a383f76c51246499540f127f4d275d57adafb8e5e2597c008e58093ac"
+  },
+  "selectedExistingConsumerCount": 1,
+  "samePANAndKSProducerCommitClaimed": false,
+  "coreRegistryContextDeepLinkBytesUnchangedFromExistingPAN541Binding": false,
+  "existingUIStatePreparationPreservedNotRelabelledAsBrowserResult": true,
+  "newBIEngine": false,
+  "newStandaloneBrowserShell": false,
+  "foreignProducerCompletionGate": false,
+  "newSourceRights": false,
+  "productiveDataOrExecutionAuthority": false,
+  "whole303AcceptanceClaimedByDependencyBinding": false,
+  "earlierConsumerProducerPinsPreserved": true,
+  "currentSourceIndependentlyPinnedAndQualifiedFromImmutablePublicMerge": true,
+  "compiledContractGraphReusedOnlyAfterExactOriginalBuildEquality": true,
+  "upstreamReleaseAcceptance": "SEPARATE_ACTUAL_PUBLIC_RELEASE_READBACK_REQUIRED_FOR_FINAL_OWN_DELIVERY",
+  "sourceQualification": {
+    "qualifiedImmutableCommit": "874957c958564cbf55793ba7df86193a573d1fca",
+    "qualifiedTree": "1b281a3c2735075b8edf67ccc12ba54be4306afe",
+    "completeSourceBlobsAndModes": 2897,
+    "originalFiveBuildsExactlyMatchedCandidate": {
+      "dist/browser-workspace/app.js": {
+        "bytes": 125535,
+        "sha256": "a370195969de260fc8d46ba245ed521f9fd393f0e0a32ac6ccfc1c116afa1b45"
+      },
+      "dist/browser-workspace/erv-human.js": {
+        "bytes": 12493,
+        "sha256": "658ad347129dc8aedff5ec48c4c9c00b5541d4e85a344e9dfa1ecbe13b9275bf"
+      },
+      "dist/browser-workspace/workspace-agent-panel.js": {
+        "bytes": 29326,
+        "sha256": "fe15d7225d0989838e7c74d58b76950886365188972234a4de546dd80083a805"
+      },
+      "dist/browser-workspace/workspace-invoice-navigation.js": {
+        "bytes": 20904,
+        "sha256": "0bda2046e9b63f9a6c3400237b737c32a1391f2177a46025f4b6058100a70df8"
+      },
+      "dist/browser-workspace/workspace-model-connection.js": {
+        "bytes": 21368,
+        "sha256": "da115e8d8715139d23e339b19ee68f401b7a4d80a5aa538cb4af45f8b4c58cf3"
+      }
+    },
+    "candidateAncestorCommit": "202b9ce77a95184e2737db6e5871eb68e282b026",
+    "candidateAncestorDifferences": "Three exact non-runtime metadata files only; all1157 original runtime/input/dependency pins unchanged."
+  },
+  "displayOnly": true,
+  "authorityFromUnkeyedHashesOrDOM": false,
+  "states": {
+    "DENIED": "Zugriff verweigert",
+    "STALE": "Revision veraltet",
+    "UNAVAILABLE": "Quelle nicht verfügbar",
+    "UNKNOWN": "Readback unbekannt"
+  }
+}

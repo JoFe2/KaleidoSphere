@@ -37,6 +37,13 @@ const names=[
  'tests/h03-starter-ci-binding.test.mjs','tests/h08-runtime-ci-binding.test.mjs',
  'tests/ks255-journey-runtime-binding.test.mjs','tests/postgresql-c2-safe-aggregate.test.mjs'
 ];
+// Current immutable candidate inputs are additive; retain every predecessor pin.
+const candidateBase='contracts/dependencies/pan549-stock-workspace-v1/';
+const candidateBinding=JSON.parse(await readFile(candidateBase+'binding-v3.json','utf8'));
+names.push(...['binding-v3.json','ui-attribution-v3.json','candidate-workspace-input-byte-closure-v3.json','workspace-byte-closure-v238.json','owned-browser/read-companion-v242.js',...Object.keys(candidateBinding.fileSHA256)].map(p=>candidateBase+p),
+ 'dependencies/ks303-owned-browser-build/pan-esbuild-integrity-v3.json','scripts/isolate-ks303-owned-browser-scope.mjs');
+names.push(...['binding-v4.json','ui-attribution-v4.json','merged-workspace-input-byte-closure-v4.json','workspace-byte-closure-v256.json'].map(p=>candidateBase+p),
+ 'dependencies/ks303-owned-browser-build/pan-esbuild-integrity-v4.json');
 const protectedFiles=['package.json','README.md','contracts/dependencies/pan541-browser-shell-v1/binding.json','contracts/dependencies/pan520-stock-source-v1.json','services/bi-control/src/business-bi/pan520-stock-consumer.mjs'];
 const map=JSON.parse(await readFile('SOURCE-MAP.json','utf8'));
 for(const path of protectedFiles)assert.equal(sha(await readFile(path)),map.files[path],'KS303_PROTECTED_PREDECESSOR_CHANGED: '+path);

@@ -6,7 +6,7 @@ import {lstatSync,readFileSync,realpathSync} from 'node:fs';
 import {resolve,join,isAbsolute} from 'node:path';
 import {pathToFileURL,fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
-import closureJSON from '../../../../contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v39.json' with {type:'json'};
+import closureJSON from '../../../../contracts/dependencies/pan549-stock-workspace-v1/workspace-byte-closure-v256.json' with {type:'json'};
 import {createPan549K05StockReadPairV1} from './pan549-k05-stock-read-pair-v1.mjs';
 const loaded=new WeakMap(),KSROOT=resolve(fileURLToPath(new URL('../../../../',import.meta.url)));
 const sha=b=>createHash('sha256').update(b).digest('hex');
