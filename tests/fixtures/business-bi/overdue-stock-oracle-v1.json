@@ -1,0 +1,739 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/overdue-stock-independent-scalar-oracle/v1",
+  "sourceBytesSHA256": "55ef0bbfddc7de8b5472f782b3690e5e1cdf28cac03c943bad7f15f2a142c04a",
+  "algorithm": "independent Python aware-datetime per-invoice scalar event arithmetic; no product mapper/SQL/results",
+  "cases": {
+    "JUNE": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-06-30T23:59:59+02:00",
+        "knowledgeCutoff": "2026-06-30T23:59:59+02:00",
+        "businessDate": "2026-06-30",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 6,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 3,
+          "overdueAmountMinorUnits": "21000",
+          "openAmountMinorUnits": "27000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 3
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "6000",
+            "paid": "3500",
+            "credited": "500",
+            "payment_count": 2,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-03",
+            "site_id": "SYN_SITE_B",
+            "due_date": "2026-06-15",
+            "balance_minor_units": "15000",
+            "paid": "5000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "JULY": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-07-31T23:59:59+02:00",
+        "knowledgeCutoff": "2026-07-31T23:59:59+02:00",
+        "businessDate": "2026-07-31",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 7,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 1,
+          "creditBalanceInvoiceCount": 1,
+          "overdueInvoiceCount": 1,
+          "openInvoiceCount": 2,
+          "overdueAmountMinorUnits": "4500",
+          "openAmountMinorUnits": "12500",
+          "creditBalanceMinorUnits": "1000",
+          "ratio": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-02",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-06-30",
+            "balance_minor_units": "4500",
+            "paid": "1000",
+            "credited": "500",
+            "payment_count": 1,
+            "adjustment_count": 1
+          }
+        ],
+        "drilldownTotal": 1,
+        "drilldownTruncated": false
+      }
+    },
+    "JUNE_SITE_A": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A"
+        ],
+        "validCutoff": "2026-06-30T23:59:59+02:00",
+        "knowledgeCutoff": "2026-06-30T23:59:59+02:00",
+        "businessDate": "2026-06-30",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 4,
+          "unknownInvoiceCount": 2,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 1,
+          "openInvoiceCount": 2,
+          "overdueAmountMinorUnits": "6000",
+          "openAmountMinorUnits": "12000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "6000",
+            "paid": "3500",
+            "credited": "500",
+            "payment_count": 2,
+            "adjustment_count": 1
+          }
+        ],
+        "drilldownTotal": 1,
+        "drilldownTruncated": false
+      }
+    },
+    "EQUIVALENT_JUNE_UTC": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-06-30T21:59:59Z",
+        "knowledgeCutoff": "2026-06-30T21:59:59Z",
+        "businessDate": "2026-06-30",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 6,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 3,
+          "overdueAmountMinorUnits": "21000",
+          "openAmountMinorUnits": "27000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 3
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "6000",
+            "paid": "3500",
+            "credited": "500",
+            "payment_count": 2,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-03",
+            "site_id": "SYN_SITE_B",
+            "due_date": "2026-06-15",
+            "balance_minor_units": "15000",
+            "paid": "5000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "BEFORE_MONTH": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-06-30T21:59:59.999Z",
+        "knowledgeCutoff": "2026-06-30T21:59:59.999Z",
+        "businessDate": "2026-06-30",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 6,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 3,
+          "overdueAmountMinorUnits": "21000",
+          "openAmountMinorUnits": "27000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 3
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "6000",
+            "paid": "3500",
+            "credited": "500",
+            "payment_count": 2,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-03",
+            "site_id": "SYN_SITE_B",
+            "due_date": "2026-06-15",
+            "balance_minor_units": "15000",
+            "paid": "5000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "AT_MONTH": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-07-01T00:00:00+02:00",
+        "knowledgeCutoff": "2026-07-01T00:00:00+02:00",
+        "businessDate": "2026-07-01",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 6,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 3,
+          "openInvoiceCount": 3,
+          "overdueAmountMinorUnits": "26000",
+          "openAmountMinorUnits": "26000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 3,
+            "denominator": 3
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "6000",
+            "paid": "3500",
+            "credited": "500",
+            "payment_count": 2,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-02",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-06-30",
+            "balance_minor_units": "5000",
+            "paid": "1000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          },
+          {
+            "invoice_id": "I-03",
+            "site_id": "SYN_SITE_B",
+            "due_date": "2026-06-15",
+            "balance_minor_units": "15000",
+            "paid": "5000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 3,
+        "drilldownTruncated": false
+      }
+    },
+    "AFTER_MONTH": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-06-30T22:00:00.001Z",
+        "knowledgeCutoff": "2026-06-30T22:00:00.001Z",
+        "businessDate": "2026-07-01",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 6,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 3,
+          "openInvoiceCount": 3,
+          "overdueAmountMinorUnits": "26000",
+          "openAmountMinorUnits": "26000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 3,
+            "denominator": 3
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "6000",
+            "paid": "3500",
+            "credited": "500",
+            "payment_count": 2,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-02",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-06-30",
+            "balance_minor_units": "5000",
+            "paid": "1000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          },
+          {
+            "invoice_id": "I-03",
+            "site_id": "SYN_SITE_B",
+            "due_date": "2026-06-15",
+            "balance_minor_units": "15000",
+            "paid": "5000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 3,
+        "drilldownTruncated": false
+      }
+    },
+    "BACKDATED_RESTATEMENT": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-06-30T23:59:59+02:00",
+        "knowledgeCutoff": "2026-07-31T23:59:59+02:00",
+        "businessDate": "2026-06-30",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 6,
+          "unknownInvoiceCount": 3,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 3,
+          "overdueAmountMinorUnits": "20000",
+          "openAmountMinorUnits": "26000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 3
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "5000",
+            "paid": "4500",
+            "credited": "500",
+            "payment_count": 3,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-03",
+            "site_id": "SYN_SITE_B",
+            "due_date": "2026-06-15",
+            "balance_minor_units": "15000",
+            "paid": "5000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "DST_BEFORE": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A"
+        ],
+        "validCutoff": "2026-10-25T00:14:59.999Z",
+        "knowledgeCutoff": "2026-10-25T00:14:59.999Z",
+        "businessDate": "2026-10-25",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 5,
+          "unknownInvoiceCount": 2,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 1,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 2,
+          "overdueAmountMinorUnits": "9500",
+          "openAmountMinorUnits": "9500",
+          "creditBalanceMinorUnits": "1000",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 2
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-02",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-06-30",
+            "balance_minor_units": "4500",
+            "paid": "1000",
+            "credited": "500",
+            "payment_count": 1,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-09",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-10-24",
+            "balance_minor_units": "5000",
+            "paid": "0",
+            "credited": "0",
+            "payment_count": 0,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "DST_EARLY": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A"
+        ],
+        "validCutoff": "2026-10-25T02:15:00+02:00",
+        "knowledgeCutoff": "2026-10-25T02:15:00+02:00",
+        "businessDate": "2026-10-25",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 5,
+          "unknownInvoiceCount": 2,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 1,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 2,
+          "overdueAmountMinorUnits": "8500",
+          "openAmountMinorUnits": "8500",
+          "creditBalanceMinorUnits": "1000",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 2
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-02",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-06-30",
+            "balance_minor_units": "4500",
+            "paid": "1000",
+            "credited": "500",
+            "payment_count": 1,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-09",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-10-24",
+            "balance_minor_units": "4000",
+            "paid": "1000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "DST_LATER": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A"
+        ],
+        "validCutoff": "2026-10-25T02:10:00+01:00",
+        "knowledgeCutoff": "2026-10-25T02:10:00+01:00",
+        "businessDate": "2026-10-25",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "PARTIAL",
+        "knownSubset": {
+          "scopedInvoiceCount": 5,
+          "unknownInvoiceCount": 2,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 1,
+          "overdueInvoiceCount": 2,
+          "openInvoiceCount": 2,
+          "overdueAmountMinorUnits": "6500",
+          "openAmountMinorUnits": "6500",
+          "creditBalanceMinorUnits": "1000",
+          "ratio": {
+            "numerator": 2,
+            "denominator": 2
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": null,
+        "overdueInvoiceCount": null,
+        "overdueRatio": null,
+        "drilldown": [
+          {
+            "invoice_id": "I-02",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-06-30",
+            "balance_minor_units": "4500",
+            "paid": "1000",
+            "credited": "500",
+            "payment_count": 1,
+            "adjustment_count": 1
+          },
+          {
+            "invoice_id": "I-09",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-10-24",
+            "balance_minor_units": "2000",
+            "paid": "3000",
+            "credited": "0",
+            "payment_count": 2,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 2,
+        "drilldownTruncated": false
+      }
+    },
+    "ZERO_DENOMINATOR": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-03-31T21:59:59Z",
+        "knowledgeCutoff": "2026-03-31T21:59:59Z",
+        "businessDate": "2026-03-31",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "COMPLETE",
+        "knownSubset": {
+          "scopedInvoiceCount": 0,
+          "unknownInvoiceCount": 0,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 0,
+          "openInvoiceCount": 0,
+          "overdueAmountMinorUnits": "0",
+          "openAmountMinorUnits": "0",
+          "creditBalanceMinorUnits": "0",
+          "ratio": null,
+          "ratioState": "ZERO_DENOMINATOR"
+        },
+        "overdueAmountMinorUnits": "0",
+        "overdueInvoiceCount": 0,
+        "overdueRatio": null,
+        "drilldown": [],
+        "drilldownTotal": 0,
+        "drilldownTruncated": false
+      }
+    },
+    "COMPLETE_NONZERO": {
+      "request": {
+        "tenantId": "SYN-TENANT-01",
+        "siteIds": [
+          "SYN_SITE_A",
+          "SYN_SITE_B"
+        ],
+        "validCutoff": "2026-06-01T00:00:01+02:00",
+        "knowledgeCutoff": "2026-06-01T00:00:01+02:00",
+        "businessDate": "2026-06-01",
+        "drilldownLimit": 20
+      },
+      "expected": {
+        "state": "COMPLETE",
+        "knownSubset": {
+          "scopedInvoiceCount": 2,
+          "unknownInvoiceCount": 0,
+          "cancelledInvoiceCount": 0,
+          "creditBalanceInvoiceCount": 0,
+          "overdueInvoiceCount": 1,
+          "openInvoiceCount": 2,
+          "overdueAmountMinorUnits": "8000",
+          "openAmountMinorUnits": "14000",
+          "creditBalanceMinorUnits": "0",
+          "ratio": {
+            "numerator": 1,
+            "denominator": 2
+          },
+          "ratioState": "KNOWN_SUBSET_RATIO"
+        },
+        "overdueAmountMinorUnits": "8000",
+        "overdueInvoiceCount": 1,
+        "overdueRatio": {
+          "numerator": 1,
+          "denominator": 2
+        },
+        "drilldown": [
+          {
+            "invoice_id": "I-01",
+            "site_id": "SYN_SITE_A",
+            "due_date": "2026-05-31",
+            "balance_minor_units": "8000",
+            "paid": "2000",
+            "credited": "0",
+            "payment_count": 1,
+            "adjustment_count": 0
+          }
+        ],
+        "drilldownTotal": 1,
+        "drilldownTruncated": false
+      }
+    }
+  }
+}

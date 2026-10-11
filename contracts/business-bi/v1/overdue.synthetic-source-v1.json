@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "kaleidosphere.business-bi/overdue-synthetic-source/v1",
+  "classification": "SYNTHETIC_NON_CUSTOMER_BYTES",
+  "sourceId": "SYN-OVERDUE-01",
+  "sourceRevision": "SYN-OVERDUE-REV-1",
+  "snapshotId": "SYN-OVERDUE-SNAPSHOT-1",
+  "historyRequiredFrom": "2026-01-01T00:00:00Z",
+  "historyCompleteFrom": "2026-01-01T01:00:00+01:00",
+  "historyCompleteThrough": "2026-11-03T00:00:00Z",
+  "knowledgeCompleteThrough": "2026-11-03T00:00:00Z",
+  "invoices": [
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_A","invoiceId":"I-01","invoiceDate":"2026-05-01","dueDate":"2026-05-31","amountMinorUnits":10000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-05-01T09:00:00+02:00","knownAt":"2026-05-01T07:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_A","invoiceId":"I-02","invoiceDate":"2026-06-01","dueDate":"2026-06-30","amountMinorUnits":6000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-01T00:00:00+02:00","knownAt":"2026-05-31T22:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_B","invoiceId":"I-03","invoiceDate":"2026-06-05","dueDate":"2026-06-15","amountMinorUnits":20000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-05T08:00:00Z","knownAt":"2026-06-05T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_B","invoiceId":"I-04","invoiceDate":"2026-07-02","dueDate":"2026-07-31","amountMinorUnits":8000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-07-02T08:00:00Z","knownAt":"2026-07-02T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_A","invoiceId":"I-05","invoiceDate":"2026-06-01","dueDate":"2026-06-15","amountMinorUnits":null,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-01T08:00:00Z","knownAt":"2026-06-01T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_B","invoiceId":"I-06","invoiceDate":"2026-06-01","dueDate":null,"amountMinorUnits":3000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-01T08:00:00Z","knownAt":"2026-06-01T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_B","invoiceId":"I-07","invoiceDate":"2026-08-01","dueDate":"2026-08-01","amountMinorUnits":2500,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-08-01T08:00:00Z","knownAt":"2026-08-01T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_A","invoiceId":"I-08","invoiceDate":"2026-06-01","dueDate":"2026-06-15","amountMinorUnits":1000,"currency":"EUR","unit":null,"validAt":"2026-06-01T08:00:00Z","knownAt":"2026-06-01T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","siteId":"SYN_SITE_A","invoiceId":"I-09","invoiceDate":"2026-10-24","dueDate":"2026-10-24","amountMinorUnits":5000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-10-24T08:00:00Z","knownAt":"2026-10-24T08:00:00Z"},
+    {"tenantId":"SYN-FOREIGN-TENANT","siteId":"SYN_SITE_B","invoiceId":"I-01","invoiceDate":"2026-05-01","dueDate":"2026-05-01","amountMinorUnits":999999,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-05-01T08:00:00Z","knownAt":"2026-05-01T08:00:00Z"}
+  ],
+  "payments": [
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-01","paymentId":"P-01","amountMinorUnits":2000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-05-20T08:00:00Z","knownAt":"2026-05-20T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-01","paymentId":"P-02","amountMinorUnits":1500,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-10T08:00:00Z","knownAt":"2026-06-10T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-01","paymentId":"P-03","amountMinorUnits":6000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-07-10T08:00:00Z","knownAt":"2026-07-10T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-01","paymentId":"P-BACKDATED","amountMinorUnits":1000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-20T08:00:00Z","knownAt":"2026-07-20T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-02","paymentId":"P-MONTH","amountMinorUnits":1000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-07-01T00:00:00+02:00","knownAt":"2026-06-30T22:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-03","paymentId":"P-05","amountMinorUnits":5000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-20T08:00:00Z","knownAt":"2026-06-20T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-09","paymentId":"P-DST-EARLY","amountMinorUnits":1000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-10-25T02:15:00+02:00","knownAt":"2026-10-25T00:15:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-09","paymentId":"P-DST-LATER","amountMinorUnits":2000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-10-25T02:10:00+01:00","knownAt":"2026-10-25T01:10:00Z"},
+    {"tenantId":"SYN-FOREIGN-TENANT","invoiceId":"I-01","paymentId":"P-01","amountMinorUnits":400000,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-01T08:00:00Z","knownAt":"2026-06-01T08:00:00Z"}
+  ],
+  "adjustments": [
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-01","adjustmentId":"C-01","kind":"CREDIT","amountMinorUnits":500,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-06-25T08:00:00Z","knownAt":"2026-06-25T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-02","adjustmentId":"C-02","kind":"CREDIT","amountMinorUnits":500,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-07-15T08:00:00Z","knownAt":"2026-07-16T08:00:00Z"},
+    {"tenantId":"SYN-TENANT-01","invoiceId":"I-03","adjustmentId":"CANCEL-03","kind":"CANCEL","amountMinorUnits":0,"currency":"EUR","unit":"MINOR_UNITS","validAt":"2026-07-02T08:00:00Z","knownAt":"2026-07-04T08:00:00Z"}
+  ]
+}

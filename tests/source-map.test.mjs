@@ -180,6 +180,8 @@ import './ks303-k05-integrity-retirement.test.mjs';
  * decision ride the same tracked-file check.
  */
 import './metric-compiler-adapter.test.mjs';
+// #317 new bounded stock operation is reached once without changing the byte-bound canonical command.
+import './overdue-stock-product-v1.test.mjs';
 
 const businessBiFiles = Object.freeze([
   'contracts/business-bi/v1/net-revenue.metric.json',

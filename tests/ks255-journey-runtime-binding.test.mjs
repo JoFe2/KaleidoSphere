@@ -73,13 +73,14 @@ const RECORDED_ORIGINALS = Object.freeze({
     '9b524b4d3ed6a1ee771c10b514c23f16db159e986b99b6b035f95c944d10b92f',
 });
 const C1_CERTIFICATE_SHA256 = '9a34711f908ada71d20655d831d5e4c563fe5e44c4b56c3877b73af73266e90b';
-// The six released suites whose real-SQL legs require the pinned runtime closure.
+// Retain all released required suites; #317 adds one actual static pinned-runtime consumer.
 const REQUIRED_RUNTIME_SUITES = Object.freeze([
   'tests/net-revenue-connected-journey.test.mjs',
   'tests/net-revenue-f4-composition.test.mjs',
   'tests/net-revenue-guided-journey.test.mjs',
   'tests/net-revenue-journey.test.mjs',
   'tests/net-revenue-ledger-mapping.test.mjs',
+  'tests/overdue-stock-product-v1.test.mjs',
   'tests/result-lineage-readonly.test.mjs',
 ]);
 
@@ -232,11 +233,12 @@ test('the runtime dependency closure is MEASURED from the current test root, not
     'the measured required-suite set must be exactly the suites that declare the runtime',
   );
   // The measured runtime SELECTION is per-suite and honest: the four suites whose executable
-  // resolver consults the injected override do so, and the two suites that only ever read a
+  // resolver consults the injected override do so, and all suites that only ever read a
   // hardcoded declared root do not — their precise honest UNRESOLVED result is preserved.
   const HARDCODED_ROOT_SUITES = Object.freeze([
     'tests/net-revenue-journey.test.mjs',
     'tests/net-revenue-ledger-mapping.test.mjs',
+    'tests/overdue-stock-product-v1.test.mjs',
   ]);
   const liveSuites = new Map(liveReport.requiredSuites.map((suite) => [suite.suite, suite]));
   for (const suite of REQUIRED_RUNTIME_SUITES) {
@@ -286,6 +288,40 @@ test('the runtime dependency closure is MEASURED from the current test root, not
   const driftedPin = runProvisioner([], {env: {...PROBE_ENV, KS255_PINNED_SPECIFIER: '@electric-sql/pglite@0.0.0'}});
   assert.equal(driftedPin.status, 1, 'a CI declaration that disagrees with the pin is refused');
   assert.match(driftedPin.stderr, /PROVISION-DENIED WORKFLOW_PIN_DISAGREES_WITH_MANIFEST:/);
+});
+
+test('static module-relative runtime measurement follows the actual importer, not the repository cwd', () => {
+  const sandbox = mkdtempSync(path.join(tmpdir(), 'ks317-static-runtime-'));
+  try {
+    const entry = path.join(sandbox, 'runtime', ENTRY_SUFFIX);
+    mkdirSync(path.dirname(entry), {recursive: true});
+    writeFileSync(entry, 'module.exports = {value: "MODULE_RELATIVE"};\n');
+    const suite = path.join(sandbox, 'nested', 'static-runtime.test.mjs');
+    mkdirSync(path.dirname(suite), {recursive: true});
+    const specifier = `../runtime/${ENTRY_SUFFIX}`;
+    writeFileSync(suite, `import runtime from '${specifier}';\nconsole.log(runtime.value);\n`);
+    const actual = spawnSync(process.execPath, [suite], {cwd: ROOT, encoding: 'utf8'});
+    assert.equal(actual.status, 0, actual.stderr);
+    assert.equal(actual.stdout.trim(), 'MODULE_RELATIVE');
+    const report = measure(['--suite', suite]);
+    assert.deepStrictEqual(report.requiredSuites[0].declaredEntryPaths, [entry]);
+    assert.deepStrictEqual(report.unresolvedSuites, []);
+    assert.equal(report.requiredSuites[0].verified, false, 'readable is not pinned');
+    const rejected = runProvisioner(['--measure', '--suite', suite, '--require-verified']);
+    assert.equal(rejected.status, 1);
+    assert.match(rejected.stderr, /PROVISION-DENIED REQUIRED_SUITE_UNVERIFIED:/);
+    const stock = measure(['--suite', 'tests/overdue-stock-product-v1.test.mjs']);
+    assert.deepStrictEqual(stock.requiredSuites[0].declaredEntryPaths, [path.join(ROOT, '.ks-journey-runtime', ENTRY_SUFFIX)]);
+    rmSync(entry);
+    const absent = measure(['--suite', suite], {env: {...PROBE_ENV, [CORE_PATH_ENV]: path.join(ROOT, '.ks-journey-runtime', ENTRY_SUFFIX)}});
+    assert.deepStrictEqual(absent.unresolvedSuites, [suite]);
+    assert.equal(absent.requiredSuites[0].injectedEnv, false, 'a static import never consults the override');
+    const denied = runProvisioner(['--measure', '--suite', suite, '--require-resolved']);
+    assert.equal(denied.status, 1);
+    assert.match(denied.stderr, /PROVISION-DENIED REQUIRED_SUITE_UNRESOLVED:/);
+  } finally {
+    rmSync(sandbox, {recursive: true, force: true});
+  }
 });
 
 test('measurement credits the environment-selected override only to the suites that ACTUALLY read it, never a declaration', () => {
