@@ -27,7 +27,7 @@
       "channel": {"const": "durable"},
       "ignorable": {"const": false},
       "version": {"properties": {"contract": {"const": "workspace-action-observation"}, "version": {"const": "v1"}}},
-      "payload": {"$ref": "agent-process-action.schema.json"}
+      "payload": {"$ref": "https://kaleidosphere.local/contracts/assistant-foundation/v1/agent-process-action.schema.json"}
     }}
   }],
   "$defs": {

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://contracts.chimpmaera.local/assistant-foundation/v1/agent-process-action.schema.json",
+  "$id": "https://kaleidosphere.local/contracts/assistant-foundation/v1/agent-process-action.schema.json",
   "title": "KS321 Preview/Display observation v1 — shape, not producer authority",
   "description": "Consumer contract only. No PAN export endpoint or source authentication is established by satisfying this schema. Unknown owner times remain null; missing process, human and grant facts remain NOT_OBSERVED.",
   "type": "object",

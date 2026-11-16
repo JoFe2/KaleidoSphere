@@ -30,6 +30,10 @@ test('M6-00 golden schemas and fixtures are versioned and compatible with the ru
     assert.equal(schema.$schema, 'https://json-schema.org/draft/2020-12/schema');
     assert.match(schema.$id, /assistant-foundation\/v1\//);
   }
+  const envelopeSchema = JSON.parse(await readFile('contracts/assistant-foundation/v1/event-envelope.schema.json', 'utf8'));
+  const processSchema = JSON.parse(await readFile('contracts/assistant-foundation/v1/agent-process-action.schema.json', 'utf8'));
+  assert.equal(envelopeSchema.allOf[0].then.properties.payload.$ref, processSchema.$id);
+  assert.match(processSchema.$id, /^https:\/\/kaleidosphere\.local\/contracts\//);
   const event = await fixture('event-envelope-v1.json');
   assert.equal(assertEventEnvelope(event), event);
   const registry = await fixture('static-registry-v1.json');
