@@ -188,6 +188,14 @@ export class InMemoryEvidenceStore {
     return this.#agentProcess.importBytes(bytes);
   }
 
+  processMetrics(options = { requiredThroughSequence: null }) {
+    if (!this.#agentProcess) fail('PROCESS_PERSISTENT_OWNER_REQUIRED');
+    closed(options, ['requiredThroughSequence'], 'PROCESS_METRICS_REQUEST_DENIED');
+    const through = options.requiredThroughSequence;
+    if (!(through === null || Number.isSafeInteger(through) && through >= 0 && through <= 128)) fail('PROCESS_METRICS_REQUEST_DENIED');
+    return this.#agentProcess.processMetrics(through);
+  }
+
   durableEvents() { return this.#agentProcess ? this.#agentProcess.durableEvents() : this.#events.filter((event) => event.channel === 'durable').map(structuredClone); }
   liveEvents() { if (this.#agentProcess) { this.#agentProcess.durableEvents(); return []; } return this.#events.filter((event) => event.channel === 'live').map(structuredClone); }
   close() { this.#agentProcess?.close(); }

@@ -18,6 +18,97 @@ function exact(value, keys) {
     || Reflect.ownKeys(ds).some(key => typeof key !== 'string' || !ds[key].enumerable || !('value' in ds[key]))) fail('PROCESS_CONFIG_DENIED');
 }
 
+// KS323: reduction of this owner's already validated, authorized committed prefix.
+// No external source authentication, clock attestation, execution or business effect.
+function processMetrics(binding, events, requiredThroughSequence) {
+  const digest = value => `sha256:${hash(canonicalJson(value))}`;
+  const throughSequence = events.at(-1)?.seq ?? 0;
+  const complete = requiredThroughSequence === null || throughSequence >= requiredThroughSequence;
+  const inputStateDigest = digest({ binding, requiredThroughSequence, events });
+  const input = { binding: structuredClone(binding), throughSequence, requiredThroughSequence,
+    status: complete ? 'COMMITTED_PREFIX' : 'INCOMPLETE_PREFIX', sourceHead: 'NOT_ATTESTED',
+    inputStateDigest, eventIds: events.map(event => event.eventId) };
+  const count = (formula, unit) => ({ formula, unit, inputStateDigest, status: complete ? 'OBSERVED_PREFIX' : 'UNKNOWN',
+    value: complete ? 0 : null, sources: [], exclusions: [] });
+  const confirmedResults = count('COUNT_DISTINCT(taskId,stepId) WHERE latest distinct non-render owner fact has matching proof and task readback', 'RESULT_COUNT');
+  const unknownOutcomes = count('COUNT_DISTINCT(taskId,stepId) WHERE latest distinct non-render owner fact is UNKNOWN and attempt=1', 'OUTCOME_COUNT');
+  const groups = new Map(), sourceFacts = new Map(), conflicts = new Set();
+  for (const event of events) {
+    const p = event.payload, key = canonicalJson([p.action.taskId, p.action.stepId]);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(event);
+    const signature = canonicalJson(p), prior = sourceFacts.get(p.source.eventDigest);
+    if (prior !== undefined && prior !== signature) conflicts.add(p.source.eventDigest);
+    sourceFacts.set(p.source.eventDigest, signature);
+  }
+  const values = [];
+  for (const group of groups.values()) {
+    const { taskId, stepId } = group[0].payload.action;
+    const actionKeyDigest = digest({ binding, taskId, stepId });
+    const observations = group.filter(event => event.payload.result?.proofKind !== 'PAN597_DOCUMENT_RENDERED');
+    const facts = new Map();
+    for (const event of observations) if (!facts.has(event.payload.source.eventDigest)) facts.set(event.payload.source.eventDigest, event);
+    const usable = [...facts.values()]; // A repeated old fact cannot become a new owner outcome.
+    const last = usable.at(-1), p = last?.payload;
+    const identities = new Set(observations.map(event => canonicalJson([event.correlationId, event.payload.mode, event.payload.action.capability])));
+    let priorRevision = 0, revisionRegression = false;
+    for (const event of usable) if (event.payload.action.taskRevision !== null) {
+      if (event.payload.action.taskRevision < priorRevision) revisionRegression = true;
+      priorRevision = event.payload.action.taskRevision;
+    }
+    let reason = !complete ? 'REQUIRED_PREFIX_MISSING'
+      : group.some(event => conflicts.has(event.payload.source.eventDigest)) ? 'SOURCE_FACT_CONFLICT'
+      : identities.size > 1 ? 'ACTION_LINEAGE_UNMATCHED'
+      : revisionRegression ? 'OWNER_REVISION_REGRESSION'
+      : !last ? 'RENDER_ONLY'
+      : p.action.attempt !== 1 ? 'NOT_ATTEMPTED'
+      : p.phase === 'UNKNOWN' ? 'OUTCOME_UNKNOWN'
+      : p.phase !== 'RESULT_CONFIRMED' ? 'OUTCOME_NOT_RECORDED'
+      : p.readbackRef !== p.action.taskId ? 'READBACK_UNMATCHED' : null;
+    const sources = group.map(event => event.eventId);
+    for (const [metric, included, excludedReason] of [
+      [confirmedResults, reason === null, reason],
+      [unknownOutcomes, reason === 'OUTCOME_UNKNOWN', reason ?? 'RESULT_CONFIRMED'],
+    ]) {
+      if (included) { metric.value++; metric.sources.push(last.eventId); }
+      else metric.exclusions.push({ actionKeyDigest, reason: excludedReason, sources });
+      const ignored = group.filter(event => event !== last).map(event => event.eventId);
+      if (included && ignored.length) metric.exclusions.push({ actionKeyDigest, reason: 'NON_CURRENT_OBSERVATIONS_NOT_ADDITIONAL_OUTCOMES', sources: ignored });
+    }
+    const span = { actionKeyDigest, taskId, stepId, inputStateDigest, unit: 'MILLISECOND',
+      status: 'UNKNOWN', value: null, reason, sources, startEventId: null, endEventId: null,
+      sourceStartTimeMs: null, sourceEndTimeMs: null };
+    if (reason === null) {
+      const starts = usable.filter(event => event.payload.phase === 'PENDING');
+      const ends = usable.filter(event => event.payload.phase === 'RESULT_CONFIRMED');
+      const startFacts = new Set(starts.map(event => event.payload.source.eventDigest));
+      const endFacts = new Set(ends.map(event => event.payload.source.eventDigest));
+      const end = ends[0], startObservations = observations.filter(event => event.payload.phase === 'PENDING');
+      const start = startObservations.find(event => event.eventId === end.causationId) ?? starts[0];
+      const startIds = new Set(startObservations.map(event => event.eventId));
+      reason = !starts.length ? 'START_NOT_RECORDED'
+        : startFacts.size !== 1 || endFacts.size !== 1 ? 'AMBIGUOUS_OWNER_ENDPOINTS'
+        : start.payload.action.attempt !== 1 || start.payload.action.taskRevision === null
+          || end.payload.action.taskRevision <= start.payload.action.taskRevision ? 'OWNER_REVISION_UNMATCHED'
+        : ends.some(event => !startIds.has(event.causationId)) ? 'UNMATCHED_OWNER_ENDPOINTS'
+        : start.payload.source.sourceTimeMs === null || end.payload.source.sourceTimeMs === null ? 'OWNER_TIME_UNAVAILABLE'
+        : end.payload.source.sourceTimeMs < start.payload.source.sourceTimeMs ? 'OWNER_TIME_REVERSED' : null;
+      span.reason = reason;
+      if (reason === null) Object.assign(span, { status: 'OBSERVED_SOURCE_SPAN',
+        value: end.payload.source.sourceTimeMs - start.payload.source.sourceTimeMs,
+        sources: [start.eventId, end.eventId], startEventId: start.eventId, endEventId: end.eventId,
+        sourceStartTimeMs: start.payload.source.sourceTimeMs, sourceEndTimeMs: end.payload.source.sourceTimeMs });
+    }
+    values.push(span);
+  }
+  return { schemaVersion: 'kaleidosphere.agent-process/metrics/v1', input, confirmedResults, unknownOutcomes,
+    actionDurations: { formula: 'RESULT_CONFIRMED.sourceTimeMs - directly causal PENDING.sourceTimeMs; one unambiguous owner fact per endpoint',
+      unit: 'MILLISECOND', inputStateDigest, endpointSemantics: 'REPORTED_PENDING_TO_CONFIRMED_SOURCE_SPAN_NOT_EXECUTION_LATENCY', values,
+      exclusions: values.filter(span => span.reason !== null).map(({ actionKeyDigest, reason, sources }) => ({ actionKeyDigest, reason, sources })) },
+    nonclaims: ['HOST_BINDING_NOT_REMOTE_PROVENANCE', 'RECORDED_PROOF_AND_READBACK_REFS_NOT_REVERIFIED_PAN',
+      'NO_BUSINESS_EFFECT_RENDER_SIMULATION_OR_REPLAY_SUCCESS', 'NO_HUMAN_GRANT_OR_PROCESS_FACTS', 'NO_INDEPENDENT_CLOCK_ATTESTATION'] };
+}
+
 // Internal backing factory: validation stays owned by core-contracts.mjs.
 export function createAgentProcessEvidenceBackingV1(options, assertEnvelope, eventType) {
   exact(options, ['stateRoot', 'binding', 'authorizeRead', 'maxEvents']);
@@ -114,5 +205,10 @@ export function createAgentProcessEvidenceBackingV1(options, assertEnvelope, eve
     }); // No acknowledgement can escape before SQLite COMMIT has succeeded.
   };
   return Object.freeze({ importBytes, durableEvents: events,
+    processMetrics(requiredThroughSequence) {
+      const result = processMetrics(binding, events(), requiredThroughSequence);
+      current(); // Recheck current permission before returning; never a metrics cache.
+      return result;
+    },
     close() { if (!closed) { db.close(); closed = true; } } });
 }

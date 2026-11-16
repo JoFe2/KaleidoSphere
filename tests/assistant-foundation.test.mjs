@@ -405,3 +405,289 @@ for (const revoked of [false, true]) {
     } finally { reopened.close(); }
   });
 }
+
+// KS323: every record and expected value below is authored SYNTHETIC data.
+// No PAN producer/readback, independent remote clock or business effect is claimed.
+async function syntheticMetricEvents(specs) {
+  const base = await syntheticProcessEvent();
+  return specs.map((spec, index) => {
+    const event = structuredClone(base), taskId = `invocation:SYNTHETIC-${spec.action}`;
+    Object.assign(event, { eventId: `ks323:SYNTHETIC-${spec.id}`, seq: index + 1,
+      correlationId: spec.correlation ?? `correlation:SYNTHETIC-${spec.action}`,
+      causationId: spec.cause ? `ks323:SYNTHETIC-${spec.cause}` : null,
+      occurredAt: spec.observedAt ?? '2099-01-01T00:00:00.000Z' });
+    const mode = spec.mode ?? 'PREVIEW', phase = spec.phase;
+    Object.assign(event.payload, { mode, phase, readbackRef: phase === 'RESULT_CONFIRMED' ? spec.readback ?? taskId : null,
+      result: phase === 'RESULT_CONFIRMED' ? {
+        resultPhase: mode === 'PREVIEW' ? 'PREVIEW_VALIDATED' : 'DOCUMENT_ACCEPTED',
+        proofRef: `context-proof:${sha256Digest({ syntheticProof: spec.action }).slice(7)}`,
+        proofKind: spec.proofKind ?? (mode === 'PREVIEW' ? 'PAN546_PREVIEW_VALIDATED' : 'PAN597_DOCUMENT_ACCEPTED'),
+      } : null });
+    event.payload.source.eventDigest = sha256Digest({ syntheticSourceFact: spec.fact ?? spec.id }).slice(7);
+    event.payload.source.sourceTimeMs = spec.time ?? null;
+    event.payload.action = { taskId, stepId: `step:SYNTHETIC-${spec.action}`, attempt: spec.attempt ?? 1,
+      capability: mode === 'PREVIEW' ? 'pan.workspace.view.preview/v1' : 'pan.workspace.document.display/v2',
+      taskRevision: Object.hasOwn(spec, 'revision') ? spec.revision : phase === 'RESULT_CONFIRMED' ? 2 : 1 };
+    event.payloadDigest = sha256Digest(event.payload);
+    return event;
+  });
+}
+
+const syntheticPositiveMetricSpecs = [
+  { id: 'p-proposed', action: 'preview', phase: 'PROPOSED', attempt: 0, revision: null, time: 900 },
+  { id: 'p-pending', action: 'preview', phase: 'PENDING', time: 1000 },
+  { id: 'p-result', action: 'preview', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'p-pending' },
+  { id: 'p-poll', action: 'preview', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'p-pending', fact: 'p-result' },
+  { id: 'd-pending', action: 'display', mode: 'DISPLAY', phase: 'PENDING', time: 2000 },
+  { id: 'd-result', action: 'display', mode: 'DISPLAY', phase: 'RESULT_CONFIRMED', time: 2600, cause: 'd-pending' },
+  { id: 'd-render', action: 'display', mode: 'DISPLAY', phase: 'RESULT_CONFIRMED', time: 3000, cause: 'd-result', proofKind: 'PAN597_DOCUMENT_RENDERED' },
+  { id: 'u-pending', action: 'unknown', phase: 'PENDING', time: 4000 },
+  { id: 'u-result', action: 'unknown', phase: 'UNKNOWN', revision: 2, time: 4200, cause: 'u-pending' },
+  { id: 'u-poll', action: 'unknown', phase: 'UNKNOWN', revision: 2, time: 4200, cause: 'u-pending', fact: 'u-result' },
+];
+
+// Independently fixed before implementation; 450/600ms are reported phase spans,
+// never an execution-latency estimate. Missing duration is null + UNKNOWN reason.
+const SYNTHETIC_POSITIVE_METRICS = {
+  confirmed: 2, unknown: 1,
+  durations: [['invocation:SYNTHETIC-preview', 450, null], ['invocation:SYNTHETIC-display', 600, null],
+    ['invocation:SYNTHETIC-unknown', null, 'OUTCOME_UNKNOWN']],
+};
+const metricNumbers = value => value && ({ confirmed: value.confirmedResults.value, unknown: value.unknownOutcomes.value,
+  durations: value.actionDurations.values.map(item => [item.taskId, item.value, item.reason]) });
+
+test('KS323 SYNTHETIC durable M1 has fixed independent counts/spans after COMMIT and reopen, without duplicate counting', async t => {
+  const { store, root, binding } = await syntheticInbox(t);
+  const events = await syntheticMetricEvents(syntheticPositiveMetricSpecs);
+  for (const [index, event] of events.entries()) {
+    const ack = store.importBytes(Buffer.from(JSON.stringify(event)));
+    assert.equal(ack.status, 'IMPORTED');
+    assert.equal(ack.persisted, true);
+    assert.equal(ack.count, index + 1);
+  }
+  store.close();
+  const reopened = new InMemoryEvidenceStore({ agentProcess: { stateRoot: root, binding, authorizeRead: () => true, maxEvents: 128 } });
+  t.after(() => reopened.close());
+  assert.deepEqual(reopened.durableEvents(), events);
+  const request = { requiredThroughSequence: events.length };
+  // The new owner read API is introduced by this slice. Optional invocation keeps
+  // the initial RED an expected-number AssertionError, not a missing-method error.
+  const metrics = reopened.processMetrics?.(request);
+  assert.deepEqual(metricNumbers(metrics), SYNTHETIC_POSITIVE_METRICS);
+  for (const event of events) assert.equal(reopened.importBytes(Buffer.from(JSON.stringify(event))).status, 'DUPLICATE');
+  assert.deepEqual(reopened.processMetrics(request), metrics);
+  assert.deepEqual(reopened.durableEvents(), events, 'calculation never appends or changes evidence');
+});
+
+test('KS323 SYNTHETIC negative expected set separates UNKNOWN and missing time/readback/render/unattempted facts', async t => {
+  const { store } = await syntheticInbox(t);
+  const events = await syntheticMetricEvents([
+    { id: 'n-pending', action: 'no-time', phase: 'PENDING', time: null },
+    { id: 'n-result', action: 'no-time', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'n-pending' },
+    { id: 'n-unknown', action: 'unknown', phase: 'UNKNOWN', time: null },
+    { id: 'n-wrong-start', action: 'wrong-readback', phase: 'PENDING', time: 2000 },
+    { id: 'n-wrong-result', action: 'wrong-readback', phase: 'RESULT_CONFIRMED', time: 2600, cause: 'n-wrong-start', readback: 'invocation:SYNTHETIC-other' },
+    { id: 'n-render', action: 'render-only', mode: 'DISPLAY', phase: 'RESULT_CONFIRMED', time: 3000, proofKind: 'PAN597_DOCUMENT_RENDERED' },
+    { id: 'n-unattempted', action: 'unattempted', phase: 'UNKNOWN', attempt: 0, revision: null, time: null },
+  ]);
+  for (const event of events) store.append(event);
+  const metrics = store.processMetrics?.({ requiredThroughSequence: events.length });
+  assert.deepEqual(metricNumbers(metrics), { confirmed: 1, unknown: 1, durations: [
+    ['invocation:SYNTHETIC-no-time', null, 'OWNER_TIME_UNAVAILABLE'], ['invocation:SYNTHETIC-unknown', null, 'OUTCOME_UNKNOWN'],
+    ['invocation:SYNTHETIC-wrong-readback', null, 'READBACK_UNMATCHED'], ['invocation:SYNTHETIC-render-only', null, 'RENDER_ONLY'],
+    ['invocation:SYNTHETIC-unattempted', null, 'NOT_ATTEMPTED'],
+  ] });
+});
+
+test('KS323 every SYNTHETIC number carries formula unit prefix sources exclusions and nonclaims without a payload dump', async t => {
+  const { store, binding } = await syntheticInbox(t);
+  const events = await syntheticMetricEvents(syntheticPositiveMetricSpecs);
+  events.forEach(event => store.append(event));
+  const result = store.processMetrics();
+  assert.deepEqual(result.input.binding, binding);
+  assert.equal(result.input.status, 'COMMITTED_PREFIX');
+  assert.equal(result.input.sourceHead, 'NOT_ATTESTED');
+  assert.match(result.input.inputStateDigest, /^sha256:[a-f0-9]{64}$/);
+  assert.deepEqual(result.input.eventIds, events.map(event => event.eventId));
+  for (const metric of [result.confirmedResults, result.unknownOutcomes, result.actionDurations]) {
+    assert.ok(metric.formula.length > 20);
+    assert.equal(metric.inputStateDigest, result.input.inputStateDigest);
+    assert.ok(Array.isArray(metric.exclusions));
+    for (const exclusion of metric.exclusions) for (const source of exclusion.sources) assert.ok(result.input.eventIds.includes(source));
+  }
+  assert.equal(result.confirmedResults.unit, 'RESULT_COUNT');
+  assert.equal(result.unknownOutcomes.unit, 'OUTCOME_COUNT');
+  assert.equal(result.actionDurations.unit, 'MILLISECOND');
+  for (const span of result.actionDurations.values) {
+    assert.equal(span.inputStateDigest, result.input.inputStateDigest);
+    assert.match(span.actionKeyDigest, /^sha256:[a-f0-9]{64}$/);
+    for (const id of span.sources) assert.ok(result.input.eventIds.includes(id));
+    assert.equal(span.status, span.value === null ? 'UNKNOWN' : 'OBSERVED_SOURCE_SPAN');
+  }
+  assert.ok(result.nonclaims.includes('NO_INDEPENDENT_CLOCK_ATTESTATION'));
+  assert.ok(result.nonclaims.includes('RECORDED_PROOF_AND_READBACK_REFS_NOT_REVERIFIED_PAN'));
+  assert.equal(JSON.stringify(result).includes('"payload"'), false);
+  assert.equal(JSON.stringify(result).includes('occurredAt'), false);
+  result.confirmedResults.value = 999;
+  result.input.binding.scope.tenantId = 'SYNTHETIC-caller-mutation';
+  assert.equal(store.processMetrics().confirmedResults.value, 2);
+  assert.deepEqual(store.processMetrics().input.binding, binding);
+  assert.deepEqual(store.durableEvents(), events);
+});
+
+test('KS323 SYNTHETIC owner endpoint negatives stay UNKNOWN while a genuinely recorded zero remains zero', async t => {
+  const start = { id: 'start', action: 'span', phase: 'PENDING', time: 1000 };
+  const end = { id: 'end', action: 'span', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'start' };
+  const cases = [
+    [[start, { ...end, time: null }], 'OWNER_TIME_UNAVAILABLE', null, 1],
+    [[start, { ...end, time: 900 }], 'OWNER_TIME_REVERSED', null, 1],
+    [[start, { ...end, revision: 1 }], 'OWNER_REVISION_UNMATCHED', null, 1],
+    [[start, { ...end, cause: null }], 'UNMATCHED_OWNER_ENDPOINTS', null, 1],
+    [[{ ...end, cause: null }], 'START_NOT_RECORDED', null, 1],
+    [[start, end, { ...end, id: 'another-end', time: 1600 }], 'AMBIGUOUS_OWNER_ENDPOINTS', null, 1],
+    [[start, { ...start, id: 'another-start', time: 1200 }, end], 'AMBIGUOUS_OWNER_ENDPOINTS', null, 1],
+    [[start, { ...end, fact: 'start' }], 'SOURCE_FACT_CONFLICT', null, 0],
+    [[start, { ...end, correlation: 'correlation:SYNTHETIC-other', cause: null }], 'ACTION_LINEAGE_UNMATCHED', null, 0],
+    [[start, { ...end, time: 1000 }], null, 0, 1],
+  ];
+  for (const [specs, reason, value, confirmed] of cases) {
+    const { store } = await syntheticInbox(t);
+    const events = await syntheticMetricEvents(specs);
+    events.forEach(event => store.append(event));
+    const metrics = store.processMetrics();
+    assert.equal(metrics.confirmedResults.value, confirmed, String(reason));
+    assert.equal(metrics.unknownOutcomes.value, 0);
+    assert.equal(metrics.actionDurations.values[0].reason, reason);
+    assert.equal(metrics.actionDurations.values[0].value, value);
+  }
+});
+
+test('KS323 SYNTHETIC gap or incomplete required prefix yields UNKNOWN not zero and recomputes after real reopen/fill', async t => {
+  const { store, root, binding } = await syntheticInbox(t);
+  const [start, end] = await syntheticMetricEvents([
+    { id: 'gap-start', action: 'gap', phase: 'PENDING', time: 1000 },
+    { id: 'gap-end', action: 'gap', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'gap-start' },
+  ]);
+  end.seq = 3;
+  store.append(start);
+  assert.equal(store.importBytes(Buffer.from(JSON.stringify(end))).status, 'GAP');
+  const request = { requiredThroughSequence: 3 }, incomplete = store.processMetrics(request);
+  assert.equal(incomplete.input.status, 'INCOMPLETE_PREFIX');
+  assert.equal(incomplete.input.throughSequence, 1);
+  assert.equal(incomplete.confirmedResults.value, null);
+  assert.equal(incomplete.unknownOutcomes.value, null);
+  assert.equal(incomplete.confirmedResults.status, 'UNKNOWN');
+  assert.equal(incomplete.actionDurations.values[0].value, null);
+  assert.equal(incomplete.actionDurations.values[0].reason, 'REQUIRED_PREFIX_MISSING');
+  store.close();
+  const reopened = new InMemoryEvidenceStore({ agentProcess: { stateRoot: root, binding, authorizeRead: () => true, maxEvents: 128 } });
+  t.after(() => reopened.close());
+  assert.deepEqual(reopened.processMetrics(request), incomplete);
+  const [filler] = await syntheticMetricEvents([{ id: 'gap-fill', action: 'not-attempted', phase: 'PROPOSED', attempt: 0, revision: null }]);
+  filler.seq = 2;
+  reopened.append(filler);
+  reopened.append(end);
+  const complete = reopened.processMetrics(request);
+  assert.equal(complete.input.throughSequence, 3);
+  assert.equal(complete.confirmedResults.value, 1);
+  assert.equal(complete.unknownOutcomes.value, 0);
+  assert.equal(complete.actionDurations.values[0].value, 450);
+  assert.equal(reopened.processMetrics({ requiredThroughSequence: 0 }).confirmedResults.value, 1, 'minimum-prefix query cannot replay an older result');
+});
+
+test('KS323 SYNTHETIC permission is rechecked before every query and final result; revoked duplicate/cache/reopen stay DENIED', async t => {
+  const root = mkdtempSync(join(tmpdir(), 'ks323-authorization-'));
+  let allowed = true, reads = 0, denyAt = Infinity;
+  const events = await syntheticMetricEvents(syntheticPositiveMetricSpecs), binding = syntheticInboxBinding(events[0]);
+  const options = { agentProcess: { stateRoot: root, binding, authorizeRead: () => allowed && ++reads < denyAt, maxEvents: 128 } };
+  const store = new InMemoryEvidenceStore(options);
+  t.after(() => { store.close(); rmSync(root, { recursive: true, force: true }); });
+  events.forEach(event => store.append(event));
+  assert.equal(store.processMetrics().confirmedResults.value, 2);
+  reads = 0; denyAt = 3;
+  let leaked;
+  assert.throws(() => { leaked = store.processMetrics(); }, /PROCESS_CURRENT_SCOPE_DENIED/);
+  assert.equal(leaked, undefined, 'revocation at the final permission check cannot publish a calculated result');
+  allowed = false;
+  assert.throws(() => store.processMetrics(), /PROCESS_CURRENT_SCOPE_DENIED/);
+  assert.throws(() => store.importBytes(Buffer.from(JSON.stringify(events[0]))), /PROCESS_CURRENT_SCOPE_DENIED/);
+  assert.throws(() => new InMemoryEvidenceStore(options), /PROCESS_CURRENT_SCOPE_DENIED/);
+  allowed = true; denyAt = Infinity;
+  store.close();
+  const reopened = new InMemoryEvidenceStore(options);
+  try {
+    assert.equal(reopened.processMetrics().confirmedResults.value, 2);
+    allowed = false;
+    assert.throws(() => reopened.processMetrics(), /PROCESS_CURRENT_SCOPE_DENIED/);
+  } finally { reopened.close(); }
+});
+
+test('KS323 SYNTHETIC metrics never join foreign scope/producer/stream or source epochs sharing action IDs', async t => {
+  const { store, binding } = await syntheticInbox(t);
+  const [event] = await syntheticMetricEvents([{ id: 'scope-result', action: 'shared-id', phase: 'RESULT_CONFIRMED', time: 1450 }]);
+  for (const change of [e => { e.payload.scope.tenantId = 'foreign'; }, e => { e.payload.scope.principalDigest = 'd'.repeat(64); },
+    e => { e.payload.scope.privacyEpoch = 2; }, e => { e.payload.source.sourceEpoch = 'd'.repeat(64); },
+    e => { e.streamId = 'foreign-stream'; }, e => { e.version.producer.id = 'foreign'; },
+    e => { e.version.producer.artifactDigest = `sha256:${'d'.repeat(64)}`; }]) {
+    const foreign = structuredClone(event); change(foreign); foreign.payloadDigest = sha256Digest(foreign.payload);
+    assert.throws(() => store.importBytes(Buffer.from(JSON.stringify(foreign))), /PROCESS_SOURCE_SCOPE_DENIED/);
+    assert.equal(store.processMetrics().confirmedResults.value, 0);
+  }
+  store.append(event);
+  const first = store.processMetrics();
+  const root = mkdtempSync(join(tmpdir(), 'ks323-other-epoch-'));
+  const otherBinding = structuredClone(binding); otherBinding.sourceEpoch = 'd'.repeat(64);
+  const other = new InMemoryEvidenceStore({ agentProcess: { stateRoot: root, binding: otherBinding, authorizeRead: () => true, maxEvents: 128 } });
+  t.after(() => { other.close(); rmSync(root, { recursive: true, force: true }); });
+  const secondEvent = structuredClone(event);
+  secondEvent.payload.source.sourceEpoch = otherBinding.sourceEpoch;
+  secondEvent.payloadDigest = sha256Digest(secondEvent.payload);
+  other.append(secondEvent);
+  const second = other.processMetrics();
+  assert.equal(first.confirmedResults.value, 1);
+  assert.equal(second.confirmedResults.value, 1);
+  assert.notEqual(first.actionDurations.values[0].actionKeyDigest, second.actionDurations.values[0].actionKeyDigest);
+  assert.equal(first.actionDurations.values[0].reason, 'START_NOT_RECORDED');
+  assert.equal(second.actionDurations.values[0].reason, 'START_NOT_RECORDED');
+  assert.throws(() => new InMemoryEvidenceStore({ agentProcess: { stateRoot: root, binding, authorizeRead: () => true, maxEvents: 128 } }), /PROCESS_BINDING_DRIFT_DENIED/);
+});
+
+test('KS323 SYNTHETIC absent readback/proof and simulation/replay are denied; default memory and getters are not widened', async t => {
+  const { store } = await syntheticInbox(t);
+  const [event] = await syntheticMetricEvents([{ id: 'denied-result', action: 'denied', phase: 'RESULT_CONFIRMED', time: 1450 }]);
+  for (const change of [e => { e.payload.readbackRef = null; }, e => { e.payload.result = null; },
+    e => { e.payload.mode = 'SIMULATION'; }, e => { e.payload.mode = 'REPLAY'; }]) {
+    const denied = structuredClone(event); change(denied); denied.payloadDigest = sha256Digest(denied.payload);
+    assert.throws(() => store.append(denied), /PROCESS_PAYLOAD_DENIED/);
+  }
+  assert.equal(store.processMetrics().confirmedResults.value, 0);
+  assert.equal(store.processMetrics().unknownOutcomes.value, 0);
+  assert.equal(store.processMetrics().input.sourceHead, 'NOT_ATTESTED');
+  assert.throws(() => new InMemoryEvidenceStore().processMetrics(), /PROCESS_PERSISTENT_OWNER_REQUIRED/);
+  for (const requiredThroughSequence of [-1, 1.5, 129, '1']) assert.throws(() => store.processMetrics({ requiredThroughSequence }), /PROCESS_METRICS_REQUEST_DENIED/);
+  let getterCalls = 0;
+  assert.throws(() => store.processMetrics({ get requiredThroughSequence() { getterCalls++; return 0; } }), /PROCESS_METRICS_REQUEST_DENIED/);
+  assert.equal(getterCalls, 0);
+  assert.deepEqual(store.durableEvents(), []);
+});
+
+test('KS323 SYNTHETIC repeated old source facts never resurrect success over a newer UNKNOWN owner fact', async t => {
+  for (const repeatedSourceFact of [true, false]) {
+    const { store } = await syntheticInbox(t);
+    const events = await syntheticMetricEvents([
+      { id: 'old-start', action: 'reobserve', phase: 'PENDING', time: 1000 },
+      { id: 'old-confirmed', action: 'reobserve', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'old-start' },
+      { id: 'new-unknown', action: 'reobserve', phase: 'UNKNOWN', revision: 3, time: 2000, cause: 'old-confirmed' },
+      { id: 'late-poll', action: 'reobserve', phase: 'RESULT_CONFIRMED', time: 1450, cause: 'old-start',
+        fact: repeatedSourceFact ? 'old-confirmed' : 'SYNTHETIC-new-digest-old-revision' },
+    ]);
+    events.slice(0, 3).forEach(event => store.append(event));
+    assert.equal(store.processMetrics().unknownOutcomes.value, 1);
+    store.append(events[3]);
+    const metrics = store.processMetrics();
+    assert.equal(metrics.confirmedResults.value, 0);
+    assert.equal(metrics.unknownOutcomes.value, repeatedSourceFact ? 1 : 0);
+    assert.equal(metrics.actionDurations.values[0].value, null);
+    assert.equal(metrics.actionDurations.values[0].reason, repeatedSourceFact ? 'OUTCOME_UNKNOWN' : 'OWNER_REVISION_REGRESSION');
+  }
+});
