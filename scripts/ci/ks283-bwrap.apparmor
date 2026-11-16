@@ -18,7 +18,7 @@ profile ks283-ci-bwrap /usr/bin/bwrap flags=(attach_disconnected) {
   allow umount,
   allow pivot_root,
   allow dbus,
-  allow px /** -> ks283-ci-bwrap//&ks283-ci-child,
+  audit allow px /** -> ks283-ci-bwrap//&ks283-ci-child,
 }
 
 profile ks283-ci-child flags=(attach_disconnected) {

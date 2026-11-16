@@ -225,4 +225,67 @@ test('K01 leaves the original C2 whitelist, metric plan and historical evaluator
   ]) assert.equal(sha256(readFileSync(file)), expected);
 });
 
+test('K01 CI diagnostics records bootstrap evidence without weakening the existing sandbox gates', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  assert.match(workflow, /node scripts\/ci\/ks283-sandbox-diagnostics\.mjs before/);
+  assert.match(workflow, /node scripts\/ci\/ks283-sandbox-diagnostics\.mjs failure/);
+  assert.match(workflow, /exit "\$ks283_status"/);
+  assert.match(workflow, /test "\$\{RUNNER_ENVIRONMENT:\?\}" = github-hosted/);
+  assert.match(workflow, /test "\$\{RUNNER_OS:\?\}" = Linux/);
+  assert.match(workflow, /assert\.deepEqual\(after,JSON\.parse\(readFileSync/);
+  assert.match(workflow, /profile\.includes\("ks283-ci-child"\).*profile\.includes\("enforce"\)/);
+  assert.match(workflow, /\["CapEff","CapPrm","CapAmb"\]/);
+  assert.match(workflow, /Object\.values\(caps\)\.every\(v=>\/\^0\+\$\//);
+  assert.match(workflow, /if-no-files-found: error/);
+  const profile = readFileSync('scripts/ci/ks283-bwrap.apparmor', 'utf8');
+  const audited = '  audit allow px /** -> ks283-ci-bwrap//&ks283-ci-child,';
+  assert.equal(profile.split(audited).length, 2);
+  assert.equal(sha256(profile.replace(audited, '  allow px /** -> ks283-ci-bwrap//&ks283-ci-child,')),
+    '45f7c2ca69b03a52244aa066c19f128fb21868ac060a4564f7d782fe1368a72f');
+});
+
+test('K01 CI diagnostics filters and bounds explicitly synthetic audit fixtures', async () => {
+  const { selectKs283AuditFacts } = await import('../scripts/ci/ks283-sandbox-diagnostics.mjs');
+  const denied = 'apparmor="DENIED" operation="capable" profile="ks283-ci-bwrap//&ks283-ci-child" pid=41 comm="bwrap" capability=12 capname="net_admin" raw="SYNTHETIC_CANARY_NOT_A_SECRET"';
+  const allowed = 'apparmor="ALLOWED" operation="exec" profile="ks283-ci-bwrap" pid=41 comm="bwrap" name="/proc/self/exe" target="ks283-ci-bwrap//&ks283-ci-child"';
+  const unrelated = 'apparmor="DENIED" operation="open" profile="unrelated" comm="other" name="SYNTHETIC_CANARY_NOT_A_SECRET"';
+  assert.deepEqual(selectKs283AuditFacts([denied, allowed, unrelated].join('\n')), {
+    events: [
+      { apparmor: 'DENIED', operation: 'capable', profile: 'ks283-ci-bwrap//&ks283-ci-child', capname: 'net_admin', comm: 'bwrap', pid: 41, capability: 12 },
+      { apparmor: 'ALLOWED', operation: 'exec', profile: 'ks283-ci-bwrap', target: 'ks283-ci-bwrap//&ks283-ci-child', comm: 'bwrap', pid: 41, path: '/proc/self/exe' },
+    ], matched: 2, truncated: false,
+  });
+  const bounded = selectKs283AuditFacts(Array(33).fill(denied).join('\n'));
+  assert.equal(bounded.events.length, 32);
+  assert.equal(bounded.matched, 33);
+  assert.equal(bounded.truncated, true);
+  assert.equal(JSON.stringify(bounded).includes('SYNTHETIC_CANARY'), false);
+  const redacted = selectKs283AuditFacts(allowed.replace('/proc/self/exe', '/home/private/SYNTHETIC_CANARY'));
+  assert.equal(redacted.events[0].path, 'OTHER_PATH');
+  assert.deepEqual(selectKs283AuditFacts('no audit evidence'), { events: [], matched: 0, truncated: false });
+});
+
+test('K01 CI diagnostics refuses execution outside the explicit hosted runner scope', () => {
+  const out = spawnSync(process.execPath, ['scripts/ci/ks283-sandbox-diagnostics.mjs', 'before'], {
+    env: { RUNNER_ENVIRONMENT: 'self-hosted', RUNNER_OS: 'Linux' }, encoding: 'utf8', timeout: 5000,
+  });
+  assert.equal(out.status, 1);
+  assert.equal(out.stdout, '');
+  assert.deepEqual(JSON.parse(out.stderr), { purpose: 'DIAGNOSTICS_ONLY_NOT_ACCEPTANCE', unavailable: true, code: 'K01_DIAGNOSTICS_HOSTED_LINUX_ONLY' });
+});
+
+test('K01 CI diagnostics failure trap preserves the actual gate exit even when diagnostics fails', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const trap = workflow.split('\n').find(line => line.trim().startsWith("trap 'ks283_status=")).trim();
+  // Shell-only control fixture: this function is NOT a real kernel/CI probe.
+  const stub = "node() { printf 'SYNTHETIC_DIAGNOSTIC\\n'; return 7; }";
+  const failed = spawnSync('/bin/bash', ['-e', '-c', `ks283_audit_since=0\n${stub}\n${trap}\nexit 23`], { encoding: 'utf8', env: {}, timeout: 5000 });
+  assert.equal(failed.status, 23);
+  assert.match(failed.stdout, /SYNTHETIC_DIAGNOSTIC/);
+  assert.match(failed.stdout, /original failure retained/);
+  const success = spawnSync('/bin/bash', ['-e', '-c', `ks283_audit_since=0\n${stub}\n${trap}\nexit 0`], { encoding: 'utf8', env: {}, timeout: 5000 });
+  assert.equal(success.status, 0);
+  assert.equal(success.stdout, '');
+});
+
 
