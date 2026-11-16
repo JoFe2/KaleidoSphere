@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {originalCiWorkflow} from './helpers/ks326-current-workflow-binding.mjs';
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const family=[
   "services/bi-agent/src/server.mjs",
@@ -12,6 +13,7 @@ const family=[
   "tests/h03-starter-product.test.mjs",
   "tests/h03-starter-browser-surface.test.mjs",
   "tests/h03-starter-ci-binding.test.mjs",
+  "tests/helpers/ks326-current-workflow-binding.mjs",
   "scripts/update-h03-starter-source-map.mjs",
   "scripts/hosting/run-native-starter-browser.py",
   "scripts/hosting/native-starter-browser.mjs",
@@ -34,28 +36,6 @@ const protectedPins={
   "services/bi-control/src/business-bi/invoice-date-o2c-views.mjs": "b262e14a9a90321c84b0b30f2ef1245c3d15c91c6a40a0e7ab800d69e001fd62"
 };
 
-// Recover the WHOLE original workflow, not a selected subset of its gates.
-// Only the approved runner-label delta and exact pre-existing diagnostics may
-// be reversed. All other bytes still have to match the retained original pin.
-function originalCiWorkflow(workflow){
- const pinned='    runs-on: ubuntu-24.04\n';
- assert.equal(workflow.split(pinned).length-1,1,'exactly one required-job runner pin');
- assert.equal(workflow.split('ubuntu-24.04').length-1,1,'no duplicate/hidden runner pin');
- let original=workflow.replace(pinned,'    runs-on: ubuntu-latest\n');
- const diagnostics=[
-  '          ks283_audit_since="$(date +%s)"\n',
-  '          # Diagnostics cannot replace a failed gate or change its exit status.\n',
-  String.raw`          trap 'ks283_status=$?; trap - EXIT; if [ "$ks283_status" -ne 0 ]; then if node scripts/ci/ks283-sandbox-diagnostics.mjs failure "$ks283_audit_since"; then :; else printf "%s\n" "K01 diagnostics unavailable; original failure retained"; fi; fi; exit "$ks283_status"' EXIT`+'\n',
-  '          node scripts/ci/ks283-sandbox-diagnostics.mjs before\n'
- ];
- for(const line of diagnostics){
-  assert.equal(original.split(line).length-1,1,'exactly one unchanged diagnostic line');
-  original=original.replace(line,'');
- }
- const pidLog='console.log("K01 runner sandbox status:",p.status,"signal:",p.signal,"error:",p.error?.code??null,"pid:",p.pid??null);';
- assert.equal(original.split(pidLog).length-1,1,'exactly one unchanged PID logging addition');
- return original.replace(pidLog,pidLog.replace(',"pid:",p.pid??null',''));
-}
 
 test('H03 actual product, served-script and binding suites are current source-addressed and reachable exactly once',()=>{
  const map=JSON.parse(readFileSync('SOURCE-MAP.json','utf8'));
@@ -95,5 +75,41 @@ test('K01 CI diagnostics pins the qualified distro and rejects every unrelated w
  ]){
   assert.notEqual(altered,workflow,'negative fixture must actually change the workflow');
   assert.throws(()=>verify(altered),assert.AssertionError);
+ }
+});
+
+test('K01 CI diagnostics shared recovery rejects incomplete duplicated modified and unrelated bytes',()=>{
+ const workflow=readFileSync('.github/workflows/ci.yml','utf8');
+ assert.equal(typeof originalCiWorkflow(workflow),'string');
+ assert.equal(digest(originalCiWorkflow(workflow)),protectedPins['.github/workflows/ci.yml']);
+ assert.throws(()=>originalCiWorkflow(null),assert.AssertionError);
+ // This selects a full mutation target, never an acceptance/stripping rule.
+ const trap=workflow.split('\n').find(line=>line.startsWith("          trap 'ks283_status="));
+ assert.equal(typeof trap,'string');
+ const lines=[
+  '          ks283_audit_since="$(date +%s)"\n',
+  '          # Diagnostics cannot replace a failed gate or change its exit status.\n',
+  trap+'\n',
+  '          node scripts/ci/ks283-sandbox-diagnostics.mjs before\n'
+ ];
+ const altered=[];
+ for(const line of lines){
+  assert.equal(workflow.split(line).length-1,1);
+  altered.push(workflow.replace(line,''),workflow.replace(line,line+line),
+   workflow.replace(line,line.slice(0,-1)+' # SYNTHETIC_MUTATION\n'));
+ }
+ const pid=',"pid:",p.pid??null';
+ altered.push(
+  workflow.replace(pid,pid+pid),workflow.replace(pid,',"pid:",0'),
+  workflow.replace('timeout:5000','timeout:5001'),
+  workflow.replace('timeout-minutes: 20','timeout-minutes: 21'),
+  workflow.replace('@electric-sql/pglite@0.3.14','@electric-sql/pglite@0.3.15'),
+  workflow.replace('fetch-depth: 0','fetch-depth: 1'),
+  workflow.replace('persist-credentials: false','persist-credentials: true'),
+  workflow+'\n# SYNTHETIC_UNAPPROVED_BODY_ADDITION\n'
+ );
+ for(const value of altered){
+  assert.notEqual(value,workflow,'every rejection fixture must actually mutate bytes');
+  assert.throws(()=>originalCiWorkflow(value),assert.AssertionError);
  }
 });

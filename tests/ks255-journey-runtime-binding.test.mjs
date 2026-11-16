@@ -40,6 +40,7 @@ import {existsSync, mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, w
 import {tmpdir} from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import {originalCiWorkflow} from './helpers/ks326-current-workflow-binding.mjs';
 
 import {
   canonicalTestCommand,
@@ -56,7 +57,8 @@ const PROVISIONER = 'scripts/provision-ks255-journey-runtime.mjs';
 const MANIFEST_PATH = 'contracts/dependencies/ks255-journey-runtime-v1.json';
 const BINDING_DIR = 'dependencies/ks-journey-runtime';
 const WORKFLOW_PATH = '.github/workflows/ci.yml';
-// The exact digest of the CURRENT workflow bytes, whose current-workflow binding is asserted by
+// The retained original digest of the CURRENT workflow generation; exact approved deltas are
+// recovered by the shared test-only fence. The same current-workflow binding is asserted by
 // tests/postgresql-c2-safe-aggregate.test.mjs. The authorized correction that re-pointed CI at the
 // committed pinned provisioner moved THIS binding only; the historical C2-correction original
 // below is immutable and is never re-minted.
@@ -192,7 +194,8 @@ test('the current test root reaches every tracked suite exactly once (the regist
 
 test('immutable historical evidence retains its exact source identity (no frozen proof binding rewritten)', () => {
   // (1) Current CI now also requires the K01 isolated aggregate; all historical originals below stay unchanged.
-  assert.equal(sha256(readBytes(WORKFLOW_PATH)), CURRENT_CI_SHA256, 'current workflow bytes');
+  const workflowBytes = readBytes(WORKFLOW_PATH);
+  assert.equal(sha256(originalCiWorkflow(workflowBytes.toString('utf8'))), CURRENT_CI_SHA256, 'current workflow original bytes');
   assert.equal(
     sha256(Buffer.from(`${execFileSync('git', ['show', `${C2_CORRECTION_COMMIT}:${WORKFLOW_PATH}`], {cwd: ROOT, encoding: 'utf8'}).trim()}\n`)),
     C2_CORRECTION_CI_SHA256,
@@ -201,7 +204,7 @@ test('immutable historical evidence retains its exact source identity (no frozen
   // (2) Every content-addressed source-map entry still matches on disk: the map binds the
   //     historical evidence and is never silently re-pointed at substituted bytes.
   const sourceMap = JSON.parse(readBytes('SOURCE-MAP.json').toString('utf8'));
-  assert.equal(sourceMap.files[WORKFLOW_PATH], CURRENT_CI_SHA256);
+  assert.equal(sourceMap.files[WORKFLOW_PATH], sha256(workflowBytes), 'source map binds exact current raw workflow bytes');
   for (const [file, expected] of Object.entries(sourceMap.files)) {
     assert.equal(sha256(readBytes(file)), expected, `${file} source identity`);
   }
