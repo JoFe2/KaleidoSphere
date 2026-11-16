@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kaleidosphere.local/contracts/assistant-foundation/v1/agent-process-action.schema.json",
+  "title": "KS321 Preview/Display observation v1 — shape, not producer authority",
+  "description": "Consumer contract only. No PAN export endpoint or source authentication is established by satisfying this schema. Unknown owner times remain null; missing process, human and grant facts remain NOT_OBSERVED.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "scope", "source", "action", "mode", "phase", "result", "readbackRef", "processFacts", "humanFacts", "grantFacts"],
+  "properties": {
+    "schemaVersion": {"const": "kaleidosphere.agent-process/action-observation/v1"},
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["tenantId", "principalDigest", "privacyEpoch"],
+      "properties": {
+        "tenantId": {"$ref": "#/$defs/id"},
+        "principalDigest": {"$ref": "#/$defs/hex"},
+        "privacyEpoch": {"$ref": "#/$defs/positive"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sourceId", "sourceEpoch", "eventDigest", "sourceTimeMs"],
+      "properties": {
+        "sourceId": {"const": "pan548.signed-native-context-outbox/v1"},
+        "sourceEpoch": {"$ref": "#/$defs/hex"},
+        "eventDigest": {"$ref": "#/$defs/hex"},
+        "sourceTimeMs": {"oneOf": [{"type": "integer", "minimum": 0, "maximum": 9007199254740991}, {"type": "null"}]}
+      }
+    },
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "required": ["taskId", "stepId", "attempt", "capability", "taskRevision"],
+      "properties": {
+        "taskId": {"$ref": "#/$defs/id"},
+        "stepId": {"$ref": "#/$defs/id"},
+        "attempt": {"type": "integer", "minimum": 0, "maximum": 1},
+        "capability": {"enum": ["pan.workspace.view.preview/v1", "pan.workspace.document.display/v2"]},
+        "taskRevision": {"oneOf": [{"$ref": "#/$defs/positive"}, {"type": "null"}]}
+      }
+    },
+    "mode": {"enum": ["PREVIEW", "DISPLAY"]},
+    "phase": {"enum": ["PROPOSED", "ADMITTED", "PENDING", "RESULT_CONFIRMED", "UNKNOWN"]},
+    "result": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["resultPhase", "proofRef", "proofKind"],
+          "properties": {
+            "resultPhase": {"enum": ["PREVIEW_VALIDATED", "DOCUMENT_ACCEPTED"]},
+            "proofRef": {"type": "string", "pattern": "^context-proof:[a-f0-9]{64}$"},
+            "proofKind": {"enum": ["PAN546_PREVIEW_VALIDATED", "PAN597_DOCUMENT_ACCEPTED", "PAN597_DOCUMENT_RENDERED"]}
+          }
+        }
+      ]
+    },
+    "readbackRef": {"oneOf": [{"$ref": "#/$defs/id"}, {"type": "null"}]},
+    "processFacts": {"const": "NOT_OBSERVED"},
+    "humanFacts": {"const": "NOT_OBSERVED"},
+    "grantFacts": {"const": "NOT_OBSERVED"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"mode": {"const": "PREVIEW"}}},
+      "then": {"properties": {
+        "action": {"properties": {"capability": {"const": "pan.workspace.view.preview/v1"}}},
+        "result": {"properties": {"resultPhase": {"const": "PREVIEW_VALIDATED"}, "proofKind": {"const": "PAN546_PREVIEW_VALIDATED"}}}
+      }},
+      "else": {"properties": {
+        "action": {"properties": {"capability": {"const": "pan.workspace.document.display/v2"}}},
+        "result": {"properties": {"resultPhase": {"const": "DOCUMENT_ACCEPTED"}, "proofKind": {"enum": ["PAN597_DOCUMENT_ACCEPTED", "PAN597_DOCUMENT_RENDERED"]}}}
+      }}
+    },
+    {
+      "if": {"properties": {"phase": {"const": "RESULT_CONFIRMED"}}},
+      "then": {"properties": {
+        "result": {"type": "object"},
+        "readbackRef": {"$ref": "#/$defs/id"},
+        "action": {"properties": {"attempt": {"const": 1}, "taskRevision": {"$ref": "#/$defs/positive"}}}
+      }},
+      "else": {"properties": {"result": {"type": "null"}}}
+    }
+  ],
+  "$defs": {
+    "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
+    "hex": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "positive": {"type": "integer", "minimum": 1, "maximum": 9007199254740991}
+  }
+}

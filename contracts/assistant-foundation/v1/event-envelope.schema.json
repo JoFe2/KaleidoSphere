@@ -21,6 +21,15 @@
     "payloadDigest": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
     "ignorable": {"type": "boolean"}
   },
+  "allOf": [{
+    "if": {"properties": {"eventType": {"const": "pan.workspace.action.observed"}}, "required": ["eventType"]},
+    "then": {"properties": {
+      "channel": {"const": "durable"},
+      "ignorable": {"const": false},
+      "version": {"properties": {"contract": {"const": "workspace-action-observation"}, "version": {"const": "v1"}}},
+      "payload": {"$ref": "https://kaleidosphere.local/contracts/assistant-foundation/v1/agent-process-action.schema.json"}
+    }}
+  }],
   "$defs": {
     "id": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"},
     "versionIdentity": {

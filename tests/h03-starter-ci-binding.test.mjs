@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
+import {originalCiWorkflow} from './helpers/ks326-current-workflow-binding.mjs';
 const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 const family=[
   "services/bi-agent/src/server.mjs",
@@ -12,6 +13,7 @@ const family=[
   "tests/h03-starter-product.test.mjs",
   "tests/h03-starter-browser-surface.test.mjs",
   "tests/h03-starter-ci-binding.test.mjs",
+  "tests/helpers/ks326-current-workflow-binding.mjs",
   "scripts/update-h03-starter-source-map.mjs",
   "scripts/hosting/run-native-starter-browser.py",
   "scripts/hosting/native-starter-browser.mjs",
@@ -34,6 +36,7 @@ const protectedPins={
   "services/bi-control/src/business-bi/invoice-date-o2c-views.mjs": "b262e14a9a90321c84b0b30f2ef1245c3d15c91c6a40a0e7ab800d69e001fd62"
 };
 
+
 test('H03 actual product, served-script and binding suites are current source-addressed and reachable exactly once',()=>{
  const map=JSON.parse(readFileSync('SOURCE-MAP.json','utf8'));
  for(const p of family){assert.match(map.files[p]??'',/^[a-f0-9]{64}$/,p);assert.equal(map.files[p],digest(readFileSync(p)),p);}
@@ -41,8 +44,72 @@ test('H03 actual product, served-script and binding suites are current source-ad
  for(const name of ['h03-starter-product.test.mjs','h03-starter-browser-surface.test.mjs','h03-starter-ci-binding.test.mjs']){
   assert.equal(parent.split("import './"+name+"';").length-1,1,name);assert.equal(pkg.scripts.test.split(/\s+/).includes('tests/'+name),false,name);
  }
- for(const [p,expected] of Object.entries(protectedPins))assert.equal(digest(readFileSync(p)),expected,p);
+ for(const [p,expected] of Object.entries(protectedPins)){
+  const bytes=readFileSync(p);
+  assert.equal(digest(p==='.github/workflows/ci.yml'?originalCiWorkflow(bytes.toString('utf8')):bytes),expected,p);
+ }
  const native=readFileSync('scripts/hosting/native-starter-browser.mjs','utf8');
  for(const actual of ['acceptInsecureCerts:false','actual-browser-real-interruption-restart-UNKNOWN-reset-hold','actual-non-admin-browser-abort-known-child-completion',
  'actual-browser-wrong-actual-business-value-not-UI-success','actual-browser-first-value-frozen-after-status-refresh'])assert.ok(native.includes(actual),actual);
+});
+
+test('K01 CI diagnostics pins the qualified distro and rejects every unrelated workflow delta',()=>{
+ const workflow=readFileSync('.github/workflows/ci.yml','utf8');
+ const verify=value=>assert.equal(digest(originalCiWorkflow(value)),protectedPins['.github/workflows/ci.yml']);
+ verify(workflow);
+ // In-memory negative fixtures only, not alternate jobs or native CI results.
+ const pin='    runs-on: ubuntu-24.04\n';
+ for(const altered of [
+  workflow.replace(pin,''),
+  workflow.replace('ubuntu-24.04','ubuntu-latest'),
+  workflow.replace(pin,pin+pin),
+  workflow+'# ubuntu-24.04\n',
+  workflow.replace('      - run: npm test','      - run: npm test -- --skip'),
+  workflow.replace('maxBuffer:1048576','maxBuffer:1048577'),
+  workflow.replace('assert.deepEqual(after,','void(after,'),
+  workflow.replace('["CapEff","CapPrm","CapAmb"]','["CapEff","CapAmb"]'),
+  workflow.replace('if-no-files-found: error','if-no-files-found: warn'),
+  workflow.replace('exit "$ks283_status"','exit 0'),
+  workflow.replace('node-version: \'24\'','node-version: \'22\''),
+  workflow.replace(',"pid:",p.pid??null','')
+ ]){
+  assert.notEqual(altered,workflow,'negative fixture must actually change the workflow');
+  assert.throws(()=>verify(altered),assert.AssertionError);
+ }
+});
+
+test('K01 CI diagnostics shared recovery rejects incomplete duplicated modified and unrelated bytes',()=>{
+ const workflow=readFileSync('.github/workflows/ci.yml','utf8');
+ assert.equal(typeof originalCiWorkflow(workflow),'string');
+ assert.equal(digest(originalCiWorkflow(workflow)),protectedPins['.github/workflows/ci.yml']);
+ assert.throws(()=>originalCiWorkflow(null),assert.AssertionError);
+ // This selects a full mutation target, never an acceptance/stripping rule.
+ const trap=workflow.split('\n').find(line=>line.startsWith("          trap 'ks283_status="));
+ assert.equal(typeof trap,'string');
+ const lines=[
+  '          ks283_audit_since="$(date +%s)"\n',
+  '          # Diagnostics cannot replace a failed gate or change its exit status.\n',
+  trap+'\n',
+  '          node scripts/ci/ks283-sandbox-diagnostics.mjs before\n'
+ ];
+ const altered=[];
+ for(const line of lines){
+  assert.equal(workflow.split(line).length-1,1);
+  altered.push(workflow.replace(line,''),workflow.replace(line,line+line),
+   workflow.replace(line,line.slice(0,-1)+' # SYNTHETIC_MUTATION\n'));
+ }
+ const pid=',"pid:",p.pid??null';
+ altered.push(
+  workflow.replace(pid,pid+pid),workflow.replace(pid,',"pid:",0'),
+  workflow.replace('timeout:5000','timeout:5001'),
+  workflow.replace('timeout-minutes: 20','timeout-minutes: 21'),
+  workflow.replace('@electric-sql/pglite@0.3.14','@electric-sql/pglite@0.3.15'),
+  workflow.replace('fetch-depth: 0','fetch-depth: 1'),
+  workflow.replace('persist-credentials: false','persist-credentials: true'),
+  workflow+'\n# SYNTHETIC_UNAPPROVED_BODY_ADDITION\n'
+ );
+ for(const value of altered){
+  assert.notEqual(value,workflow,'every rejection fixture must actually mutate bytes');
+  assert.throws(()=>originalCiWorkflow(value),assert.AssertionError);
+ }
 });

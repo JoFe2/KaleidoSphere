@@ -225,4 +225,135 @@ test('K01 leaves the original C2 whitelist, metric plan and historical evaluator
   ]) assert.equal(sha256(readFileSync(file)), expected);
 });
 
+test('K01 CI diagnostics records bootstrap evidence without weakening the existing sandbox gates', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  assert.match(workflow, /node scripts\/ci\/ks283-sandbox-diagnostics\.mjs before/);
+  assert.match(workflow, /node scripts\/ci\/ks283-sandbox-diagnostics\.mjs failure/);
+  assert.match(workflow, /exit "\$ks283_status"/);
+  assert.match(workflow, /test "\$\{RUNNER_ENVIRONMENT:\?\}" = github-hosted/);
+  assert.match(workflow, /test "\$\{RUNNER_OS:\?\}" = Linux/);
+  assert.match(workflow, /assert\.deepEqual\(after,JSON\.parse\(readFileSync/);
+  assert.match(workflow, /profile\.includes\("ks283-ci-child"\).*profile\.includes\("enforce"\)/);
+  assert.match(workflow, /\["CapEff","CapPrm","CapAmb"\]/);
+  assert.match(workflow, /Object\.values\(caps\)\.every\(v=>\/\^0\+\$\//);
+  assert.match(workflow, /if-no-files-found: error/);
+  const profile = readFileSync('scripts/ci/ks283-bwrap.apparmor', 'utf8');
+  const audited = '  audit allow px /** -> ks283-ci-bwrap//&ks283-ci-child,';
+  assert.equal(profile.split(audited).length, 2);
+  assert.equal(sha256(profile.replace(audited, '  allow px /** -> ks283-ci-bwrap//&ks283-ci-child,')),
+    '45f7c2ca69b03a52244aa066c19f128fb21868ac060a4564f7d782fe1368a72f');
+});
+
+test('K01 CI diagnostics filters and bounds explicitly synthetic audit fixtures', async () => {
+  const { selectKs283AuditFacts } = await import('../scripts/ci/ks283-sandbox-diagnostics.mjs');
+  const denied = 'apparmor="DENIED" operation="capable" profile="ks283-ci-bwrap//&ks283-ci-child" pid=41 comm="bwrap" capability=12 capname="net_admin" raw="SYNTHETIC_CANARY_NOT_A_SECRET"';
+  const allowed = 'apparmor="ALLOWED" operation="exec" profile="ks283-ci-bwrap" pid=41 comm="bwrap" name="/proc/self/exe" target="ks283-ci-bwrap//&ks283-ci-child"';
+  const unrelated = 'apparmor="DENIED" operation="open" profile="unrelated" comm="other" name="SYNTHETIC_CANARY_NOT_A_SECRET"';
+  assert.deepEqual(selectKs283AuditFacts([denied, allowed, unrelated].join('\n')), {
+    events: [
+      { apparmor: 'DENIED', operation: 'capable', profile: 'ks283-ci-bwrap//&ks283-ci-child', capname: 'net_admin', comm: 'bwrap', pid: 41, capability: 12 },
+      { apparmor: 'ALLOWED', operation: 'exec', profile: 'ks283-ci-bwrap', target: 'ks283-ci-bwrap//&ks283-ci-child', comm: 'bwrap', pid: 41, path: '/proc/self/exe' },
+    ], matched: 2, truncated: false,
+  });
+  const bounded = selectKs283AuditFacts(Array(33).fill(denied).join('\n'));
+  assert.equal(bounded.events.length, 32);
+  assert.equal(bounded.matched, 33);
+  assert.equal(bounded.truncated, true);
+  assert.equal(JSON.stringify(bounded).includes('SYNTHETIC_CANARY'), false);
+  const redacted = selectKs283AuditFacts(allowed.replace('/proc/self/exe', '/home/private/SYNTHETIC_CANARY'));
+  assert.equal(redacted.events[0].path, 'OTHER_PATH');
+  assert.deepEqual(selectKs283AuditFacts('no audit evidence'), { events: [], matched: 0, truncated: false });
+});
+
+test('K01 CI diagnostics refuses execution outside the explicit hosted runner scope', () => {
+  const out = spawnSync(process.execPath, ['scripts/ci/ks283-sandbox-diagnostics.mjs', 'before'], {
+    env: { RUNNER_ENVIRONMENT: 'self-hosted', RUNNER_OS: 'Linux' }, encoding: 'utf8', timeout: 5000,
+  });
+  assert.equal(out.status, 1);
+  assert.equal(out.stdout, '');
+  assert.deepEqual(JSON.parse(out.stderr), { purpose: 'DIAGNOSTICS_ONLY_NOT_ACCEPTANCE', unavailable: true, code: 'K01_DIAGNOSTICS_HOSTED_LINUX_ONLY' });
+});
+
+test('K01 CI diagnostics failure trap preserves the actual gate exit even when diagnostics fails', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const trap = workflow.split('\n').find(line => line.trim().startsWith("trap 'ks283_status=")).trim();
+  // Shell-only control fixture: this function is NOT a real kernel/CI probe.
+  const stub = "node() { printf 'SYNTHETIC_DIAGNOSTIC\\n'; return 7; }";
+  const failed = spawnSync('/bin/bash', ['-e', '-c', `ks283_audit_since=0\n${stub}\n${trap}\nexit 23`], { encoding: 'utf8', env: {}, timeout: 5000 });
+  assert.equal(failed.status, 23);
+  assert.match(failed.stdout, /SYNTHETIC_DIAGNOSTIC/);
+  assert.match(failed.stdout, /original failure retained/);
+  const success = spawnSync('/bin/bash', ['-e', '-c', `ks283_audit_since=0\n${stub}\n${trap}\nexit 0`], { encoding: 'utf8', env: {}, timeout: 5000 });
+  assert.equal(success.status, 0);
+  assert.equal(success.stdout, '');
+});
+
+test('K01 CI diagnostics D1 only emits known values or fixed redacted categories', async () => {
+  const { selectKs283AuditFacts: select } = await import('../scripts/ci/ks283-sandbox-diagnostics.mjs');
+  const base = 'apparmor="DENIED" operation="capable" profile="ks283-ci-bwrap" pid=41 comm="bwrap" capability=12 capname="net_admin"';
+  for (const marker of ['SYNTHETIC_BOUNDARY_MARKER', 'SYNTHETIC_DIFFERENT_VALUE_2']) {
+    for (const [input, key, expected] of [
+      [base.replace('operation="capable"', `operation="${marker}"`), 'operation', 'OTHER_OPERATION'],
+      [base.replace('profile="ks283-ci-bwrap"', `profile="ks283-ci-${marker}"`), 'profile', 'OTHER_PROFILE'],
+      [base + ` target="${marker}"`, 'target', 'OTHER_PROFILE'],
+      [base.replace('capname="net_admin"', `capname="${marker}"`), 'capname', 'OTHER_CAPABILITY'],
+      [base + ` requested_mask="${marker}"`, 'requested_mask', 'OTHER_MASK'],
+      [base + ` denied_mask="${marker}"`, 'denied_mask', 'OTHER_MASK'],
+      [base + ` name="/app/${marker}"`, 'path', 'OTHER_PATH'],
+      [base.replace('profile="ks283-ci-bwrap"', `profile="/home/private/${marker}"`), 'profile', 'OTHER_PROFILE'],
+    ]) {
+      const result = select(input);
+      assert.equal(result.events[0][key], expected);
+      assert.equal(JSON.stringify(result).includes(marker), false);
+      assert.equal(result.events[0].pid, 41);
+    }
+  }
+  for (const profile of ['ks283-ci-bwrap', 'ks283-ci-child', 'ks283-ci-bwrap//&ks283-ci-child', 'bwrap', 'unpriv_bwrap', 'bwrap//&unpriv_bwrap', 'unconfined']) {
+    const result = select(base.replace('profile="ks283-ci-bwrap"', `profile="${profile}"`));
+    assert.equal(result.events[0].profile, profile);
+    assert.equal(result.events[0].capname, 'net_admin');
+  }
+  const exec = select('audit: type=1400 audit(123.456:7): apparmor="ALLOWED" operation="exec" profile="ks283-ci-bwrap" comm="bwrap" name="/runtime/node" requested_mask="x"');
+  assert.equal(exec.events[0].path, '/runtime/node');
+  assert.equal(exec.events[0].requested_mask, 'x');
+});
+
+test('K01 CI diagnostics D2 rejects entire ambiguous records and skips complete unknown values', async () => {
+  const { selectKs283AuditFacts: select } = await import('../scripts/ci/ks283-sandbox-diagnostics.mjs');
+  const base = 'apparmor="DENIED" operation="capable" profile="ks283-ci-bwrap" comm="bwrap" pid=41';
+  for (const suffix of [' info="unfinished', ' operation="exec"', ' pid=42', ' info=one info=two', ' info="closed"junk',
+    ' malformed', String.raw` info="unsupported\escape"`, " info='unsupported'", ' info=control\u0000', ' apparmor="ALLOWED"']) {
+    assert.deepEqual(select(base + suffix), { events: [], matched: 0, truncated: false }, suffix);
+  }
+  const opaque = ' info="profile=unrelated comm=other operation=SYNTHETIC_FAKE_EVENT"';
+  assert.deepEqual(select(base + opaque), select(base));
+  assert.deepEqual(select(base + ' info=profile=unrelated'), select(base));
+  assert.deepEqual(select('apparmor="DENIED" operation="open" profile="unrelated" comm="other"' + opaque.replace('unrelated', 'ks283-ci-bwrap')),
+    { events: [], matched: 0, truncated: false });
+  assert.deepEqual(select('apparmor="DENIED" profile="ks283-ci-bwrap" comm="bwrap"'), { events: [], matched: 0, truncated: false });
+  assert.deepEqual(select('[ 12.345] audit: type=1400 audit(123.456:7): ' + base), select(base));
+});
+
+test('K01 CI diagnostics minimizes non-audit metadata without exposing unknown values', async () => {
+  const { selectKs283RuntimeFacts: select } = await import('../scripts/ci/ks283-sandbox-diagnostics.mjs');
+  // Pure, explicitly synthetic metadata; NOT an observation of the hosted job.
+  const known = { bwrapVersion: 'bubblewrap 0.13.1\n', packages: 'bubblewrap 0.13.1-1\napparmor 4.0.1-0ubuntu2\napparmor-utils 4.0.1-0ubuntu2\n',
+    kernelRelease: 'Linux 6.11.0-1018-azure x86_64\n', realPath: '/usr/bin/bwrap', collectorProfile: 'unconfined\n',
+    loadedProfiles: 'ks283-ci-bwrap (enforce)\nks283-ci-child (enforce)\n',
+    launch: { command: '/usr/bin/bwrap', args: ['--unshare-all', '--ro-bind', '/usr', '/usr', '/runtime/node'] } };
+  assert.deepEqual(select(known), { bwrapVersion: 'bubblewrap 0.13.1', packages: ['bubblewrap 0.13.1-1', 'apparmor 4.0.1-0ubuntu2', 'apparmor-utils 4.0.1-0ubuntu2'],
+    kernelRelease: 'Linux 6.11.0-1018-azure x86_64', realPath: '/usr/bin/bwrap', collectorProfile: 'unconfined',
+    bwrapProfiles: ['ks283-ci-bwrap (enforce)', 'ks283-ci-child (enforce)'], launch: known.launch });
+  for (const marker of ['SYNTHETIC_BOUNDARY_MARKER', 'SYNTHETIC_DIFFERENT_VALUE_2']) {
+    const result = select({ bwrapVersion: `bubblewrap 0.${marker}`, packages: `bubblewrap 0.${marker}`, kernelRelease: `Linux 6.11.0-${marker} x86_64`,
+      realPath: `/app/${marker}`, collectorProfile: `/home/private/${marker} (enforce)`,
+      loadedProfiles: `ks283-ci-bwrap-${marker} (enforce)\nks283-ci-bwrap (enforce)`,
+      launch: { command: `/usr/${marker}`, args: ['--unshare-all', `/home/private/${marker}`, '/runtime/node', `/app/${marker}`] } });
+    assert.deepEqual(result, { bwrapVersion: null, packages: [], kernelRelease: null, realPath: 'OTHER_PATH', collectorProfile: 'OTHER_PROFILE (enforce)',
+      bwrapProfiles: ['OTHER_PROFILE (enforce)', 'ks283-ci-bwrap (enforce)'],
+      launch: { command: 'OTHER_EXECUTABLE', args: ['--unshare-all', 'OTHER_PATH_OR_ARGUMENT', '/runtime/node', 'OTHER_PATH_OR_ARGUMENT'] } });
+    assert.equal(JSON.stringify(result).includes(marker), false);
+  }
+});
+
 

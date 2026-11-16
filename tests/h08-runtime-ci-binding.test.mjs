@@ -1,4 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFileSync} from 'node:fs';import {createHash} from 'node:crypto';
+import {originalCiWorkflow} from './helpers/ks326-current-workflow-binding.mjs';
 const family=[
   "services/bi-control/src/hosting/portable-runtime.mjs",
   "services/bi-control/src/hosting/portable-runtime-lifecycle.mjs",
@@ -31,5 +32,8 @@ test('H08 current real product lifecycle CLI and required suites are source-addr
  const parent=readFileSync('tests/source-map.test.mjs','utf8'),topology=readFileSync('tests/canonical-test-topology.test.mjs','utf8'),pkg=JSON.parse(readFileSync('package.json'));
  for(const name of ['h08-portable-native-product.test.mjs','h08-portable-lifecycle.test.mjs','h08-portable-cli.test.mjs','h08-runtime-ci-binding.test.mjs']){
  assert.equal(parent.split("import './"+name+"';").length-1,1,name);assert.equal(pkg.scripts.test.split(/\s+/).includes('tests/'+name),false,name);assert.ok(topology.includes("suite: 'tests/"+name+"'"),name);}
- for(const [name,expected] of Object.entries(protectedPins))assert.equal(digest(readFileSync(name)),expected,name);
+ for(const [name,expected] of Object.entries(protectedPins)){
+  const bytes=readFileSync(name);
+  assert.equal(digest(name==='.github/workflows/ci.yml'?originalCiWorkflow(bytes.toString('utf8')):bytes),expected,name);
+ }
 });

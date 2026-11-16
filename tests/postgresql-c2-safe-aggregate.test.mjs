@@ -40,6 +40,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {execFileSync, spawnSync} from 'node:child_process';
 import test from 'node:test';
+import {originalCiWorkflow} from './helpers/ks326-current-workflow-binding.mjs';
 
 import {
   ADMITTED_HOLDOUT_SHA256,
@@ -971,13 +972,13 @@ test('the real clean-room evidence is registered byte-for-byte and bound to the 
   // provisioned closure, without relaxing any retained gate. Only the current hash binding moves;
   // the historical original above is immutable. KS248 adds an explicit public paired-task
   // evaluation step and disables persisted checkout credentials; retained SQL gates remain.
-  // K01 adds mandatory isolated-aggregate execution; only this current CI digest advances.
+  // Keep the original CI digest; recover only the exact reviewed current-workflow deltas.
   assert.equal(
     fileSha256(Buffer.from(`${git('show', `${C2_CORRECTION_COMMIT}:.github/workflows/ci.yml`)}\n`)),
     '92cb8d81f7b751eb9c9fe80bbc263072f67291185548aebac79c411345677eb9',
   );
   assert.equal(
-    fileSha256(await readFile(path.join(root, '.github/workflows/ci.yml'))),
+    fileSha256(originalCiWorkflow(await readFile(path.join(root, '.github/workflows/ci.yml'), 'utf8'))),
     '09807b18dbd5594d93bd9355eb653d1e9fc931e0dc0f360d86512bea934160ec',
   );
   // (3c) The delivered product bytes carry exactly the digests the tested run bound.
