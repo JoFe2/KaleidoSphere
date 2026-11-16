@@ -374,3 +374,34 @@ test('KS322 object append validates closed descriptors before encoding untrusted
   assert.equal(getters, 0);
   assert.deepEqual(store.durableEvents(), []);
 });
+
+for (const revoked of [false, true]) {
+  test(`KS322 R1 object append denies an own array-index getter without execution (${revoked ? 'read revoked' : 'read allowed'})`, async t => {
+    const root = mkdtempSync(join(tmpdir(), 'ks322-array-descriptor-'));
+    const event = await syntheticProcessEvent();
+    const plain = structuredClone(event);
+    let allowed = true;
+    const options = { agentProcess: { stateRoot: root, binding: syntheticInboxBinding(event), authorizeRead: () => allowed, maxEvents: 128 } };
+    const store = new InMemoryEvidenceStore(options);
+    t.after(() => { store.close(); rmSync(root, { recursive: true, force: true }); });
+    let getterCalls = 0;
+    Object.defineProperty(event.sensitivity.categories, '0', {
+      enumerable: true, configurable: true, get() { getterCalls++; return 'none'; },
+    });
+    allowed = !revoked;
+    let acknowledgement, denial;
+    try { acknowledgement = store.append(event); } catch (error) { denial = error; }
+    assert.equal(getterCalls, 0, 'descriptor denial must precede every category read or encoding');
+    assert.equal(acknowledgement, undefined, 'accessor input must never produce an ACK');
+    assert.equal(denial?.code, 'EVENT_CLOSED_SHAPE_DENIED');
+    allowed = true;
+    assert.deepEqual(store.durableEvents(), [], 'rejected object must not persist an event');
+    store.close();
+    const reopened = new InMemoryEvidenceStore(options);
+    try {
+      assert.deepEqual(reopened.durableEvents(), [], 'reopen must confirm the empty persisted prefix');
+      assert.deepEqual(reopened.append(plain), plain, 'ordinary data arrays remain accepted');
+      assert.deepEqual(reopened.durableEvents(), [plain]);
+    } finally { reopened.close(); }
+  });
+}

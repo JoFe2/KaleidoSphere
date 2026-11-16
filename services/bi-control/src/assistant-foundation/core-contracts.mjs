@@ -29,6 +29,25 @@ function closed(value, keys, code) {
     || Reflect.ownKeys(descriptors).some(key => typeof key !== 'string' || !descriptors[key].enumerable || !('value' in descriptors[key]))) fail(code);
 }
 
+// The closed process object accepts only one array: sensitivity.categories.
+// Preflight its descriptors without reading input properties or elements;
+// the ordinary envelope validator handles missing/invalid enclosing shapes.
+function assertAgentProcessObjectArrayDescriptors(envelope) {
+  const sensitivity = envelope && typeof envelope === 'object'
+    ? Object.getOwnPropertyDescriptor(envelope, 'sensitivity')?.value : undefined;
+  const categories = sensitivity && typeof sensitivity === 'object'
+    ? Object.getOwnPropertyDescriptor(sensitivity, 'categories')?.value : undefined;
+  if (!Array.isArray(categories)) return;
+  const descriptors = Object.getOwnPropertyDescriptors(categories);
+  const length = descriptors.length.value;
+  if (Object.getPrototypeOf(categories) !== Array.prototype || Reflect.ownKeys(descriptors).length !== length + 1) fail('EVENT_CLOSED_SHAPE_DENIED');
+  for (let index = 0; index < length; index++) {
+    if (!Object.hasOwn(descriptors, index)) fail('EVENT_CLOSED_SHAPE_DENIED');
+    const element = descriptors[index];
+    if (!element.enumerable || !('value' in element)) fail('EVENT_CLOSED_SHAPE_DENIED');
+  }
+}
+
 // Shape/consistency only, NOT source authentication, read authority or a
 // business-success attestation. The trusted producer connection is still absent.
 export function assertAgentProcessPayloadV1(payload) {
@@ -140,6 +159,7 @@ export class InMemoryEvidenceStore {
   }
 
   append(envelope) {
+    if (this.#agentProcess) assertAgentProcessObjectArrayDescriptors(envelope);
     assertEventEnvelope(envelope);
     if (this.#agentProcess) {
       const imported = this.importBytes(Buffer.from(canonicalJson(envelope)));
