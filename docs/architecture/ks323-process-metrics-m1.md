@@ -18,6 +18,8 @@ Within one bound owner the logical key is `(taskId, stepId)`; its reported key d
 
 Inspection of the pinned PAN invocation owner shows `attempt: row ? 1 : 0`; it is not a retry counter. A repeated source fact (`source.eventDigest` with identical complete payload) does not become a new owner outcome when polled later. Contradictory payloads under the same source-fact digest, inconsistent action identity or regressing revisions are excluded explicitly. A late observation of an old confirmed fact cannot resurrect success after a newer UNKNOWN fact.
 
+Attempted UNKNOWN and RESULT_CONFIRMED facts at the same non-null owner revision are incompatible: `OWNER_REVISION_OUTCOME_CONFLICT` excludes the ambiguous action and leaves its duration UNKNOWN/null. Same-phase equal-revision observations remain permitted; UNKNOWN at revision 2 followed by confirmation at revision 3 remains a valid recovery. Null-revision, attempt and repeated-source-fact semantics are unchanged.
+
 ## Three bounded metrics
 
 1. `confirmedResults`, unit `RESULT_COUNT`: one per logical action whose latest distinct non-render owner fact is `RESULT_CONFIRMED`, attempt 1, with the existing contract-required proof/readback fields and `readbackRef === taskId`. Existing envelope validation enforces mode/capability/result/proof-kind consistency and a positive task revision. Preview validation and document acceptance are recorded owner results, not business mutations or physical display sight. The calculator does not independently fetch or reverify PAN proofs; the result states this nonclaim.

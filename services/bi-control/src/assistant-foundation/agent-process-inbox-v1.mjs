@@ -51,15 +51,23 @@ function processMetrics(binding, events, requiredThroughSequence) {
     const usable = [...facts.values()]; // A repeated old fact cannot become a new owner outcome.
     const last = usable.at(-1), p = last?.payload;
     const identities = new Set(observations.map(event => canonicalJson([event.correlationId, event.payload.mode, event.payload.action.capability])));
-    let priorRevision = 0, revisionRegression = false;
+    const terminalPhases = new Map();
+    let priorRevision = 0, revisionRegression = false, revisionOutcomeConflict = false;
     for (const event of usable) if (event.payload.action.taskRevision !== null) {
       if (event.payload.action.taskRevision < priorRevision) revisionRegression = true;
       priorRevision = event.payload.action.taskRevision;
+      const phase = event.payload.phase;
+      if (event.payload.action.attempt === 1 && (phase === 'UNKNOWN' || phase === 'RESULT_CONFIRMED')) {
+        const prior = terminalPhases.get(priorRevision);
+        if (prior !== undefined && prior !== phase) revisionOutcomeConflict = true;
+        terminalPhases.set(priorRevision, phase);
+      }
     }
     let reason = !complete ? 'REQUIRED_PREFIX_MISSING'
       : group.some(event => conflicts.has(event.payload.source.eventDigest)) ? 'SOURCE_FACT_CONFLICT'
       : identities.size > 1 ? 'ACTION_LINEAGE_UNMATCHED'
       : revisionRegression ? 'OWNER_REVISION_REGRESSION'
+      : revisionOutcomeConflict ? 'OWNER_REVISION_OUTCOME_CONFLICT'
       : !last ? 'RENDER_ONLY'
       : p.action.attempt !== 1 ? 'NOT_ATTEMPTED'
       : p.phase === 'UNKNOWN' ? 'OUTCOME_UNKNOWN'

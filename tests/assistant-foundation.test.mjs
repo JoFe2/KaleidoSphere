@@ -691,3 +691,23 @@ test('KS323 SYNTHETIC repeated old source facts never resurrect success over a n
     assert.equal(metrics.actionDurations.values[0].reason, repeatedSourceFact ? 'OUTCOME_UNKNOWN' : 'OWNER_REVISION_REGRESSION');
   }
 });
+
+test('KS323 R1 SYNTHETIC incompatible terminal facts at one owner revision remain ambiguous in either observation order', async t => {
+  for (const phases of [['UNKNOWN', 'RESULT_CONFIRMED'], ['RESULT_CONFIRMED', 'UNKNOWN']]) {
+    const { store } = await syntheticInbox(t);
+    const events = await syntheticMetricEvents([
+      { id: 'r1-pending', action: 'r1-display', mode: 'DISPLAY', phase: 'PENDING', time: 100 },
+      { id: 'r1-first', action: 'r1-display', mode: 'DISPLAY', phase: phases[0], revision: 2, time: 200, cause: 'r1-pending' },
+      { id: 'r1-last', action: 'r1-display', mode: 'DISPLAY', phase: phases[1], revision: 2, time: 350, cause: 'r1-pending' },
+    ]);
+    events.forEach(event => store.append(event));
+    const metrics = store.processMetrics();
+    assert.equal(metrics.confirmedResults.value, 0);
+    assert.equal(metrics.confirmedResults.exclusions[0].reason, 'OWNER_REVISION_OUTCOME_CONFLICT');
+    assert.equal(metrics.unknownOutcomes.exclusions[0].reason, 'OWNER_REVISION_OUTCOME_CONFLICT');
+    assert.equal(metrics.actionDurations.values[0].value, null);
+    assert.equal(metrics.actionDurations.values[0].status, 'UNKNOWN');
+    assert.equal(metrics.actionDurations.values[0].reason, 'OWNER_REVISION_OUTCOME_CONFLICT');
+    assert.deepEqual(store.durableEvents(), events);
+  }
+});

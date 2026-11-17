@@ -751,7 +751,7 @@
     "services/bi-control/query-packs/db-analyzer/v1/postgresql/structure-dependencies.sql": "f39689e149b507a9eff6ddeb716b0855826b44eceec17343123b20ff557e8ae9",
     "services/bi-control/query-packs/db-analyzer/v1/postgresql/structure-relations.sql": "0a514dc03dcbb4666a1fb10155ee4f4ad1f179b3b1c3f1ac5b9ec46cac146e6f",
     "services/bi-control/query-packs/db-analyzer/v1/postgresql/structure-schemas.sql": "6ac08a3d5a5ce2be9b3434007b3b1d588ce199ead888ece77abd9a9333bcae14",
-    "services/bi-control/src/assistant-foundation/agent-process-inbox-v1.mjs": "a2e2ae6a286d5421ad39e7696f3aeec834ce683d34250ddddcd1fc5219a36a3b",
+    "services/bi-control/src/assistant-foundation/agent-process-inbox-v1.mjs": "d86379a00135bd57f5b5475b6cf5a751f6ab2e7ce305d53323a3150f7a99467a",
     "services/bi-control/src/assistant-foundation/capability-registry.mjs": "212d01aedb8bcbe74a38d52e251cdf68ed3b1eac56082d665e8db80dfef0495c",
     "services/bi-control/src/assistant-foundation/core-contracts.mjs": "79b1bceda8b5c550a15342872cc8fac05fe10cbd6917367a1bca3d11a1d15d68",
     "services/bi-control/src/assistant-foundation/execution-control.mjs": "2af9f75932f498d5c51744205e674d9db628924641b9248db237127f407ff50a",
@@ -908,7 +908,7 @@
     "tests/agent-skill-adapters.test.mjs": "035c62c651d6048b2be208959898b55e941b6a20797ede0015340a8a1f45a763",
     "tests/agent-skill-distribution.test.mjs": "c727ac5985730ed3f039fb9afa6236dced36396bcb828771fd4dd5c13eea4313",
     "tests/ambiguous-outcome-reconciliation.test.mjs": "2ff33fd900e4233eb2d9a0e8fbc77a28fe56304f93aa55f61e88285908b7c082",
-    "tests/assistant-foundation.test.mjs": "d9d5ff2e22cac7872f8f87cb8d90123309b994955ef0f6c9dbb023501a7492e3",
+    "tests/assistant-foundation.test.mjs": "b8160bac2b9407ef327dbd7b8844a408d334a393e2c08f7bed6bf31fdd2c1cee",
     "tests/bi-agent-ask-intent.test.mjs": "b8fa3d59341a53099bb1ad8369aff2f1c77dbaecfcde03fde72c942e171fa72e",
     "tests/bi-specialist.test.mjs": "10c8c8f342e7e83c9bd080cf12b10e108df1b757c4bdecb78c084db0566430b1",
     "tests/bounded-api-read-ci-binding.test.mjs": "4db5673b268d1b7b80d0d89859b7e6efe4d235a03bcbb6f44ad7c0f0ea18b81b",
@@ -1255,7 +1255,7 @@
     "verification/postgresql/postgresql-c1-live-matrix-v1.json": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
     "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "ad68a5b3598fdd08bb09d594f914bc05c3431029fa80084e1b7dbb28def35b39",
     "verification/relational-core-worker-comparison-v1.json": "5fa485b38e5e019f3aee42d9d4567de7408dc1c829714571774df2318f336278",
-    "docs/architecture/ks323-process-metrics-m1.md": "2c65519678585d89968b470ee9b54a1f40f48f5325025daeeaf35c54c33a6005"
+    "docs/architecture/ks323-process-metrics-m1.md": "c61baac6968ab6540362ee0b4440e71ff13d04433789cc8d72979492b1aa34d5"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {
