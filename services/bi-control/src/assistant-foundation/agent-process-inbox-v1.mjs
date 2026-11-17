@@ -119,7 +119,9 @@ function processMetrics(binding, events, requiredThroughSequence) {
 
 // Internal backing factory: validation stays owned by core-contracts.mjs.
 export function createAgentProcessEvidenceBackingV1(options, assertEnvelope, eventType) {
-  exact(options, ['stateRoot', 'binding', 'authorizeRead', 'maxEvents']);
+  const readOnly = Object.hasOwn(options ?? {}, 'readOnly');
+  exact(options, ['stateRoot', 'binding', 'authorizeRead', 'maxEvents', ...(readOnly ? ['readOnly'] : [])]);
+  if (readOnly && options.readOnly !== true) fail('PROCESS_CONFIG_DENIED');
   exact(options.binding, ['scope', 'sourceId', 'sourceEpoch', 'streamId', 'producer']);
   exact(options.binding.scope, ['tenantId', 'principalDigest', 'privacyEpoch']);
   exact(options.binding.producer, ['id', 'version', 'artifactDigest']);
@@ -136,34 +138,55 @@ export function createAgentProcessEvidenceBackingV1(options, assertEnvelope, eve
   authorize();
   const root = options.stateRoot;
   if (typeof root !== 'string' || !isAbsolute(root) || resolve(root) !== root || /[\x00-\x1f\x7f]/.test(root)) fail('PROCESS_OWNED_ROOT_DENIED');
-  mkdirSync(root, { recursive: true, mode: 0o700 });
+  if (!readOnly) mkdirSync(root, { recursive: true, mode: 0o700 });
   const directory = lstatSync(root);
   if (!directory.isDirectory() || directory.isSymbolicLink() || directory.uid !== process.getuid?.() || (directory.mode & 0o077) !== 0) fail('PROCESS_OWNED_ROOT_DENIED');
   const file = join(root, 'agent-process-inbox-v1.sqlite');
   let fd;
   try {
-    try { fd = openSync(file, constants.O_RDWR | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600); }
-    catch (error) { if (error.code !== 'EEXIST') throw error; fd = openSync(file, constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK); }
+    if (readOnly) fd = openSync(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+    else {
+      try { fd = openSync(file, constants.O_RDWR | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW | constants.O_NONBLOCK, 0o600); }
+      catch (error) { if (error.code !== 'EEXIST') throw error; fd = openSync(file, constants.O_RDWR | constants.O_NOFOLLOW | constants.O_NONBLOCK); }
+    }
     const stat = fstatSync(fd);
     if (!stat.isFile() || stat.nlink !== 1 || stat.uid !== process.getuid?.() || (stat.mode & 0o077) !== 0) fail('PROCESS_OWNED_FILE_DENIED');
   } finally { if (fd !== undefined) closeSync(fd); }
-  const db = new DatabaseSync(file);
+  // Node 24's real SQLite readOnly flag prevents creation and database writes.
+  // Do not use immutable: an active owner's committed WAL must remain visible.
+  const db = new DatabaseSync(file, { readOnly });
+  const settingsSchema = 'process_inbox_settings(id INTEGER PRIMARY KEY CHECK(id=1), binding TEXT NOT NULL) STRICT';
+  const eventsSchema = 'process_inbox_events(event_id TEXT PRIMARY KEY, seq INTEGER NOT NULL UNIQUE CHECK(seq>0), bytes BLOB NOT NULL, raw_sha256 TEXT NOT NULL) STRICT';
+  const assertBinding = () => {
+    if (db.prepare('SELECT binding FROM process_inbox_settings WHERE id=1').get()?.binding !== bindingBytes) fail('PROCESS_BINDING_DRIFT_DENIED');
+  };
   const transaction = body => {
     db.exec('BEGIN IMMEDIATE');
     try { const result = body(); db.exec('COMMIT'); return result; }
     catch (error) { db.exec('ROLLBACK'); throw error; }
   };
   try {
-    db.exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
-      CREATE TABLE IF NOT EXISTS process_inbox_settings(id INTEGER PRIMARY KEY CHECK(id=1), binding TEXT NOT NULL) STRICT;
-      CREATE TABLE IF NOT EXISTS process_inbox_events(event_id TEXT PRIMARY KEY, seq INTEGER NOT NULL UNIQUE CHECK(seq>0), bytes BLOB NOT NULL, raw_sha256 TEXT NOT NULL) STRICT;`);
-    transaction(() => {
-      db.prepare('INSERT OR IGNORE INTO process_inbox_settings VALUES(1,?)').run(bindingBytes);
-      if (db.prepare('SELECT binding FROM process_inbox_settings WHERE id=1').get().binding !== bindingBytes) fail('PROCESS_BINDING_DRIFT_DENIED');
-    });
+    if (readOnly) {
+      authorize();
+      assertBinding();
+      // Prove this existing owner's complete schema, never repair a partial one.
+      for (const [name, schema] of [['process_inbox_settings', settingsSchema], ['process_inbox_events', eventsSchema]]) {
+        if (db.prepare('SELECT sql FROM sqlite_schema WHERE type=\'table\' AND name=?').get(name)?.sql !== `CREATE TABLE ${schema}`) fail('PROCESS_EXISTING_SCHEMA_DENIED');
+      }
+      authorize();
+      assertBinding();
+    } else {
+      db.exec(`PRAGMA busy_timeout=5000; PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;
+        CREATE TABLE IF NOT EXISTS ${settingsSchema};
+        CREATE TABLE IF NOT EXISTS ${eventsSchema};`);
+      transaction(() => {
+        db.prepare('INSERT OR IGNORE INTO process_inbox_settings VALUES(1,?)').run(bindingBytes);
+        assertBinding();
+      });
+    }
   } catch (error) { db.close(); throw error; }
   let closed = false;
-  const current = () => { if (closed) fail('PROCESS_STORE_CLOSED'); authorize(); };
+  const current = () => { if (closed) fail('PROCESS_STORE_CLOSED'); authorize(); if (readOnly) assertBinding(); };
   const decode = bytes => {
     if (!(bytes instanceof Uint8Array) || bytes.byteLength === 0 || bytes.byteLength > 65536) fail('PROCESS_BYTES_DENIED');
     const raw = Buffer.from(bytes);
@@ -185,10 +208,11 @@ export function createAgentProcessEvidenceBackingV1(options, assertEnvelope, eve
       if (hash(raw) !== row.raw_sha256 || event.eventId !== row.event_id || event.seq !== row.seq || row.seq !== index + 1) fail('PROCESS_STORED_EVIDENCE_DENIED');
       return event;
     });
-    authorize();
+    current();
     return result;
   };
   const importBytes = bytes => {
+    if (readOnly) fail('PROCESS_READ_ONLY_DENIED');
     current();
     const { raw, event } = decode(bytes);
     return transaction(() => {

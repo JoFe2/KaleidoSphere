@@ -334,7 +334,7 @@ async function processView(request, body) {
   }
   // Open only an existing host-selected owner inside a genuinely authorized read.
   // The existing owner rechecks this current authorization on every owner read.
-  const owner = new InMemoryEvidenceStore({agentProcess: {...config, authorizeRead: () => currentProcessRead(request)}});
+  const owner = new InMemoryEvidenceStore({agentProcess: {...config, readOnly: true, authorizeRead: () => currentProcessRead(request)}});
   try { return readProcessViewV1(owner, body); }
   finally { owner.close(); }
 }
