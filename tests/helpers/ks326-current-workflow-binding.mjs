@@ -9,7 +9,10 @@ export function originalCiWorkflow(workflow){
  const pinned='    runs-on: ubuntu-24.04\n';
  assert.equal(workflow.split(pinned).length-1,1,'exactly one required-job runner pin');
  assert.equal(workflow.split('ubuntu-24.04').length-1,1,'no duplicate/hidden runner pin');
- let original=workflow.replace(pinned,'    runs-on: ubuntu-latest\n');
+ const budget='    timeout-minutes: 30\n';
+ assert.equal(workflow.split(budget).length-1,1,'exactly one approved whole-job runner budget');
+ assert.equal(workflow.split('timeout-minutes:').length-1,1,'no duplicate/hidden timeout key');
+ let original=workflow.replace(budget,'    timeout-minutes: 20\n').replace(pinned,'    runs-on: ubuntu-latest\n');
  const diagnostics=[
   '          ks283_audit_since="$(date +%s)"\n',
   '          # Diagnostics cannot replace a failed gate or change its exit status.\n',
