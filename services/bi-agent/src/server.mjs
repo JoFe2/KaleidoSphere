@@ -9,6 +9,15 @@ import { renderProcessViewV1 } from './process-view-page.mjs';
 const port = Number(process.env.PORT ?? 18790);
 const controlBase = process.env.CONTROL_BASE_URL;
 if (controlBase !== 'http://bi-control:18089') throw new Error('AGENT_CONTROL_ROUTE_DENIED');
+// Only this local read may use an owner-selected native-host port. The global
+// control pin and all chat/analysis/execution transports remain unchanged.
+const processViewControlPort = process.env.KS324_PROCESS_VIEW_CONTROL_PORT;
+const localProcessPort = Number(processViewControlPort);
+if (processViewControlPort !== undefined && (!Number.isInteger(localProcessPort)
+  || localProcessPort < 1 || localProcessPort > 65535 || String(localProcessPort) !== processViewControlPort)) throw new Error('AGENT_PROCESS_CONTROL_PORT_DENIED');
+const processViewControlUrl = processViewControlPort === undefined
+  ? `${controlBase}/v1/process-view/read`
+  : `http://127.0.0.1:${processViewControlPort}/v1/process-view/read`;
 // An owner-fixed product route prefix prepares the native page for a protected
 // ingress; it grants no session identity, tenant rights or hosted authority.
 // The absent option retains the existing local/self-hosting routes byte-for-byte.
@@ -144,7 +153,7 @@ async function processViewRead(request, body) {
     || (request.headers.origin !== undefined && request.headers.origin !== 'http://' + host)
     || (request.headers['sec-fetch-site'] !== undefined && !['same-origin', 'none'].includes(request.headers['sec-fetch-site']))) throw coded('AGENT_PROCESS_ORIGIN_DENIED');
   const token = await secret();
-  const response = await fetch(`${controlBase}/v1/process-view/read`, {
+  const response = await fetch(processViewControlUrl, {
     method: 'POST', headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
     body: JSON.stringify(body), signal: AbortSignal.timeout(30000),
   });
