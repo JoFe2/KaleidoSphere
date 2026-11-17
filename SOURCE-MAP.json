@@ -648,7 +648,7 @@
     "services/bi-agent/src/pansphaira-analytics/pipeline.mjs": "027201872c1dc14b64cef10c9980b0db6cd4d2f23e3278509cbf5a233e519174",
     "services/bi-agent/src/pansphaira-analytics/profile-contract.mjs": "8322fbb5847c0bdf653eb1d723a9fa59d9dccc2f45973b62ba0bd3d673f2219c",
     "services/bi-agent/src/pansphaira-analytics/server.mjs": "1ff0e7476269e93a8bc52d446e7fc408199a7181103a54e54a8bc16149c844e5",
-    "services/bi-agent/src/server.mjs": "6cc0cef11f77ae30839825805c02e4b679fb476bbf694885bfef56c97530b384",
+    "services/bi-agent/src/server.mjs": "b157ae4a35ba77c7a6af11590c80bd8712aac7cd8af33d760ab5d642c894fe88",
     "services/bi-control/Dockerfile.h05-native": "d5923bdd66b88da56c284541e5eac73abe7ee13827be1bdc27d737d05e04d1bb",
     "services/bi-control/fixtures/assistant-foundation/event-envelope-v1.json": "83c7bc3a8aef79f6d21f7abd6bbcc55161f9c8676e1c1b95f146feba37cece20",
     "services/bi-control/fixtures/assistant-foundation/static-registry-v1.json": "734d95b0f3c2de768c1f2516e6f74df738b41247612b270a7b0432aaa5796d91",
@@ -883,7 +883,7 @@
     "services/bi-control/src/runtime/local-runtime-context.mjs": "3317d84ebbea3b544301a3d7d97c8737c352454a08af02d044f078b9145e3ad2",
     "services/bi-control/src/runtime/pan-origin-source.mjs": "66c22d65f375e2e0bc9e67c323e0d2ccd64db7adc5e5e5415d7b2c4e6f898a81",
     "services/bi-control/src/runtime/pan-runtime-source.mjs": "3e1ac1b5d94adfe8abef5bded939e902b54c393d95590b4f357c4aa7389af6f3",
-    "services/bi-control/src/server.mjs": "266677847b72ea28983443ca3e669b1bf61492bb754f5f70f99969b45e7a24bb",
+    "services/bi-control/src/server.mjs": "f95c2957e8529a783f6a66024d4a246d0ea67cec41f130ed92b5e14ccc49ab06",
     "services/bi-control/src/superset-fingerprint.mjs": "5af298de81428b21c0bda7f44171ac9dc5ef7437d7f19eb907060ce6809a7c8e",
     "services/bi-control/src/trusted-workflow/ambiguous-outcome-reconciliation.mjs": "0d6633a4d86bc913cc3caa0d90783bab21eb732e037030ec9b4d80c096e43b3a",
     "services/bi-control/src/trusted-workflow/reviewed-superset-executor.mjs": "55d3057d237c4d4aa46d55c985f5349adca6e88d44c01f43aa841e4f83d672d3",
@@ -908,7 +908,7 @@
     "tests/agent-skill-adapters.test.mjs": "035c62c651d6048b2be208959898b55e941b6a20797ede0015340a8a1f45a763",
     "tests/agent-skill-distribution.test.mjs": "c727ac5985730ed3f039fb9afa6236dced36396bcb828771fd4dd5c13eea4313",
     "tests/ambiguous-outcome-reconciliation.test.mjs": "2ff33fd900e4233eb2d9a0e8fbc77a28fe56304f93aa55f61e88285908b7c082",
-    "tests/assistant-foundation.test.mjs": "b8160bac2b9407ef327dbd7b8844a408d334a393e2c08f7bed6bf31fdd2c1cee",
+    "tests/assistant-foundation.test.mjs": "09cf7eccb9134717ed65f1d2be59605cfefa96cf1e9be4f30412ba48e76279c9",
     "tests/bi-agent-ask-intent.test.mjs": "b8fa3d59341a53099bb1ad8369aff2f1c77dbaecfcde03fde72c942e171fa72e",
     "tests/bi-specialist.test.mjs": "10c8c8f342e7e83c9bd080cf12b10e108df1b757c4bdecb78c084db0566430b1",
     "tests/bounded-api-read-ci-binding.test.mjs": "4db5673b268d1b7b80d0d89859b7e6efe4d235a03bcbb6f44ad7c0f0ea18b81b",
@@ -1255,7 +1255,11 @@
     "verification/postgresql/postgresql-c1-live-matrix-v1.json": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
     "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "ad68a5b3598fdd08bb09d594f914bc05c3431029fa80084e1b7dbb28def35b39",
     "verification/relational-core-worker-comparison-v1.json": "5fa485b38e5e019f3aee42d9d4567de7408dc1c829714571774df2318f336278",
-    "docs/architecture/ks323-process-metrics-m1.md": "c61baac6968ab6540362ee0b4440e71ff13d04433789cc8d72979492b1aa34d5"
+    "docs/architecture/ks323-process-metrics-m1.md": "c61baac6968ab6540362ee0b4440e71ff13d04433789cc8d72979492b1aa34d5",
+    "services/bi-agent/src/process-view-page.mjs": "ee528455ee899dc1d4a04cd92267fa4cc97ba491aa6c92d0bb265f969be9a729",
+    "services/bi-control/src/assistant-foundation/process-view-readback-v1.mjs": "1c8f2773dd369bbb23a73fd55f2e6bf61b6917277880f77cccbf820b111331bc",
+    "tests/helpers/ks324-process-view-fixture.mjs": "d3f016f589c799bc7681fa43f9b0be959b4eaaf5700afa527c32ea046f039f03",
+    "docs/architecture/ks324-process-view-m1.md": "2ada1c58f71e95067240f4a4eee90530e218cf5b81e5eb823f008dc91e5122c5"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {

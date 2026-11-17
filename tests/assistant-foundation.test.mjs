@@ -711,3 +711,64 @@ test('KS323 R1 SYNTHETIC incompatible terminal facts at one owner revision remai
     assert.deepEqual(store.durableEvents(), events);
   }
 });
+
+const {readProcessViewV1} = await import('../services/bi-control/src/assistant-foundation/process-view-readback-v1.mjs');
+const syntheticViewSpecs = [
+  {id:'view-start',action:'view',phase:'PENDING',time:100,correlation:'correlation:SYNTHETIC-view'},
+  {id:'view-end',action:'view',phase:'RESULT_CONFIRMED',time:350,cause:'view-start',correlation:'correlation:SYNTHETIC-view'},
+  {id:'view-unknown',action:'unknown',phase:'UNKNOWN',time:null,correlation:'correlation:SYNTHETIC-view'},
+];
+test('KS324 SYNTHETIC view and filter use one actual authorized committed input, without effects or payload dumps',async t=>{
+  const {store}=await syntheticInbox(t),events=await syntheticMetricEvents(syntheticViewSpecs);
+  events.forEach(event=>store.append(event));
+  const before=store.durableEvents(),view=readProcessViewV1(store,{phase:'UNKNOWN'});
+  assert.equal(view.state,'CURRENT');assert.equal(view.correlationId,'correlation:SYNTHETIC-view');
+  assert.deepEqual(view.rows.map(row=>row.eventId),[events[2].eventId]);
+  assert.equal(view.metrics.confirmedResults.value,1);assert.equal(view.metrics.unknownOutcomes.value,1);
+  assert.equal(view.metrics.actionDurations.values[0].value,250);
+  assert.equal(view.inputStateDigest,view.metrics.input.inputStateDigest);
+  assert.ok(view.rows.every(row=>row.inputStateDigest===view.inputStateDigest));
+  assert.equal(JSON.stringify(view).includes('"payload"'),false);
+  for(const request of [{phase:'ALL',scope:{tenantId:'foreign'}},{phase:'ALL',role:'admin'},{phase:'ALL',sourceEpoch:'foreign'},{phase:'SUCCESS'}])assert.throws(()=>readProcessViewV1(store,request),/DENIED/);
+  assert.deepEqual(store.durableEvents(),before);
+});
+
+test('KS324 SYNTHETIC actual SQLite change between owner reads is STALE, never mixed rows and metrics',async t=>{
+  const {store,root,binding}=await syntheticInbox(t),events=await syntheticMetricEvents(syntheticViewSpecs);
+  events.forEach(event=>store.append(event));
+  const [later]=await syntheticMetricEvents([{id:'view-later',action:'view',phase:'UNKNOWN',revision:3,time:450,cause:'view-end',correlation:'correlation:SYNTHETIC-view'}]);later.seq=4;
+  let checks=0,changeAt=Infinity;
+  const reader=new InMemoryEvidenceStore({agentProcess:{stateRoot:root,binding,maxEvents:128,authorizeRead:()=>{if(++checks===changeAt)store.append(later);return true;}}});
+  t.after(()=>reader.close());checks=0;changeAt=3;
+  assert.throws(()=>readProcessViewV1(reader,{phase:'ALL'}),/PROCESS_VIEW_STALE/);
+  assert.equal(store.durableEvents().length,4);
+  const fresh=readProcessViewV1(reader,{phase:'ALL'});assert.equal(fresh.metrics.confirmedResults.value,0);assert.equal(fresh.metrics.unknownOutcomes.value,2);
+});
+
+test('KS324 SYNTHETIC multiple correlations are unavailable and final current authorization still denies a read',async t=>{
+  const {store,root,binding}=await syntheticInbox(t);
+  (await syntheticMetricEvents(syntheticPositiveMetricSpecs)).forEach(event=>store.append(event));
+  assert.deepEqual(readProcessViewV1(store,{phase:'ALL'}),{state:'UNAVAILABLE',code:'PROCESS_VIEW_MULTIPLE_CORRELATIONS',rows:[],metrics:null});
+  let allowed=true;
+  const reader=new InMemoryEvidenceStore({agentProcess:{stateRoot:root,binding,maxEvents:128,authorizeRead:()=>allowed}});t.after(()=>reader.close());
+  allowed=false;assert.throws(()=>readProcessViewV1(reader,{phase:'ALL'}),/PROCESS_CURRENT_SCOPE_DENIED/);
+});
+
+test('KS324 SYNTHETIC existing agent/control HTTP path reads real inbox, rejects foreign input/origin/auth and never fills missing data',async t=>{
+  const {startProcessViewFixtureV1}=await import('./helpers/ks324-process-view-fixture.mjs');
+  const {renameSync,existsSync}=await import('node:fs');
+  const f=await startProcessViewFixtureV1();t.after(()=>f.close());
+  assert.ok(f.acks.every(ack=>ack.status==='IMPORTED'&&ack.persisted));
+  const before=f.store.durableEvents(),response=await f.request();assert.equal(response.status,200);
+  const value=await response.json();assert.equal(value.state,'CURRENT');assert.equal(value.metrics.confirmedResults.value,1);assert.equal(value.metrics.unknownOutcomes.value,1);assert.equal(value.metrics.actionDurations.values[0].value,250);
+  assert.deepEqual(value.rows.map(row=>row.eventId),before.map(event=>event.eventId));
+  const page=await fetch(f.origin+'/process-view');assert.equal(page.status,200);assert.match(await page.text(),/Vorgangsansicht/);
+  const api=await fetch(f.origin+'/api/process-view',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phase:'ALL'})});assert.deepEqual(await api.json(),value);
+  const foreign=await f.request({phase:'ALL',scope:{tenantId:'foreign'}});assert.equal(foreign.status,400);assert.equal((await foreign.json()).status,'DENIED');
+  const unauthenticated=await fetch(f.control+'/v1/process-view/read',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({phase:'ALL'})});assert.equal(unauthenticated.status,401);
+  const origin=await fetch(f.origin+'/api/process-view',{method:'POST',headers:{'content-type':'application/json',origin:'http://SYNTHETIC-foreign.invalid'},body:JSON.stringify({phase:'ALL'})});assert.equal(origin.status,400);assert.equal((await origin.json()).code,'AGENT_PROCESS_ORIGIN_DENIED');
+  assert.deepEqual(f.store.durableEvents(),before);
+  renameSync(f.configFile,f.configFile+'.held');assert.equal((await(await f.request()).json()).state,'MISSING');renameSync(f.configFile+'.held',f.configFile);
+  f.store.close();const db=join(f.stateRoot,'agent-process-inbox-v1.sqlite');renameSync(db,db+'.held');
+  assert.equal((await(await f.request()).json()).state,'MISSING');assert.equal(existsSync(db),false);
+});
