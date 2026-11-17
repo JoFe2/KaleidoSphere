@@ -102,7 +102,7 @@ test('K01 CI diagnostics shared recovery rejects incomplete duplicated modified 
  altered.push(
   workflow.replace(pid,pid+pid),workflow.replace(pid,',"pid:",0'),
   workflow.replace('timeout:5000','timeout:5001'),
-  workflow.replace('timeout-minutes: 20','timeout-minutes: 21'),
+  workflow.replace('timeout-minutes: 30','timeout-minutes: 21'),
   workflow.replace('@electric-sql/pglite@0.3.14','@electric-sql/pglite@0.3.15'),
   workflow.replace('fetch-depth: 0','fetch-depth: 1'),
   workflow.replace('persist-credentials: false','persist-credentials: true'),
@@ -110,6 +110,30 @@ test('K01 CI diagnostics shared recovery rejects incomplete duplicated modified 
  );
  for(const value of altered){
   assert.notEqual(value,workflow,'every rejection fixture must actually mutate bytes');
+  assert.throws(()=>originalCiWorkflow(value),assert.AssertionError);
+ }
+});
+
+test('CI runner job budget is exactly 30 and only that approved delta recovers the full historical workflow',()=>{
+ const workflow=readFileSync('.github/workflows/ci.yml','utf8');
+ const budget='    timeout-minutes: 30\n';
+ assert.equal(workflow.split(budget).length-1,1,'exactly one approved whole-job runner budget');
+ assert.equal(workflow.split('timeout-minutes:').length-1,1,'no hidden or additional timeout key');
+ const original=originalCiWorkflow(workflow);
+ assert.equal(original.split('    timeout-minutes: 20\n').length-1,1,'retained historical job budget');
+ assert.equal(digest(original),protectedPins['.github/workflows/ci.yml']);
+ for(const value of [
+  workflow.replace(budget,''),
+  workflow.replace(budget,budget+budget),
+  ...[20,21,29,31].map(minutes=>workflow.replace(budget,`    timeout-minutes: ${minutes}\n`)),
+  workflow.replace(budget,"    timeout-minutes: '30'\n"),
+  workflow.replace(budget,budget+'      timeout-minutes: 30\n'),
+  workflow+'# timeout-minutes: 30\n',
+  workflow.replace('timeout:5000','timeout:5001'),
+  workflow.replace('node scripts/run-ks248-paired-access-evaluation.mjs','true # SYNTHETIC_REMOVED_PAIRED_GATE'),
+  workflow.replace('docker compose --env-file .env.example --file compose.yaml config --quiet','true # SYNTHETIC_REMOVED_COMPOSE_GATE')
+ ]){
+  assert.notEqual(value,workflow,'each negative fixture must really change current bytes');
   assert.throws(()=>originalCiWorkflow(value),assert.AssertionError);
  }
 });

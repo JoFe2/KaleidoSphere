@@ -19,7 +19,7 @@
   },
   "files": {
     ".gitattributes": "b8dec6d3243a5fb37aae25e1c489e28623df48ebe697aad4a08f20c5af28e08a",
-    ".github/workflows/ci.yml": "2bfdc761971f4e446962d3474974c5abac633bf78133ca3e92fee9cf5b9652ba",
+    ".github/workflows/ci.yml": "e8bb96373ff56e7b8bafedcc471b4a0d3f77699f7a3787b30a6ddcf4e28ace8b",
     ".gitignore": "51bf3657277de6ac0e19d93e108139bc2afe6dd875f8720be579694692ec30c3",
     ".ks150-c2-real-cleanroom-post-restore-evidence.json": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382",
     ".ks150-c2-real-cleanroom-primary-evidence.json": "b3c10b112edf72bbf6241691d686cc2adc7e4380e3a9a238618ac0f3dd9ca382",
@@ -751,9 +751,9 @@
     "services/bi-control/query-packs/db-analyzer/v1/postgresql/structure-dependencies.sql": "f39689e149b507a9eff6ddeb716b0855826b44eceec17343123b20ff557e8ae9",
     "services/bi-control/query-packs/db-analyzer/v1/postgresql/structure-relations.sql": "0a514dc03dcbb4666a1fb10155ee4f4ad1f179b3b1c3f1ac5b9ec46cac146e6f",
     "services/bi-control/query-packs/db-analyzer/v1/postgresql/structure-schemas.sql": "6ac08a3d5a5ce2be9b3434007b3b1d588ce199ead888ece77abd9a9333bcae14",
-    "services/bi-control/src/assistant-foundation/agent-process-inbox-v1.mjs": "4b3fdc813ddc94405ea6e7edf7800f28423a7f8adc180f19a5195c27de64c663",
+    "services/bi-control/src/assistant-foundation/agent-process-inbox-v1.mjs": "d86379a00135bd57f5b5475b6cf5a751f6ab2e7ce305d53323a3150f7a99467a",
     "services/bi-control/src/assistant-foundation/capability-registry.mjs": "212d01aedb8bcbe74a38d52e251cdf68ed3b1eac56082d665e8db80dfef0495c",
-    "services/bi-control/src/assistant-foundation/core-contracts.mjs": "b87d59305f63d80c776f35ed6f0cdb49d46c46a0d2dd58c7a20fdfd1cff3f831",
+    "services/bi-control/src/assistant-foundation/core-contracts.mjs": "79b1bceda8b5c550a15342872cc8fac05fe10cbd6917367a1bca3d11a1d15d68",
     "services/bi-control/src/assistant-foundation/execution-control.mjs": "2af9f75932f498d5c51744205e674d9db628924641b9248db237127f407ff50a",
     "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.d.mts": "055773b1988b1e760867a787191b76a9de6965c33dd666cc44c0406771b1def8",
     "services/bi-control/src/assistant-foundation/pan541-ui-state-consumer-v1.mjs": "73591ee114a00a6cdbc98ec51e8b66e3042b8e14166bef4597483971858b84db",
@@ -908,7 +908,7 @@
     "tests/agent-skill-adapters.test.mjs": "035c62c651d6048b2be208959898b55e941b6a20797ede0015340a8a1f45a763",
     "tests/agent-skill-distribution.test.mjs": "c727ac5985730ed3f039fb9afa6236dced36396bcb828771fd4dd5c13eea4313",
     "tests/ambiguous-outcome-reconciliation.test.mjs": "2ff33fd900e4233eb2d9a0e8fbc77a28fe56304f93aa55f61e88285908b7c082",
-    "tests/assistant-foundation.test.mjs": "c69bb8eb44b17dd80fdab3189b065da76e236f87722cb97eda0fbbb9be6c7b2a",
+    "tests/assistant-foundation.test.mjs": "b8160bac2b9407ef327dbd7b8844a408d334a393e2c08f7bed6bf31fdd2c1cee",
     "tests/bi-agent-ask-intent.test.mjs": "b8fa3d59341a53099bb1ad8369aff2f1c77dbaecfcde03fde72c942e171fa72e",
     "tests/bi-specialist.test.mjs": "10c8c8f342e7e83c9bd080cf12b10e108df1b757c4bdecb78c084db0566430b1",
     "tests/bounded-api-read-ci-binding.test.mjs": "4db5673b268d1b7b80d0d89859b7e6efe4d235a03bcbb6f44ad7c0f0ea18b81b",
@@ -1078,7 +1078,7 @@
     "tests/h02-protected-source-availability.test.mjs": "a5911e89b32921f8433ef990e9c59946528a1b8a0f8ec732116e0d5878801808",
     "tests/h02-runtime-ci-binding.test.mjs": "079ae62dbc4dc708a7482d65c7de233e52034fb2b3d9f2ecbdc5faf2e2e8dd0c",
     "tests/h03-starter-browser-surface.test.mjs": "2b89ad2e36a3d005e19cdf47e7cb5b72e8043d60b86bd0b7627284e7ba9e23db",
-    "tests/h03-starter-ci-binding.test.mjs": "9284881b0ae5323d4fd50c867ea10982da0a7e282840a6110c84cd784dd87026",
+    "tests/h03-starter-ci-binding.test.mjs": "846b34f8fa56b612bb2913d12882f765a7fa7c9752920f30951d7f16830fac98",
     "tests/h03-starter-product.test.mjs": "44e613f8b59f93dae24694f63582f4232d10e0f52644a95587c46dfb0ccf7014",
     "tests/h05-closed-runtime-template.test.mjs": "884e638465a0ad16e0b490e4fa9ea5572dcd0ca109e9c802035ad4de35560db7",
     "tests/h05-native-broker-runtime.test.mjs": "f963af113b3471d66dbaeba1dde80563f65dfb6d5567f50263c9334c0337bb1a",
@@ -1099,7 +1099,7 @@
     "tests/h282-host-epic-native-binding.test.mjs": "2d2d40172822ac5c0df7c65bfabf2524aa5691ea215ca71999eed75983c46a26",
     "tests/helpers/ks254-generation-runner.mjs": "132f607067c96a0000d11991e17d765c90204be0a1dad972cf20b117ddc9baee",
     "tests/helpers/ks254-http-harness.mjs": "a6ffffd86cb19c20c4e21b74edbc36af13e02e51e496afaeccf6cc8387332eed",
-    "tests/helpers/ks326-current-workflow-binding.mjs": "60efe0294637138514db651ab853d0b7c3bc8b1e15af139c68a8de80ac83408d",
+    "tests/helpers/ks326-current-workflow-binding.mjs": "de927083a5a99cfc0d2fa6aa77ad77ea9e05a7c770e6e574264f185103d122c6",
     "tests/helpers/object-capability-adversarial-matrix-v1.mjs": "855fd2a560b446874ba3ae038a427134ab58276a32652d2e89d13e0086258387",
     "tests/helpers/relational-core-native-worker-probe.py": "3f52fa3ca27a4549bca7ad81503e3de969a988da0f7e359dd3b79d879f04a1bd",
     "tests/helpers/relational-core-owned-fixture.py": "d62c364f03e891c56ab2d6277705c1f128f2e195c6f7efbe07875cdb72b7219f",
@@ -1254,7 +1254,8 @@
     "verification/postgresql/postgresql-c1-live-matrix-provenance-v1.json": "40b6d1ae6a249b51d0deb964c37ecbf0fb1e8b16a1703a03ab416b699060c529",
     "verification/postgresql/postgresql-c1-live-matrix-v1.json": "90866c86b344c2043fdd32b3b3728da5c1d5b957dd01119c03c9398a347f3eab",
     "verification/postgresql/postgresql-c2-real-cleanroom-provenance-v1.json": "ad68a5b3598fdd08bb09d594f914bc05c3431029fa80084e1b7dbb28def35b39",
-    "verification/relational-core-worker-comparison-v1.json": "5fa485b38e5e019f3aee42d9d4567de7408dc1c829714571774df2318f336278"
+    "verification/relational-core-worker-comparison-v1.json": "5fa485b38e5e019f3aee42d9d4567de7408dc1c829714571774df2318f336278",
+    "docs/architecture/ks323-process-metrics-m1.md": "c61baac6968ab6540362ee0b4440e71ff13d04433789cc8d72979492b1aa34d5"
   },
   "derivedFiles": {
     "services/bi-control/src/db-analyzer/core.mjs": {
