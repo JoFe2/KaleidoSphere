@@ -22,13 +22,49 @@ Keine Bindung aus Browserflags, Abfrageparametern, Rollen oder Testdaten ableite
 Die vorhandene Bindung muss dem bereits gespeicherten Inboxowner entsprechen;
 eine fehlende Datei wird nicht als Ersatzinbox angelegt.
 
-Ohne expliziten Anschluss ist die Ansicht UNCONFIGURED. Fehlende Konfiguration
-oder Inbox ergibt MISSING. Das Produkt importiert oder befüllt nichts automatisch.
-Die Tests starten die vorhandenen Server direkt mit Node und eigenen temporären
-Ports/Dateien. Ihre exakte Übersetzung der vorgeschriebenen Containeradresse
-`http://bi-control:18089` auf den privaten Loopback-Port ändert weder HTTP-Body
-noch Authentifizierung noch Antwort. Sie ist ausschließlich Testtransport, kein
-Produkt-Fallback oder neuer Exportendpoint.
+Für den tatsächlich nativen Single-Host-Start erhält nur der Agent-Prozess
+`KS324_PROCESS_VIEW_CONTROL_PORT=<Control-Port>`. Der streng kanonische
+Dezimalport 1..65535 wählt ausschließlich `127.0.0.1` und den festen bestehenden
+Readendpoint; kein Client-URL/Host/Scope und keine allgemeine Proxyfunktion.
+`CONTROL_BASE_URL=http://bi-control:18089` bleibt für die bisherigen Pfade exakt
+verpflichtend. Die neue Option verändert weder Chat/Analyse/Discovery noch deren
+Routepin. Ohne diese Option bleibt das bisherige Ziel unverändert; eine native
+Host-DNS-Auflösung von `bi-control` wird NICHT vorausgesetzt oder eingerichtet.
+Der alte transportadaptierte Browserlauf beweist nur Funktion, nicht Produktstart.
+Die neuen Bootstrap-Tests und der ergänzende Browserlauf starten den Produktpfad
+mit der expliziten lokalen Option ohne Fetchremapping/Preloader/Hostalias.
+
+Beispiel nach Setzen eigener absoluter Variablen `REPO`, `OWNED_RUN`,
+`OWNER_CONFIG`, `TOKEN_FILE`, `NODE` und freier `CONTROL_PORT`/`AGENT_PORT`:
+
+```sh
+# Control, eigenes Terminal; vorhandener Token und bereits initialisierter Owner.
+env PORT="$CONTROL_PORT" CONTROL_BIND_ADDRESS=127.0.0.1 \
+  CONTROL_TOKEN_FILE="$TOKEN_FILE" KS324_PROCESS_INBOX_CONFIG_FILE="$OWNER_CONFIG" \
+  RECEIPT_DIR="$OWNED_RUN/receipts" PROJECTION_DB="$OWNED_RUN/projection.sqlite" \
+  REPOSITORY_ROOT="$REPO/services/bi-control" BI_FIXTURE_DIR="$REPO/services/bi-control/fixtures" \
+  BI_ENGINE=mssql BI_SOURCE_MODE=fixture KS_H03_STARTER_OPT_IN=false KS_H05_NATIVE_PROBE_OPT_IN=false \
+  "$NODE" "$REPO/services/bi-control/src/server.mjs"
+# Agent, zweites eigenes Terminal; anschließend http://127.0.0.1:<AGENT_PORT>/process-view.
+env PORT="$AGENT_PORT" CONTROL_TOKEN_FILE="$TOKEN_FILE" \
+  CONTROL_BASE_URL=http://bi-control:18089 KS324_PROCESS_VIEW_CONTROL_PORT="$CONTROL_PORT" \
+  AGENT_ROUTE_PREFIX= LLM_MODE=stub KS_H03_STARTER_OPT_IN=false \
+  "$NODE" "$REPO/services/bi-agent/src/server.mjs"
+```
+
+Am erreichbaren Control ergibt ein fehlender expliziter Owneranschluss UNCONFIGURED;
+fehlende Konfiguration/Inbox ergibt MISSING. Das Produkt importiert oder befüllt
+nichts automatisch. Der Präsentationsread öffnet den existierenden Owner zwingend
+mit der einschränkenden Hostoption `readOnly: true`: kein mkdir, keine SQLite-
+Initialisierung/Migration oder neue Binding, keine schreibende Transaktion.
+Fehlende, leere, partielle, beschädigte und fremd gebundene Stores werden ohne
+Schema-/Binding-/Datenänderung verweigert, statt neue EMPTY-Nullzahlen zu erzeugen.
+Der bewusste bisherige Import-/Initialisierungsdefault bleibt unverändert;
+Readonly-Append/Import wird verweigert. Aktuelle Leserechte und gespeicherte Bindung
+werden erneut geprüft, tatsächliche WAL-COMMITs bleiben sichtbar (kein immutable-
+Snapshottrick). SQLite kann bei gültigen WAL-Lesern Koordinations-SHM anlegen oder
+Readmarks ändern; das ist keine behauptete Nulländerung aller Dateisystembytes.
+Die uninitialisierten negativen Fälle bleiben vollständig unverändert.
 
 ## Autorität und Grenzen
 

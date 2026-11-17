@@ -772,3 +772,7 @@ test('KS324 SYNTHETIC existing agent/control HTTP path reads real inbox, rejects
   f.store.close();const db=join(f.stateRoot,'agent-process-inbox-v1.sqlite');renameSync(db,db+'.held');
   assert.equal((await(await f.request()).json()).state,'MISSING');assert.equal(existsSync(db),false);
 });
+
+// KS324: canonical imported routes retain the frozen npm test command.
+import './ks324-local-bootstrap.test.mjs';
+import './ks324-read-only-owner.test.mjs';
