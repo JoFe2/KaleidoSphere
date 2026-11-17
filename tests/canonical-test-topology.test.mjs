@@ -113,6 +113,8 @@ const INTENTIONAL_IMPORTED_PARENT = Object.freeze('tests/source-map.test.mjs');
 const INTENTIONAL_C2_IMPORTED_SUITE = Object.freeze('tests/postgresql-c2-safe-aggregate.test.mjs');
 const INTENTIONAL_C2_IMPORTED_PARENT = Object.freeze('tests/postgresql-c1-certification.test.mjs');
 const INTENTIONAL_IMPORTED_ROUTES = Object.freeze([
+  { parent: 'tests/assistant-foundation.test.mjs', suite: 'tests/ks324-local-bootstrap.test.mjs' },
+  { parent: 'tests/assistant-foundation.test.mjs', suite: 'tests/ks324-read-only-owner.test.mjs' },
   { parent: INTENTIONAL_C2_IMPORTED_PARENT, suite: INTENTIONAL_C2_IMPORTED_SUITE },
   { parent: INTENTIONAL_IMPORTED_PARENT, suite: INTENTIONAL_IMPORTED_SUITE },
   { parent: 'tests/source-map.test.mjs', suite: 'tests/net-revenue-visual-v1.test.mjs' },

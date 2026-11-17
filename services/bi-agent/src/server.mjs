@@ -4,10 +4,20 @@ import http from 'node:http';
 import { objectFromMessage, technicalFamily } from './ask-intent.mjs';
 import { capabilityManifestV1 } from './capability-manifest-v1.mjs';
 import { capabilityAttestationV2, executeExternalIntentV2, externalBiProviderProfileV1 } from './external-api-v2.mjs';
+import { renderProcessViewV1 } from './process-view-page.mjs';
 
 const port = Number(process.env.PORT ?? 18790);
 const controlBase = process.env.CONTROL_BASE_URL;
 if (controlBase !== 'http://bi-control:18089') throw new Error('AGENT_CONTROL_ROUTE_DENIED');
+// Only this local read may use an owner-selected native-host port. The global
+// control pin and all chat/analysis/execution transports remain unchanged.
+const processViewControlPort = process.env.KS324_PROCESS_VIEW_CONTROL_PORT;
+const localProcessPort = Number(processViewControlPort);
+if (processViewControlPort !== undefined && (!Number.isInteger(localProcessPort)
+  || localProcessPort < 1 || localProcessPort > 65535 || String(localProcessPort) !== processViewControlPort)) throw new Error('AGENT_PROCESS_CONTROL_PORT_DENIED');
+const processViewControlUrl = processViewControlPort === undefined
+  ? `${controlBase}/v1/process-view/read`
+  : `http://127.0.0.1:${processViewControlPort}/v1/process-view/read`;
 // An owner-fixed product route prefix prepares the native page for a protected
 // ingress; it grants no session identity, tenant rights or hosted authority.
 // The absent option retains the existing local/self-hosting routes byte-for-byte.
@@ -129,6 +139,26 @@ async function controlJson(path, body) {
     signal: AbortSignal.timeout(30000),
   });
   const value = await response.json().catch(() => ({code: 'AGENT_CONTROL_RESPONSE_INVALID'}));
+  if (!response.ok) throw coded(value.code ?? 'AGENT_CONTROL_FAILED');
+  return value;
+}
+
+async function processViewRead(request, body) {
+  // This existing local/self-hosted agent delegates only its host-configured
+  // control read. Do not invent a hosted session-to-source principal mapping.
+  if (routePrefix) throw coded('AGENT_PROCESS_PROTECTED_BINDING_UNAVAILABLE');
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress)) throw coded('AGENT_PROCESS_LOCAL_ONLY');
+  const host = request.headers.host;
+  if (!/^(?:127\.0\.0\.1|localhost|\[::1\]):[1-9][0-9]{0,4}$/.test(host ?? '')
+    || (request.headers.origin !== undefined && request.headers.origin !== 'http://' + host)
+    || (request.headers['sec-fetch-site'] !== undefined && !['same-origin', 'none'].includes(request.headers['sec-fetch-site']))) throw coded('AGENT_PROCESS_ORIGIN_DENIED');
+  const token = await secret();
+  const response = await fetch(processViewControlUrl, {
+    method: 'POST', headers: {authorization: `Bearer ${token}`, 'content-type': 'application/json'},
+    body: JSON.stringify(body), signal: AbortSignal.timeout(30000),
+  });
+  const value = await response.json().catch(() => ({code: 'AGENT_CONTROL_RESPONSE_INVALID'}));
+  if (token !== await secret()) throw coded('AGENT_CONTROL_AUTH_CHANGED');
   if (!response.ok) throw coded(value.code ?? 'AGENT_CONTROL_FAILED');
   return value;
 }
@@ -270,6 +300,8 @@ const server = http.createServer(async (request, response) => {
       return send(response, 200, asset.contentType, asset.body, 'public, max-age=3600');
     }
     if (request.method === 'GET' && requestPath === '/') return send(response, 200, 'text/html', h03PageApi?h03PageApi.renderH03BrowserStarterV1(routePrefix):page);
+    if (request.method === 'GET' && requestPath === '/process-view') return send(response, 200, 'text/html', renderProcessViewV1(routePrefix));
+    if (request.method === 'POST' && requestPath === '/api/process-view') return send(response, 200, 'application/json', await processViewRead(request, await requestJson(request)));
     if (request.method === 'POST' && requestPath === '/api/chat') {
       const body=await requestJson(request);
       if(h03PageApi)return send(response,200,'application/json',await controlJson('/v1/starter',h03PageApi.validateH03BrowserCommandV1(body)));

@@ -1,4 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { readFileSync, lstatSync } from 'node:fs';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import path from 'node:path';
@@ -17,6 +18,8 @@ import { runAnalyzeProfile } from './db-analyzer/workflow.mjs';
 import { coded, exactObject, validateActionRequest, validateAgentText } from './policy.mjs';
 import { assertProductSecretBinding, buildLiveProfile, selectProductDescriptor, selectedEngine } from './runtime-config.mjs';
 import { collectSupersetFingerprint, evaluateSupersetPlanningGate } from './superset-fingerprint.mjs';
+import { InMemoryEvidenceStore } from './assistant-foundation/core-contracts.mjs';
+import { readProcessViewV1 } from './assistant-foundation/process-view-readback-v1.mjs';
 
 const port = Number(process.env.PORT ?? 18089);
 const receiptDir = process.env.RECEIPT_DIR ?? '/var/lib/chimpmaera-bi/receipts';
@@ -301,6 +304,41 @@ async function externalPreview(body) {
   };
 }
 
+// Local/self-hosted UI delegation uses this existing control credential, never
+// browser tenant/role/source flags. Protected multi-user mapping is not inferred.
+function currentProcessRead(request) {
+  try {
+    const current = readFileSync(process.env.CONTROL_TOKEN_FILE, 'utf8').trim();
+    return current.length > 0 && authorized(request, current);
+  } catch { return false; }
+}
+async function processView(request, body) {
+  exactObject(body, ['phase']);
+  if (!currentProcessRead(request)) throw coded('CONTROL_AUTH_DENIED');
+  const file = process.env.KS324_PROCESS_INBOX_CONFIG_FILE;
+  if (!file) return {state: 'UNCONFIGURED', code: 'PROCESS_VIEW_OWNER_UNCONFIGURED', rows: [], metrics: null};
+  if (process.env.CONTROL_BIND_ADDRESS !== '127.0.0.1') throw coded('PROCESS_VIEW_LOCAL_OWNER_REQUIRED');
+  let config;
+  try { config = JSON.parse(await readFile(file, 'utf8')); }
+  catch (error) {
+    if (error.code === 'ENOENT') return {state: 'MISSING', code: 'PROCESS_VIEW_CONFIG_MISSING', rows: [], metrics: null};
+    throw coded('PROCESS_VIEW_CONFIG_DENIED');
+  }
+  exactObject(config, ['stateRoot', 'binding', 'maxEvents']);
+  if (!currentProcessRead(request)) throw coded('CONTROL_AUTH_DENIED');
+  try {
+    if (!lstatSync(path.join(config.stateRoot, 'agent-process-inbox-v1.sqlite')).isFile()) throw coded('PROCESS_VIEW_INBOX_DENIED');
+  } catch (error) {
+    if (error.code === 'ENOENT') return {state: 'MISSING', code: 'PROCESS_VIEW_INBOX_MISSING', rows: [], metrics: null};
+    throw error;
+  }
+  // Open only an existing host-selected owner inside a genuinely authorized read.
+  // The existing owner rechecks this current authorization on every owner read.
+  const owner = new InMemoryEvidenceStore({agentProcess: {...config, readOnly: true, authorizeRead: () => currentProcessRead(request)}});
+  try { return readProcessViewV1(owner, body); }
+  finally { owner.close(); }
+}
+
 function send(response, status, value) {
   const body = `${JSON.stringify(value)}\n`;
   response.writeHead(status, {'content-type': 'application/json; charset=utf-8', 'content-length': Buffer.byteLength(body), 'cache-control': 'no-store'});
@@ -366,6 +404,11 @@ const server = http.createServer(async (request, response) => {
     }
     if (request.method !== 'POST') throw coded('CONTROL_ROUTE_DENIED');
     const body = await bodyJson(request);
+    if (request.url === '/v1/process-view/read') {
+      const result = await processView(request, body);
+      if (!currentProcessRead(request)) throw coded('CONTROL_AUTH_DENIED');
+      return send(response, 200, result);
+    }
     if (request.url === '/v1/runtime/plan') {
       if (!h05OwnedTemplate) throw coded('H05_SERVER_TEMPLATE_DISABLED');
       const plan = h05TemplateApi.planH05ClosedRuntimeTemplateV1(h05OwnedTemplate.templateContext, body, h05PlannedDigest ?? null);
